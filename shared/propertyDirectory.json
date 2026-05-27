@@ -1,0 +1,232 @@
+{
+  "bedroomGroups": [
+    {
+      "bedrooms": 1,
+      "label": "1 Bedroom",
+      "names": [
+        "Christmas Cottage",
+        "Harbor Lights",
+        "In Harmony Retreat",
+        "Island Gardens",
+        "Island Vibes",
+        "Lavender Hill Unit 10-E",
+        "Lots of Knots",
+        "MandeVilla at Ixora",
+        "Ocean Garden",
+        "Paradise Carest",
+        "Sun, Moon and Stars",
+        "The Little Easy",
+        "Tropical Orchid",
+        "White Seagull",
+        "Windwardside Guest Cottage",
+        "Windwardside Main House"
+      ]
+    },
+    {
+      "bedrooms": 2,
+      "label": "2 Bedrooms",
+      "names": [
+        "Brezza di Mare",
+        "Desert Rose Villa",
+        "Fish Tales",
+        "Miles Away",
+        "Mystical Mermaid Villa",
+        "Notre Ciel",
+        "Orchid Garden",
+        "Samba Azul",
+        "San Costanzo",
+        "Sapphire Peak",
+        "Sea Palace Retreat",
+        "Sol Cottage Villa",
+        "Sol La Vie",
+        "Sunset Paradise",
+        "Villa Madeline",
+        "Waterklip"
+      ]
+    },
+    {
+      "bedrooms": 3,
+      "label": "3 Bedrooms",
+      "names": [
+        "Alta Vista",
+        "Arco Iris",
+        "Astral Villa",
+        "Beyond the Sea",
+        "Cara Mia",
+        "East End Seascape",
+        "Hart Bay Beach House",
+        "Idyllic Villa",
+        "Monarch Cottage",
+        "Palladio's View",
+        "Pebble Cove",
+        "Sea Palms",
+        "Seagrape Estate",
+        "Southern Exposure",
+        "Villa Bijou",
+        "Villa Madeira"
+      ]
+    },
+    {
+      "bedrooms": 4,
+      "label": "4 Bedrooms",
+      "names": [
+        "Beija Flor",
+        "Blue Agave",
+        "Cinnamon Stones",
+        "Coral Sky Villa",
+        "Drake's View",
+        "Great Escape",
+        "Halcyon Days",
+        "Hart Bay Great House",
+        "Mad-de-Lis",
+        "Oceanport Villa",
+        "Palm Ridge",
+        "Reef Bay Holiday Villa",
+        "Sapphire Sunrise",
+        "Serenity Vista Villa",
+        "Villa Kia Orana",
+        "Villa South Palm",
+        "Villa de Paz"
+      ]
+    },
+    {
+      "bedrooms": 5,
+      "label": "5 Bedrooms",
+      "names": [
+        "Argonauta",
+        "Seacove Villa",
+        "Villa Ixora"
+      ]
+    },
+    {
+      "bedrooms": 6,
+      "label": "6 Bedrooms",
+      "names": [
+        "Casa Del Palmas",
+        "Chateau Margot",
+        "Oceana Villa"
+      ]
+    }
+  ],
+  "propertyOverrides": {
+    "brezza-di-mare": {
+      "shortDescription": "Modern hillside villa with panoramic Caribbean views, infinity pool, spa, and seamless indoor-outdoor living in Fish Bay.",
+      "maxGuests": 4,
+      "bathrooms": 2.5,
+      "location": "Fish Bay",
+      "highlights": [
+        "Pool",
+        "Hot Tub",
+        "Internet"
+      ],
+      "description": [
+        "Brezza di Mare features a seamless, modern design emphasizing comfort and panoramic views.",
+        "The main level hosts an open-concept great room with a gourmet kitchen, dining area, and half bath, ideal for entertaining. Floor-to-ceiling windows frame breathtaking vistas of Ram Head and the Caribbean Sea.",
+        "A private staircase leads down to two air-conditioned primary suites, each with a king bed, private deck, chaise lounges, and en-suite bathrooms featuring double vanities and rock showers.",
+        "Outside, the villa truly comes alive. A spacious covered outdoor living and dining area includes a sectional sofa and table for up to 10 guests, perfect for al fresco meals. The 20' x 10' knife-edge infinity pool and adjacent hot tub overlook the sea, while a sun deck with loungers invites relaxation.",
+        "A built-in gas grill, outdoor sink, and mini-fridge make outdoor cooking effortless. Nestled at the end of a quiet road in Fish Bay, the property offers both serenity and luxury, just minutes from St. John's pristine beaches and national park trails. The villa is at the end of its road, providing complete serenity, but is only a 12-minute drive to Cruz Bay.",
+        "Brezza di Mare is next door to its sister property, San Costanzo. For large or multi-generational groups, renting 2 bedroom/2 bathroom San Costanzo with 2 bedroom/2.5 bathroom Brezza di Mare gives guests the flexibility of privacy and time together.",
+        "Base nightly rates vary and additional per person per night charges and other fees may apply.",
+        "To book direct, please contact James M. Miller Property Management at miller.marc17@yahoo.com."
+      ],
+      "booking": {
+        "contactName": "James M. Miller Property Management",
+        "email": "miller.marc17@yahoo.com",
+        "note": "VRBO reviews and photo gallery can be referenced alongside the direct booking contact."
+      },
+      "amenityGroups": [
+        {
+          "title": "Essentials",
+          "items": [
+            "Wireless internet",
+            "Free wifi",
+            "Wifi speed: 100+ Mbps (good for 1-2 people or up to 6 devices)",
+            "Internet",
+            "Wifi",
+            "Towels provided",
+            "Bath and beach towels, plus coolers for beach days",
+            "Linens provided",
+            "Air conditioning in bedrooms only",
+            "Shampoo",
+            "Toilet paper",
+            "Basic soaps",
+            "Iron and board"
+          ]
+        },
+        {
+          "title": "Kitchen",
+          "items": [
+            "Filtered drinking water",
+            "Refrigerator",
+            "Dishwasher",
+            "Microwave",
+            "Stove",
+            "Oven",
+            "Grill",
+            "Dishes and utensils",
+            "Dining table",
+            "Coffee maker",
+            "Coffee grinder",
+            "Kettle",
+            "Blender",
+            "Ice maker",
+            "Toaster"
+          ]
+        },
+        {
+          "title": "Pool and Spa",
+          "items": [
+            "Private pool",
+            "Spa whirlpool",
+            "Hot tub",
+            "Outdoor pool"
+          ]
+        },
+        {
+          "title": "Outside",
+          "items": [
+            "Outdoor furniture",
+            "Beach chairs",
+            "Beach towels",
+            "Outdoor shower"
+          ]
+        },
+        {
+          "title": "Entertainment",
+          "items": [
+            "Television",
+            "Smart TV",
+            "Satellite / cable"
+          ]
+        },
+        {
+          "title": "Laundry and Parking",
+          "items": [
+            "Washing machine",
+            "Dryer",
+            "Parking for 2 jeeps"
+          ]
+        },
+        {
+          "title": "Safety and Suitability",
+          "items": [
+            "Carbon monoxide detector",
+            "Smoke detector",
+            "Minimum age limit for renters",
+            "No pets allowed"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "quote": "We had a wonderful stay at this beautiful home. The sunrise views from the large open deck were beautiful every morning. The outdoor pool and dining space were an awesome place to hang out, and we grilled several evenings instead of dining out because we didn't want to leave.",
+          "author": "Rhonda W."
+        },
+        {
+          "quote": "The house was wonderful. My husband and I enjoyed the pool, hot tub, and outdoor area. The indoor and outdoor shower was also pretty cool. Everything worked as it should and the house was easy to get to. This might have been our favorite place we've stayed at.",
+          "author": "Emily P."
+        }
+      ]
+    }
+  }
+}

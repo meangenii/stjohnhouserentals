@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="sea" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd36d" />
+      <stop offset="50%" stop-color="#ff8f6b" />
+      <stop offset="100%" stop-color="#0d7c83" />
+    </linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="28" fill="#fff9ef" />
+  <path
+    d="M20 58c9 0 12-8 21-8s12 8 21 8 12-8 14-8v13c-2 0-5 8-14 8s-12-8-21-8-12 8-21 8-12-8-14-8V50c2 0 5 8 14 8Z"
+    fill="url(#sea)"
+  />
+  <path
+    d="M24 40c10-11 19-16 26-16 7 0 14 3 22 11l-6 6c-7-6-12-8-17-8-5 0-12 4-20 13Z"
+    fill="#183239"
+  />
+</svg>

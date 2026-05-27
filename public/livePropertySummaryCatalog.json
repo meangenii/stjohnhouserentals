@@ -1,0 +1,1665 @@
+{
+  "capturedAt": "2026-05-26T18:16:42.162Z",
+  "snapshotDate": "2026-05-26",
+  "source": "https://www.stjohnhouserentals.com/",
+  "propertyCount": 68,
+  "properties": [
+    {
+      "id": "christmas-cottage",
+      "slug": "christmas-cottage",
+      "path": "/rental-properties/christmas-cottage",
+      "name": "Christmas Cottage",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "Studio",
+        "1 Bath",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_d33d74fd7a084bb4961516fbc9866255~mv2.jpg",
+        "alt": "",
+        "title": "Christmas Cottage.jpg",
+        "width": 600,
+        "height": 402
+      }
+    },
+    {
+      "id": "island-gardens",
+      "slug": "island-gardens",
+      "path": "/rental-properties/island-gardens",
+      "name": "Island Gardens",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "Studio",
+        "1 Bath",
+        "Internet",
+        "Coral Bay, St John VI"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_28a52a8294874802a33bf0614e21cb84~mv2.jpg",
+        "alt": "",
+        "title": "Island-Gardens.jpg",
+        "width": 640,
+        "height": 428
+      }
+    },
+    {
+      "id": "harbor-lights",
+      "slug": "harbor-lights",
+      "path": "/rental-properties/harbor-lights",
+      "name": "Harbor Lights",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_140d16d44e5c47d7866305e8b4bd1441~mv2.avif",
+        "alt": "",
+        "title": "HERO-Harbor Lights-Harbor Lights Property.avif",
+        "width": 1920,
+        "height": 1438
+      }
+    },
+    {
+      "id": "in-harmony-retreat",
+      "slug": "in-harmony-retreat",
+      "path": "/rental-properties/in-harmony-retreat",
+      "name": "In Harmony Retreat",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay, St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/6c05e8_bba26e24ae734ee0bc504255294bfd17~mv2.jpg",
+        "alt": "",
+        "title": "In-Harmony-Retreat portada.jpg",
+        "width": 600,
+        "height": 429
+      }
+    },
+    {
+      "id": "island-vibes",
+      "slug": "island-vibes",
+      "path": "/rental-properties/island-vibes",
+      "name": "Island Vibes",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "Studio & Sleeping Porch",
+        "1 Bath",
+        "Internet",
+        "Coral Bay, St John, VI"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_56ff2f5093ac489bb58c3f36f7e6f1f1~mv2.jpg",
+        "alt": "",
+        "title": "Island Vibes.jpg",
+        "width": 576,
+        "height": 386
+      }
+    },
+    {
+      "id": "lavender-hill-unit-10-e-",
+      "slug": "lavender-hill-unit-10-e-",
+      "path": "/rental-properties/lavender-hill-unit-10-e-",
+      "name": "Lavender Hill Unit 10-E",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_5d7beb266b0947539cb5cfefedd5c2b9~mv2.avif",
+        "alt": "",
+        "title": "HERO-MermaidTail10E-Outdoor Dining.avif",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "lots-of-knots-",
+      "slug": "lots-of-knots-",
+      "path": "/rental-properties/lots-of-knots-",
+      "name": "Lots of Knots",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Hot Tub",
+        "Internet",
+        "Upper Carolina"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_35621ab7c05e47c09152640dd3a7d381~mv2.png",
+        "alt": "",
+        "title": "Lots-of-Knots-.png",
+        "width": 900,
+        "height": 683
+      }
+    },
+    {
+      "id": "mandevilla-at-ixora",
+      "slug": "mandevilla-at-ixora",
+      "path": "/rental-properties/mandevilla-at-ixora",
+      "name": "MandeVilla at Ixora",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Ajax Peak"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b5ab55b6a20d41fe90ba35915d08d936~mv2.avif",
+        "alt": "",
+        "title": "HERO-MI-View.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "paradise-carest",
+      "slug": "paradise-carest",
+      "path": "/rental-properties/paradise-carest",
+      "name": "Paradise Carest",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_5cd506a98f074f8a8e3232b5ad8b9d57~mv2.avif",
+        "alt": "",
+        "title": "HERO-Paradise Carest-Beach.avif",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "sun%2C-moon-and-stars",
+      "slug": "sun%2C-moon-and-stars",
+      "path": "/rental-properties/sun%2C-moon-and-stars",
+      "name": "Sun, Moon and Stars",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay, St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_701696742b1e46e0bce576f6eb2b2ae6~mv2.png",
+        "alt": "",
+        "title": "Sun-Moon-and-Stars-St-John-.png",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
+      "id": "the-little-easy",
+      "slug": "the-little-easy",
+      "path": "/rental-properties/the-little-easy",
+      "name": "The Little Easy",
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "1 Bedroom + Loft",
+        "2 Baths",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_13f8663417054f61ade20db1a6e39f5c~mv2.png",
+        "alt": "",
+        "title": "The Little Easy.png",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
+      "id": "windwardside-guest-cottage",
+      "slug": "windwardside-guest-cottage",
+      "path": "/rental-properties/windwardside-guest-cottage",
+      "name": "Windwardside Guest Cottage",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_def23f7199a942b7a621cca6cedb2a80~mv2.png",
+        "alt": "",
+        "title": "Windwardside Guest Cottage.png",
+        "width": 900,
+        "height": 598
+      }
+    },
+    {
+      "id": "windwardside-main-house",
+      "slug": "windwardside-main-house",
+      "path": "/rental-properties/windwardside-main-house",
+      "name": "Windwardside Main House",
+      "bedrooms": 1,
+      "bathrooms": 2,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "2 Baths",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_fb0b3dfaa9554fc6a9773e2f953eea14~mv2.png",
+        "alt": "",
+        "title": "Windwardside Main House.png",
+        "width": 900,
+        "height": 531
+      }
+    },
+    {
+      "id": "brezza-di-mare",
+      "slug": "brezza-di-mare",
+      "path": "/rental-properties/brezza-di-mare",
+      "name": "Brezza di Mare",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_3b06752e21c549b3a7a44237b823686d~mv2.avif",
+        "alt": "",
+        "title": "HERO-BdM-Pool.avif",
+        "width": 1920,
+        "height": 1430
+      }
+    },
+    {
+      "id": "desert-rose-villa",
+      "slug": "desert-rose-villa",
+      "path": "/rental-properties/desert-rose-villa",
+      "name": "Desert Rose Villa",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Internet",
+        "Full A/C",
+        "Solar & battery backup",
+        "Kid friendly",
+        "Ocean view",
+        "Washer & dryer",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_da5028892f5b4493b3d65bbbc956140e~mv2.png",
+        "alt": "",
+        "title": "Desert Rose Villa.png",
+        "width": 900,
+        "height": 548
+      }
+    },
+    {
+      "id": "fish-tales",
+      "slug": "fish-tales",
+      "path": "/rental-properties/fish-tales",
+      "name": "Fish Tales",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Internet",
+        "Full AC",
+        "Solar & battery backup",
+        "Kid friendly",
+        "Ocean view",
+        "Washer & dryer",
+        "Fish Bay, St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_ba741ff03dbb44cc9afa8d5924e93c27~mv2.jpg",
+        "alt": "",
+        "title": "Fish Tales.jpg",
+        "width": 737,
+        "height": 491
+      }
+    },
+    {
+      "id": "miles-away",
+      "slug": "miles-away",
+      "path": "/rental-properties/miles-away",
+      "name": "Miles Away",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Internet",
+        "Rendezvous Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_7f41985226d4407395efe82ffaabc03c~mv2.jpg",
+        "alt": "",
+        "title": "HERO-Miles Away_edited.jpg",
+        "width": 1920,
+        "height": 618
+      }
+    },
+    {
+      "id": "mystical-mermaid-villa",
+      "slug": "mystical-mermaid-villa",
+      "path": "/rental-properties/mystical-mermaid-villa",
+      "name": "Mystical Mermaid Villa",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_6c4d584baca64abfaa861daeda60c508~mv2.png",
+        "alt": "",
+        "title": "Mystical Mermaid Villa.png",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
+      "id": "notre-ciel",
+      "slug": "notre-ciel",
+      "path": "/rental-properties/notre-ciel",
+      "name": "Notre Ciel",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 6,
+      "facts": [
+        "Max 7 Guests",
+        "2 Bedrooms + Loft",
+        "2 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Mamey Peak"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_a381a051afe74ff880118a683b5d13f4~mv2.png",
+        "alt": "",
+        "title": "Notre Ciel.png",
+        "width": 900,
+        "height": 600
+      }
+    },
+    {
+      "id": "orchid-garden",
+      "slug": "orchid-garden",
+      "path": "/rental-properties/orchid-garden",
+      "name": "Orchid Garden",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Internet",
+        "Johns Folly"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_9e9e9be1b12a45d6920242a343c4d3b0~mv2.jpg",
+        "alt": "",
+        "title": "Orchid Garden.jpg",
+        "width": 640,
+        "height": 480
+      }
+    },
+    {
+      "id": "samba-azul",
+      "slug": "samba-azul",
+      "path": "/rental-properties/samba-azul",
+      "name": "Samba Azul",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Chocolate Hole"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_34d7c81d655b4145a56b82a0b5d72fdf~mv2.avif",
+        "alt": "",
+        "title": "HERO-Samba Azul-Pool.avif",
+        "width": 1920,
+        "height": 1221
+      }
+    },
+    {
+      "id": "san-costanzo",
+      "slug": "san-costanzo",
+      "path": "/rental-properties/san-costanzo",
+      "name": "San Costanzo",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Hot Tub",
+        "Internet",
+        "Fish Bay, St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_81f20db7d8804b6da8e5984a62d1fb86~mv2.avif",
+        "alt": "",
+        "title": "HERO-SC-Hot Tub.avif",
+        "width": 1920,
+        "height": 1438
+      }
+    },
+    {
+      "id": "sapphire-peak",
+      "slug": "sapphire-peak",
+      "path": "/rental-properties/sapphire-peak",
+      "name": "Sapphire Peak",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Mamey Peak"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_9b2868a9d1b544fa9eb8cc08c256caef~mv2.avif",
+        "alt": "",
+        "title": "HERO-Sapphire Peak-Pool.avif",
+        "width": 1920,
+        "height": 1446
+      }
+    },
+    {
+      "id": "sea-palace-retreat",
+      "slug": "sea-palace-retreat",
+      "path": "/rental-properties/sea-palace-retreat",
+      "name": "Sea Palace Retreat",
+      "bedrooms": 2,
+      "bathrooms": 2.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "2 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_b105a08bc2f24094a5202ba27c3fd6ec~mv2.jpg",
+        "alt": "",
+        "title": "Sea Palace Retreat.jpg",
+        "width": 800,
+        "height": 544
+      }
+    },
+    {
+      "id": "sol-cottage-villa",
+      "slug": "sol-cottage-villa",
+      "path": "/rental-properties/sol-cottage-villa",
+      "name": "Sol Cottage Villa",
+      "bedrooms": 2,
+      "bathrooms": 1,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_26e62910813c452788c3b9a65faa6707~mv2.avif",
+        "alt": "",
+        "title": "HERO-SolCottage-Pool.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "sol-la-vie",
+      "slug": "sol-la-vie",
+      "path": "/rental-properties/sol-la-vie",
+      "name": "Sol La Vie",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_2e89ba6da6b54fd1b535cf4e676838bc~mv2.jpg",
+        "alt": "",
+        "title": "HERO-SLV-View_edited.jpg",
+        "width": 1920,
+        "height": 727
+      }
+    },
+    {
+      "id": "sunset-paradise",
+      "slug": "sunset-paradise",
+      "path": "/rental-properties/sunset-paradise",
+      "name": "Sunset Paradise",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_be0b834fbe5f4e7c9bbe72d2b31120ac~mv2.png",
+        "alt": "",
+        "title": "Sunset Paradise.png",
+        "width": 800,
+        "height": 533
+      }
+    },
+    {
+      "id": "villa-madeline",
+      "slug": "villa-madeline",
+      "path": "/rental-properties/villa-madeline",
+      "name": "Villa Madeline",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Coral Bay - Edens"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_45f8721982f54f8991ac5f8df1f72d53~mv2.png",
+        "alt": "",
+        "title": "Villa Madeline.png",
+        "width": 800,
+        "height": 431
+      }
+    },
+    {
+      "id": "waterklip",
+      "slug": "waterklip",
+      "path": "/rental-properties/waterklip",
+      "name": "Waterklip",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Internet",
+        "Cruz Bay - Contant"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_c81faece10cd4a548325c4bf3f84eba6~mv2.avif",
+        "alt": "",
+        "title": "03-st-john-villa-waterklip-pool-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "alta-vista",
+      "slug": "alta-vista",
+      "path": "/rental-properties/alta-vista",
+      "name": "Alta Vista",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux Mountain"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b1a892f43efb4579962c15ce80eeaa5c~mv2.avif",
+        "alt": "",
+        "title": "HERO-Alta Vista-Pool.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "arco-iris",
+      "slug": "arco-iris",
+      "path": "/rental-properties/arco-iris",
+      "name": "Arco Iris",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Point Rendezvous"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_61e1555a2a2e4b709f0d8ca8985a8b62~mv2.avif",
+        "alt": "",
+        "title": "HERO-Arco Iris-Double Rainbow.avif",
+        "width": 1920,
+        "height": 729
+      }
+    },
+    {
+      "id": "astral-villa",
+      "slug": "astral-villa",
+      "path": "/rental-properties/astral-villa",
+      "name": "Astral Villa",
+      "bedrooms": 3,
+      "bathrooms": 4,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "2 Hot Tubs",
+        "Solar Battery",
+        "Internet",
+        "Battery Backup",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_9f70e688480d47aa8c4ee3785ade9799~mv2.png",
+        "alt": "",
+        "title": "Astral Villa.png",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
+      "id": "beyond-the-sea",
+      "slug": "beyond-the-sea",
+      "path": "/rental-properties/beyond-the-sea",
+      "name": "Beyond the Sea",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Maria Bluff"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_4f140ccc87964f95a068407e0c12feea~mv2.avif",
+        "alt": "",
+        "title": "02-Beyond-the-Sea-Aerial.avif",
+        "width": 1024,
+        "height": 575
+      }
+    },
+    {
+      "id": "cara-mia",
+      "slug": "cara-mia",
+      "path": "/rental-properties/cara-mia",
+      "name": "Cara Mia",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Point Rendezvous"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_bb05137e479e4cb68251a0e2d31bc8b3~mv2.avif",
+        "alt": "",
+        "title": "HERO-CaraMia-Pool.avif",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "east-end-seascape",
+      "slug": "east-end-seascape",
+      "path": "/rental-properties/east-end-seascape",
+      "name": "East End Seascape",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Internet",
+        "Air-conditioned Bedrooms",
+        "East End, St John, VI"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_65603067ad8d4d0fa285cf7ae5069a46~mv2.jpg",
+        "alt": "",
+        "title": "East End Seascape.jpg",
+        "width": 640,
+        "height": 343
+      }
+    },
+    {
+      "id": "hart-bay-beach-house",
+      "slug": "hart-bay-beach-house",
+      "path": "/rental-properties/hart-bay-beach-house",
+      "name": "Hart Bay Beach House",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Internet",
+        "Hart Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b77af13fc20445118416368081aa283b~mv2.avif",
+        "alt": "",
+        "title": "21-HartBayBeach-Loungers-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "idyllic-villa",
+      "slug": "idyllic-villa",
+      "path": "/rental-properties/idyllic-villa",
+      "name": "Idyllic Villa",
+      "bedrooms": 3,
+      "bathrooms": 0,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_ceb93daa0dd84a79aeae6f64c4009b04~mv2.png",
+        "alt": "",
+        "title": "Idyllic Villa.png",
+        "width": 737,
+        "height": 358
+      }
+    },
+    {
+      "id": "monarch-cottage",
+      "slug": "monarch-cottage",
+      "path": "/rental-properties/monarch-cottage",
+      "name": "Monarch Cottage",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Bathrooms",
+        "Waterfront at Estate Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/135d29_becd587adb1241d3b8a23f1eb2fc6e1a~mv2.jpg",
+        "alt": "",
+        "title": "Outside-Monarch.jpg",
+        "width": 2400,
+        "height": 1350
+      }
+    },
+    {
+      "id": "palladio%E2%80%99s-view",
+      "slug": "palladio%E2%80%99s-view",
+      "path": "/rental-properties/palladio%E2%80%99s-view",
+      "name": "Palladio’s View",
+      "bedrooms": 3,
+      "bathrooms": 2.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "2.5 Baths",
+        "A/C",
+        "Pool",
+        "Hot Tub",
+        "Wifi"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/6c05e8_9e7f1c6c81f145079afe6da3e41f2f63~mv2.png",
+        "alt": "",
+        "title": "Palladio-aerial (1).png",
+        "width": 900,
+        "height": 506
+      }
+    },
+    {
+      "id": "pebble-cove",
+      "slug": "pebble-cove",
+      "path": "/rental-properties/pebble-cove",
+      "name": "Pebble Cove",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Internet",
+        "East End Water Front"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_327f1030a1374249905cced920a48bd3~mv2.png",
+        "alt": "",
+        "title": "Pebble Cove.png",
+        "width": 800,
+        "height": 659
+      }
+    },
+    {
+      "id": "sea-palms",
+      "slug": "sea-palms",
+      "path": "/rental-properties/sea-palms",
+      "name": "Sea Palms",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_f1023fabbefa420691a598c1a37bd492~mv2.avif",
+        "alt": "",
+        "title": "HERO-Sea Palms-Pool.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "seagrape-estate",
+      "slug": "seagrape-estate",
+      "path": "/rental-properties/seagrape-estate",
+      "name": "Seagrape Estate",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 7,
+      "facts": [
+        "Max 7 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_aeb53321f87c409286bdbb7e1a557f58~mv2.jpg",
+        "alt": "",
+        "title": "Seagrape Estate.jpg",
+        "width": 640,
+        "height": 424
+      }
+    },
+    {
+      "id": "southern-exposure",
+      "slug": "southern-exposure",
+      "path": "/rental-properties/southern-exposure",
+      "name": "Southern Exposure",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_9ec24c46029c4c37a1fa92de7e399161~mv2.png",
+        "alt": "",
+        "title": "Southern Exposure.png",
+        "width": 900,
+        "height": 660
+      }
+    },
+    {
+      "id": "villa-bijou",
+      "slug": "villa-bijou",
+      "path": "/rental-properties/villa-bijou",
+      "name": "Villa Bijou",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_a43554ae71704fa19f767d4960225bb1~mv2.png",
+        "alt": "",
+        "title": "Villa Bijou.png",
+        "width": 800,
+        "height": 555
+      }
+    },
+    {
+      "id": "villa-madeira",
+      "slug": "villa-madeira",
+      "path": "/rental-properties/villa-madeira",
+      "name": "Villa Madeira",
+      "bedrooms": 3,
+      "bathrooms": 3.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Chocolate Hole"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_57986771c4f9407cbd1b82e7a405fd6a~mv2.avif",
+        "alt": "",
+        "title": "13-Villa-Madeira-aerial-above-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "beija-flor",
+      "slug": "beija-flor",
+      "path": "/rental-properties/beija-flor",
+      "name": "Beija Flor",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Internet",
+        "Rendezvous Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_02780f434a1e475db2b63132059ee8fc~mv2.avif",
+        "alt": "",
+        "title": "HERO-Beija Flor-House Side_edited.avif",
+        "width": 1878,
+        "height": 835
+      }
+    },
+    {
+      "id": "blue-agave",
+      "slug": "blue-agave",
+      "path": "/rental-properties/blue-agave",
+      "name": "Blue Agave",
+      "bedrooms": 4,
+      "bathrooms": 4,
+      "maxGuests": 0,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4 Baths",
+        "Kitchen",
+        "Living room",
+        "Deck with pool"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_1d3f61fcec2f48c79558e8e11eaf49fe~mv2.avif",
+        "alt": "",
+        "title": "HERO-Blue Agave-Sunset(2).avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "cinnamon-stones",
+      "slug": "cinnamon-stones",
+      "path": "/rental-properties/cinnamon-stones",
+      "name": "Cinnamon Stones",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Heated Lap Pool",
+        "Internet",
+        "Estate Catherineberg (3.8 mi to Cruz Bay)"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_26000497a8d0471d96b32b9c149f3fe4~mv2.avif",
+        "alt": "",
+        "title": "26-Cinnamon-Stones-aerial-pool-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "coral-sky-villa",
+      "slug": "coral-sky-villa",
+      "path": "/rental-properties/coral-sky-villa",
+      "name": "Coral Sky Villa",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Upper Carolina"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_82416d5327cd4e85bb6fe542b2bf4921~mv2.jpg",
+        "alt": "",
+        "title": "HERO-Coral Sky-Pool-View_edited_edited.jpg",
+        "width": 1920,
+        "height": 509
+      }
+    },
+    {
+      "id": "drake%E2%80%99s-view",
+      "slug": "drake%E2%80%99s-view",
+      "path": "/rental-properties/drake%E2%80%99s-view",
+      "name": "Drake’s View",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux Mountain, top of St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_2310e997e3c5459082aab8c4f2f2f071~mv2.png",
+        "alt": "",
+        "title": "Drake’s View.png",
+        "width": 900,
+        "height": 600
+      }
+    },
+    {
+      "id": "great-escape",
+      "slug": "great-escape",
+      "path": "/rental-properties/great-escape",
+      "name": "Great Escape",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Catherineberg"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b691d0b82460487cbd5b7c857d54d8dc~mv2.avif",
+        "alt": "",
+        "title": "01-great-escape-gazebo-pool-view-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "halcyon-days",
+      "slug": "halcyon-days",
+      "path": "/rental-properties/halcyon-days",
+      "name": "Halcyon Days",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_6a0d4425025b4c1491c7bc633a8f766a~mv2.png",
+        "alt": "",
+        "title": "Halcyon Days.png",
+        "width": 900,
+        "height": 506
+      }
+    },
+    {
+      "id": "hart-bay-great-house",
+      "slug": "hart-bay-great-house",
+      "path": "/rental-properties/hart-bay-great-house",
+      "name": "Hart Bay Great House",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Hart Bay, St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_c25b8cac875d4fadbe5b4962838a2db0~mv2.avif",
+        "alt": "",
+        "title": "01-HartBayGreatHouse-Pool-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "mad-de-lis",
+      "slug": "mad-de-lis",
+      "path": "/rental-properties/mad-de-lis",
+      "name": "Mad-de-Lis",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Internet",
+        "Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_50f1fbe0f84b4707bf7ba6829cbfcc76~mv2.avif",
+        "alt": "",
+        "title": "HERO-MdL-Pool.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "oceanport-villa",
+      "slug": "oceanport-villa",
+      "path": "/rental-properties/oceanport-villa",
+      "name": "Oceanport Villa",
+      "bedrooms": 4,
+      "bathrooms": 4,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Hart Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_c77e7ab1b933440a9409225da01f1932~mv2.jpg",
+        "alt": "",
+        "title": "Oceanport Villa.jpg",
+        "width": 900,
+        "height": 502
+      }
+    },
+    {
+      "id": "palm-ridge",
+      "slug": "palm-ridge",
+      "path": "/rental-properties/palm-ridge",
+      "name": "Palm Ridge",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Infinity Pool",
+        "Internet",
+        "Majestic Mile"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_3ab5b8c9cf8c40f28e614845dc56e637~mv2.jpg",
+        "alt": "",
+        "title": "HERO-Pool_edited.jpg",
+        "width": 1920,
+        "height": 785
+      }
+    },
+    {
+      "id": "reef-bay-holiday-villa",
+      "slug": "reef-bay-holiday-villa",
+      "path": "/rental-properties/reef-bay-holiday-villa",
+      "name": "Reef Bay Holiday Villa",
+      "bedrooms": 4,
+      "bathrooms": 4,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Reef Bay Water Front St John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_4def54638f064d49b37c6d0b91e20f67~mv2.jpg",
+        "alt": "",
+        "title": "Reef Bay Holiday Villa.jpg",
+        "width": 600,
+        "height": 433
+      }
+    },
+    {
+      "id": "sapphire-sunrise",
+      "slug": "sapphire-sunrise",
+      "path": "/rental-properties/sapphire-sunrise",
+      "name": "Sapphire Sunrise",
+      "bedrooms": 4,
+      "bathrooms": 4,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "Internet",
+        "Bordeaux Mountain"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_e6fca9964fdc41e2b972469d35d615b9~mv2.jpg",
+        "alt": "",
+        "title": "HERO-Sapphire Sunrise(2)_edited.jpg",
+        "width": 1920,
+        "height": 660
+      }
+    },
+    {
+      "id": "serenity-vista-villa",
+      "slug": "serenity-vista-villa",
+      "path": "/rental-properties/serenity-vista-villa",
+      "name": "Serenity Vista Villa",
+      "bedrooms": 4,
+      "bathrooms": 4,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_f4ee7a092497444bbf7821abe6d7b080~mv2.png",
+        "alt": "",
+        "title": "Serenity Villa.png",
+        "width": 900,
+        "height": 506
+      }
+    },
+    {
+      "id": "villa-de-paz",
+      "slug": "villa-de-paz",
+      "path": "/rental-properties/villa-de-paz",
+      "name": "Villa de Paz",
+      "bedrooms": 4,
+      "bathrooms": 2.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "2.5 Baths",
+        "Pool",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_71a3fc8d6e4741d8930c46068a96f669~mv2.avif",
+        "alt": "",
+        "title": "HERO-VdP-Pool.avif",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "villa-kia-orana",
+      "slug": "villa-kia-orana",
+      "path": "/rental-properties/villa-kia-orana",
+      "name": "Villa Kia Orana",
+      "bedrooms": 4,
+      "bathrooms": 6,
+      "maxGuests": 12,
+      "facts": [
+        "Max 12 Guests",
+        "4 Bedrooms",
+        "6 Baths",
+        "Swimming pool",
+        "Air-conditioning",
+        "Ceiling fans",
+        "Wireless Broadband Internet",
+        "Game room",
+        "Outdoor kitchen",
+        "Security system"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/135d29_4a71876082cd4d069f5593aff07cdd9f~mv2.jpg",
+        "alt": "",
+        "title": "ed2ad916-3997-454c-8e04-dbeddefbf677.jpg",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "villa-south-palm",
+      "slug": "villa-south-palm",
+      "path": "/rental-properties/villa-south-palm",
+      "name": "Villa South Palm",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Internet",
+        "Bethany"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_097dfbe2e73c410583b5095255996e4c~mv2.avif",
+        "alt": "",
+        "title": "HERO-VSP-Pool-View.avif",
+        "width": 1920,
+        "height": 1440
+      }
+    },
+    {
+      "id": "argonauta",
+      "slug": "argonauta",
+      "path": "/rental-properties/argonauta",
+      "name": "Argonauta",
+      "bedrooms": 5,
+      "bathrooms": 5,
+      "maxGuests": 10,
+      "facts": [
+        "Max 10 Guests",
+        "5 Bedrooms",
+        "5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Contant"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b6a1000476504ced91c0d8467433ed88~mv2.avif",
+        "alt": "",
+        "title": "HERO-argonauta-pool-view-.avif",
+        "width": 1920,
+        "height": 1280
+      }
+    },
+    {
+      "id": "seacove-villa",
+      "slug": "seacove-villa",
+      "path": "/rental-properties/seacove-villa",
+      "name": "Seacove Villa",
+      "bedrooms": 5,
+      "bathrooms": 5.5,
+      "maxGuests": 10,
+      "facts": [
+        "Max 10 Guests",
+        "5 Bedrooms",
+        "5.5 Baths",
+        "Pool",
+        "Internet",
+        "Peter Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_8d4643b30bac473db15c2f902f77c28c~mv2.png",
+        "alt": "",
+        "title": "Seacove Villa.png",
+        "width": 800,
+        "height": 472
+      }
+    },
+    {
+      "id": "villa-ixora",
+      "slug": "villa-ixora",
+      "path": "/rental-properties/villa-ixora",
+      "name": "Villa Ixora",
+      "bedrooms": 5,
+      "bathrooms": 4,
+      "maxGuests": 10,
+      "facts": [
+        "Max 10 Guests",
+        "5 Bedrooms",
+        "4 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Ajax Peak, St. John"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_b2dd3ab897c7407d98fda355b2bd2215~mv2.jpg",
+        "alt": "",
+        "title": "HERO-Ixora-Aerial-Top-Down_edited.jpg",
+        "width": 1376,
+        "height": 415
+      }
+    },
+    {
+      "id": "casa-del-palmas",
+      "slug": "casa-del-palmas",
+      "path": "/rental-properties/casa-del-palmas",
+      "name": "Casa Del Palmas",
+      "bedrooms": 6,
+      "bathrooms": 5,
+      "maxGuests": 12,
+      "facts": [
+        "Max 12 Guests",
+        "6 Bedrooms",
+        "5 Baths",
+        "Pool",
+        "Internet",
+        "Fish Bay"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_7bd2e489db364a24aba7de346b115fac~mv2.png",
+        "alt": "",
+        "title": "Casa Del Palmas.png",
+        "width": 900,
+        "height": 600
+      }
+    },
+    {
+      "id": "chateau-margot",
+      "slug": "chateau-margot",
+      "path": "/rental-properties/chateau-margot",
+      "name": "Chateau Margot",
+      "bedrooms": 6,
+      "bathrooms": 5.5,
+      "maxGuests": 12,
+      "facts": [
+        "Max 12 Guests",
+        "6 Bedrooms",
+        "5.5 Baths",
+        "Pool",
+        "Internet",
+        "Bordeaux Mountain"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/b5efc4_460cd7fb77b643cb8f7727c395c98839~mv2.avif",
+        "alt": "",
+        "title": "03-chateau-margot-view-800x540.avif",
+        "width": 800,
+        "height": 540
+      }
+    },
+    {
+      "id": "oceana",
+      "slug": "oceana",
+      "path": "/rental-properties/oceana",
+      "name": "Oceana Villa",
+      "bedrooms": 6,
+      "bathrooms": 6.5,
+      "maxGuests": 12,
+      "facts": [
+        "Max 12 Guests",
+        "6 Bedrooms",
+        "6.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Chocolate Hole"
+      ],
+      "heroImage": {
+        "url": "https://static.wixstatic.com/media/64053b_6c1511f803884b708146a90b3e261244~mv2.png",
+        "alt": "",
+        "title": "Oceana Villa.png",
+        "width": 800,
+        "height": 510
+      }
+    }
+  ]
+}
