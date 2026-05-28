@@ -8,7 +8,6 @@ const siteNavItems = [
   {
     label: 'HOUSES',
     path: '/st-john-rentals',
-    footerPath: '/st-john-rentals',
     matchPaths: ['/st-john-rentals', '/for-rent', '/for-sale', '/property-for-sale', '/rental-properties'],
     children: [
       { label: 'Rental Accommodations', path: '/for-rent', matchPaths: ['/for-rent'] },
@@ -41,11 +40,8 @@ const siteNavItems = [
   { label: 'ADVERTISE', path: '/advertise', matchPaths: ['/advertise'] },
 ]
 
-const footerNavItems = [
-  ...siteNavItems.map((item) => ({
-    ...item,
-    path: item.footerPath ?? item.path,
-  })),
+const footerNavItems = siteNavItems
+const footerMetaItems = [
   { label: 'PRIVACY POLICY', path: '/privacy-policy', matchPaths: ['/privacy-policy'] },
   { label: 'TERMS OF AGREEMENT', path: '/terms-of-agreement', matchPaths: ['/terms-of-agreement'] },
 ]
@@ -58,10 +54,13 @@ function isActiveChildItem(pathname, child) {
   return isActiveNavItem(pathname, child.matchPaths ?? [child.path])
 }
 
-export function SiteLayout() {
-  const location = useLocation()
+function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
   const [openMenuLabel, setOpenMenuLabel] = useState('')
-  const primaryNavRef = useRef(null)
+  const navRef = useRef(null)
+
+  useEffect(() => {
+    setOpenMenuLabel('')
+  }, [pathname])
 
   useEffect(() => {
     if (!openMenuLabel) {
@@ -69,7 +68,7 @@ export function SiteLayout() {
     }
 
     function handlePointerDown(event) {
-      if (!primaryNavRef.current?.contains(event.target)) {
+      if (!navRef.current?.contains(event.target)) {
         setOpenMenuLabel('')
       }
     }
@@ -90,6 +89,72 @@ export function SiteLayout() {
       document.removeEventListener('keydown', handleEscape)
     }
   }, [openMenuLabel])
+
+  return (
+    <nav aria-label={ariaLabel} className={navClassName} ref={navRef}>
+      {items.map((item) => {
+        const isActive = isActiveNavItem(pathname, item.matchPaths)
+
+        if (item.children?.length) {
+          const isOpen = openMenuLabel === item.label
+
+          return (
+            <div
+              className={`site-nav-item ${isActive ? 'site-nav-item--active' : ''} ${isOpen ? 'site-nav-item--open' : ''}`.trim()}
+              key={item.label}
+              onBlurCapture={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) {
+                  setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : currentLabel))
+                }
+              }}
+              onFocusCapture={() => setOpenMenuLabel(item.label)}
+              onMouseEnter={() => setOpenMenuLabel(item.label)}
+              onMouseLeave={() => setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : currentLabel))}
+            >
+              <button
+                aria-expanded={isOpen}
+                aria-haspopup="true"
+                className="site-nav-link site-nav-toggle"
+                type="button"
+                onClick={() => setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : item.label))}
+              >
+                {item.label}
+              </button>
+
+              <div aria-label={`${item.label} submenu`} className="site-subnav" role="menu">
+                {item.children.map((child) => (
+                  <Link
+                    className={`site-subnav-link ${isActiveChildItem(pathname, child) ? 'active' : ''}`.trim()}
+                    key={child.path}
+                    role="menuitem"
+                    to={child.path}
+                    onClick={() => setOpenMenuLabel('')}
+                  >
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )
+        }
+
+        return (
+          <Link
+            className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
+            key={item.path}
+            to={item.path}
+            onClick={() => setOpenMenuLabel('')}
+          >
+            {item.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
+export function SiteLayout() {
+  const location = useLocation()
 
   return (
     <div className="site-shell">
@@ -130,65 +195,7 @@ export function SiteLayout() {
                 Skip to Main Content
               </a>
 
-              <nav aria-label="Primary" className="site-nav" ref={primaryNavRef}>
-                {siteNavItems.map((item) => {
-                  const isActive = isActiveNavItem(location.pathname, item.matchPaths)
-
-                  if (item.children?.length) {
-                    const isOpen = openMenuLabel === item.label
-
-                    return (
-                      <div
-                        className={`site-nav-item ${isActive ? 'site-nav-item--active' : ''} ${isOpen ? 'site-nav-item--open' : ''}`.trim()}
-                        key={item.label}
-                        onBlurCapture={(event) => {
-                          if (!event.currentTarget.contains(event.relatedTarget)) {
-                            setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : currentLabel))
-                          }
-                        }}
-                        onFocusCapture={() => setOpenMenuLabel(item.label)}
-                        onMouseEnter={() => setOpenMenuLabel(item.label)}
-                        onMouseLeave={() => setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : currentLabel))}
-                      >
-                        <button
-                          aria-expanded={isOpen}
-                          aria-haspopup="true"
-                          className="site-nav-link site-nav-toggle"
-                          type="button"
-                          onClick={() => setOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : item.label))}
-                        >
-                          {item.label}
-                        </button>
-
-                        <div aria-label={`${item.label} submenu`} className="site-subnav" role="menu">
-                          {item.children.map((child) => (
-                            <Link
-                              className={`site-subnav-link ${isActiveChildItem(location.pathname, child) ? 'active' : ''}`.trim()}
-                              key={child.path}
-                              role="menuitem"
-                              to={child.path}
-                              onClick={() => setOpenMenuLabel('')}
-                            >
-                              {child.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )
-                  }
-
-                  return (
-                    <Link
-                      className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setOpenMenuLabel('')}
-                    >
-                      {item.label}
-                    </Link>
-                  )
-                })}
-              </nav>
+              <SiteMenu ariaLabel="Primary" items={siteNavItems} pathname={location.pathname} />
             </div>
           </div>
         </div>
@@ -205,17 +212,21 @@ export function SiteLayout() {
               <img alt="St. John House Rentals" className="footer-logo" src={logo} />
             </Link>
 
-            <nav aria-label="Footer" className="footer-nav">
-              {footerNavItems.map((item) => (
-                <Link
-                  className={isActiveNavItem(location.pathname, item.matchPaths) ? 'active' : ''}
-                  key={`footer-${item.path}`}
-                  to={item.path}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <div className="footer-nav-group">
+              <SiteMenu ariaLabel="Footer" items={footerNavItems} navClassName="site-nav footer-nav" pathname={location.pathname} />
+
+              <nav aria-label="Footer legal" className="footer-meta-nav">
+                {footerMetaItems.map((item) => (
+                  <Link
+                    className={isActiveNavItem(location.pathname, item.matchPaths) ? 'active' : ''}
+                    key={`footer-meta-${item.path}`}
+                    to={item.path}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
 
