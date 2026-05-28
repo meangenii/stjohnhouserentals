@@ -975,6 +975,177 @@ img {
   aspect-ratio: 600 / 395;
 }
 
+.advertise-page {
+  background: #ffffff;
+}
+
+.advertise-page-hero,
+.advertise-page-hero-inner {
+  min-height: clamp(18rem, 31vw, 37.5rem);
+}
+
+.advertise-page-hero {
+  background-position: center 52%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.advertise-page-hero-inner,
+.advertise-page-contact-inner {
+  width: min(1440px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.advertise-page-hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 0;
+}
+
+.advertise-page-hero h1 {
+  width: min(100%, 58rem);
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 6vw, 5.15rem);
+  font-weight: 400;
+  line-height: 1.04;
+  text-align: center;
+  text-wrap: balance;
+  text-shadow: 0 8px 24px rgba(6, 19, 39, 0.22);
+}
+
+.advertise-page-contact {
+  padding: 1.9rem 0 3.25rem;
+}
+
+.advertise-page-contact-inner {
+  display: grid;
+  gap: 2.25rem;
+  align-items: start;
+}
+
+.advertise-page-copy {
+  color: var(--brand-navy);
+}
+
+.advertise-page-copy h2,
+.advertise-page-copy h3 {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.advertise-page-copy h2 {
+  font-size: clamp(2.35rem, 7vw, 3.75rem);
+}
+
+.advertise-page-copy h3 {
+  margin-top: 1.25rem;
+  font-size: clamp(1.75rem, 5vw, 2.65rem);
+}
+
+.advertise-page-copy p {
+  margin: 1.4rem 0 0;
+  color: var(--brand-navy);
+  font-size: clamp(1rem, 1.3vw, 1.18rem);
+  line-height: 1.55;
+}
+
+.advertise-page-booking-notice {
+  margin-top: 2.2rem;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.advertise-page-contact-details {
+  margin-top: 2rem;
+}
+
+.advertise-page-contact-details h3 {
+  margin-top: 0;
+  color: var(--brand-navy);
+}
+
+.advertise-page-contact-details p {
+  margin-top: 0.85rem;
+}
+
+.advertise-page-form {
+  display: grid;
+  gap: 1.65rem;
+}
+
+.advertise-page-form-grid {
+  display: grid;
+  gap: 1.75rem 1.3rem;
+}
+
+.advertise-page-field {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.advertise-page-field span {
+  color: var(--brand-navy);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.advertise-page-field input,
+.advertise-page-field textarea {
+  width: 100%;
+  padding: 1rem 1.15rem;
+  border: 0;
+  background: #f7f7f7;
+  color: var(--brand-navy);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.advertise-page-field textarea {
+  min-height: 8.75rem;
+  resize: vertical;
+}
+
+.advertise-page-field input::placeholder,
+.advertise-page-field textarea::placeholder {
+  color: #8f97a7;
+}
+
+.advertise-page-field input:focus-visible,
+.advertise-page-field textarea:focus-visible {
+  outline: 2px solid rgba(34, 105, 255, 0.28);
+  outline-offset: 2px;
+}
+
+.advertise-page-submit {
+  justify-self: start;
+  padding: 1rem 2.3rem;
+  border: 0;
+  border-radius: 1rem;
+  color: #ffffff;
+  background: #e38435;
+  box-shadow: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.advertise-page-submit:hover,
+.advertise-page-submit:focus-visible {
+  background: #d77829;
+  transform: translateY(-1px);
+}
+
 .rental-accommodations-page {
   background: #ffffff;
 }
@@ -2000,6 +2171,240 @@ img {
   margin-top: 0;
 }
 
+.local-attractions-page {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 30%, #ffffff 100%);
+}
+
+.local-attractions-hero {
+  min-height: clamp(22rem, 40vw, 37.75rem);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.local-attractions-hero-overlay {
+  display: grid;
+  place-items: center;
+  min-height: inherit;
+  padding: 3.5rem 1rem 3.8rem;
+  background: linear-gradient(180deg, rgba(7, 19, 46, 0.28) 0%, rgba(7, 19, 46, 0.42) 100%);
+}
+
+.local-attractions-hero-copy {
+  width: min(100%, 56rem);
+  text-align: center;
+  color: #ffffff;
+}
+
+.local-attractions-hero-copy h1 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 7vw, 5.9rem);
+  font-weight: 400;
+  line-height: 0.98;
+  text-shadow: 0 10px 26px rgba(7, 19, 46, 0.22);
+}
+
+.local-attractions-hero-copy p {
+  margin: 1.45rem auto 0;
+  max-width: 34rem;
+  color: rgba(255, 255, 255, 0.96);
+  font-size: clamp(1rem, 1.6vw, 1.18rem);
+  line-height: 1.45;
+}
+
+.local-attractions-hero-button {
+  width: auto;
+  margin-top: 1.75rem;
+  padding-inline: 1.65rem;
+  border-color: #ffffff;
+  color: var(--brand-navy);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 34px rgba(7, 19, 46, 0.18);
+}
+
+.local-attractions-map-section,
+.local-attractions-dining-section,
+.local-attractions-categories {
+  width: min(1440px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.local-attractions-map-section {
+  padding-top: 2.4rem;
+}
+
+.local-attractions-map-card {
+  overflow: hidden;
+  border: 1px solid #dbe6f4;
+  border-radius: 2rem;
+  background: #edf6ff;
+  box-shadow: 0 24px 42px rgba(7, 33, 74, 0.1);
+}
+
+.local-attractions-map-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.local-attractions-intro-row {
+  display: grid;
+  gap: 1.35rem;
+  align-items: start;
+  padding-top: 2rem;
+}
+
+.local-attractions-intro-copy h2 {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.local-attractions-intro-copy p {
+  margin: 1rem 0 0;
+  max-width: 73rem;
+  color: #000000;
+  font-size: clamp(1rem, 1.25vw, 1.18rem);
+  line-height: 1.55;
+}
+
+.local-attractions-map-button {
+  width: auto;
+  justify-self: start;
+}
+
+.local-attractions-dining-section {
+  padding-top: 3rem;
+}
+
+.local-attractions-dining-header {
+  text-align: center;
+}
+
+.local-attractions-dining-header h2 {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-display);
+  font-size: clamp(2.45rem, 6vw, 3.95rem);
+  font-weight: 400;
+  line-height: 1.04;
+}
+
+.local-attractions-dining-group {
+  margin-top: 2.4rem;
+}
+
+.local-attractions-dining-group-label {
+  margin: 0 0 1rem;
+  color: #000000;
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.local-attractions-dining-list {
+  overflow: hidden;
+  border: 1px solid #e1bea0;
+  background: #f1c8a6;
+}
+
+.local-attractions-dining-row {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.local-attractions-dining-row + .local-attractions-dining-row {
+  border-top: 1px solid rgba(126, 89, 54, 0.18);
+}
+
+.local-attractions-restaurant-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.05fr) auto;
+  gap: 0.35rem 1rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+  color: #000000;
+}
+
+.local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
+  border-top: 1px solid rgba(126, 89, 54, 0.18);
+}
+
+.local-attractions-restaurant-entry p {
+  margin: 0;
+  color: inherit;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.local-attractions-restaurant-name {
+  font-weight: 500;
+}
+
+.local-attractions-restaurant-cuisine {
+  text-align: center;
+}
+
+.local-attractions-restaurant-phone {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.local-attractions-restaurant-phone--empty {
+  visibility: hidden;
+}
+
+.local-attractions-restaurant-location {
+  grid-column: 2 / 4;
+  justify-self: end;
+  text-align: right;
+}
+
+.local-attractions-categories {
+  padding-top: 3rem;
+  padding-bottom: 3.5rem;
+}
+
+.local-attractions-category-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.local-attractions-category-card {
+  display: grid;
+  gap: 1.1rem;
+  align-content: space-between;
+  min-height: 8.75rem;
+  padding: 1.15rem 1.1rem;
+  border-radius: 1.35rem;
+  background: linear-gradient(145deg, #17365f 0%, #2b5489 100%);
+  box-shadow: 0 20px 34px rgba(7, 33, 74, 0.15);
+}
+
+.local-attractions-category-mark {
+  width: 2.6rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.local-attractions-category-card h3 {
+  margin: 0;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.8rem);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
 .snapshot-page {
   padding: 2.4rem 0 3rem;
 }
@@ -2692,6 +3097,18 @@ img {
   justify-content: center;
 }
 
+.footer-nav .site-nav-item {
+  padding-top: 0.9rem;
+  padding-bottom: 0;
+  margin-top: -0.9rem;
+  margin-bottom: 0;
+}
+
+.footer-nav .site-subnav {
+  top: auto;
+  bottom: 100%;
+}
+
 .footer-meta-nav {
   display: flex;
   flex-wrap: wrap;
@@ -2780,6 +3197,20 @@ img {
   .hero-actions {
     grid-template-columns: repeat(2, minmax(0, auto));
     justify-content: start;
+  }
+
+  .local-attractions-intro-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.75rem;
+    align-items: end;
+  }
+
+  .advertise-page-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .advertise-page-field--full {
+    grid-column: 1 / -1;
   }
 
   .button-link {
@@ -2882,6 +3313,35 @@ img {
 }
 
 @media (min-width: 900px) {
+  .advertise-page-hero-inner,
+  .advertise-page-contact-inner {
+    width: min(1440px, calc(100% - 5rem));
+  }
+
+  .advertise-page-contact-inner {
+    grid-template-columns: minmax(0, 1.05fr) minmax(22rem, 0.9fr);
+    gap: 3.2rem;
+  }
+
+  .local-attractions-map-section,
+  .local-attractions-dining-section,
+  .local-attractions-categories {
+    width: min(1440px, calc(100% - 5rem));
+  }
+
+  .local-attractions-hero-overlay {
+    padding: 4.75rem 2rem 5.2rem;
+  }
+
+  .local-attractions-dining-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .local-attractions-dining-row:not(.local-attractions-dining-row--single) .local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
+    border-top: 0;
+    border-left: 1px solid rgba(126, 89, 54, 0.18);
+  }
+
   .rental-accommodations-hero,
   .rental-accommodations-hero-inner {
     min-height: 25rem;
@@ -3068,14 +3528,7 @@ img {
 
   .footer-top-inner {
     width: min(1440px, 100%);
-    grid-template-columns: 268px minmax(0, 1fr);
-    gap: 2rem;
     padding: 1.4rem 40px 1.2rem;
-  }
-
-  .footer-logo-link {
-    justify-self: start;
-    width: 268px;
   }
 
   .footer-meta-nav {
@@ -3410,6 +3863,16 @@ img {
   .footer-top-inner,
   .footer-bottom-inner {
     width: min(1440px, 100%);
+  }
+
+  .footer-top-inner {
+    grid-template-columns: 268px minmax(0, 1fr);
+    gap: 2rem;
+  }
+
+  .footer-logo-link {
+    justify-self: start;
+    width: 268px;
   }
 
   .home-hero-copy h1 {

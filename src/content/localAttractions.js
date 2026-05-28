@@ -1,0 +1,450 @@
+export const localAttractionsHeroImage =
+  'https://static.wixstatic.com/media/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif/v1/fill/w_1920,h_1073,al_c,q_90,enc_avif,quality_auto/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif'
+
+export const localAttractionsHeroTagline = 'From Beaches to Restaurants - Find It Here!'
+
+export const coralBayDining = [
+  {
+    name: "Dazey's Bayhouse",
+    cuisine: 'Deli-Special Chefs',
+    location: 'Coral Bay Harbor',
+    phone: '340-204-2333',
+  },
+  {
+    name: 'Ekeate Pink Corner',
+    cuisine: 'Caribbean',
+    location: 'The Triangle',
+    phone: '340-244-8586',
+  },
+  {
+    name: 'Johnny Lime',
+    cuisine: 'Caribbean BBQ',
+    location: 'Coral Bay Harbor',
+    phone: '340-513-0032',
+  },
+  {
+    name: 'Lime Out',
+    cuisine: 'Caribbean Tacos',
+    location: 'Coral Bay Harbor',
+    phone: '340-643-5333',
+  },
+  {
+    name: 'Love City Cafe',
+    cuisine: 'Deli-Bakery',
+    location: 'Coral Bay Harbor',
+    phone: '340-473-6228',
+  },
+  {
+    name: "Miss Lucy's",
+    cuisine: 'Caribbean',
+    location: 'Friis Bay',
+    phone: '340-693-5244',
+  },
+  {
+    name: 'Skinny Legs',
+    cuisine: 'American',
+    location: 'Coral Bay Harbor',
+    phone: '340-779-4982',
+  },
+  {
+    name: 'Surf Club Cantina',
+    cuisine: 'American',
+    location: 'Coral Bay Harbor',
+    phone: '340-725-8272',
+  },
+  {
+    name: 'The Lookout @ Concordia',
+    cuisine: 'Caribbean-International',
+    location: 'Near Salt Pond',
+    phone: '340-693-5855',
+  },
+]
+
+export const islandDining = [
+  {
+    name: 'Caneel Bay Beach Club',
+    cuisine: 'American-Caribbean',
+    location: 'Honeymoon Beach',
+    phone: '340-690-3582',
+  },
+  {
+    name: 'Cinnamon Bay Concessions',
+    cuisine: 'American',
+    location: 'Cinnamon Bay',
+  },
+  {
+    name: "Coco Jim's",
+    cuisine: 'Caribbean',
+    location: 'Centerline Rd',
+    phone: '401-651-1930',
+  },
+  {
+    name: "Drifters (Formerly Columbo's)",
+    cuisine: 'Smoothies-American',
+    location: 'Centerline @ N. Shore',
+    phone: 'TBD',
+  },
+  {
+    name: "Gwen's Place",
+    cuisine: 'Caribbean',
+    location: 'Gifft Hill Rd',
+    phone: '340-642-0338',
+  },
+  {
+    name: 'Heading East Bar & Grill',
+    cuisine: 'Caribbean',
+    location: 'Centerline Rd',
+    phone: '340-201-2658',
+  },
+  {
+    name: 'Lovango Beach Club',
+    cuisine: 'Caribbean-Seafood',
+    location: 'Lovango Cay',
+    phone: '855-938-5348',
+  },
+  {
+    name: 'Love City Tacos',
+    cuisine: 'Mexican',
+    location: 'Centerline Rd',
+    phone: '340-277-0500',
+  },
+  {
+    name: 'Maho Crossroads Food Truck',
+    cuisine: 'American',
+    location: 'Maho Beach',
+  },
+  {
+    name: 'Midway Cafe & Grill',
+    cuisine: 'American-Caribbean',
+    location: 'Centerline Rd',
+    phone: '340-473-6991',
+  },
+  {
+    name: 'RainTree Cafe',
+    cuisine: 'American',
+    location: 'Cinnamon Bay',
+    phone: '340-714-7144',
+  },
+  {
+    name: 'Shambles Island Bar & Grill',
+    cuisine: 'American',
+    location: 'Centerline Rd',
+    phone: '340-777-4015',
+  },
+  {
+    name: 'The Windmill Bar',
+    cuisine: 'American-Caribbean',
+    location: 'Centerline Rd',
+    phone: '340-244-6002',
+  },
+  {
+    name: "Tony's Kitchen Food Truck",
+    cuisine: 'Caribbean',
+    location: 'Centerline @ Gifft Hill',
+    phone: '340-693-7247',
+  },
+  {
+    name: 'Trunk Bay Concessions',
+    cuisine: 'American',
+    location: 'Trunk Bay Park',
+  },
+  {
+    name: "Zozo's",
+    cuisine: 'Italian-Caribbean',
+    location: 'Caneel Bay',
+    phone: '860-977-6323',
+  },
+]
+
+export const cruzBayDining = [
+  {
+    name: '1864 The Restaurant',
+    cuisine: 'Seafood',
+    location: 'Mongoose Junction',
+    phone: '340-774-1864',
+  },
+  {
+    name: 'Amore Arowako Vegan Club',
+    cuisine: 'Caribbean',
+    location: 'Constant Point',
+    phone: '510-304-7788',
+  },
+  {
+    name: 'Bajo El Sol Art Bar Cafe',
+    cuisine: 'Gourmet Caribbean-Light Fare',
+    location: 'Mongoose Junction',
+    phone: '340-693-7070',
+  },
+  {
+    name: 'Cafe Roma',
+    cuisine: 'Italian',
+    location: 'Vester Gade',
+    phone: '340-776-6524',
+  },
+  {
+    name: "Cap's Place",
+    cuisine: 'Caribbean',
+    location: 'North Shore Road',
+  },
+  {
+    name: 'Cool Desires',
+    cuisine: 'Dessert',
+    location: 'North Shore Road',
+    phone: '340-643-5874',
+  },
+  {
+    name: 'Cruz Bay Landing',
+    cuisine: 'Caribbean-American-Seafood',
+    location: 'Ferry Landing',
+    phone: '340-776-6908',
+  },
+  {
+    name: "Dave & Jerry's Steakhouse",
+    cuisine: 'Steak & Seafood (Vegan Options)',
+    location: 'Vester Gade',
+    phone: '340-779-9614',
+  },
+  {
+    name: "De' Coal Pot",
+    cuisine: 'Caribbean',
+    location: 'Vester Gade',
+    phone: '340-205-0001',
+  },
+  {
+    name: 'Dolphin Grab & Go',
+    cuisine: 'Market Buffet',
+    location: 'At the Circle',
+  },
+  {
+    name: 'Downtown Sips',
+    cuisine: 'Bakery',
+    location: 'Vester Gade',
+    phone: '340-642-0077',
+  },
+  {
+    name: 'Every-Ting Kurry',
+    cuisine: 'Caribbean',
+    location: 'Vester Gade',
+    phone: '340-643-6394',
+  },
+  {
+    name: 'Extra Virgin Bistro',
+    cuisine: 'Mediterranean',
+    location: 'Across from School',
+    phone: '340-715-1864',
+  },
+  {
+    name: 'Greengos',
+    cuisine: 'Mexican',
+    location: 'Mongoose Junction',
+    phone: '340-777-8226',
+  },
+  {
+    name: 'High Tide',
+    cuisine: 'Seafood',
+    location: 'Wharfside Landing',
+    phone: '340-714-6169',
+  },
+  {
+    name: 'Hinds',
+    cuisine: 'Continental Caribbean',
+    location: "Meada's Plaza",
+    phone: '340-423-6606',
+  },
+  {
+    name: 'Irie Pops',
+    cuisine: 'Dessert',
+    location: 'North Shore Road',
+    phone: '939-410-8389',
+  },
+  {
+    name: 'Karma Beach Lounge',
+    cuisine: 'Caribbean-Mediterranean',
+    location: 'Wharfside Landing',
+    phone: '340-318-9599',
+  },
+  {
+    name: 'La Tapa Plage',
+    cuisine: 'Mediterranean',
+    location: 'Wharfside Landing',
+    phone: '340-693-7755',
+  },
+  {
+    name: 'Little Olive Food Truck',
+    cuisine: 'Mediterranean',
+    location: 'Beside Tennis Courts',
+    phone: '340-727-8777',
+  },
+  {
+    name: 'Love City Barbeque',
+    cuisine: 'Caribbean BBQ',
+    location: 'Across from Tennis Courts',
+    phone: '340-715-5600',
+  },
+  {
+    name: 'Love City Bites',
+    cuisine: 'Caribbean-American',
+    location: 'Fishfry Drive',
+    phone: '340-423-7200',
+  },
+  {
+    name: 'Love City Delights',
+    cuisine: 'Desserts',
+    location: 'Cruz Bay Beach',
+    phone: '340-626-3404',
+  },
+  {
+    name: "Morgan's Mango",
+    cuisine: 'Caribbean-American',
+    location: 'North Shore Road',
+    phone: '340-693-8141',
+  },
+  {
+    name: "Nella's Lounge",
+    cuisine: 'Caribbean',
+    location: 'North Shore Road',
+    phone: '340-626-2689',
+  },
+  {
+    name: 'North Shore Deli',
+    cuisine: 'Healthy',
+    location: 'Mongoose Junction',
+    phone: '340-777-3061',
+  },
+  {
+    name: 'Ocean 362',
+    cuisine: 'Caribbean-American-Seafood',
+    location: 'Strand Gade',
+    phone: '340-776-0001',
+  },
+  {
+    name: 'Our Market Smoothies',
+    cuisine: 'Caribbean Smoothies & Shakes',
+    location: 'King Street',
+    phone: '340-693-9160',
+  },
+  {
+    name: "P&P's By the Sea",
+    cuisine: 'Caribbean Seafood',
+    location: 'South Shore Road',
+    phone: '340-693-8587',
+  },
+  {
+    name: "Paulie's Luncheonette",
+    cuisine: 'Casual',
+    location: 'Cruz Bay Road',
+    phone: '340-423-5484',
+  },
+  {
+    name: "Ronnie's Pizza an' Mo",
+    cuisine: 'Italian',
+    location: 'Palm Plaza',
+    phone: '340-693-7700',
+  },
+  {
+    name: "Sam & Jack's Deli",
+    cuisine: 'Delicatessen',
+    location: 'The Marketplace',
+    phone: '340-714-3354',
+  },
+  {
+    name: "Shaibu's Gourmet Grab & Go",
+    cuisine: 'Market Buffet',
+    location: 'The Marketplace',
+  },
+  {
+    name: "Snorkel's Bar & Grill",
+    cuisine: 'American',
+    location: 'Westin',
+    phone: '340-693-8000',
+  },
+  {
+    name: 'St. John Back Bar',
+    cuisine: 'American-Asian',
+    location: 'Across from Wharfside',
+    phone: '781-497-4182',
+  },
+  {
+    name: 'St. John Brewers- The Tap Room',
+    cuisine: 'Pub Food',
+    location: 'Mongoose Junction',
+    phone: '340-715-7775',
+  },
+  {
+    name: 'St. John Scoops',
+    cuisine: 'Dessert',
+    location: 'Mongoose Junction',
+  },
+  {
+    name: 'STJ Speakeasy',
+    cuisine: 'Caribbean',
+    location: 'Cruz Bay Road',
+    phone: '340-210-5002',
+  },
+  {
+    name: 'Sun Dog Cafe',
+    cuisine: 'American-Caribbean',
+    location: 'Mongoose Junction',
+    phone: '340-693-8340',
+  },
+  {
+    name: 'The Banana Deck',
+    cuisine: 'Caribbean-American-Seafood',
+    location: 'Across from Wharfside',
+    phone: '340-693-5055',
+  },
+  {
+    name: 'The Beach Bar',
+    cuisine: 'Caribbean-American',
+    location: 'Wharfside Landing',
+    phone: '340-777-4220',
+  },
+  {
+    name: 'The Lime Inn',
+    cuisine: 'Caribbean Seafood',
+    location: 'Vester Gade',
+    phone: '340-776-6425',
+  },
+  {
+    name: 'The Longboard',
+    cuisine: 'Caribbean Seafood',
+    location: 'Vester Gade',
+    phone: '340-715-2210',
+  },
+  {
+    name: 'The Roti King',
+    cuisine: 'Caribbean',
+    location: 'Cruz Bay Road',
+    phone: '340-201-1967',
+  },
+  {
+    name: 'The Tap & Still',
+    cuisine: 'Grill',
+    location: 'Prince Street',
+    phone: '340-474-1902',
+  },
+  {
+    name: 'The Terrace',
+    cuisine: 'FrenchSeafood',
+    location: 'Across from Wharfside',
+    phone: '340-779-8550',
+  },
+  {
+    name: "Uncle Joe's BBQ",
+    cuisine: 'Caribbean BBQ',
+    location: 'North Shore Road',
+    phone: '340-693-8806',
+  },
+  {
+    name: "Woody's Seafood Saloon",
+    cuisine: 'Caribbean Seafood',
+    location: 'Prince Street',
+    phone: '340-779-4625',
+  },
+]
+
+export const localAttractionsDiningSections = [
+  { title: 'Coral Bay Dining', restaurants: coralBayDining },
+  { title: 'Island Dining', restaurants: islandDining },
+  { title: 'Cruz Bay Dining', restaurants: cruzBayDining },
+]
