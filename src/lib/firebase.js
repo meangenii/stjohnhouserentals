@@ -1,4 +1,5 @@
 import { getApps, initializeApp } from 'firebase/app'
+import { getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -7,10 +8,20 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
 export function isFirebaseConfigured() {
-  return Object.values(firebaseConfig).every(Boolean)
+  const requiredKeys = [
+    firebaseConfig.apiKey,
+    firebaseConfig.authDomain,
+    firebaseConfig.projectId,
+    firebaseConfig.storageBucket,
+    firebaseConfig.messagingSenderId,
+    firebaseConfig.appId,
+  ]
+
+  return requiredKeys.every(Boolean)
 }
 
 export function getFirebaseApp() {
@@ -19,4 +30,14 @@ export function getFirebaseApp() {
   }
 
   return getApps()[0] ?? initializeApp(firebaseConfig)
+}
+
+export function getFirestoreDb() {
+  const app = getFirebaseApp()
+
+  if (!app) {
+    return null
+  }
+
+  return getFirestore(app)
 }

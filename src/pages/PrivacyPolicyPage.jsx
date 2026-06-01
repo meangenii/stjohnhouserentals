@@ -1,6 +1,7 @@
-import { SnapshotPage } from '../components/SnapshotPage'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { ContentPage } from '../components/ContentPage'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function PrivacyPolicyPage() {
-  return <SnapshotPage eyebrow="Privacy policy" page={pageSnapshots.privacyPolicy} />
+  const page = useStructuredPageContent('privacyPolicy')
+  return <ContentPage page={page} />
 }

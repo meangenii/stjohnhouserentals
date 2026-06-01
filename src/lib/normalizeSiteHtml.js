@@ -1,5 +1,16 @@
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
 
+function repairSnapshotText(text = '') {
+  return text
+    .replaceAll('\u00e2\u20ac\u2122', '\u2019')
+    .replaceAll('\u00e2\u20ac\u0153', '\u201c')
+    .replaceAll('\u00e2\u20ac\u009d', '\u201d')
+    .replaceAll('\u00e2\u20ac\u201c', '\u2013')
+    .replaceAll('\u00e2\u20ac\u201d', '\u2014')
+    .replaceAll('\u00c2\u00a0', ' ')
+    .replaceAll('\u00c2', '')
+}
+
 function normalizeLegacyPath(pathname) {
   const trimmedPath = String(pathname ?? '').trim()
 
@@ -55,7 +66,7 @@ function normalizeHrefValue(href) {
 }
 
 export function normalizeSiteHtml(html) {
-  const sourceHtml = typeof html === 'string' ? html : ''
+  const sourceHtml = repairSnapshotText(typeof html === 'string' ? html : '')
 
   if (!sourceHtml.trim()) {
     return ''

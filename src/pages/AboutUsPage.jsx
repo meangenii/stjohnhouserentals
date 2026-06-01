@@ -1,45 +1,17 @@
-import { pageSnapshots } from '../content/siteSnapshot'
-
-function getOriginalWixImageUrl(url) {
-  const value = String(url ?? '').trim()
-
-  if (!value) {
-    return ''
-  }
-
-  const [sourceUrl] = value.split('/v1/')
-  return sourceUrl
-}
-
-function findImage(page, matchText) {
-  const image = (page.imageGallery ?? []).find((item) =>
-    String(item.alt ?? '')
-      .toLowerCase()
-      .includes(matchText.toLowerCase()),
-  )
-
-  return image ? { ...image, url: getOriginalWixImageUrl(image.url) } : null
-}
-
-function getHeroHeading(page) {
-  const match = String(page.contentHtml ?? '').match(/<h1>(.*?)<\/h1>/i)
-  return match?.[1]?.trim() || page.h1 || page.title
-}
+import { getContentImageSrc } from '../lib/contentAssets'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function AboutUsPage() {
-  const page = pageSnapshots.aboutUs
-  const heroHeading = getHeroHeading(page)
-  const heroImage = findImage(page, 'anaberg')
-  const storyImage = findImage(page, 'fishes swimming')
-  const essentialsImage = findImage(page, 'pool deck')
-  const [storyHeading, essentialsHeading] = page.sectionHeadings
-  const [storyLead, storySupport, storyBodyOne, storyBodyTwo, storyBodyThree, essentialsLead] = page.leadParagraphs
+  const page = useStructuredPageContent('aboutUs')
+  const heroImageUrl = getContentImageSrc(page.hero.image)
+  const storyImageUrl = getContentImageSrc(page.story.image)
+  const essentialsImageUrl = getContentImageSrc(page.essentials.image)
 
   return (
     <div className="about-page">
-      <section className="about-page-hero" style={heroImage?.url ? { backgroundImage: `url(${heroImage.url})` } : undefined}>
+      <section className="about-page-hero" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}>
         <div className="about-page-hero-inner">
-          <h1>{heroHeading}</h1>
+          <h1>{page.hero.title}</h1>
         </div>
       </section>
 
@@ -47,21 +19,30 @@ export function AboutUsPage() {
         <div className="about-page-story-inner">
           <div className="about-page-story-grid">
             <div className="about-page-story-media">
-              {storyImage?.url ? <img alt={storyImage.alt || storyHeading} src={storyImage.url} /> : null}
+              {storyImageUrl ? (
+                <img
+                  alt={page.story.image.alt || page.story.title}
+                  decoding="async"
+                  fetchPriority="low"
+                  loading="lazy"
+                  src={storyImageUrl}
+                />
+              ) : null}
             </div>
 
             <div className="about-page-story-copy">
-              <p className="about-page-kicker">About Us</p>
-              <h2>{storyHeading}</h2>
-              <p>{storyLead}</p>
-              <p>{storySupport}</p>
+              <p className="about-page-kicker">{page.story.kicker}</p>
+              <h2>{page.story.title}</h2>
+              {page.story.leadParagraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
             </div>
           </div>
 
           <div className="about-page-story-body">
-            <p>{storyBodyOne}</p>
-            <p>{storyBodyTwo}</p>
-            <p>{storyBodyThree}</p>
+            {page.story.bodyParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </div>
       </section>
@@ -70,13 +51,21 @@ export function AboutUsPage() {
         <div className="about-page-essentials-inner">
           <div className="about-page-essentials-grid">
             <div className="about-page-essentials-copy">
-              <p className="about-page-kicker">Essentials</p>
-              <h2>{essentialsHeading}</h2>
-              <p>{essentialsLead}</p>
+              <p className="about-page-kicker">{page.essentials.kicker}</p>
+              <h2>{page.essentials.title}</h2>
+              <p>{page.essentials.lead}</p>
             </div>
 
             <div className="about-page-essentials-media">
-              {essentialsImage?.url ? <img alt={essentialsImage.alt || essentialsHeading} src={essentialsImage.url} /> : null}
+              {essentialsImageUrl ? (
+                <img
+                  alt={page.essentials.image.alt || page.essentials.title}
+                  decoding="async"
+                  fetchPriority="low"
+                  loading="lazy"
+                  src={essentialsImageUrl}
+                />
+              ) : null}
             </div>
           </div>
         </div>

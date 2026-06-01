@@ -1,0 +1,2207 @@
+{
+  "generatedAt": "2026-06-01T23:16:19.966Z",
+  "siteShell": {
+    "source": "structured-seed",
+    "contact": {
+      "primaryEmail": "stjohnlinks@gmail.com"
+    },
+    "header": {
+      "utility": {
+        "socialLink": {
+          "href": "https://www.facebook.com/houserentalsVI/",
+          "label": "Stjohnhousesrentals"
+        },
+        "message": "Offering Rentals Since 1999",
+        "bookingCallouts": [
+          "Book Directly",
+          "NO VRBO or AIRBnB Fees"
+        ]
+      },
+      "logo": {
+        "kind": "image",
+        "alt": "St. John House Rentals",
+        "assetId": "siteLogo"
+      },
+      "primaryNav": [
+        {
+          "label": "HOME",
+          "path": "/",
+          "matchPaths": [
+            "/"
+          ]
+        },
+        {
+          "label": "ABOUT",
+          "path": "/about-us",
+          "matchPaths": [
+            "/about-us"
+          ]
+        },
+        {
+          "label": "HOUSES",
+          "path": "/st-john-rentals",
+          "matchPaths": [
+            "/st-john-rentals",
+            "/for-rent",
+            "/for-sale",
+            "/property-for-sale",
+            "/rental-properties"
+          ],
+          "children": [
+            {
+              "label": "Rental Accommodations",
+              "path": "/for-rent",
+              "matchPaths": [
+                "/for-rent"
+              ]
+            },
+            {
+              "label": "Property For Sale",
+              "path": "/property-for-sale",
+              "matchPaths": [
+                "/for-sale",
+                "/property-for-sale"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "TRANSPORTATION",
+          "path": "/car-barge-information",
+          "matchPaths": [
+            "/car-barge-information",
+            "/passenger-ferry",
+            "/ferrys",
+            "/cars"
+          ],
+          "children": [
+            {
+              "label": "Car Barge Information",
+              "path": "/car-barge-information",
+              "matchPaths": [
+                "/car-rental-ferry-boat-info",
+                "/car-barge-information"
+              ]
+            },
+            {
+              "label": "Passenger Ferry",
+              "path": "/passenger-ferry",
+              "matchPaths": [
+                "/passenger-ferry",
+                "/ferrys"
+              ]
+            },
+            {
+              "label": "St John Car Rentals",
+              "path": "/cars",
+              "matchPaths": [
+                "/cars"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "ACTIVITIES",
+          "path": "/map",
+          "matchPaths": [
+            "/map",
+            "/boats",
+            "/charter-boat-rentals"
+          ],
+          "children": [
+            {
+              "label": "Charter Boats",
+              "path": "/boats",
+              "matchPaths": [
+                "/boats",
+                "/charter-boat-rentals"
+              ]
+            },
+            {
+              "label": "Local Attractions",
+              "path": "/map",
+              "matchPaths": [
+                "/map"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "ADVERTISE",
+          "path": "/advertise",
+          "matchPaths": [
+            "/advertise"
+          ]
+        }
+      ]
+    },
+    "footer": {
+      "primaryNav": [
+        {
+          "label": "HOME",
+          "path": "/",
+          "matchPaths": [
+            "/"
+          ]
+        },
+        {
+          "label": "ABOUT",
+          "path": "/about-us",
+          "matchPaths": [
+            "/about-us"
+          ]
+        },
+        {
+          "label": "HOUSES",
+          "path": "/st-john-rentals",
+          "matchPaths": [
+            "/st-john-rentals",
+            "/for-rent",
+            "/for-sale",
+            "/property-for-sale",
+            "/rental-properties"
+          ],
+          "children": [
+            {
+              "label": "Rental Accommodations",
+              "path": "/for-rent",
+              "matchPaths": [
+                "/for-rent"
+              ]
+            },
+            {
+              "label": "Property For Sale",
+              "path": "/property-for-sale",
+              "matchPaths": [
+                "/for-sale",
+                "/property-for-sale"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "TRANSPORTATION",
+          "path": "/car-barge-information",
+          "matchPaths": [
+            "/car-barge-information",
+            "/passenger-ferry",
+            "/ferrys",
+            "/cars"
+          ],
+          "children": [
+            {
+              "label": "Car Barge Information",
+              "path": "/car-barge-information",
+              "matchPaths": [
+                "/car-rental-ferry-boat-info",
+                "/car-barge-information"
+              ]
+            },
+            {
+              "label": "Passenger Ferry",
+              "path": "/passenger-ferry",
+              "matchPaths": [
+                "/passenger-ferry",
+                "/ferrys"
+              ]
+            },
+            {
+              "label": "St John Car Rentals",
+              "path": "/cars",
+              "matchPaths": [
+                "/cars"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "ACTIVITIES",
+          "path": "/map",
+          "matchPaths": [
+            "/map",
+            "/boats",
+            "/charter-boat-rentals"
+          ],
+          "children": [
+            {
+              "label": "Charter Boats",
+              "path": "/boats",
+              "matchPaths": [
+                "/boats",
+                "/charter-boat-rentals"
+              ]
+            },
+            {
+              "label": "Local Attractions",
+              "path": "/map",
+              "matchPaths": [
+                "/map"
+              ]
+            }
+          ]
+        },
+        {
+          "label": "ADVERTISE",
+          "path": "/advertise",
+          "matchPaths": [
+            "/advertise"
+          ]
+        }
+      ],
+      "legalNav": [
+        {
+          "label": "PRIVACY POLICY",
+          "path": "/privacy-policy",
+          "matchPaths": [
+            "/privacy-policy"
+          ]
+        },
+        {
+          "label": "TERMS OF AGREEMENT",
+          "path": "/terms-of-agreement",
+          "matchPaths": [
+            "/terms-of-agreement"
+          ]
+        }
+      ],
+      "copyright": "Copyright 2026 St John Houses Rentals",
+      "designCredit": "Design By S9 Consulting"
+    }
+  },
+  "structuredPageSummaries": [
+    {
+      "key": "home",
+      "label": "Home",
+      "path": "/",
+      "title": "Searching for a private Caribbean villa for your next escape?",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "home",
+      "routeAliases": []
+    },
+    {
+      "key": "aboutUs",
+      "label": "About",
+      "path": "/about-us",
+      "title": "Celebrating 25 years this season!",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "about",
+      "routeAliases": []
+    },
+    {
+      "key": "houseRentals",
+      "label": "House Rentals",
+      "path": "/st-john-rentals",
+      "title": "House Rentals",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "house-rentals",
+      "routeAliases": []
+    },
+    {
+      "key": "advertise",
+      "label": "Advertise",
+      "path": "/advertise",
+      "title": "Advertise on St. John House Rentals",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "advertise",
+      "routeAliases": []
+    },
+    {
+      "key": "localAttractions",
+      "label": "Local Attractions",
+      "path": "/map",
+      "title": "Local Attractions",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "local-attractions",
+      "routeAliases": []
+    },
+    {
+      "key": "propertyForSale",
+      "label": "Property For Sale",
+      "path": "/property-for-sale",
+      "title": "Property For Sale",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "property-for-sale",
+      "routeAliases": []
+    },
+    {
+      "key": "rentalAccommodations",
+      "label": "Rental Accommodations",
+      "path": "/for-rent",
+      "title": "Rental Accommodations",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "rental-accommodations",
+      "routeAliases": []
+    },
+    {
+      "key": "carBargeInformation",
+      "label": "Car Barge Information",
+      "path": "/car-barge-information",
+      "title": "Car Barge Information",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "car-barge-information",
+      "routeAliases": []
+    },
+    {
+      "key": "passengerFerry",
+      "label": "Passenger Ferry",
+      "path": "/passenger-ferry",
+      "title": "Passenger Ferry Schedule",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "passenger-ferry",
+      "routeAliases": [
+        "/ferrys"
+      ]
+    },
+    {
+      "key": "stJohnCarRentals",
+      "label": "St John Car Rentals",
+      "path": "/cars",
+      "title": "St John Car Rentals",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "st-john-car-rentals",
+      "routeAliases": []
+    },
+    {
+      "key": "charterBoats",
+      "label": "Charter Boats",
+      "path": "/boats",
+      "title": "Charter Boats",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "charter-boats",
+      "routeAliases": []
+    },
+    {
+      "key": "privacyPolicy",
+      "label": "Privacy Policy",
+      "path": "/privacy-policy",
+      "title": "Privacy Policy",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "termsOfAgreement",
+      "label": "Terms Of Agreement",
+      "path": "/terms-of-agreement",
+      "title": "Terms of Agreement",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "blog",
+      "label": "Blog",
+      "path": "/blog",
+      "title": "Blog",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "jewelry",
+      "label": "Jewelry",
+      "path": "/jewelry",
+      "title": "Jewelry",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "links",
+      "label": "Links",
+      "path": "/links",
+      "title": "Helpful St. John Links",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "stJohnBook",
+      "label": "St John Books",
+      "path": "/st-john-book",
+      "title": "St. John Books",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "art",
+      "label": "Art",
+      "path": "/art",
+      "title": "Art",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    }
+  ],
+  "pageInventory": [
+    {
+      "key": "home",
+      "label": "Home",
+      "path": "/",
+      "title": "Searching for a private Caribbean villa for your next escape?",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "home",
+      "routeAliases": []
+    },
+    {
+      "key": "aboutUs",
+      "label": "About",
+      "path": "/about-us",
+      "title": "Celebrating 25 years this season!",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "about",
+      "routeAliases": []
+    },
+    {
+      "key": "houseRentals",
+      "label": "House Rentals",
+      "path": "/st-john-rentals",
+      "title": "House Rentals",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "house-rentals",
+      "routeAliases": []
+    },
+    {
+      "key": "advertise",
+      "label": "Advertise",
+      "path": "/advertise",
+      "title": "Advertise on St. John House Rentals",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "advertise",
+      "routeAliases": []
+    },
+    {
+      "key": "localAttractions",
+      "label": "Local Attractions",
+      "path": "/map",
+      "title": "Local Attractions",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "local-attractions",
+      "routeAliases": []
+    },
+    {
+      "key": "propertyForSale",
+      "label": "Property For Sale",
+      "path": "/property-for-sale",
+      "title": "Property For Sale",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "property-for-sale",
+      "routeAliases": []
+    },
+    {
+      "key": "rentalAccommodations",
+      "label": "Rental Accommodations",
+      "path": "/for-rent",
+      "title": "Rental Accommodations",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "rental-accommodations",
+      "routeAliases": []
+    },
+    {
+      "key": "carBargeInformation",
+      "label": "Car Barge Information",
+      "path": "/car-barge-information",
+      "title": "Car Barge Information",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "car-barge-information",
+      "routeAliases": []
+    },
+    {
+      "key": "passengerFerry",
+      "label": "Passenger Ferry",
+      "path": "/passenger-ferry",
+      "title": "Passenger Ferry Schedule",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "passenger-ferry",
+      "routeAliases": [
+        "/ferrys"
+      ]
+    },
+    {
+      "key": "stJohnCarRentals",
+      "label": "St John Car Rentals",
+      "path": "/cars",
+      "title": "St John Car Rentals",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "st-john-car-rentals",
+      "routeAliases": []
+    },
+    {
+      "key": "charterBoats",
+      "label": "Charter Boats",
+      "path": "/boats",
+      "title": "Charter Boats",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "charter-boats",
+      "routeAliases": []
+    },
+    {
+      "key": "privacyPolicy",
+      "label": "Privacy Policy",
+      "path": "/privacy-policy",
+      "title": "Privacy Policy",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "termsOfAgreement",
+      "label": "Terms Of Agreement",
+      "path": "/terms-of-agreement",
+      "title": "Terms of Agreement",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "blog",
+      "label": "Blog",
+      "path": "/blog",
+      "title": "Blog",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "jewelry",
+      "label": "Jewelry",
+      "path": "/jewelry",
+      "title": "Jewelry",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "links",
+      "label": "Links",
+      "path": "/links",
+      "title": "Helpful St. John Links",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "stJohnBook",
+      "label": "St John Books",
+      "path": "/st-john-book",
+      "title": "St. John Books",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "art",
+      "label": "Art",
+      "path": "/art",
+      "title": "Art",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "routeAliases": []
+    },
+    {
+      "key": "propertyDetailTemplate",
+      "label": "Property Detail Template",
+      "path": "/rental-properties/:slug",
+      "title": "Local rental property detail route",
+      "group": "houses",
+      "source": "catalog-driven"
+    },
+    {
+      "key": "charterBoatDetailTemplate",
+      "label": "Charter Boat Detail Template",
+      "path": "/charter-boat-rentals/:slug",
+      "title": "Local charter boat detail route",
+      "group": "activities",
+      "source": "catalog-driven"
+    },
+    {
+      "key": "adminWorkspace",
+      "label": "Admin Workspace",
+      "path": "/admin",
+      "title": "Hidden internal admin route",
+      "group": "internal",
+      "source": "custom"
+    }
+  ],
+  "pages": {
+    "home": {
+      "key": "home",
+      "path": "/",
+      "navLabel": "Home",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "home",
+      "hero": {
+        "titleLines": [
+          "Welcome to St. John",
+          "House Rentals"
+        ],
+        "lead": "Find the perfect vacation home for your next island adventure.",
+        "image": {
+          "kind": "image",
+          "assetId": "homeHeroBeach",
+          "alt": "Trunk Bay view across bright blue water on St. John"
+        }
+      },
+      "directory": {
+        "title": "Searching for a private Caribbean villa for your next escape?"
+      },
+      "trust": {
+        "eyebrow": "Why Choose Us",
+        "title": "We've been a trusted St. John business for over 25 years!",
+        "lead": "St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you're looking for a way to support locals, you've found it!",
+        "action": {
+          "label": "Browse Rentals",
+          "path": "/st-john-rentals"
+        },
+        "image": {
+          "kind": "image",
+          "assetId": "homeWhyChooseUs",
+          "alt": "Pink plumeria flowers overlooking St. John waters"
+        }
+      },
+      "discover": {
+        "title": "Discover the magic and beauty of St. John in the U.S. Virgin Islands",
+        "image": {
+          "kind": "image",
+          "assetId": "homeDiscoverCollage",
+          "alt": "St. John bay collage with coastal views and boats"
+        },
+        "features": [
+          {
+            "kind": "selection",
+            "title": "Wide Selection of Properties",
+            "body": "From cozy vacation rentals to luxurious homes for sale, we offer properties that suit every need and budget."
+          },
+          {
+            "kind": "deals",
+            "title": "Special Deals",
+            "body": "Take advantage of our exclusive offers and limited-time specials to get the best value for your stay or purchase."
+          },
+          {
+            "kind": "local",
+            "title": "GO Local",
+            "body": "We understand St. John like no one else. Our knowledge of the island helps us provide valuable recommendations for your stay, whether it's for property, charter boats, or car rentals."
+          },
+          {
+            "kind": "service",
+            "title": "Reliable Customer Service",
+            "body": "While we don't handle bookings directly, we connect you with trusted rental and property partners."
+          }
+        ]
+      },
+      "about": {
+        "title": "ABOUT ST. JOHN HOUSE RENTALS",
+        "bodyIntro": "Our homes are owned or run by a number of individuals and management companies, and they all do their own booking. The email link on each home's page will get you directly to the person who can help! We at ",
+        "bodyLink": {
+          "href": "http://stjohnlinks.com/",
+          "label": "stjohnhouserentals.com"
+        },
+        "bodyOutro": " do not handle bookings.",
+        "image": {
+          "kind": "image",
+          "assetId": "homeAboutPool",
+          "alt": "Pool deck overlooking villa and turquoise ocean at Still Waters Villa"
+        }
+      }
+    },
+    "aboutUs": {
+      "key": "aboutUs",
+      "path": "/about-us",
+      "navLabel": "About",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "about",
+      "hero": {
+        "title": "Celebrating 25 years this season!",
+        "image": {
+          "kind": "image",
+          "assetId": "aboutHeroAnaberg",
+          "alt": "Anaberg ruins overlooking St. John waters"
+        }
+      },
+      "story": {
+        "kicker": "About Us",
+        "title": "St. John House Rentals is owned and run by Jean \"Mean Jean\" Vance",
+        "leadParagraphs": [
+          "If you're a long-time visitor to St. John, you may remember her from her bartending days at the famous Skinny Legs Bar and Grill.",
+          "It was back in those days-in 1999, when the internet first came to Coral Bay-that Mean Jean and her friend Andy Gordon started a website called St. John Links, designed to give intrepid travelers a little info about how to vacation on the sleepy side of the island. Andy was a tech whiz with a neuromuscular disease that caused his fingers to stop working. Mean Jean was, literally, his right hand, moving the computer mouse and doing the typing."
+        ],
+        "bodyParagraphs": [
+          "The site started with just a handful of rentals and the idea was simple: connect vacationers directly with property owners looking to rent out their homes. No fuss. No fees. No middleman. If you saw a house you liked, you could contact the homeowner directly and book. The homeowner would give a percentage to St. John Links. And-in the true Coral Bay fashion-it was all done on the honor system.",
+          "People liked this idea. The business grew. In 2004 St. John Links added St. John House Rentals to accommodate the demand. Today, the site is going strong, giving you an easy way to connect directly with dozens of St. John property owners.",
+          "If you're looking for the best way to support local, you've found it. As for Mean Jean, she's no longer behind the bar at Skinny's but she's still on the island, still exploring all the hidden beauties of her home, and still doing one of those things that makes St. John such a magical place: making connections."
+        ],
+        "image": {
+          "kind": "image",
+          "assetId": "aboutStoryParrotfish",
+          "alt": "Parrotfish swimming in clear Caribbean water"
+        }
+      },
+      "essentials": {
+        "kicker": "Essentials",
+        "title": "We believe that finding the right home",
+        "lead": "is essential to making your stay unforgettable. Whether you're visiting for a week or planning an extended stay, we have a home for you. From cozy cottages to spacious villas, we offer properties in some of the most desirable locations on St. John, giving you access to pristine beaches, hiking trails, and breathtaking views.",
+        "image": {
+          "kind": "image",
+          "assetId": "aboutEssentialsPool",
+          "alt": "Pool deck overlooking villa and turquoise ocean"
+        }
+      }
+    },
+    "houseRentals": {
+      "key": "houseRentals",
+      "path": "/st-john-rentals",
+      "navLabel": "House Rentals",
+      "title": "House Rentals",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "house-rentals",
+      "intro": {
+        "eyebrow": "House Rentals",
+        "title": "Are you looking for private vacation villas in the Caribbean?",
+        "lead": "Explore our diverse selection of rental homes and find the perfect fit.",
+        "paragraphs": [
+          "Accommodations on St. John, with beautiful views, cool breezes, and peaceful sounds of the ocean?",
+          "St. John, in the Virgin Islands, has some of the most charming and unique vacation home rentals in the Caribbean. Browse the current property catalog below and contact owners directly from each listing page."
+        ]
+      },
+      "directory": {
+        "title": "Available House Rentals",
+        "actionLabel": "View Property"
+      }
+    },
+    "advertise": {
+      "key": "advertise",
+      "path": "/advertise",
+      "navLabel": "Advertise",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "advertise",
+      "hero": {
+        "title": "Advertise on St. John House Rentals",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/ede627_b458d88f60da4566a0285c92798f0774~mv2.jpg",
+          "alt": "Sunlight reflecting across calm blue water"
+        }
+      },
+      "contact": {
+        "title": "Advertising Your Property",
+        "subtitle": "Get in Touch with Our Team",
+        "bodyParagraphs": [
+          "Do you own or manage a property on St. John? Advertise your St John villa, timeshare, or Bed and Breakfast with St John's oldest vacation rentals site.",
+          "We offer a flat-rate annual subscription for each listing. We do the work for you. All changes are free. NO commissions on bookings!"
+        ],
+        "bookingNotice": "VISITORS TO ST JOHN - THIS IS NOT FOR BOOKING INQUIRIES.",
+        "bookingHelpParts": {
+          "before": "If you are interested in information on or booking a villa, please, ",
+          "emphasis": "communicate directly with St John Owners/Managers",
+          "after": " from the page of each vacation rental home of interest. The email link or phone number on each vacation rental page will get you directly to the person who can help!"
+        },
+        "contactTitle": "Contact Us",
+        "contactLines": [
+          {
+            "label": "Email",
+            "value": "stjohnlinks@gmail.com",
+            "href": "mailto:stjohnlinks@gmail.com"
+          }
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "id": "firstName",
+            "label": "Your First Name",
+            "name": "firstName",
+            "placeholder": "enter your first name",
+            "type": "text"
+          },
+          {
+            "id": "lastName",
+            "label": "Your Last Name",
+            "name": "lastName",
+            "placeholder": "enter your last name",
+            "type": "text"
+          },
+          {
+            "id": "email",
+            "label": "Your Email",
+            "name": "email",
+            "placeholder": "enter your email",
+            "type": "email"
+          },
+          {
+            "id": "subject",
+            "label": "Subject",
+            "name": "subject",
+            "placeholder": "enter your subject",
+            "type": "text"
+          }
+        ],
+        "messageField": {
+          "id": "message",
+          "label": "Your Message",
+          "name": "message",
+          "placeholder": "enter your message",
+          "rows": 6
+        },
+        "submitLabel": "Send Message"
+      }
+    },
+    "localAttractions": {
+      "key": "localAttractions",
+      "path": "/map",
+      "navLabel": "Local Attractions",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "local-attractions",
+      "hero": {
+        "title": "Local Attractions",
+        "tagline": "From Beaches to Restaurants - Find It Here!",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif",
+          "alt": "Trunk Bay viewed from above with turquoise water and white sand"
+        }
+      },
+      "map": {
+        "image": {
+          "kind": "image",
+          "assetId": "localAttractionsMap",
+          "alt": "Virgin Islands National Park map of St. John"
+        },
+        "action": {
+          "label": "View Full Map"
+        }
+      },
+      "intro": {
+        "title": "Where do you want to spend your day?",
+        "paragraphs": [
+          "The National Park Service map above has the major features and routes you need to plan which beaches and hiking trails will be closest as you pick your perfect accommodations."
+        ]
+      },
+      "dining": {
+        "title": "St. John Restaurants",
+        "sections": [
+          {
+            "title": "Coral Bay Dining",
+            "restaurants": [
+              {
+                "name": "Dazey's Bayhouse",
+                "cuisine": "Deli-Special Chefs",
+                "location": "Coral Bay Harbor",
+                "phone": "340-204-2333"
+              },
+              {
+                "name": "Ekeate Pink Corner",
+                "cuisine": "Caribbean",
+                "location": "The Triangle",
+                "phone": "340-244-8586"
+              },
+              {
+                "name": "Johnny Lime",
+                "cuisine": "Caribbean BBQ",
+                "location": "Coral Bay Harbor",
+                "phone": "340-513-0032"
+              },
+              {
+                "name": "Lime Out",
+                "cuisine": "Caribbean Tacos",
+                "location": "Coral Bay Harbor",
+                "phone": "340-643-5333"
+              },
+              {
+                "name": "Love City Cafe",
+                "cuisine": "Deli-Bakery",
+                "location": "Coral Bay Harbor",
+                "phone": "340-473-6228"
+              },
+              {
+                "name": "Miss Lucy's",
+                "cuisine": "Caribbean",
+                "location": "Friis Bay",
+                "phone": "340-693-5244"
+              },
+              {
+                "name": "Skinny Legs",
+                "cuisine": "American",
+                "location": "Coral Bay Harbor",
+                "phone": "340-779-4982"
+              },
+              {
+                "name": "Surf Club Cantina",
+                "cuisine": "American",
+                "location": "Coral Bay Harbor",
+                "phone": "340-725-8272"
+              },
+              {
+                "name": "The Lookout @ Concordia",
+                "cuisine": "Caribbean-International",
+                "location": "Near Salt Pond",
+                "phone": "340-693-5855"
+              }
+            ]
+          },
+          {
+            "title": "Island Dining",
+            "restaurants": [
+              {
+                "name": "Caneel Bay Beach Club",
+                "cuisine": "American-Caribbean",
+                "location": "Honeymoon Beach",
+                "phone": "340-690-3582"
+              },
+              {
+                "name": "Cinnamon Bay Concessions",
+                "cuisine": "American",
+                "location": "Cinnamon Bay"
+              },
+              {
+                "name": "Coco Jim's",
+                "cuisine": "Caribbean",
+                "location": "Centerline Rd",
+                "phone": "401-651-1930"
+              },
+              {
+                "name": "Drifters (Formerly Columbo's)",
+                "cuisine": "Smoothies-American",
+                "location": "Centerline @ N. Shore",
+                "phone": "TBD"
+              },
+              {
+                "name": "Gwen's Place",
+                "cuisine": "Caribbean",
+                "location": "Gifft Hill Rd",
+                "phone": "340-642-0338"
+              },
+              {
+                "name": "Heading East Bar & Grill",
+                "cuisine": "Caribbean",
+                "location": "Centerline Rd",
+                "phone": "340-201-2658"
+              },
+              {
+                "name": "Lovango Beach Club",
+                "cuisine": "Caribbean-Seafood",
+                "location": "Lovango Cay",
+                "phone": "855-938-5348"
+              },
+              {
+                "name": "Love City Tacos",
+                "cuisine": "Mexican",
+                "location": "Centerline Rd",
+                "phone": "340-277-0500"
+              },
+              {
+                "name": "Maho Crossroads Food Truck",
+                "cuisine": "American",
+                "location": "Maho Beach"
+              },
+              {
+                "name": "Midway Cafe & Grill",
+                "cuisine": "American-Caribbean",
+                "location": "Centerline Rd",
+                "phone": "340-473-6991"
+              },
+              {
+                "name": "RainTree Cafe",
+                "cuisine": "American",
+                "location": "Cinnamon Bay",
+                "phone": "340-714-7144"
+              },
+              {
+                "name": "Shambles Island Bar & Grill",
+                "cuisine": "American",
+                "location": "Centerline Rd",
+                "phone": "340-777-4015"
+              },
+              {
+                "name": "The Windmill Bar",
+                "cuisine": "American-Caribbean",
+                "location": "Centerline Rd",
+                "phone": "340-244-6002"
+              },
+              {
+                "name": "Tony's Kitchen Food Truck",
+                "cuisine": "Caribbean",
+                "location": "Centerline @ Gifft Hill",
+                "phone": "340-693-7247"
+              },
+              {
+                "name": "Trunk Bay Concessions",
+                "cuisine": "American",
+                "location": "Trunk Bay Park"
+              },
+              {
+                "name": "Zozo's",
+                "cuisine": "Italian-Caribbean",
+                "location": "Caneel Bay",
+                "phone": "860-977-6323"
+              }
+            ]
+          },
+          {
+            "title": "Cruz Bay Dining",
+            "restaurants": [
+              {
+                "name": "1864 The Restaurant",
+                "cuisine": "Seafood",
+                "location": "Mongoose Junction",
+                "phone": "340-774-1864"
+              },
+              {
+                "name": "Amore Arowako Vegan Club",
+                "cuisine": "Caribbean",
+                "location": "Constant Point",
+                "phone": "510-304-7788"
+              },
+              {
+                "name": "Bajo El Sol Art Bar Cafe",
+                "cuisine": "Gourmet Caribbean-Light Fare",
+                "location": "Mongoose Junction",
+                "phone": "340-693-7070"
+              },
+              {
+                "name": "Cafe Roma",
+                "cuisine": "Italian",
+                "location": "Vester Gade",
+                "phone": "340-776-6524"
+              },
+              {
+                "name": "Cap's Place",
+                "cuisine": "Caribbean",
+                "location": "North Shore Road"
+              },
+              {
+                "name": "Cool Desires",
+                "cuisine": "Dessert",
+                "location": "North Shore Road",
+                "phone": "340-643-5874"
+              },
+              {
+                "name": "Cruz Bay Landing",
+                "cuisine": "Caribbean-American-Seafood",
+                "location": "Ferry Landing",
+                "phone": "340-776-6908"
+              },
+              {
+                "name": "Dave & Jerry's Steakhouse",
+                "cuisine": "Steak & Seafood (Vegan Options)",
+                "location": "Vester Gade",
+                "phone": "340-779-9614"
+              },
+              {
+                "name": "De' Coal Pot",
+                "cuisine": "Caribbean",
+                "location": "Vester Gade",
+                "phone": "340-205-0001"
+              },
+              {
+                "name": "Dolphin Grab & Go",
+                "cuisine": "Market Buffet",
+                "location": "At the Circle"
+              },
+              {
+                "name": "Downtown Sips",
+                "cuisine": "Bakery",
+                "location": "Vester Gade",
+                "phone": "340-642-0077"
+              },
+              {
+                "name": "Every-Ting Kurry",
+                "cuisine": "Caribbean",
+                "location": "Vester Gade",
+                "phone": "340-643-6394"
+              },
+              {
+                "name": "Extra Virgin Bistro",
+                "cuisine": "Mediterranean",
+                "location": "Across from School",
+                "phone": "340-715-1864"
+              },
+              {
+                "name": "Greengos",
+                "cuisine": "Mexican",
+                "location": "Mongoose Junction",
+                "phone": "340-777-8226"
+              },
+              {
+                "name": "High Tide",
+                "cuisine": "Seafood",
+                "location": "Wharfside Landing",
+                "phone": "340-714-6169"
+              },
+              {
+                "name": "Hinds",
+                "cuisine": "Continental Caribbean",
+                "location": "Meada's Plaza",
+                "phone": "340-423-6606"
+              },
+              {
+                "name": "Irie Pops",
+                "cuisine": "Dessert",
+                "location": "North Shore Road",
+                "phone": "939-410-8389"
+              },
+              {
+                "name": "Karma Beach Lounge",
+                "cuisine": "Caribbean-Mediterranean",
+                "location": "Wharfside Landing",
+                "phone": "340-318-9599"
+              },
+              {
+                "name": "La Tapa Plage",
+                "cuisine": "Mediterranean",
+                "location": "Wharfside Landing",
+                "phone": "340-693-7755"
+              },
+              {
+                "name": "Little Olive Food Truck",
+                "cuisine": "Mediterranean",
+                "location": "Beside Tennis Courts",
+                "phone": "340-727-8777"
+              },
+              {
+                "name": "Love City Barbeque",
+                "cuisine": "Caribbean BBQ",
+                "location": "Across from Tennis Courts",
+                "phone": "340-715-5600"
+              },
+              {
+                "name": "Love City Bites",
+                "cuisine": "Caribbean-American",
+                "location": "Fishfry Drive",
+                "phone": "340-423-7200"
+              },
+              {
+                "name": "Love City Delights",
+                "cuisine": "Desserts",
+                "location": "Cruz Bay Beach",
+                "phone": "340-626-3404"
+              },
+              {
+                "name": "Morgan's Mango",
+                "cuisine": "Caribbean-American",
+                "location": "North Shore Road",
+                "phone": "340-693-8141"
+              },
+              {
+                "name": "Nella's Lounge",
+                "cuisine": "Caribbean",
+                "location": "North Shore Road",
+                "phone": "340-626-2689"
+              },
+              {
+                "name": "North Shore Deli",
+                "cuisine": "Healthy",
+                "location": "Mongoose Junction",
+                "phone": "340-777-3061"
+              },
+              {
+                "name": "Ocean 362",
+                "cuisine": "Caribbean-American-Seafood",
+                "location": "Strand Gade",
+                "phone": "340-776-0001"
+              },
+              {
+                "name": "Our Market Smoothies",
+                "cuisine": "Caribbean Smoothies & Shakes",
+                "location": "King Street",
+                "phone": "340-693-9160"
+              },
+              {
+                "name": "P&P's By the Sea",
+                "cuisine": "Caribbean Seafood",
+                "location": "South Shore Road",
+                "phone": "340-693-8587"
+              },
+              {
+                "name": "Paulie's Luncheonette",
+                "cuisine": "Casual",
+                "location": "Cruz Bay Road",
+                "phone": "340-423-5484"
+              },
+              {
+                "name": "Ronnie's Pizza an' Mo",
+                "cuisine": "Italian",
+                "location": "Palm Plaza",
+                "phone": "340-693-7700"
+              },
+              {
+                "name": "Sam & Jack's Deli",
+                "cuisine": "Delicatessen",
+                "location": "The Marketplace",
+                "phone": "340-714-3354"
+              },
+              {
+                "name": "Shaibu's Gourmet Grab & Go",
+                "cuisine": "Market Buffet",
+                "location": "The Marketplace"
+              },
+              {
+                "name": "Snorkel's Bar & Grill",
+                "cuisine": "American",
+                "location": "Westin",
+                "phone": "340-693-8000"
+              },
+              {
+                "name": "St. John Back Bar",
+                "cuisine": "American-Asian",
+                "location": "Across from Wharfside",
+                "phone": "781-497-4182"
+              },
+              {
+                "name": "St. John Brewers- The Tap Room",
+                "cuisine": "Pub Food",
+                "location": "Mongoose Junction",
+                "phone": "340-715-7775"
+              },
+              {
+                "name": "St. John Scoops",
+                "cuisine": "Dessert",
+                "location": "Mongoose Junction"
+              },
+              {
+                "name": "STJ Speakeasy",
+                "cuisine": "Caribbean",
+                "location": "Cruz Bay Road",
+                "phone": "340-210-5002"
+              },
+              {
+                "name": "Sun Dog Cafe",
+                "cuisine": "American-Caribbean",
+                "location": "Mongoose Junction",
+                "phone": "340-693-8340"
+              },
+              {
+                "name": "The Banana Deck",
+                "cuisine": "Caribbean-American-Seafood",
+                "location": "Across from Wharfside",
+                "phone": "340-693-5055"
+              },
+              {
+                "name": "The Beach Bar",
+                "cuisine": "Caribbean-American",
+                "location": "Wharfside Landing",
+                "phone": "340-777-4220"
+              },
+              {
+                "name": "The Lime Inn",
+                "cuisine": "Caribbean Seafood",
+                "location": "Vester Gade",
+                "phone": "340-776-6425"
+              },
+              {
+                "name": "The Longboard",
+                "cuisine": "Caribbean Seafood",
+                "location": "Vester Gade",
+                "phone": "340-715-2210"
+              },
+              {
+                "name": "The Roti King",
+                "cuisine": "Caribbean",
+                "location": "Cruz Bay Road",
+                "phone": "340-201-1967"
+              },
+              {
+                "name": "The Tap & Still",
+                "cuisine": "Grill",
+                "location": "Prince Street",
+                "phone": "340-474-1902"
+              },
+              {
+                "name": "The Terrace",
+                "cuisine": "FrenchSeafood",
+                "location": "Across from Wharfside",
+                "phone": "340-779-8550"
+              },
+              {
+                "name": "Uncle Joe's BBQ",
+                "cuisine": "Caribbean BBQ",
+                "location": "North Shore Road",
+                "phone": "340-693-8806"
+              },
+              {
+                "name": "Woody's Seafood Saloon",
+                "cuisine": "Caribbean Seafood",
+                "location": "Prince Street",
+                "phone": "340-779-4625"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "propertyForSale": {
+      "key": "propertyForSale",
+      "path": "/property-for-sale",
+      "navLabel": "Property For Sale",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "property-for-sale",
+      "hero": {
+        "title": "Property For Sale",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_0af116d3fda94cab9898dc51cf33dd77~mv2.avif",
+          "alt": "Sunny St. John ridge with bay views"
+        }
+      },
+      "story": {
+        "title": "St John Virgin Islands",
+        "paragraphs": [
+          "If you've ever vacationed in an exotic location and wished you could stay forever, you're not alone. Although it might seem unattainable, owning a piece of the rock can be your reality.",
+          "St. John is rich with history and culture. One of the most attractive aspects of St. John is the Virgin Islands National Park, which Laurance Rockefeller helped to establish in 1956. Since then, the VINP on St. John has grown to 7,200 acres plus 5,600 underwater acres. This equates to approximately 80 percent of the island remaining untouched, including pristine white sand beaches."
+        ],
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_6d3187f374f04f81a52a51be49c8a3c7~mv2.avif",
+          "alt": "Stone tower and tropical plants overlooking St. John waters"
+        }
+      },
+      "details": {
+        "paragraphs": [
+          "Visitors are attracted to this small island from all walks of life and from every part of the globe. Visitors and residents alike enjoy hiking trails, swimming, surfing, snorkeling, scuba diving, and sailing, along with an array of other outdoor activities.",
+          "Regardless of your budget, the brokers and sales agents of 340 Real Estate Co. can show and sell all the properties that are on the MLS whether it be Commercial properties, Residential homes, Land, or Condos. We have an up to date comprehensive online database of all the properties for sale on the St John Board of Realtors MLS as well as a database of St John Real Estate Sales History, including MLS Homes, Land, and Condos sold on St John since 2009!",
+          "Whether it be for a week or a lifetime, contact us today and let us put our collective 50-plus years of real estate experience to work, helping you realize your dream of owning a piece of St John."
+        ],
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_3c05a421d934451a9680a7216002dc24~mv2.avif",
+          "alt": "Cruz Bay shoreline and sky"
+        },
+        "contact": {
+          "name": "Tammy Donnelly",
+          "role": "VI Licensed Real Estate Broker / Owner",
+          "website": {
+            "href": "http://www.340realestateco.com",
+            "label": "www.340realestateco.com"
+          },
+          "phone": "340-643-6068"
+        }
+      }
+    },
+    "rentalAccommodations": {
+      "key": "rentalAccommodations",
+      "path": "/for-rent",
+      "navLabel": "Rental Accommodations",
+      "group": "houses",
+      "source": "structured",
+      "contentModel": "rental-accommodations",
+      "hero": {
+        "title": "Rental Accommodations",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/11062b_dd6ed5b1a0294c2f9107c8c6e80a33d1~mv2.jpg",
+          "alt": "Seaside neighborhood on St. John"
+        }
+      },
+      "directory": {
+        "title": "Available Properties",
+        "filterPlaceholder": "Filter by number of bedrooms",
+        "filterActionLabel": "View Available Rentals",
+        "emptyStateAll": "No rentals are available right now.",
+        "emptyStateUnavailable": "Rental summaries are unavailable right now.",
+        "featuredListings": [
+          {
+            "name": "Arco Iris",
+            "path": "/rental-properties/arco-iris",
+            "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Point Rendezvous",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/b5efc4_61e1555a2a2e4b709f0d8ca8985a8b62~mv2.avif/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Arco%20Iris-Double%20Rainbow.avif",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          },
+          {
+            "name": "Beyond the Sea",
+            "path": "/rental-properties/beyond-the-sea",
+            "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Maria Bluff",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/b5efc4_4f140ccc87964f95a068407e0c12feea~mv2.avif/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/02-Beyond-the-Sea-Aerial.avif",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          },
+          {
+            "name": "Coral Sky Villa",
+            "path": "/rental-properties/coral-sky-villa",
+            "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Upper Carolina",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/b5efc4_82416d5327cd4e85bb6fe542b2bf4921~mv2.jpg/v1/fill/w_147,h_39,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Coral%20Sky-Pool-View_edited_edited.jpg",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          },
+          {
+            "name": "Notre Ciel",
+            "path": "/rental-properties/notre-ciel",
+            "summary": "Max 7 Guests 2 Bedrooms + Loft 2 Baths Pool Hot Tub Internet Mamey Peak",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/64053b_a381a051afe74ff880118a683b5d13f4~mv2.png/v1/fill/w_90,h_60,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Notre%20Ciel.png",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          },
+          {
+            "name": "Sol La Vie",
+            "path": "/rental-properties/sol-la-vie",
+            "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/b5efc4_2e89ba6da6b54fd1b535cf4e676838bc~mv2.jpg/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-SLV-View_edited.jpg",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          },
+          {
+            "name": "The Little Easy",
+            "path": "/rental-properties/the-little-easy",
+            "summary": "Max 4 Guests 1 Bedroom + Loft 2 Baths Internet Coral Bay",
+            "image": {
+              "kind": "image",
+              "url": "https://static.wixstatic.com/media/64053b_13f8663417054f61ade20db1a6e39f5c~mv2.png/v1/fill/w_90,h_68,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/The%20Little%20Easy.png",
+              "alt": "Available Rentals",
+              "title": ""
+            }
+          }
+        ]
+      }
+    },
+    "carBargeInformation": {
+      "key": "carBargeInformation",
+      "path": "/car-barge-information",
+      "navLabel": "Car Barge Information",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "car-barge-information",
+      "hero": {
+        "title": "Car Barge Information",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_971bc1f62448471297f979f7390629da~mv2.avif",
+          "alt": "Car barges lined up at the dock"
+        }
+      },
+      "intro": {
+        "portAuthorityFees": [
+          {
+            "label": "Small Vehicles",
+            "value": "$3"
+          },
+          {
+            "label": "Large Vehicles",
+            "value": "$4"
+          }
+        ],
+        "leftParagraphs": [
+          "Before you get onto the car barge heading to St. John, in Red Hook, make sure to stop at the small booth at the entrance to pay the Port Authority Fee.",
+          "Get your ticket and drive into the large parking lot. An employee will guide you to your parking spot. You will wait in this spot until it is your turn to load onto the barge.",
+          "When you are called by the barge employee, note that you must back your vehicle onto the barge."
+        ],
+        "rightParagraphs": [
+          "One-way or round-trip tickets are purchased after you are on the barge. Tickets are not interchangeable between the three car barge companies. If you purchase a round-trip ticket, it is only good for the company that issued it.",
+          "The Red Hook ferry location services both passenger ferries and car barges at separate well-marked entrances. Arrive as early as possible before the car barge departure time you hope to catch. It fills up fast."
+        ],
+        "referenceLink": {
+          "href": "https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/",
+          "label": "Link for information is here."
+        }
+      },
+      "operators": [
+        {
+          "title": "LOVE CITY CAR FERRIES",
+          "meta": {
+            "names": "M/V Grand Vic and M/V Capt Vic",
+            "phone": "(340) 779-4000",
+            "travelTime": "30 minutes"
+          },
+          "image": {
+            "kind": "image",
+            "url": "https://static.wixstatic.com/media/b5efc4_5d1227f8bfe0474d95adc7d25196a775~mv2.avif",
+            "alt": "Love City car ferry"
+          },
+          "schedules": [
+            {
+              "title": "Monday-Friday",
+              "columns": [
+                {
+                  "heading": "Enighed Pond (St. John) -> Red Hook (St. Thomas)",
+                  "times": [
+                    "**6:15 AM - *6:30 AM",
+                    "8:00 AM - 8:30 AM",
+                    "10:00 AM - 10:30 AM",
+                    "Noon - 12:30 PM",
+                    "2:00 PM - 2:30 PM",
+                    "4:00 PM - *4:30 PM",
+                    "6:15 PM - *6:30 PM"
+                  ]
+                },
+                {
+                  "heading": "Red Hook (St. Thomas) -> Enighed Pond (St. John)",
+                  "times": [
+                    "**7:00 AM - *7:30 AM",
+                    "9:00 AM - 9:30 AM",
+                    "11:00 AM - 11:30 AM",
+                    "1:00 PM - 1:30 PM",
+                    "3:00 PM - 3:30 PM",
+                    "5:00 PM - *5:30 PM",
+                    "7:00 PM - *7:30 PM"
+                  ]
+                }
+              ],
+              "notes": [
+                "*Seasonal",
+                "**Not on Weekends or Holidays"
+              ]
+            },
+            {
+              "title": "Saturday-Sunday & Holidays",
+              "columns": [
+                {
+                  "heading": "Enighed Pond (St. John) -> Red Hook (St. Thomas)",
+                  "times": [
+                    "8:00 AM",
+                    "10:00 AM",
+                    "Noon",
+                    "2:00 PM",
+                    "4:00 PM",
+                    "6:15 PM"
+                  ]
+                },
+                {
+                  "heading": "Red Hook (St. Thomas) -> Enighed Pond (St. John)",
+                  "times": [
+                    "9:00 AM",
+                    "11:00 AM",
+                    "1:00 PM",
+                    "3:00 PM",
+                    "5:00 PM",
+                    "7:00 PM"
+                  ]
+                }
+              ]
+            }
+          ],
+          "rates": {
+            "heading": "LOVE CITY CAR FERRY RATES",
+            "rows": [
+              {
+                "label": "One-way",
+                "values": [
+                  "$65"
+                ]
+              },
+              {
+                "label": "Round Trip",
+                "values": [
+                  "$80"
+                ]
+              }
+            ],
+            "footer": [
+              "Last Updated: 4/13/2026"
+            ],
+            "url": "https://www.lovecitycarferries.com/"
+          }
+        },
+        {
+          "title": "BIG RED BARGE CO.",
+          "meta": {
+            "names": "M/V Todd G. and M/V Virginia Pride",
+            "phone": "(340) 227-0918",
+            "travelTime": "30 minutes"
+          },
+          "image": {
+            "kind": "image",
+            "url": "https://static.wixstatic.com/media/b5efc4_f045011a181c4bc3b6eb416b8b98be53~mv2.avif",
+            "alt": "Big Red Barge"
+          },
+          "schedules": [
+            {
+              "title": "Monday-Sunday",
+              "columns": [
+                {
+                  "heading": "Departing from Cruz Bay, St. John:",
+                  "times": [
+                    "6:00 AM",
+                    "7:30 AM",
+                    "9:30 AM",
+                    "11:30 AM",
+                    "1:30 PM",
+                    "3:30 PM",
+                    "5:30 PM"
+                  ]
+                },
+                {
+                  "heading": "Departing from Red Hook, St. Thomas:",
+                  "times": [
+                    "6:30 AM",
+                    "8:30 AM",
+                    "10:30 AM",
+                    "12:30 PM",
+                    "2:30 PM",
+                    "4:30 PM",
+                    "6:30 PM"
+                  ]
+                }
+              ]
+            }
+          ],
+          "rates": {
+            "heading": "BIG RED BARGE CO. RATES",
+            "rows": [
+              {
+                "label": "One-way",
+                "values": [
+                  "$65",
+                  "$15"
+                ]
+              },
+              {
+                "label": "Round Trip",
+                "values": [
+                  "$80",
+                  "$25"
+                ]
+              },
+              {
+                "label": "",
+                "values": [
+                  "$60"
+                ]
+              }
+            ],
+            "footer": [
+              "Last Updated: 4/13/2026",
+              "*Must show a valid US Virgin Islands ID"
+            ],
+            "url": "https://www.bigredbarge.co/"
+          }
+        }
+      ],
+      "note": "Note: about St. Thomas-St. John Car Barge Rates: All rates included above are for cars, small trucks, and SUVs, unless otherwise stated. Other types of vehicles, including commercial vehicles, should call the barge companies to discuss rates and fees for your particular needs."
+    },
+    "passengerFerry": {
+      "key": "passengerFerry",
+      "path": "/passenger-ferry",
+      "navLabel": "Passenger Ferry",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "passenger-ferry",
+      "routeAliases": [
+        "/ferrys"
+      ],
+      "hero": {
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg/v1/fit/w_2500,h_1330,al_c/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg",
+          "alt": "Passenger ferries docked in Cruz Bay",
+          "title": "passenger-ferry-harbor.jpg"
+        }
+      },
+      "redHook": {
+        "titleLines": [
+          "Passenger Ferry Schedule",
+          "St. Thomas - St. John",
+          "Red Hook Ferry",
+          "Red Hook, St. Thomas - Cruz Bay, St. John"
+        ],
+        "meta": [
+          "Operated by: Transportation Services and Varlack Ventures",
+          "Telephone: (340) 776-6282 and (340) 776-6412",
+          "Travel Time: 15 minutes"
+        ],
+        "directions": [
+          {
+            "heading": "Red Hook -> Cruz Bay",
+            "times": [
+              "5:30 am (M-F)",
+              "6:30 AM",
+              "7:30 AM",
+              "8:30 AM",
+              "9:00 AM",
+              "10:00 AM",
+              "11:00 AM",
+              "Noon",
+              "1:00 PM",
+              "2:00 PM",
+              "3:00 PM",
+              "4:00 PM",
+              "5:00 PM",
+              "6:00 PM",
+              "7:00 PM",
+              "8:00 PM",
+              "9:00 PM",
+              "10:00 PM",
+              "11:00 PM",
+              "11:30 PM"
+            ],
+            "chunkSize": 8
+          },
+          {
+            "heading": "Cruz Bay -> Red Hook",
+            "times": [
+              "6:30 AM",
+              "7:30 AM",
+              "8:30 AM",
+              "9:00 AM",
+              "10:00 AM",
+              "11:00 AM",
+              "Noon",
+              "1:00 PM",
+              "2:00 PM",
+              "3:00 PM",
+              "4:00 PM",
+              "5:00 PM",
+              "6:00 PM",
+              "7:00 PM",
+              "8:00 PM",
+              "9:00 PM",
+              "10:00 PM",
+              "11:00 PM"
+            ],
+            "chunkSize": 8
+          }
+        ],
+        "rates": {
+          "title": "Red Hook - Cruz Bay Ferry Rates",
+          "lines": [
+            "Adult (Non-Resident) One-way - $8.15",
+            "Adult (Resident*) One-way - $6.00",
+            "Senior (Resident*) One-way - $1.50",
+            "Child (2-11) One-way $1.00",
+            "Infants (under 2 years) - FREE",
+            "Luggage/Box - $4.00 each",
+            "* Valid USVI ID required for resident rates.",
+            "Last Updated: 11/22/2023"
+          ]
+        }
+      },
+      "crownBay": {
+        "title": "Crown Bay Ferry",
+        "routeLine": "(Route: Crown Bay, St. Thomas to Cruz Bay, St. John)",
+        "meta": [
+          "Operated by: Inter Island Boat Services",
+          "Telephone: (340) 776-6597",
+          "St. Thomas Ferry Landing: Crown Bay Marina",
+          "St. John Ferry Landing: Victor William Sewer Marine Facility (AKA: The Creek)",
+          "Travel Time: 35 minutes",
+          "Note: Check-in is 30 minutes prior to departure time."
+        ],
+        "directions": [
+          {
+            "heading": "Crown Bay -> Cruz Bay",
+            "times": [
+              "9:45 AM (Fri, Sat & Sun)",
+              "2:15 PM (Fri, Sat & Sun)",
+              "3:30 PM",
+              "5:30 PM"
+            ],
+            "chunkSize": 1
+          },
+          {
+            "heading": "Cruz Bay -> Crown Bay",
+            "times": [
+              "8:30 AM (Fri, Sat & Sun)",
+              "11:00 AM",
+              "1:15 PM (Fri, Sat & Sun)",
+              "4:15 PM"
+            ],
+            "chunkSize": 1
+          }
+        ]
+      }
+    },
+    "stJohnCarRentals": {
+      "key": "stJohnCarRentals",
+      "path": "/cars",
+      "navLabel": "St John Car Rentals",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "st-john-car-rentals",
+      "hero": {
+        "title": "St John Car Rentals",
+        "tagline": "Rent a car to explore all that St. John has to offer",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_6bf78c0201a34e879b21263e1e283553~mv2.avif",
+          "alt": "Jeep driving along a St. John road"
+        }
+      },
+      "directory": {
+        "title": "Below are names and numbers of car rentals",
+        "introParagraph": "on St. John. Some rental homes on our hilly island require 4-wheel drive vehicles to navigate the terrain. The most important thing to remember is that we drive on the left here.",
+        "companies": [
+          {
+            "name": "C & C",
+            "website": "http://www.cccarrental.com/",
+            "phones": [
+              "340-693-8164"
+            ]
+          },
+          {
+            "name": "Courtesy",
+            "website": "https://www.courtesycarrental.com/",
+            "phones": [
+              "340-776-6650"
+            ]
+          },
+          {
+            "name": "O'Connor",
+            "website": "http://www.oconnorcarrental.com/",
+            "phones": [
+              "340-776-6343"
+            ]
+          },
+          {
+            "name": "L&L Jeep Rental",
+            "website": "http://www.bookajeep.com/",
+            "phones": [
+              "340-776-1120"
+            ]
+          },
+          {
+            "name": "Mr. Pipers Jeeps",
+            "website": "https://mrpipersjeeps.com/",
+            "phones": [
+              "340-693-7580"
+            ]
+          },
+          {
+            "name": "St John Car Rental",
+            "website": "https://www.stjohncarrental.com/",
+            "phones": [
+              "340-776-6103"
+            ]
+          },
+          {
+            "name": "Aqua Blue Car Rental",
+            "website": "http://www.aquablucarrental.com/",
+            "phones": [
+              "340-776-2782"
+            ]
+          },
+          {
+            "name": "Sunshine Jeep Rental",
+            "website": "http://www.sunshinesjeeprental.com/",
+            "phones": [
+              "340-690-1786"
+            ]
+          },
+          {
+            "name": "Penn's Jeep Rental, Inc.",
+            "phones": [
+              "340-776-6530"
+            ]
+          },
+          {
+            "name": "Cool Breeze Jeep & Car Rental",
+            "website": "http://www.coolbreezecarrental.com/stjohn_vehicles_rates.htm",
+            "phones": [
+              "340-776-6588"
+            ]
+          },
+          {
+            "name": "Delbert Hill Car and Jeep Rental",
+            "website": "http://delberthillcarrental.com/",
+            "phones": [
+              "340-776-6637"
+            ]
+          },
+          {
+            "name": "Cruz Bay Car Rentals",
+            "website": "https://cruzbaycarrental.com/",
+            "phones": [
+              "340-227-0138",
+              "340-626-4552"
+            ]
+          },
+          {
+            "name": "Spencer's Jeep Rental",
+            "website": "http://www.stjohntraveler.com/usvi/transportation/spencers-jeeps/",
+            "phones": [
+              "340-693-8784",
+              "888-776-6628"
+            ],
+            "separator": " or "
+          }
+        ],
+        "airportParagraph": "If you feel comfortable with driving on the left and backing up onto the barge, you can also pick up a rental car at the airport on St. Thomas and drive to the car ferry (\"the barge\") in Red Hook. Please note, not all rental companies allow their cars to be taken to St. John, but Budget Car Rental does, and it is located right at the airport.",
+        "budgetPhones": [
+          "1-800-626-4516",
+          "340-776-5774"
+        ],
+        "dependableParagraph": "Dependable Car Rental will allow their cars to go to St John also, but do not provide service of vehicles on St John if it were to break down. They are 3 minutes from the airport and offer a shuttle to and from.",
+        "dependablePhone": "1-800-522-3076",
+        "detailImage": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/b5efc4_70547ca9cb5f4d48807f3639ffdc0096~mv2.jpg",
+          "alt": "Red jeep parked on a St. John road"
+        }
+      }
+    },
+    "charterBoats": {
+      "key": "charterBoats",
+      "path": "/boats",
+      "navLabel": "Charter Boats",
+      "group": "activities",
+      "source": "structured",
+      "contentModel": "charter-boats",
+      "hero": {
+        "title": "Charter Boats",
+        "lead": "Rent a charter boat for an unforgettable St. John adventure.",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/ede627_58e29e33d0fd408a947face9bf3459de~mv2.jpg",
+          "alt": "Charter boat cruising blue water near Whistling Cay"
+        }
+      },
+      "intro": {
+        "title": "Looking for a day sail in the Caribbean?",
+        "paragraph": "Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.",
+        "image": {
+          "kind": "image",
+          "url": "https://static.wixstatic.com/media/9d128c_44abcdda393b4a0cb2d88c577092b4f1~mv2.png",
+          "alt": "Sailboat charter cruising St. John waters"
+        }
+      },
+      "directory": {
+        "title": "Charter Boats on St John",
+        "listings": []
+      },
+      "safety": {
+        "title": "Hurricane Guide & Maritime Safety - What you NEED to know.",
+        "sections": [
+          {
+            "label": "Hurricane Guide",
+            "paragraph": "The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands. Visit them at",
+            "href": "https://vitema.vi.gov/"
+          },
+          {
+            "label": "Maritime Safety",
+            "paragraph": "The USCG has provided the following link for those who are interested in learning more.",
+            "href": "https://www.rentalboatsafety.com/"
+          }
+        ]
+      }
+    },
+    "privacyPolicy": {
+      "key": "privacyPolicy",
+      "path": "/privacy-policy",
+      "navLabel": "Privacy Policy",
+      "title": "Privacy Policy",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "metaDescription": "Our Privacy Policy outlines how we protect and manage your personal data on St. John House Rentals.",
+      "bodyHtml": "<h1>Privacy Policy</h1>\n<p>Your privacy matters to us.</p>\n<h2><span>This privacy policy has been compiled to better serve</span></h2>\n<p>those who are concerned with how their ‘Personally Identifiable Information’ (PII) is being used online. PII, as described in US privacy law and information security, is information that can be used on its own or with other information to identify, contact, or locate a single person, or to identify an individual in context. Please read our privacy policy carefully to get a clear understanding of how we collect, use, protect or otherwise handle your Personally Identifiable Information in accordance with our website.</p>\n<p>What personal information do we collect from the people that visit our blog, website or app?<br>\nWhen ordering or registering on our site, as appropriate, you may be asked to enter your name, email address or other details to help you with your experience.<br>\n<br>\nWhen do we collect information?<br>\nWe collect information from you when you or enter information on our site.<br>\nwhen they email me.&nbsp;<br>\n<br>\nHow do we use your information?<br>\nWe may use the information we collect from you when you register, make a purchase, sign up for our newsletter, respond to a survey or marketing communication, surf the website, or use certain other site features in the following ways:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• To follow up with them after correspondence (live chat, email or phone inquiries)<br>\n<br>\nHow do we protect your information?<br>\nWe do not use vulnerability scanning and/or scanning to PCI standards.<br>\nWe use regular Malware Scanning.<br>\nYour personal information is contained behind secured networks and is only accessible by a limited number of persons who have special access rights to such systems, and are required to keep the information confidential. In addition, all sensitive/credit information you supply is encrypted via Secure Socket Layer (SSL) technology.<br>\nWe implement a variety of security measures when a user enters, submits, or accesses their information to maintain the safety of your personal information.<br>\nAll transactions are processed through a gateway provider and are not stored or processed on our servers.<br>\n<br>\nDo we use ‘cookies’?<br>\nWe do not use cookies for tracking purposes<br>\nYou can choose to have your computer warn you each time a cookie is being sent, or you can choose to turn off all cookies. You do this through your browser settings. Since the browser is a little different, look at your browser’s Help Menu to learn the correct way to modify your cookies.<br>\nIf you turn cookies off.<br>\n<br>\nThird-party disclosure<br>\nWe do not sell, trade, or otherwise transfer to outside parties your Personally Identifiable Information unless we provide users with advance notice. This does not include website hosting partners and other parties who assist us in operating our website, conducting our business, or serving our users, so long as those parties agree to keep this information confidential. We may also release information when it’s release is appropriate to comply with the law, enforce our site policies, or protect ours or others’ rights, property or safety.<br>\nHowever, non-personally identifiable visitor information may be provided to other parties for marketing, advertising, or other uses.<br>\n<br>\nThird-party links<br>\nOccasionally, at our discretion, we may include or offer third-party products or services on our website. These third-party sites have separate and independent privacy policies. We, therefore, have no responsibility or liability for the content and activities of these linked sites. Nonetheless, we seek to protect the integrity of our site and welcome any feedback about these sites.<br>\n<br>\nGoogle<br>\nGoogle’s advertising requirements can be summed up by Google’s Advertising Principles. They are put in place to provide a positive experience for users. <span><a href=\"https://support.google.com/adwordspolicy/answer/1316548?hl=en\" target=\"_blank\" rel=\"noreferrer noopener\">https://support.google.com/adwordspolicy/answer/1316548?hl=en</a></span><br>\nWe use Google AdSense Advertising on our website.<br>\nGoogle, as a third-party vendor, uses cookies to serve ads on our site. Google’s use of the DART cookie enables it to serve ads to our users based on previous visits to our site and other sites on the Internet. Users may opt-out of the use of the DART cookie by visiting the Google Ad and Content Network privacy policy.<br>\n<br>\nWe have implemented the following:<br>\nWe, along with third-party vendors such as Google use first-party cookies (such as the Google Analytics cookies) and third-party cookies (such as the DoubleClick cookie) or other third-party identifiers together to compile data regarding user interactions with ad impressions and other ad service functions as they relate to our website.<br>\n<br>\nOpting out:<br>\nUsers can set preferences for how Google advertises to you using the Google Ad Settings page. Alternatively, you can opt out by visiting the Network Advertising Initiative Opt-Out page or by using the Google Analytics Opt-Out Browser Add-on.<br>\n<br>\nCalifornia Online Privacy Protection Act<br>\nCalOPPA is the first state law in the nation to require commercial websites and online services to post a privacy policy. The law’s reach stretches well beyond California to require any person or company in the United States (and conceivably the world) that operates websites collecting Personally Identifiable Information from California consumers to post a conspicuous privacy policy on its website stating exactly the information being collected and those individuals or companies with whom it is being shared. – See more at <span><a href=\"http://consumercal.org/california-online-privacy-protection-act-caloppa/#sthash.0FdRbT51.dpuf\" target=\"_blank\" rel=\"noreferrer noopener\">http://consumercal.org/california-online-privacy-protection-act-caloppa/#sthash.0FdRbT51.dpuf</a></span><br>\n<br>\nAccording to CalOPPA, we agree to the following:<br>\nUsers can visit our site anonymously.<br>\nOnce this privacy policy is created, we will add a link to it on our homepage or as a minimum, on the first significant page after entering our website.<br>\nOur Privacy Policy link includes the word ‘Privacy’ and can easily be found on the page specified above.<br>\nYou will be notified of any Privacy Policy changes:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• On our Privacy Policy Page<br>\nCan change your personal information:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• By emailing us<br>\n<br>\nHow does our site handle Do Not Track signals?<br>\nWe honor Do Not Track signals and Do Not Track, plant cookies, or use advertising when a Do Not Track (DNT) browser mechanism is in place.<br>\n<br>\nDoes our site allow third-party behavioral tracking?<br>\nIt’s also important to note that we do not allow third-party behavioral tracking<br>\n<br>\nCOPPA (Children Online Privacy Protection Act)<br>\nWhen it comes to the collection of personal information from children under the age of 13 years old, the Children’s Online Privacy Protection Act (COPPA) puts parents in control. The Federal Trade Commission, United States’ consumer protection agency, enforces the COPPA Rule, which spells out what operators of websites and online services must do to protect children’s privacy and safety online.<br>\nWe do not specifically market to children under the age of 13 years old.<br>\n<br>\nFair Information Practices<br>\nThe Fair Information Practices Principles form the backbone of privacy law in the United States and the concepts they include have played a significant role in the development of data protection laws around the globe. Understanding the Fair Information Practice Principles and how they should be implemented is critical to comply with the various privacy laws that protect personal information.<br>\nIn order to be in line with Fair Information Practices we will take the following responsive action, should a data breach occur:<br>\nWe will notify you via email<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Within 7 business days<br>\nWe will notify the users via in-site notification<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Within 7 business days<br>\nWe also agree to the Individual Redress Principle which requires that individuals have the right to legally pursue enforceable rights against data collectors and processors who fail to adhere to the law. This principle requires not only that individuals have enforceable rights against data users, but also that individuals have recourse to courts or government agencies to investigate and/or prosecute non-compliance by data processors.<br>\n<br>\nCAN-SPAM Act<br>\nThe CAN-SPAM Act is a law that sets the rules for commercial email, establishes requirements for commercial messages, gives recipients the right to have emails stopped from being sent to them, and spells out tough penalties for violations.<br>\n<br>\nWe collect your email address in order to:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Send information, respond to inquiries, and/or other requests or questions<br>\n<br>\nTo be in accordance with CANSPAM, we agree to the following:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Not use false or misleading subjects or email addresses.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Identify the message as an advertisement in some reasonable way.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Include the physical address of our business or site headquarters.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Monitor third-party email marketing services for compliance, if one is used.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Honor opt-out/unsubscribe requests quickly.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Allow users to unsubscribe by using the link at the bottom of each email.<br>\nIf at any time you would like to unsubscribe from receiving future emails, you can email us at<br>\n<span><a href=\"mailto:stjohnlinks@gmail.com\" target=\"_self\">stjohnlinks@gmail.com</a></span> and we will promptly remove you from ALL correspondence.</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/ede627_ae406026ffdd4db786914ff1452b1f7f~mv2.png/v1/fill/w_121,h_90,al_c,q_85,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/ede627_ae406026ffdd4db786914ff1452b1f7f~mv2.png",
+          "alt": "fry.PNG",
+          "title": ""
+        }
+      ]
+    },
+    "termsOfAgreement": {
+      "key": "termsOfAgreement",
+      "path": "/terms-of-agreement",
+      "navLabel": "Terms Of Agreement",
+      "title": "Terms of Agreement",
+      "group": "legal",
+      "source": "structured",
+      "contentModel": "legal-content-page",
+      "metaDescription": "Read the Terms of Agreement for using St. John House Rentals: rental advertising & service info.",
+      "bodyHtml": "<h1>Terms of Agreement</h1>\n<p>Terms governing your use of this website and our services.</p>\n<h2><span>Acceptance of Terms</span></h2>\n<p>The following rules and regulations apply to all visitors and users of this website. By accessing St John Links websites, stjohnlinks.com, stjohnhouserentals.com and coralbaystjohn.com, the user acknowledges acceptance of these terms and conditions.</p>\n<p>General Disclaimer.<br>\nALL INFORMATION PROVIDED ON THIS WEBSITE IS PROVIDED “AS IS” WITH ALL FAULTS WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED. WE WARRANT NEITHER THAT ACCESS TO St John Links WILL BE UNINTERRUPTED NOR THAT MATERIAL APPEARING THEREON WILL BE ERROR-FREE. THERE MAY BE DELAYS, OMISSIONS, OR INTERRUPTIONS AND INACCURACIES IN THE INFORMATION AVAILABLE THROUGH St John Links. St John Links DISCLAIMS ALL WARRANTIES, EXPRESSED OR IMPLIED, INCLUDING, WITHOUT LIMITATION, THOSE OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.<br>\nSt John Links SHALL NOT UNDER ANY CIRCUMSTANCES BE LIABLE TO ANY PERSON FOR ANY INDIRECT, SPECIAL, CONSEQUENTIAL, OR INCIDENTAL DAMAGES, INCLUDING, WITHOUT LIMITATION, DAMAGES RESULTING FROM USE OR INABILITY TO USE THIS WEBSITE, DAMAGES RESULTING FROM THE USE OF OR RELIANCE ON THE INFORMATION PRESENTED, LOSS OF PROFITS OR REVENUES, LOSS OF INFORMATION OR COSTS OF REPLACEMENT GOODS, EVEN IF St John Links HAS BEEN ADVISED IN ADVANCE OF THE POSSIBILITY OF SUCH DAMAGES.<br>\nAccuracy of Information.<br>\nAlthough St John Links has attempted to provide accurate information on its website, St John Links assumes no responsibility for the accuracy of the information. St John Links does not make any representations, nor do we endorse the accuracy, completeness, timeliness, or reliability of information available through St John Links. We do not guarantee that content has been posted with the permission of the copyright or the proprietary owner. You may rely on such materials solely at your own risk. We are not responsible for materials contained in postings, but we do reserve the right to remove or modify such materials at our sole discretion for any reason.<br>\nLinks to Other Sites.<br>\nFor your easy accessibility, St John Links may include links to sites on the Internet that are owned or operated by third parties. By linking to such third-party site, you shall review and agree to that site’s rules of use before using such site. You also agree that St John Links has no control over the content of that site and cannot assume any responsibility for material created or published by such third-party sites. In addition, a link to a non- St John Links site does not imply that St John Links endorses the site or the products or services referenced in such third-party site.<br>\nElectronic Commerce<br>\nWe offer users of St John Links the opportunity to purchase goods and services via the internet. While we will take reasonable security precautions concerning electronic transmission of data or communications, we disclaim any liability for interception of such data or communications. You agree that we shall not be under a duty to inquire as to the authority or propriety of any information or instructions given to us by you and we shall be entitled to act upon any such information or instructions, and we will not be liable for any loss, cost, expense or other liability arising out of any such instructions.<br>\n <br>\nLimit On Our Liability<br>\nSt John Links, its officers and directors, are not liable for incidental, indirect, consequential, special, punitive, or exemplary damages of any kind, including lost revenues or profits, loss of business or loss of data, in any way related to this service or for any claim, loss or injury based on errors or omission, interruptions or any other inaccuracies appearing on St John Links (including without limitation as a result of breach of any warranty or other term of this Agreement). Any claim against us shall be limited to the amount you paid, if any, to us for use of St John Links.<br>\nGoverning Law<br>\nBY CONTINUING TO USE St John Links, YOU AGREE TO ABIDE BY THIS SITE’S TERMS OF USE.</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/ede627_55e5e38935d14ac895741c4d2280de29~mv2.jpg/v1/fill/w_120,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/ede627_55e5e38935d14ac895741c4d2280de29~mv2.jpg",
+          "alt": "water.jpg",
+          "title": ""
+        }
+      ]
+    },
+    "blog": {
+      "key": "blog",
+      "path": "/blog",
+      "navLabel": "Blog",
+      "title": "Blog",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "metaDescription": "Read the St. John House Rentals blog: island guides, travel tips & local stories for your Caribbean adventure.",
+      "bodyHtml": "<p>All Posts</p>\n<h2>Check back soon</h2>\n<p>Once posts are published, you’ll see them here.</p>",
+      "imageGallery": []
+    },
+    "jewelry": {
+      "key": "jewelry",
+      "path": "/jewelry",
+      "navLabel": "Jewelry",
+      "title": "Jewelry",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "metaDescription": "Explore unique St. John jewelry, featuring handmade designs, island-inspired styles, and one-of-a-kind pieces perfect for memorable Caribbean keepsakes.",
+      "bodyHtml": "<h2>Title 1</h2>\n<h4>Title 2</h4>\n<p>Text 1</p>\n<p>Text 2</p>\n<p>Text 3</p>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>TESTING****</h5>\n<h5>The Island Hook Bracelet</h5>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>Title</h5>\n<h5>Title</h5>\n<h2>Title</h2>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h1>Jewelry</h1>\n<p>Capture the spirit of St. John with unique, handcrafted jewelry</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/55d98a_3287270d83ef4efabfdd1f52d0dc6ec2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/wolfgang-hasselmann-1ICIhK-ElJs-unsplash-edited.jpg",
+          "alt": "",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg/v1/fill/w_144,h_77,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Social%20Image_edited.jpg",
+          "alt": "Image (2).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/b5efc4_b531a597961440d0a246634801d1fda6~mv2.avif/v1/fill/w_147,h_29,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Island-hook-Bracelet.avif",
+          "alt": "Image (2).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_d751e296d5ed41cfa9bff5cba2a99843~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(2).png",
+          "alt": "Image (2).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_9dd4293510bd43a084a9e7d47d33b81e~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(4).png",
+          "alt": "Image (4).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/b5efc4_bb911bb7ccab485d9967e0d6c34f0ab5~mv2.avif/v1/fill/w_160,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/b5efc4_bb911bb7ccab485d9967e0d6c34f0ab5~mv2.avif",
+          "alt": "Jewelry HERO.avif",
+          "title": ""
+        }
+      ]
+    },
+    "links": {
+      "key": "links",
+      "path": "/links",
+      "navLabel": "Links",
+      "title": "Helpful St. John Links",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "metaDescription": "Essential St. John links: local services, tourism info, transportation & tips for your perfect stay.",
+      "bodyHtml": "<h1>Helpful St. John Links</h1>\n<p>Discover local resources and links for your convenience.</p>\n<h2><span>Whether you’re actively planning your next escape</span></h2>\n<p>to St. John or just taking a quick virtual break during a busy day, thanks for visiting us!</p>\n<p>St John Links helps you plan your special Caribbean vacation to our beautiful island and provides all the essential information you need while you're here! Returning to paradise? We’ve got tips on things to do, where to stay, and \"things you need to know,\" like how to get around and where to find the everyday services you need while visiting paradise. First-time visitor? Start here!</p>\n\n\n\n<p>Our information page includes tips on island manners, important phone numbers, Western Union services, and much more. With picture-perfect weather, a diverse community, and beautiful places of worship, you’ll feel right at home. We’ve also included medical info such as hospitals, clinics, and other emergency numbers, just in case. US citizens don’t need a passport to visit – we’re part of the US! However, we’ve also got passport information if needed. If you’re staying for a while and hope to volunteer, you can help our seniors or join the volunteers keeping our National Park pristine. Make a difference!</p>\n<p>Looking for a St. John Virgin Island rental home, vacation villa, or intimate Caribbean cottage in Cruz Bay or Coral Bay? How about a relaxing day sail or an exciting sports fishing adventure? St John Links has it all – boat rentals, charter boats, snorkeling, world-class sailing, fishing, and horseback riding. And when you need a break from vacationing, we have some of the best massage therapists around! When planning your vacation on the beautiful island of St. John, consider everything that can make your trip even more memorable. The St John Links website helps you find the right accommodation, transportation, and everyday services. St. John is the most natural and beautiful US Virgin Island, home to world-class beaches, rich tropical foliage, and endemic birds. Check out books written by local authors, and use our map and ferry information to help you navigate around. Your trip may include hiking trails, snorkeling tours, or simply exploring in your rental car – it’s your vacation!</p>\n\n\n\n<p>St. John restaurants offer everything from fine dining to casual meals. Discover more about our paradise today!</p>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h2>Useful websites and links</h2>\n<h2>Tourist Places</h2>\n<h2>Place 7</h2>\n<p>Location</p>\n<p>Washington, USA</p>\n<h2>Stores</h2>\n<h2>Place 6</h2>\n<p>Location</p>\n<p>Pensilvânia, USA</p>\n<h2>Restaurants</h2>\n<h2>Place 5</h2>\n<p>Location</p>\n<p>Filadèlfia, PA, USA</p>\n<h2>Landmarks</h2>\n<h2>Place 4</h2>\n<p>Location</p>\n<p>New York, NY, USA</p>\n<h2>Government</h2>\n<h2>Place 3</h2>\n<p>Location</p>\n<p>Colorado, USA</p>\n<h2>Emergency</h2>\n<h2>Place 2</h2>\n<p>Location</p>\n<p>Boston, MA, USA</p>\n<h2>Beaches</h2>\n<h2>Place 1</h2>\n<p>Location</p>\n<p>Miami, FL, USA</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_5d3604d25c5448a0a49cdacca6966916~mv2.png/v1/fill/w_160,h_60,al_c,q_85,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/9d128c_5d3604d25c5448a0a49cdacca6966916~mv2.png",
+          "alt": "1 Page Header.png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_181efe89fdc74feeac009bdd9181b12e~mv2.png/v1/fill/w_125,h_122,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/image%2021.png",
+          "alt": "Icons representing local services, tourism, and transportation links",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_f0e42b8b2d0c4945aaf40d92f3a3086d~mv2.png/v1/fill/w_125,h_122,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/image%2021%20(1).png",
+          "alt": "St John Links has it all – boat rentals and charter boats, snorkeling, world-class sailing, fishing, and horseback riding.",
+          "title": ""
+        }
+      ]
+    },
+    "stJohnBook": {
+      "key": "stJohnBook",
+      "path": "/st-john-book",
+      "navLabel": "St John Books",
+      "title": "St. John Books",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "metaDescription": "Find books about St. John, travel guides, and local stories to enrich your island experience and help you explore the culture and history of the Virgin Islands.",
+      "bodyHtml": "<h5>Texto</h5>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>Title</h5>\n<h5>Title</h5>\n<h2>Title</h2>\n<h1>St. John Books</h1>\n<p>Stories, guides, and insights inspired by the island of St. John</p>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h2>Title 1</h2>\n<h4>Title 2</h4>\n<p>Text 1</p>\n<p>Text 2</p>\n<p>Text 3</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_d751e296d5ed41cfa9bff5cba2a99843~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(2).png",
+          "alt": "Image (2).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/9d128c_9dd4293510bd43a084a9e7d47d33b81e~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(4).png",
+          "alt": "Image (4).png",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/135d29_71ef937f429749f28f446e6e4e673038~mv2.jpg/v1/fill/w_131,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/135d29_71ef937f429749f28f446e6e4e673038~mv2.jpg",
+          "alt": "Pool-and-Spa.jpg",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/55d98a_3287270d83ef4efabfdd1f52d0dc6ec2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/wolfgang-hasselmann-1ICIhK-ElJs-unsplash-edited.jpg",
+          "alt": "",
+          "title": ""
+        }
+      ]
+    },
+    "art": {
+      "key": "art",
+      "path": "/art",
+      "navLabel": "Art",
+      "title": "Art",
+      "group": "marketing",
+      "source": "structured",
+      "contentModel": "rich-content-page",
+      "metaDescription": "Discover vibrant local art in St. John, from galleries to handcrafted island pieces that capture the beauty, culture, and spirit of the Caribbean.",
+      "bodyHtml": "<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h3>*********TESTING*****Carol Aaron Art</h3>\n<h1>Art</h1>\n<p>Explore the creativity and culture of St. John through local artistry</p>",
+      "imageGallery": [
+        {
+          "url": "https://static.wixstatic.com/media/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif/v1/fit/w_480,h_361,q_90,enc_avif,quality_auto/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif",
+          "alt": "",
+          "title": ""
+        },
+        {
+          "url": "https://static.wixstatic.com/media/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif/v1/fill/w_120,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif",
+          "alt": "Coral Bay Sky.avif",
+          "title": ""
+        }
+      ]
+    }
+  }
+}

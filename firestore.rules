@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cmsProperties/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /cmsCharters/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /cmsSiteContent/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /cmsStructuredPages/{document} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

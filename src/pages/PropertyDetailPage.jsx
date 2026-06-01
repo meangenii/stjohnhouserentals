@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import heroBeach from '../content/hero_beach.png'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { buildWixImageUrl } from '../lib/wixImage'
 
-function PropertySection({ html, children, className = '' }) {
+function PropertyContentSection({ title, html, children, className = '' }) {
   const normalizedHtml = normalizeSiteHtml(html)
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
@@ -16,9 +16,25 @@ function PropertySection({ html, children, className = '' }) {
 
   return (
     <section className={`property-template-section ${className}`.trim()}>
+      <header className="property-template-section-header">
+        <h2>{title}</h2>
+        <div aria-hidden="true" className="property-template-rule" />
+      </header>
+
       {hasHtml ? <div className="property-rich-copy" dangerouslySetInnerHTML={{ __html: normalizedHtml }} /> : children}
     </section>
   )
+}
+
+function getShortDescriptionLines(property) {
+  if (Array.isArray(property.facts) && property.facts.length > 0) {
+    return property.facts.map((fact) => String(fact).trim()).filter(Boolean)
+  }
+
+  return String(property.shortDescription ?? '')
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 export function PropertyDetailPage() {
@@ -81,7 +97,9 @@ export function PropertyDetailPage() {
   }
 
   const { property } = state
-  const galleryImages = property.gallery.length > 0 ? property.gallery : property.heroImage ? [property.heroImage] : []
+  const propertyGallery = Array.isArray(property.gallery) ? property.gallery.filter(Boolean) : []
+  const shortDescriptionLines = getShortDescriptionLines(property)
+  const galleryImages = propertyGallery.length > 0 ? propertyGallery : property.heroImage ? [property.heroImage] : []
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
@@ -90,7 +108,6 @@ export function PropertyDetailPage() {
     : activeImage?.url
       ? buildWixImageUrl(activeImage, { width: 1600, height: 540 })
       : heroBeach
-  const actionLinks = property.externalLinks ?? []
 
   return (
     <article className="property-page property-page--template">
@@ -108,22 +125,6 @@ export function PropertyDetailPage() {
             <h1>{property.name}</h1>
           </header>
 
-          {actionLinks.length ? (
-            <nav className="detail-action-row" aria-label={`${property.name} contact links`}>
-              {actionLinks.map((link) => (
-                <a
-                  className="button-link button-link--ghost"
-                  href={link.href}
-                  key={link.href}
-                  rel={link.isMailto || link.isPhone ? undefined : 'noreferrer'}
-                  target={link.isMailto || link.isPhone ? undefined : '_blank'}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </nav>
-          ) : null}
-
           {activeImage ? (
             <section className="property-gallery">
               <div className="property-gallery-stage">
@@ -132,41 +133,12 @@ export function PropertyDetailPage() {
                   className="property-gallery-image"
                   decoding="async"
                   loading="eager"
-                  src={buildWixImageUrl(activeImage, { width: 1200, height: 900, mode: 'fit' })}
+                  src={buildWixImageUrl(activeImage, { width: 1600, height: 520 })}
                 />
-
-                {galleryImages.length > 1 ? (
-                  <>
-                    <button
-                      aria-label="Previous image"
-                      className="property-gallery-arrow property-gallery-arrow--previous"
-                      type="button"
-                      onClick={() =>
-                        setActiveImageIndex((currentIndex) =>
-                          currentIndex === 0 ? galleryImages.length - 1 : currentIndex - 1,
-                        )
-                      }
-                    >
-                      {'<'}
-                    </button>
-                    <button
-                      aria-label="Next image"
-                      className="property-gallery-arrow property-gallery-arrow--next"
-                      type="button"
-                      onClick={() =>
-                        setActiveImageIndex((currentIndex) =>
-                          currentIndex === galleryImages.length - 1 ? 0 : currentIndex + 1,
-                        )
-                      }
-                    >
-                      {'>'}
-                    </button>
-                  </>
-                ) : null}
               </div>
 
               {galleryImages.length > 1 ? (
-                <div className="property-thumbnail-row" role="list" aria-label="Property gallery">
+                <div className="property-thumbnail-row" role="list" aria-label="Property gallery thumbnails">
                   {galleryImages.map((image, imageIndex) => (
                     <button
                       className={`property-thumbnail ${imageIndex === safeImageIndex ? 'property-thumbnail--active' : ''}`}
@@ -178,7 +150,7 @@ export function PropertyDetailPage() {
                         alt={image.alt || `${property.name} view ${imageIndex + 1}`}
                         decoding="async"
                         loading="lazy"
-                        src={buildWixImageUrl(image, { width: 180, height: 140 })}
+                        src={buildWixImageUrl(image, { width: 420, height: 300 })}
                       />
                     </button>
                   ))}
@@ -187,17 +159,47 @@ export function PropertyDetailPage() {
             </section>
           ) : null}
 
-          <PropertySection>
-            <div className="property-fact-stack">
-              {property.facts.map((fact) => (
-                <p key={fact}>{fact}</p>
-              ))}
-            </div>
-          </PropertySection>
+          {shortDescriptionLines.length > 0 ? (
+            <PropertyContentSection title="Short Description">
+              <div className="property-fact-stack">
+                {shortDescriptionLines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </div>
+            </PropertyContentSection>
+          ) : null}
 
-          <PropertySection html={property.descriptionHtml} />
-          <PropertySection html={property.amenitiesHtml} />
-          <PropertySection html={property.reviewsHtml} />
+          <PropertyContentSection html={property.descriptionHtml} title="Description" />
+          <PropertyContentSection html={property.amenitiesHtml} title="Amenities" />
+          <PropertyContentSection html={property.reviewsHtml} title="Reviews" />
+
+          {property.previousProperty || property.nextProperty ? (
+            <nav aria-label="Adjacent properties" className="property-adjacent-nav">
+              <div className="property-adjacent-slot">
+                {property.previousProperty ? (
+                  <Link
+                    aria-label={`Previous property: ${property.previousProperty.name}`}
+                    className="property-adjacent-link"
+                    to={property.previousProperty.path}
+                  >
+                    previous item
+                  </Link>
+                ) : null}
+              </div>
+
+              <div className="property-adjacent-slot property-adjacent-slot--end">
+                {property.nextProperty ? (
+                  <Link
+                    aria-label={`Next property: ${property.nextProperty.name}`}
+                    className="property-adjacent-link"
+                    to={property.nextProperty.path}
+                  >
+                    next item
+                  </Link>
+                ) : null}
+              </div>
+            </nav>
+          ) : null}
         </div>
       </section>
     </article>

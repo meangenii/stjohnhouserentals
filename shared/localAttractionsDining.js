@@ -1,8 +1,3 @@
-export const localAttractionsHeroImage =
-  'https://static.wixstatic.com/media/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif/v1/fill/w_1920,h_1073,al_c,q_90,enc_avif,quality_auto/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif'
-
-export const localAttractionsHeroTagline = 'From Beaches to Restaurants - Find It Here!'
-
 export const coralBayDining = [
   {
     name: "Dazey's Bayhouse",

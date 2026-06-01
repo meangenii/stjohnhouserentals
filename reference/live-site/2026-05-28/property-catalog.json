@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-05-28T14:11:39.821Z",
+  "capturedAt": "2026-05-28T16:59:23.635Z",
   "snapshotDate": "2026-05-28",
   "source": "https://www.stjohnhouserentals.com/",
   "propertyCount": 68,
@@ -9026,37 +9026,8 @@
           "author": "Guest review"
         }
       ],
-      "externalLinks": [
-        {
-          "href": "mailto:340realestateco@gmail.com?subject=Southern_Exposure_SJL",
-          "label": "340realestateco@gmail.com",
-          "isMailto": true,
-          "isPhone": false,
-          "isInternal": false
-        },
-        {
-          "href": "tel:340-643-6068",
-          "label": "340-643-6068",
-          "isMailto": false,
-          "isPhone": true,
-          "isInternal": false
-        },
-        {
-          "href": "http://atwww.340realestateco.com/",
-          "label": "http://atwww.340realestateco.com/",
-          "isMailto": false,
-          "isPhone": false,
-          "isInternal": false
-        },
-        {
-          "href": "http://www.340realestateco.com",
-          "label": "www.340realestateco.com",
-          "isMailto": false,
-          "isPhone": false,
-          "isInternal": false
-        }
-      ],
-      "pageTitle": "Southern Exposure | St John House Rental"
+      "externalLinks": [],
+      "pageTitle": ""
     },
     {
       "id": "villa-bijou",

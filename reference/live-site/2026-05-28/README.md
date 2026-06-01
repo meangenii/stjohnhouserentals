@@ -12,7 +12,7 @@ Generated files:
 
 Static routes captured: 19
 Rental property routes captured: 68
-Charter boat routes captured: 5
+Charter boat routes captured: 0
 Auxiliary routes captured: 1
 
 Tracked static routes:

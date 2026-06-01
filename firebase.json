@@ -2,7 +2,12 @@
   "functions": {
     "source": "functions"
   },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
   "hosting": {
+    "site": "sjhr-f502d",
     "public": "dist",
     "ignore": [
       "firebase.json",
@@ -27,6 +32,9 @@
   "emulators": {
     "auth": {
       "port": 9099
+    },
+    "firestore": {
+      "port": 8080
     },
     "functions": {
       "port": 5001

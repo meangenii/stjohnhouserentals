@@ -1,11 +1,5 @@
-import { Link } from 'react-router-dom'
-import {
-  localAttractionsDiningSections,
-  localAttractionsHeroImage,
-  localAttractionsHeroTagline,
-} from '../content/localAttractions'
-import stJohnMap from '../content/map.png'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { getContentImageSrc } from '../lib/contentAssets'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function pairRestaurants(restaurants) {
   const rows = []
@@ -50,52 +44,53 @@ function DiningSection({ title, restaurants }) {
 }
 
 export function LocalAttractionsPage() {
-  const page = pageSnapshots.localAttractions
-  const primaryRouteLink = page.routeLinks?.find((link) => link.path) ?? null
-  const introHeading = page.sectionHeadings?.[0] ?? 'Where do you want to spend your day?'
-  const diningHeading = page.sectionHeadings?.[1] ?? 'St. John Restaurants'
+  const page = useStructuredPageContent('localAttractions')
+  const heroImageUrl = getContentImageSrc(page.hero.image)
+  const mapImageUrl = getContentImageSrc(page.map.image)
 
   return (
     <article className="local-attractions-page">
-      <section className="local-attractions-hero" style={{ backgroundImage: `url(${localAttractionsHeroImage})` }}>
+      <section className="local-attractions-hero" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}>
         <div className="local-attractions-hero-overlay">
           <div className="local-attractions-hero-copy">
-            <h1>{page.h1}</h1>
-            <p>{localAttractionsHeroTagline}</p>
-            {primaryRouteLink ? (
-              <Link className="button-link button-link--secondary local-attractions-hero-button" to={primaryRouteLink.path}>
-                {primaryRouteLink.label}
-              </Link>
-            ) : null}
+            <h1>{page.hero.title}</h1>
+            <p>{page.hero.tagline}</p>
           </div>
         </div>
       </section>
 
       <section className="local-attractions-map-section">
         <div className="local-attractions-map-card">
-          <img alt="Virgin Islands National Park map of St. John" className="local-attractions-map-image" src={stJohnMap} />
+          <img
+            alt={page.map.image.alt}
+            className="local-attractions-map-image"
+            decoding="async"
+            fetchPriority="low"
+            loading="lazy"
+            src={mapImageUrl}
+          />
         </div>
 
         <div className="local-attractions-intro-row">
           <div className="local-attractions-intro-copy">
-            <h2>{introHeading}</h2>
-            {page.leadParagraphs?.map((paragraph) => (
+            <h2>{page.intro.title}</h2>
+            {page.intro.paragraphs.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
             ))}
           </div>
 
-          <a className="button-link button-link--ghost local-attractions-map-button" href={stJohnMap} rel="noreferrer" target="_blank">
-            View Full Map
+          <a className="button-link button-link--ghost local-attractions-map-button" href={mapImageUrl} rel="noreferrer" target="_blank">
+            {page.map.action.label}
           </a>
         </div>
       </section>
 
       <section className="local-attractions-dining-section">
         <header className="local-attractions-dining-header">
-          <h2>{diningHeading}</h2>
+          <h2>{page.dining.title}</h2>
         </header>
 
-        {localAttractionsDiningSections.map((section) => (
+        {page.dining.sections.map((section) => (
           <DiningSection key={section.title} restaurants={section.restaurants} title={section.title} />
         ))}
       </section>

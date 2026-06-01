@@ -6,7 +6,13 @@ export function ListingCard({ actionLabel = 'Learn More', item }) {
     <>
       {image ? (
         <div className="listing-card-media">
-          <img alt={image.alt || item.name} className="listing-card-image" src={image.url} />
+          <img
+            alt={image.alt || item.name}
+            className="listing-card-image"
+            decoding="async"
+            loading="lazy"
+            src={image.url}
+          />
         </div>
       ) : null}
 

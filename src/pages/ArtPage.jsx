@@ -1,6 +1,7 @@
-import { SnapshotPage } from '../components/SnapshotPage'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { ContentPage } from '../components/ContentPage'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function ArtPage() {
-  return <SnapshotPage page={pageSnapshots.art} />
+  const page = useStructuredPageContent('art')
+  return <ContentPage page={page} />
 }

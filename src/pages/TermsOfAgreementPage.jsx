@@ -1,6 +1,7 @@
-import { SnapshotPage } from '../components/SnapshotPage'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { ContentPage } from '../components/ContentPage'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function TermsOfAgreementPage() {
-  return <SnapshotPage eyebrow="Terms of agreement" page={pageSnapshots.termsOfAgreement} />
+  const page = useStructuredPageContent('termsOfAgreement')
+  return <ContentPage page={page} />
 }

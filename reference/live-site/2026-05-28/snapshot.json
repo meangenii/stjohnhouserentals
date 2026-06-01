@@ -1,11 +1,11 @@
 {
-  "capturedAt": "2026-05-28T14:11:57.045Z",
+  "capturedAt": "2026-05-28T16:59:38.721Z",
   "snapshotDate": "2026-05-28",
   "source": "https://www.stjohnhouserentals.com",
   "routeInventory": {
     "staticRouteCount": 19,
     "rentalPropertyCount": 68,
-    "charterRouteCount": 5,
+    "charterRouteCount": 0,
     "staticPaths": [
       "/",
       "/about-us",
@@ -2313,139 +2313,17 @@
       "url": "https://www.stjohnhouserentals.com/boats",
       "navLabel": "Charter Boats",
       "group": "travel",
-      "title": "Charter Boats | St John House Rental",
+      "title": "",
       "h1": "Charter Boats",
-      "metaDescription": "Rent sailboat & powerboat charters in St. John’s crystal waters. Snorkel tours & day sails await!",
+      "metaDescription": "",
       "canonical": "https://www.stjohnhouserentals.com/boats",
-      "leadParagraphs": [
-        "Rent a charter boat for an unforgettable St. John adventure.",
-        "Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.",
-        "The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands. Visit them at https://vitema.vi.gov/",
-        "The USCG has provided the following link for those who are interested in learning more. https://www.rentalboatsafety.com/"
-      ],
-      "sectionHeadings": [
-        "Looking for a day sail in the Caribbean?",
-        "Salty Viking",
-        "Boat BVI",
-        "FlyAway Charters VI",
-        "Island Roots",
-        "Tacoboatstjohn",
-        "Charter Boats on St John",
-        "Hurricane Guide & Maritime Safety - What you NEED to know."
-      ],
-      "routeLinks": [
-        {
-          "path": "/",
-          "href": "https://www.stjohnhouserentals.com/",
-          "label": "View"
-        }
-      ],
+      "leadParagraphs": [],
+      "sectionHeadings": [],
+      "routeLinks": [],
       "htmlFile": "html/boats.html",
-      "contentHtml": "<h1>Charter Boats</h1>\n<p>Rent a charter boat for an unforgettable St. John adventure.</p>\n<h2>Looking for a day sail in the Caribbean?</h2>\n<p>Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.</p>\n<h4>Salty Viking</h4>\n<h4>Boat BVI</h4>\n<h4>FlyAway Charters VI</h4>\n<h4>Island Roots</h4>\n<h4>Tacoboatstjohn</h4>\n<h2>Charter Boats on St John</h2>\n<h3>Hurricane Guide &amp; Maritime Safety - What you NEED to know.</h3>\n<p>Hurricane Guide</p>\n\n<p>The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is&nbsp;June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands.&nbsp;&nbsp; Visit them at&nbsp;<span><a href=\"https://vitema.vi.gov/\" target=\"_blank\" rel=\"noreferrer noopener\">https://vitema.vi.gov/</a></span></p>\n\n\n\n<p>Maritime Safety</p>\n\n<p>The USCG has provided the following link for those who are interested in learning more.&nbsp;<span><a href=\"https://www.rentalboatsafety.com/\" target=\"_blank\" rel=\"noreferrer noopener\">https://www.rentalboatsafety.com/</a></span></p>",
-      "imageGallery": [
-        {
-          "url": "https://static.wixstatic.com/media/ede627_58e29e33d0fd408a947face9bf3459de~mv2.jpg/v1/fill/w_120,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/ede627_58e29e33d0fd408a947face9bf3459de~mv2.jpg",
-          "alt": "whistling-cay.jpg",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/9d128c_44abcdda393b4a0cb2d88c577092b4f1~mv2.png/v1/fill/w_125,h_125,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/image%2021.png",
-          "alt": "Sailboat charter cruising St. John waters",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/ede627_cded9f0cdec34d82a5afa2b64b914b97~mv2.webp/v1/fill/w_147,h_92,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/rs%3Dw_1280%2Ch_800.webp",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/6c05e8_f9a21703ec8b42088d34191136632dd2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Boat%20BVI.jpg",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/6c05e8_6ad9ebd152c0436c9cac74c4e09a232f~mv2.jpg/v1/fill/w_147,h_101,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/FlyAway%20Charters%20VI.jpg",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/6c05e8_b3c4eb87a3bb4f7eab62553d8008ae58~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Island%20Roots.jpg",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://static.wixstatic.com/media/6c05e8_4b317279721d43ee90afff2952aa6043~mv2.png/v1/fill/w_80,h_39,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Captain-Johnny-Cakes.png",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        }
-      ],
-      "charterListings": [
-        {
-          "name": "FlyAway Charters VI",
-          "summary": "Every charter at FlyAway Charters is private and customized. We pride ourselves on providing a unique experience bolstered by our extensive local knowledge to provide the perfect experience for you.",
-          "path": "/charter-boat-rentals/flyaway-charters-vi",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/flyaway-charters-vi",
-          "image": {
-            "url": "https://static.wixstatic.com/media/6c05e8_6ad9ebd152c0436c9cac74c4e09a232f~mv2.jpg",
-            "alt": "",
-            "title": "FlyAway Charters VI.jpg",
-            "width": 1454,
-            "height": 1000
-          }
-        },
-        {
-          "name": "Island Roots",
-          "summary": "Let us know of any questions or requests. We are always happy to learn how we can make it your best day on the water.",
-          "path": "/charter-boat-rentals/island-roots",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/island-roots",
-          "image": {
-            "url": "https://static.wixstatic.com/media/6c05e8_b3c4eb87a3bb4f7eab62553d8008ae58~mv2.jpg",
-            "alt": "",
-            "title": "Island Roots.jpg",
-            "width": 1600,
-            "height": 1067
-          }
-        },
-        {
-          "name": "Tacoboatstjohn",
-          "summary": "If you book the 11:00 time slot, please plan to arrive at 10:15 so chances are better for a spot. * Please note that the Lime Out does not accept reservations. Refer to their website. No matter the time slot you choose....",
-          "path": "/charter-boat-rentals/tacoboatstjohn",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/tacoboatstjohn",
-          "image": {
-            "url": "https://static.wixstatic.com/media/6c05e8_4b317279721d43ee90afff2952aa6043~mv2.png",
-            "alt": "",
-            "title": "Captain-Johnny-Cakes.png",
-            "width": 800,
-            "height": 394
-          }
-        },
-        {
-          "name": "Boat BVI",
-          "summary": "The British Virgin Islands has always been and continues to be recognized as a world leader of great places to go sailing. Since it became a major charter sailing destination in the early 70’s, you’d think that other coo...",
-          "path": "/charter-boat-rentals/boat-bvi",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/boat-bvi",
-          "image": {
-            "url": "https://static.wixstatic.com/media/6c05e8_f9a21703ec8b42088d34191136632dd2~mv2.jpg",
-            "alt": "",
-            "title": "Boat BVI.jpg",
-            "width": 2000,
-            "height": 1333
-          }
-        },
-        {
-          "name": "Salty Viking",
-          "summary": "Discover the US & British Virgin Islands on Salty Viking- Premier choice for luxury boat charters",
-          "path": "/charter-boat-rentals/private-luxury-power-catamaran-adventures",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/private-luxury-power-catamaran-adventures",
-          "image": {
-            "url": "https://static.wixstatic.com/media/ede627_cded9f0cdec34d82a5afa2b64b914b97~mv2.webp",
-            "alt": "",
-            "title": "rs=w_1280,h_800.webp",
-            "width": 1280,
-            "height": 800
-          }
-        }
-      ]
+      "contentHtml": "",
+      "imageGallery": [],
+      "charterListings": []
     },
     "localAttractions": {
       "key": "localAttractions",

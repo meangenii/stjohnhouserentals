@@ -1,50 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import logo from '../content/site_logo.png'
-
-const siteNavItems = [
-  { label: 'HOME', path: '/', matchPaths: ['/'] },
-  { label: 'ABOUT', path: '/about-us', matchPaths: ['/about-us'] },
-  {
-    label: 'HOUSES',
-    path: '/st-john-rentals',
-    matchPaths: ['/st-john-rentals', '/for-rent', '/for-sale', '/property-for-sale', '/rental-properties'],
-    children: [
-      { label: 'Rental Accommodations', path: '/for-rent', matchPaths: ['/for-rent'] },
-      { label: 'Property For Sale', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
-    ],
-  },
-  {
-    label: 'TRANSPORTATION',
-    path: '/car-barge-information',
-    matchPaths: ['/car-barge-information', '/passenger-ferry', '/ferrys', '/cars'],
-    children: [
-      {
-        label: 'Car Barge Information',
-        path: '/car-barge-information',
-        matchPaths: ['/car-rental-ferry-boat-info', '/car-barge-information'],
-      },
-      { label: 'Passenger Ferry', path: '/passenger-ferry', matchPaths: ['/passenger-ferry', '/ferrys'] },
-      { label: 'St John Car Rentals', path: '/cars', matchPaths: ['/cars'] },
-    ],
-  },
-  {
-    label: 'ACTIVITIES',
-    path: '/map',
-    matchPaths: ['/map', '/boats', '/charter-boat-rentals'],
-    children: [
-      { label: 'Charter Boats', path: '/boats', matchPaths: ['/boats', '/charter-boat-rentals'] },
-      { label: 'Local Attractions', path: '/map', matchPaths: ['/map'] },
-    ],
-  },
-  { label: 'ADVERTISE', path: '/advertise', matchPaths: ['/advertise'] },
-]
-
-const footerNavItems = siteNavItems
-const footerMetaItems = [
-  { label: 'PRIVACY POLICY', path: '/privacy-policy', matchPaths: ['/privacy-policy'] },
-  { label: 'TERMS OF AGREEMENT', path: '/terms-of-agreement', matchPaths: ['/terms-of-agreement'] },
-]
+import { useSiteShellContent } from '../lib/useSiteContent'
 
 function isActiveNavItem(pathname, matchPaths) {
   return matchPaths.some((matchPath) => pathname === matchPath || pathname.startsWith(`${matchPath}/`))
@@ -57,10 +13,6 @@ function isActiveChildItem(pathname, child) {
 function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
   const [openMenuLabel, setOpenMenuLabel] = useState('')
   const navRef = useRef(null)
-
-  useEffect(() => {
-    setOpenMenuLabel('')
-  }, [pathname])
 
   useEffect(() => {
     if (!openMenuLabel) {
@@ -155,6 +107,12 @@ function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
 
 export function SiteLayout() {
   const location = useLocation()
+  const siteShell = useSiteShellContent()
+  const siteNavItems = siteShell.header.primaryNav
+  const footerNavItems = siteShell.footer.primaryNav
+  const footerMetaItems = siteShell.footer.legalNav
+  const logo = siteShell.header.logo
+  const utility = siteShell.header.utility
 
   return (
     <div className="site-shell">
@@ -164,22 +122,23 @@ export function SiteLayout() {
             <div className="utility-social">
               <a
                 className="utility-social-link"
-                href="https://www.facebook.com/houserentalsVI/"
+                href={utility.socialLink.href}
                 rel="noreferrer noopener"
                 target="_blank"
               >
                 <span aria-hidden="true" className="utility-facebook">
                   f
                 </span>
-                <span>Stjohnhousesrentals</span>
+                <span>{utility.socialLink.label}</span>
               </a>
             </div>
 
-            <p className="utility-message">Offering Rentals Since 1999</p>
+            <p className="utility-message">{utility.message}</p>
 
             <div className="utility-booking">
-              <span>Book Directly</span>
-              <span>NO VRBO or AIRBnB Fees</span>
+              {utility.bookingCallouts.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
             </div>
           </div>
         </div>
@@ -187,7 +146,7 @@ export function SiteLayout() {
         <div className="masthead">
           <div className="masthead-inner">
             <Link aria-label="St. John House Rentals home" className="site-logo-link" to="/">
-              <img alt="St. John House Rentals" className="site-logo" src={logo} />
+              <img alt={logo.alt} className="site-logo" src={logo.src} />
             </Link>
 
             <div className="masthead-nav">
@@ -195,7 +154,7 @@ export function SiteLayout() {
                 Skip to Main Content
               </a>
 
-              <SiteMenu ariaLabel="Primary" items={siteNavItems} pathname={location.pathname} />
+              <SiteMenu ariaLabel="Primary" items={siteNavItems} key={`primary-${location.pathname}`} pathname={location.pathname} />
             </div>
           </div>
         </div>
@@ -209,11 +168,17 @@ export function SiteLayout() {
         <div className="footer-top">
           <div className="footer-top-inner">
             <Link aria-label="St. John House Rentals home" className="footer-logo-link" to="/">
-              <img alt="St. John House Rentals" className="footer-logo" src={logo} />
+              <img alt={logo.alt} className="footer-logo" src={logo.src} />
             </Link>
 
             <div className="footer-nav-group">
-              <SiteMenu ariaLabel="Footer" items={footerNavItems} navClassName="site-nav footer-nav" pathname={location.pathname} />
+              <SiteMenu
+                ariaLabel="Footer"
+                items={footerNavItems}
+                key={`footer-${location.pathname}`}
+                navClassName="site-nav footer-nav"
+                pathname={location.pathname}
+              />
 
               <nav aria-label="Footer legal" className="footer-meta-nav">
                 {footerMetaItems.map((item) => (
@@ -232,8 +197,8 @@ export function SiteLayout() {
 
         <div className="footer-bottom">
           <div className="footer-bottom-inner">
-            <p className="footer-copyright">Copyright {'\u00A9'} 2026 St John Houses Rentals</p>
-            <p className="footer-design">Design By S9 Consulting</p>
+            <p className="footer-copyright">{siteShell.footer.copyright}</p>
+            <p className="footer-design">{siteShell.footer.designCredit}</p>
           </div>
         </div>
       </footer>

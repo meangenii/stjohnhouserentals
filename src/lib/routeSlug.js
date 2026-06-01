@@ -6,40 +6,42 @@ function safeDecodeRouteSegment(value) {
   }
 }
 
-export function getRouteSlugVariants(slug) {
-  const pending = [String(slug ?? '').trim()]
-  const variants = new Set()
-
-  while (pending.length > 0) {
-    const candidate = pending.pop()?.trim()
-
-    if (!candidate || variants.has(candidate)) {
-      continue
-    }
-
-    variants.add(candidate)
-
-    const decodedCandidate = safeDecodeRouteSegment(candidate)
-    const encodedCandidate = encodeURIComponent(candidate)
-    const curlyApostropheCandidate = candidate.replaceAll("'", '’')
-    const straightApostropheCandidate = candidate.replaceAll('’', "'")
-
-    if (decodedCandidate && decodedCandidate !== candidate) {
-      pending.push(decodedCandidate)
-    }
-
-    if (encodedCandidate && encodedCandidate !== candidate) {
-      pending.push(encodedCandidate)
-    }
-
-    if (curlyApostropheCandidate !== candidate) {
-      pending.push(curlyApostropheCandidate)
-    }
-
-    if (straightApostropheCandidate !== candidate) {
-      pending.push(straightApostropheCandidate)
-    }
+function safeEncodeRouteSegment(value) {
+  try {
+    return encodeURIComponent(value)
+  } catch {
+    return value
   }
+}
+
+export function getRouteSlugVariants(slug) {
+  const variants = new Set()
+  const base = String(slug ?? '').trim()
+
+  if (!base) {
+    return []
+  }
+
+  const decodedBase = safeDecodeRouteSegment(base)
+  const directCandidates = [base, decodedBase]
+  const apostropheCandidates = directCandidates.flatMap((value) => [
+    value,
+    value.replaceAll("'", '\u2019'),
+    value.replaceAll('\u2019', "'"),
+  ])
+
+  ;[...apostropheCandidates, ...apostropheCandidates.map((value) => safeEncodeRouteSegment(value))].forEach(
+    (candidate) => {
+      const trimmedCandidate = String(candidate ?? '').trim()
+
+      if (!trimmedCandidate) {
+        return
+      }
+
+      variants.add(trimmedCandidate)
+      variants.add(trimmedCandidate.toLowerCase())
+    },
+  )
 
   return Array.from(variants)
 }

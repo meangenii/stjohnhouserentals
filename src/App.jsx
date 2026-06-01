@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { SiteLayout } from './components/SiteLayout'
+import { AdminPage } from './pages/AdminPage'
 import { AboutUsPage } from './pages/AboutUsPage'
 import { AdvertisePage } from './pages/AdvertisePage'
 import { ArtPage } from './pages/ArtPage'
@@ -7,7 +8,6 @@ import { BlogPage } from './pages/BlogPage'
 import { CarBargeInformationPage } from './pages/CarBargeInformationPage'
 import { CharterBoatDetailPage } from './pages/CharterBoatDetailPage'
 import { CharterBoatsPage } from './pages/CharterBoatsPage'
-import { FerrysPage } from './pages/FerrysPage'
 import { HomePage } from './pages/HomePage'
 import { HouseRentalsPage } from './pages/HouseRentalsPage'
 import { JewelryPage } from './pages/JewelryPage'
@@ -23,12 +23,36 @@ import { StJohnBookPage } from './pages/StJohnBookPage'
 import { StJohnCarRentalsPage } from './pages/StJohnCarRentalsPage'
 import { TermsOfAgreementPage } from './pages/TermsOfAgreementPage'
 
+function normalizeHashRoute() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const { hash, pathname, search } = window.location
+
+  if (!hash.startsWith('#/')) {
+    return
+  }
+
+  const nextPath = hash.slice(1)
+  const currentPath = `${pathname}${search}`
+
+  if (nextPath === currentPath) {
+    return
+  }
+
+  window.history.replaceState(null, '', nextPath)
+}
+
 function App() {
+  normalizeHashRoute()
+
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<SiteLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="admin" element={<AdminPage />} />
           <Route path="about-us" element={<AboutUsPage />} />
           <Route path="st-john-rentals" element={<HouseRentalsPage />} />
           <Route path="1bedroom/:slug" element={<PropertyDetailPage />} />
@@ -38,7 +62,7 @@ function App() {
           <Route path="car-rental-ferry-boat-info" element={<CarBargeInformationPage />} />
           <Route path="car-barge-information" element={<CarBargeInformationPage />} />
           <Route path="passenger-ferry" element={<PassengerFerryPage />} />
-          <Route path="ferrys" element={<FerrysPage />} />
+          <Route path="ferrys" element={<PassengerFerryPage />} />
           <Route path="cars" element={<StJohnCarRentalsPage />} />
           <Route path="boats" element={<CharterBoatsPage />} />
           <Route path="map" element={<LocalAttractionsPage />} />

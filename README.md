@@ -4,10 +4,11 @@ Phase one is a React rebuild of the current public site using Firebase Hosting f
 
 ## Current Status
 
-- `Home` and `About` are custom React rebuilds.
-- The remaining public routes are present in React and currently render snapshot-backed content from `src/content/liveSiteSnapshot.json`.
-- `/for-rent` renders listing cards parsed from the live snapshot. A local `/rental-properties/:slug` route exists, but the listing cards still open the live site while local route parity continues.
-- Snapshot refresh also updates `public/livePropertyCatalog.json` for the local property catalog flow.
+- The shared site shell and major custom public routes now read structured seed content from `shared/siteContent.js`.
+- All current public routes now render through the structured content layer instead of `SnapshotPage`.
+- Rental properties now read directly from the live Firestore catalog in `firebase` mode when the frontend targets the deployed API, while charters continue through `siteApi`.
+- `npm run content:generate` writes the Functions-safe content artifacts under `functions/src/generated/` before build, emulators, or deploy.
+- `siteApi` exposes structured page content plus rental and charter endpoints, including authenticated admin write endpoints for Firebase-backed property and charter editing.
 
 Start with these docs:
 
@@ -19,8 +20,12 @@ Useful commands:
 
 ```bash
 npm install
-npm run snapshot:site
 npm run dev
 npm run check
+npm run firebase:doctor
 npm run emulators
+npm run deploy
+npm run deploy:firestore
+npm run seed:firebase-data
+npm run snapshot:site
 ```

@@ -1,19 +1,13 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { buildWixImageUrl } from '../lib/wixImage'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { listCharters } from '../lib/charterRepository'
+import { getContentImageSrc } from '../lib/contentAssets'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function cleanText(value) {
   return String(value ?? '')
     .replace(/\s+/g, ' ')
     .trim()
-}
-
-function getOrderedCharterListings(page) {
-  const desiredNames = page.sectionHeadings?.slice(1, 6) ?? []
-
-  return desiredNames
-    .map((name) => page.charterListings?.find((listing) => listing.name === name))
-    .filter(Boolean)
 }
 
 function truncateSummary(summary, limit = 138) {
@@ -35,16 +29,16 @@ function truncateSummary(summary, limit = 138) {
   }
 }
 
-function CharterBoatCard({ listing }) {
-  const imageUrl = buildWixImageUrl(listing.image, { width: 760, height: 520 })
-  const summary = truncateSummary(listing.summary)
+function CharterBoatCard({ charter }) {
+  const imageUrl = getContentImageSrc(charter.heroImage, { width: 760, height: 520 })
+  const summary = truncateSummary(charter.shortDescription)
 
   return (
     <article className="charter-boats-card">
-      <Link aria-label={listing.name} className="charter-boats-card-media" to={listing.path}>
+      <Link aria-label={charter.name} className="charter-boats-card-media" to={charter.path}>
         {imageUrl ? (
           <img
-            alt={listing.image?.alt || listing.name}
+            alt={charter.heroImage?.alt || charter.name}
             className="charter-boats-card-image"
             decoding="async"
             loading="lazy"
@@ -54,19 +48,19 @@ function CharterBoatCard({ listing }) {
       </Link>
 
       <div className="charter-boats-card-body">
-        <h3>{listing.name}</h3>
+        <h3>{charter.name}</h3>
         <div aria-hidden="true" className="charter-boats-card-divider" />
         <p>{summary.text}</p>
 
         {summary.isTruncated ? (
-          <Link className="charter-boats-card-more" to={listing.path}>
+          <Link className="charter-boats-card-more" to={charter.path}>
             Show More
           </Link>
         ) : (
           <div aria-hidden="true" className="charter-boats-card-more-spacer" />
         )}
 
-        <Link className="charter-boats-card-action" to={listing.path}>
+        <Link className="charter-boats-card-action" to={charter.path}>
           Learn More
         </Link>
       </div>
@@ -75,10 +69,30 @@ function CharterBoatCard({ listing }) {
 }
 
 export function CharterBoatsPage() {
-  const page = pageSnapshots.charterBoats
-  const charterListings = getOrderedCharterListings(page)
-  const heroImageUrl = buildWixImageUrl(page.imageGallery?.[0], { width: 1920, height: 920 })
-  const introImageUrl = buildWixImageUrl(page.imageGallery?.[1], { width: 960, height: 820 })
+  const page = useStructuredPageContent('charterBoats')
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 920 })
+  const introImageUrl = getContentImageSrc(page.intro.image, { width: 960, height: 820 })
+  const [state, setState] = useState({ status: 'loading', charters: [] })
+
+  useEffect(() => {
+    let cancelled = false
+
+    listCharters()
+      .then((charters) => {
+        if (!cancelled) {
+          setState({ status: 'ready', charters })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({ status: 'ready', charters: [] })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <article className="charter-boats-page">
@@ -93,8 +107,8 @@ export function CharterBoatsPage() {
         }
       >
         <div className="charter-boats-hero-inner">
-          <h1>{page.h1}</h1>
-          <p>{cleanText(page.leadParagraphs?.[0])}</p>
+          <h1>{page.hero.title}</h1>
+          <p>{page.hero.lead}</p>
         </div>
       </section>
 
@@ -102,18 +116,13 @@ export function CharterBoatsPage() {
         <div className="charter-boats-intro-inner">
           <div className="charter-boats-intro-grid">
             <div className="charter-boats-intro-copy">
-              <h2>{page.sectionHeadings?.[0] ?? 'Looking for a day sail in the Caribbean?'}</h2>
-              <p>{cleanText(page.leadParagraphs?.[1])}</p>
+              <h2>{page.intro.title}</h2>
+              <p>{page.intro.paragraph}</p>
             </div>
 
             <div className="charter-boats-intro-media">
               {introImageUrl ? (
-                <img
-                  alt={page.imageGallery?.[1]?.alt || 'Sailboat charter cruising St. John waters'}
-                  decoding="async"
-                  loading="lazy"
-                  src={introImageUrl}
-                />
+                <img alt={page.intro.image.alt || 'Sailboat charter cruising St. John waters'} decoding="async" loading="lazy" src={introImageUrl} />
               ) : null}
             </div>
           </div>
@@ -122,11 +131,11 @@ export function CharterBoatsPage() {
 
       <section className="charter-boats-directory">
         <div className="charter-boats-directory-inner">
-          <h2>{page.sectionHeadings?.[6] ?? 'Charter Boats on St John'}</h2>
+          <h2>{page.directory.title}</h2>
 
           <div className="charter-boats-grid">
-            {charterListings.map((listing) => (
-              <CharterBoatCard key={listing.path ?? listing.href} listing={listing} />
+            {state.charters.map((charter) => (
+              <CharterBoatCard key={charter.slug} charter={charter} />
             ))}
           </div>
         </div>
@@ -134,27 +143,20 @@ export function CharterBoatsPage() {
 
       <section className="charter-boats-safety">
         <div className="charter-boats-safety-inner">
-          <h3>{page.sectionHeadings?.[7] ?? 'Hurricane Guide & Maritime Safety - What you NEED to know.'}</h3>
+          <h3>{page.safety.title}</h3>
 
           <div className="charter-boats-safety-copy">
-            <p className="charter-boats-safety-label">Hurricane Guide</p>
-            <p>
-              The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for
-              disaster preparedness and response. Hurricane season is June 1st through November 30th. You can
-              find basic information, tracking maps, emergency communication methods and kit suggestions for
-              the various dangerous conditions you can encounter in the Caribbean islands. Visit them at{' '}
-              <a href="https://vitema.vi.gov/" rel="noreferrer" target="_blank">
-                https://vitema.vi.gov/
-              </a>
-            </p>
-
-            <p className="charter-boats-safety-label">Maritime Safety</p>
-            <p>
-              The USCG has provided the following link for those who are interested in learning more.{' '}
-              <a href="https://www.rentalboatsafety.com/" rel="noreferrer" target="_blank">
-                https://www.rentalboatsafety.com/
-              </a>
-            </p>
+            {page.safety.sections.map((section) => (
+              <div key={section.label}>
+                <p className="charter-boats-safety-label">{section.label}</p>
+                <p>
+                  {section.paragraph}{' '}
+                  <a href={section.href} rel="noreferrer" target="_blank">
+                    {section.href}
+                  </a>
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

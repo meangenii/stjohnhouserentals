@@ -1,11 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PropertyDirectorySection } from '../components/PropertyDirectorySection'
-import heroBeach from '../content/hero_beach.png'
-import homeAboutPool from '../content/home_about_pool.jpg'
-import homeDiscoverCollage from '../content/home_discover_collage.png'
-import homeWhyChooseUs from '../content/home_why_choose_us.jpg'
-import { homeBedroomGroups } from '../content/homePropertyDirectory'
-import { pageSnapshots } from '../content/siteSnapshot'
+import { getContentImageSrc } from '../lib/contentAssets'
+import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function HomeFeatureIcon({ kind }) {
   if (kind === 'selection') {
@@ -63,49 +59,48 @@ function HomeFeatureIcon({ kind }) {
 }
 
 export function HomePage() {
-  const homePage = pageSnapshots.home
-  const browseRentalsPath = homePage.routeLinks.find((routeLink) => routeLink.label === 'Browse Rentals')?.path ?? '/st-john-rentals'
-  const [directoryHeading, trustHeading, discoverHeading, aboutHeading] = homePage.sectionHeadings
-  const [heroLead, trustLead, selectionLead, dealsLead, localLead, serviceLead] = homePage.leadParagraphs
-  const featureItems = [
-    { kind: 'selection', title: 'Wide Selection of Properties', body: selectionLead },
-    { kind: 'deals', title: 'Special Deals', body: dealsLead },
-    { kind: 'local', title: 'GO Local', body: localLead },
-    { kind: 'service', title: 'Reliable Customer Service', body: serviceLead },
-  ]
+  const page = useStructuredPageContent('home')
+  const heroImageUrl = getContentImageSrc(page.hero.image)
+  const trustImageUrl = getContentImageSrc(page.trust.image)
+  const discoverImageUrl = getContentImageSrc(page.discover.image)
+  const aboutImageUrl = getContentImageSrc(page.about.image)
 
   return (
     <div className="home-page">
-      <section className="home-hero" style={{ backgroundImage: `url(${heroBeach})` }}>
+      <section className="home-hero" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}>
         <div className="home-hero-overlay">
           <div className="home-hero-copy">
             <h1>
-              <span>Welcome to St. John</span>
-              <span>House Rentals</span>
+              {page.hero.titleLines.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
             </h1>
-            <p>{heroLead}</p>
+            <p>{page.hero.lead}</p>
           </div>
         </div>
       </section>
 
-      <PropertyDirectorySection groups={homeBedroomGroups} title={directoryHeading} />
+      <PropertyDirectorySection title={page.directory.title} />
 
       <section className="page-section home-trust">
         <div className="home-trust-grid">
           <div className="home-trust-copy">
-            <p className="home-trust-eyebrow">Why Choose Us</p>
-            <h2>{trustHeading}</h2>
-            <p>{trustLead}</p>
-            <Link className="home-trust-button" to={browseRentalsPath}>
-              Browse Rentals
+            <p className="home-trust-eyebrow">{page.trust.eyebrow}</p>
+            <h2>{page.trust.title}</h2>
+            <p>{page.trust.lead}</p>
+            <Link className="home-trust-button" to={page.trust.action.path}>
+              {page.trust.action.label}
             </Link>
           </div>
 
           <div className="home-trust-media">
             <img
-              alt="Pink plumeria flowers overlooking St. John waters"
+              alt={page.trust.image.alt}
               className="home-trust-image"
-              src={homeWhyChooseUs}
+              decoding="async"
+              fetchPriority="low"
+              loading="lazy"
+              src={trustImageUrl}
             />
           </div>
         </div>
@@ -114,20 +109,23 @@ export function HomePage() {
       <section className="home-discover-band">
         <div className="page-section home-discover">
           <div className="home-discover-header">
-            <h2>{discoverHeading}</h2>
+            <h2>{page.discover.title}</h2>
           </div>
 
           <div className="home-discover-grid">
             <div className="home-discover-media">
               <img
-                alt="St. John bay collage with coastal views and boats"
+                alt={page.discover.image.alt}
                 className="home-discover-image"
-                src={homeDiscoverCollage}
+                decoding="async"
+                fetchPriority="low"
+                loading="lazy"
+                src={discoverImageUrl}
               />
             </div>
 
             <div className="home-discover-features">
-              {featureItems.map((item) => (
+              {page.discover.features.map((item) => (
                 <article className="home-discover-feature" key={item.title}>
                   <div className="home-discover-feature-icon">
                     <HomeFeatureIcon kind={item.kind} />
@@ -145,23 +143,24 @@ export function HomePage() {
         <div className="page-section home-about">
           <div className="home-about-grid">
             <div className="home-about-copy">
-              <h2>{aboutHeading}</h2>
+              <h2>{page.about.title}</h2>
               <p>
-                Our homes are owned or run by a number of individuals and management companies, and they all do their
-                own booking. The email link on each home&apos;s page will get you directly to the person who can help!
-                We at{' '}
-                <a className="home-about-link" href="http://stjohnlinks.com/" rel="noreferrer" target="_blank">
-                  stjohnhouserentals.com
+                {page.about.bodyIntro}
+                <a className="home-about-link" href={page.about.bodyLink.href} rel="noreferrer" target="_blank">
+                  {page.about.bodyLink.label}
                 </a>{' '}
-                do not handle bookings.
+                {page.about.bodyOutro.trim()}
               </p>
             </div>
 
             <div className="home-about-media">
               <img
-                alt="Pool deck overlooking villa and turquoise ocean at Still Waters Villa"
+                alt={page.about.image.alt}
                 className="home-about-image"
-                src={homeAboutPool}
+                decoding="async"
+                fetchPriority="low"
+                loading="lazy"
+                src={aboutImageUrl}
               />
             </div>
           </div>
