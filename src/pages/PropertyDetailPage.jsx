@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
@@ -40,6 +40,12 @@ export function PropertyDetailPage() {
   const { slug = '' } = useParams()
   const [state, setState] = useState({ status: 'loading' })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [thumbnailRailState, setThumbnailRailState] = useState({
+    canScroll: false,
+    atStart: true,
+    atEnd: true,
+  })
+  const thumbnailsRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -69,6 +75,57 @@ export function PropertyDetailPage() {
       cancelled = true
     }
   }, [slug])
+
+  useEffect(() => {
+    const thumbnailsElement = thumbnailsRef.current
+
+    if (!thumbnailsElement) {
+      setThumbnailRailState({
+        canScroll: false,
+        atStart: true,
+        atEnd: true,
+      })
+      return undefined
+    }
+
+    const syncThumbnailRailState = () => {
+      const maxScrollLeft = Math.max(0, thumbnailsElement.scrollWidth - thumbnailsElement.clientWidth)
+      const canScroll = maxScrollLeft > 8
+      const nextState = {
+        canScroll,
+        atStart: !canScroll || thumbnailsElement.scrollLeft <= 8,
+        atEnd: !canScroll || thumbnailsElement.scrollLeft >= maxScrollLeft - 8,
+      }
+
+      setThumbnailRailState((currentState) => {
+        if (
+          currentState.canScroll === nextState.canScroll &&
+          currentState.atStart === nextState.atStart &&
+          currentState.atEnd === nextState.atEnd
+        ) {
+          return currentState
+        }
+
+        return nextState
+      })
+    }
+
+    syncThumbnailRailState()
+
+    thumbnailsElement.addEventListener('scroll', syncThumbnailRailState, { passive: true })
+
+    const resizeObserver =
+      typeof ResizeObserver === 'function' ? new ResizeObserver(() => syncThumbnailRailState()) : null
+
+    resizeObserver?.observe(thumbnailsElement)
+    window.addEventListener('resize', syncThumbnailRailState)
+
+    return () => {
+      thumbnailsElement.removeEventListener('scroll', syncThumbnailRailState)
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', syncThumbnailRailState)
+    }
+  }, [slug, state.status])
 
   if (state.status === 'loading') {
     return (
@@ -102,6 +159,14 @@ export function PropertyDetailPage() {
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
+  const thumbnailRailClassName = [
+    'property-gallery-thumbnails-shell',
+    thumbnailRailState.canScroll ? 'property-gallery-thumbnails-shell--scrollable' : '',
+    thumbnailRailState.atStart ? 'property-gallery-thumbnails-shell--at-start' : '',
+    thumbnailRailState.atEnd ? 'property-gallery-thumbnails-shell--at-end' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
   const bannerImageUrl = property.heroImage?.url
     ? buildRemoteImageUrl(property.heroImage, { width: 1600, height: 540 })
     : activeImage?.url
@@ -130,27 +195,47 @@ export function PropertyDetailPage() {
                   className="property-gallery-image"
                   decoding="async"
                   loading="eager"
-                  src={buildRemoteImageUrl(activeImage, { width: 1600, height: 520 })}
+                  src={buildRemoteImageUrl(activeImage, { width: 1800, height: 1400, mode: 'fit' })}
                 />
               </div>
 
               {galleryImages.length > 1 ? (
-                <div className="property-thumbnail-row" role="list" aria-label="Property gallery thumbnails">
-                  {galleryImages.map((image, imageIndex) => (
-                    <button
-                      className={`property-thumbnail ${imageIndex === safeImageIndex ? 'property-thumbnail--active' : ''}`}
-                      key={`${image.url}-${imageIndex}`}
-                      type="button"
-                      onClick={() => setActiveImageIndex(imageIndex)}
-                    >
-                      <img
-                        alt={image.alt || `${property.name} view ${imageIndex + 1}`}
-                        decoding="async"
-                        loading="lazy"
-                        src={buildRemoteImageUrl(image, { width: 420, height: 300 })}
-                      />
-                    </button>
-                  ))}
+                <div className={thumbnailRailClassName}>
+                  <p className="property-gallery-swipe-hint" aria-hidden="true">
+                    Swipe for more photos <span>-{'>'}</span>
+                  </p>
+
+                  <p className="visually-hidden" id="property-gallery-swipe-instructions">
+                    Swipe or scroll horizontally to see more property photos.
+                  </p>
+
+                  <div
+                    ref={thumbnailsRef}
+                    aria-describedby={thumbnailRailState.canScroll ? 'property-gallery-swipe-instructions' : undefined}
+                    aria-label="Property image gallery"
+                    className="property-gallery-thumbnails"
+                    role="list"
+                  >
+                    {galleryImages.map((image, imageIndex) => (
+                      <button
+                        aria-label={`Show property image ${imageIndex + 1}`}
+                        aria-pressed={imageIndex === safeImageIndex}
+                        className={`property-gallery-thumbnail ${
+                          imageIndex === safeImageIndex ? 'property-gallery-thumbnail--active' : ''
+                        }`}
+                        key={`${image.url}-${imageIndex}`}
+                        type="button"
+                        onClick={() => setActiveImageIndex(imageIndex)}
+                      >
+                        <img
+                          alt={image.alt || `${property.name} view ${imageIndex + 1}`}
+                          decoding="async"
+                          loading="lazy"
+                          src={buildRemoteImageUrl(image, { width: 520, height: 360 })}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </section>

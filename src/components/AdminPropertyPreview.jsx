@@ -92,9 +92,11 @@ export function AdminPropertyPreview({ property }) {
               </div>
 
               {galleryImages.length > 1 ? (
-                <div className="admin-property-preview-thumbnails" role="list" aria-label="Property gallery">
+                <div className="admin-property-preview-thumbnails" role="list" aria-label="Property image gallery">
                   {galleryImages.map((image, imageIndex) => (
                     <button
+                      aria-label={`Show property image ${imageIndex + 1}`}
+                      aria-pressed={imageIndex === safeImageIndex}
                       className={`admin-property-preview-thumbnail ${
                         imageIndex === safeImageIndex ? 'admin-property-preview-thumbnail--active' : ''
                       }`.trim()}

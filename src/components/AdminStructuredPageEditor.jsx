@@ -197,10 +197,12 @@ function LinkFields({
   hrefLabel = 'Link URL',
   textLabel = 'Link Text',
 }) {
+  const linkTarget = link?.href ?? link?.path ?? ''
+
   return (
     <div className="admin-content-grid">
       <TextField disabled={disabled} label={`${label} ${textLabel}`} onChange={onLabelChange} value={link?.label ?? ''} />
-      <TextField disabled={disabled} label={`${label} ${hrefLabel}`} onChange={onHrefChange} value={link?.href ?? ''} />
+      <TextField disabled={disabled} label={`${label} ${hrefLabel}`} onChange={onHrefChange} value={linkTarget} />
     </div>
   )
 }

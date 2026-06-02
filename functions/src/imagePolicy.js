@@ -2,11 +2,13 @@ const { HttpError } = require('./firebaseAdmin')
 
 function getExpectedStorageBucket() {
   const firebaseConfigRaw = String(process.env.FIREBASE_CONFIG ?? '').trim()
+  let projectId = ''
 
   if (firebaseConfigRaw) {
     try {
       const parsedConfig = JSON.parse(firebaseConfigRaw)
       const bucket = String(parsedConfig?.storageBucket ?? '').trim()
+      projectId = String(parsedConfig?.projectId ?? '').trim()
 
       if (bucket) {
         return bucket
@@ -16,7 +18,17 @@ function getExpectedStorageBucket() {
     }
   }
 
-  return String(process.env.FIREBASE_STORAGE_BUCKET ?? process.env.STORAGE_BUCKET ?? '').trim()
+  const explicitBucket = String(process.env.FIREBASE_STORAGE_BUCKET ?? process.env.STORAGE_BUCKET ?? '').trim()
+
+  if (explicitBucket) {
+    return explicitBucket
+  }
+
+  const fallbackProjectId =
+    projectId ||
+    String(process.env.GCLOUD_PROJECT ?? process.env.PROJECT_ID ?? process.env.FIREBASE_PROJECT_ID ?? '').trim()
+
+  return fallbackProjectId ? `${fallbackProjectId}.firebasestorage.app` : ''
 }
 
 function createStorageUrlError(label, bucketName) {
@@ -71,11 +83,26 @@ function looksLikeManagedImageObject(value) {
     return false
   }
 
-  return (
+  if (
     value.kind === 'image' ||
-    Object.prototype.hasOwnProperty.call(value, 'url') ||
-    Object.prototype.hasOwnProperty.call(value, 'assetId')
-  )
+    Object.prototype.hasOwnProperty.call(value, 'assetId') ||
+    Object.prototype.hasOwnProperty.call(value, 'src')
+  ) {
+    return true
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(value, 'url')) {
+    return false
+  }
+
+  const imageOnlyKeys = new Set(['kind', 'url', 'alt', 'title', 'width', 'height'])
+  const keys = Object.keys(value)
+
+  if (keys.every((key) => imageOnlyKeys.has(key))) {
+    return true
+  }
+
+  return ['alt', 'title', 'width', 'height'].some((key) => Object.prototype.hasOwnProperty.call(value, key))
 }
 
 function assertStorageManagedImage(asset, label) {
