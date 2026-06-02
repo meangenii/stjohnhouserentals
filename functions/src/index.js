@@ -18,10 +18,14 @@ const {
 } = require('./propertyRepository')
 const {
   getSiteShellContent,
-  seedSiteContentRecords,
   getStructuredPageContent,
   listPageInventory,
   listStructuredPages,
+  resetSiteShellContentToSeed,
+  resetStructuredPageContentToSeed,
+  saveSiteShellContent,
+  saveStructuredPageContent,
+  seedSiteContentRecords,
 } = require('./siteContentRepository')
 
 const startedAt = new Date().toISOString()
@@ -247,6 +251,56 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         reset: result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/content/site-shell') {
+      const adminUser = await requireAdminUser(request)
+      const siteShell = await saveSiteShellContent(request.body?.draft ?? {}, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        siteShell,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && path === 'admin/content/site-shell') {
+      const adminUser = await requireAdminUser(request)
+      const siteShell = await resetSiteShellContentToSeed(adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        siteShell,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path.startsWith('admin/content/pages/')) {
+      const adminUser = await requireAdminUser(request)
+      const pageKey = path.replace(/^admin\/content\/pages\//, '')
+      const page = await saveStructuredPageContent(pageKey, request.body?.draft ?? {}, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        page,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && path.startsWith('admin/content/pages/')) {
+      const adminUser = await requireAdminUser(request)
+      const pageKey = path.replace(/^admin\/content\/pages\//, '')
+      const page = await resetStructuredPageContentToSeed(pageKey, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        page,
       })
       return
     }

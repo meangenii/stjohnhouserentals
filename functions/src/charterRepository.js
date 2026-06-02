@@ -1,5 +1,6 @@
 const charterCatalog = require('./generated/liveCharterCatalog.json')
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const CHARTER_COLLECTION = 'cmsCharters'
 
@@ -91,6 +92,8 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
   if (!slug || !name) {
     throw new Error('Invalid charter data: name and slug are required.')
   }
+
+  assertStorageImagesInValue(draft, `Charter ${name || slug} image`)
 
   const contentParagraphs = Array.isArray(draft?.contentParagraphs)
     ? draft.contentParagraphs.map((paragraph) => String(paragraph).trim()).filter(Boolean)

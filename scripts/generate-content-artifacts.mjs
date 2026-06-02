@@ -1,6 +1,8 @@
-import { copyFile, mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { mediaCatalog } from '../shared/mediaCatalog.js'
+import { rewriteValueWithMediaManifest } from '../shared/mediaLibrary.js'
 import {
   getSiteShellContent,
   getStructuredPageContent,
@@ -35,12 +37,14 @@ async function writeGeneratedJson(filename, payload) {
   await writeFile(targetPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
 }
 
-async function copyRequiredArtifact(sourceRelativePath) {
+async function copyRequiredJsonArtifact(sourceRelativePath) {
   const sourcePath = resolve(rootDir, sourceRelativePath)
   const filename = sourceRelativePath.split('/').at(-1)
   const targetPath = resolve(generatedDir, filename)
+  const payload = JSON.parse(await readFile(sourcePath, 'utf8'))
+  const rewrittenPayload = rewriteValueWithMediaManifest(payload, mediaCatalog)
 
-  await copyFile(sourcePath, targetPath)
+  await writeFile(targetPath, `${JSON.stringify(rewrittenPayload, null, 2)}\n`, 'utf8')
 }
 
 async function main() {
@@ -48,9 +52,9 @@ async function main() {
   await writeGeneratedJson('siteContent.json', buildSiteContentPayload())
 
   await Promise.all([
-    copyRequiredArtifact('public/livePropertyCatalog.json'),
-    copyRequiredArtifact('public/livePropertySummaryCatalog.json'),
-    copyRequiredArtifact('public/liveCharterCatalog.json'),
+    copyRequiredJsonArtifact('public/livePropertyCatalog.json'),
+    copyRequiredJsonArtifact('public/livePropertySummaryCatalog.json'),
+    copyRequiredJsonArtifact('public/liveCharterCatalog.json'),
   ])
 }
 

@@ -1,5 +1,6 @@
 const siteContent = require('./generated/siteContent.json')
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const SITE_CONTENT_COLLECTION = 'cmsSiteContent'
 const STRUCTURED_PAGE_COLLECTION = 'cmsStructuredPages'
@@ -32,11 +33,155 @@ function getStructuredPageSeedMap() {
   return cloneData(siteContent.pages || {})
 }
 
+function getStructuredPageSeed(key) {
+  return cloneData(siteContent.pages?.[key] ?? null)
+}
+
 function getPageIndexSeed() {
   return {
     structuredPageSummaries: cloneData(siteContent.structuredPageSummaries || []),
     pageInventory: cloneData(siteContent.pageInventory || []),
   }
+}
+
+function getStaticPageInventoryEntries() {
+  return getPageIndexSeed().pageInventory.filter((page) => page.source !== 'structured')
+}
+
+function stripAdminMetadata(record = {}) {
+  const content = { ...record }
+  delete content.updatedBy
+  delete content.updatedAt
+  return content
+}
+
+function formatActor(actor) {
+  if (typeof actor === 'string' && actor.trim()) {
+    return actor.trim()
+  }
+
+  return actor?.email || actor?.uid || 'admin'
+}
+
+function createInvalidSiteShellError() {
+  return new HttpError(400, 'Site shell content must be a JSON object.')
+}
+
+function createInvalidStructuredPageError(message) {
+  return new HttpError(400, message)
+}
+
+function normalizeSiteShellDraft(draft) {
+  if (!draft || typeof draft !== 'object' || Array.isArray(draft)) {
+    throw createInvalidSiteShellError()
+  }
+
+  assertStorageImagesInValue(draft, 'Site shell image')
+  return cloneData(draft)
+}
+
+function resolveStructuredPageTitle(page = {}) {
+  return (
+    page.title ||
+    page.hero?.title ||
+    page.redHook?.titleLines?.[0] ||
+    page.story?.title ||
+    page.directory?.title ||
+    page.intro?.title ||
+    page.contact?.title ||
+    ''
+  )
+}
+
+function buildStructuredPageSummary(page = {}) {
+  return {
+    key: String(page.key ?? '').trim(),
+    label: String(page.navLabel ?? '').trim(),
+    path: String(page.path ?? '').trim(),
+    title: String(resolveStructuredPageTitle(page)).trim(),
+    group: String(page.group ?? '').trim(),
+    source: 'structured',
+    contentModel: String(page.contentModel ?? '').trim(),
+    routeAliases: Array.isArray(page.routeAliases)
+      ? page.routeAliases.map((value) => String(value).trim()).filter(Boolean)
+      : [],
+  }
+}
+
+function sortStructuredPages(pages) {
+  const seedOrder = new Map(
+    getPageIndexSeed().structuredPageSummaries.map((page, index) => [String(page.key ?? '').trim(), index]),
+  )
+
+  return [...pages].sort((left, right) => {
+    const leftKey = String(left.key ?? '').trim()
+    const rightKey = String(right.key ?? '').trim()
+    const leftOrder = seedOrder.has(leftKey) ? seedOrder.get(leftKey) : Number.MAX_SAFE_INTEGER
+    const rightOrder = seedOrder.has(rightKey) ? seedOrder.get(rightKey) : Number.MAX_SAFE_INTEGER
+
+    if (leftOrder !== rightOrder) {
+      return leftOrder - rightOrder
+    }
+
+    const leftPath = String(left.path ?? '').trim()
+    const rightPath = String(right.path ?? '').trim()
+
+    if (leftPath !== rightPath) {
+      return leftPath.localeCompare(rightPath)
+    }
+
+    return leftKey.localeCompare(rightKey)
+  })
+}
+
+function buildPageIndexDocument(structuredPages = []) {
+  const structuredPageSummaries = sortStructuredPages(structuredPages.map((page) => buildStructuredPageSummary(page)))
+
+  return {
+    structuredPageSummaries,
+    pageInventory: [...structuredPageSummaries, ...getStaticPageInventoryEntries()],
+  }
+}
+
+function normalizeStructuredPageDraft(key, draft) {
+  if (!key) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  if (!draft || typeof draft !== 'object' || Array.isArray(draft)) {
+    throw createInvalidStructuredPageError('Structured page content must be a JSON object.')
+  }
+
+  const normalized = cloneData(draft)
+
+  normalized.key = key
+  normalized.source = 'structured'
+  normalized.path = String(normalized.path ?? '').trim()
+  normalized.navLabel = String(normalized.navLabel ?? '').trim()
+  normalized.group = String(normalized.group ?? '').trim()
+  normalized.contentModel = String(normalized.contentModel ?? '').trim()
+  normalized.routeAliases = Array.isArray(normalized.routeAliases)
+    ? normalized.routeAliases.map((value) => String(value).trim()).filter(Boolean)
+    : []
+
+  if (!normalized.path) {
+    throw createInvalidStructuredPageError('Structured pages require a path.')
+  }
+
+  if (!normalized.navLabel) {
+    throw createInvalidStructuredPageError('Structured pages require a navLabel.')
+  }
+
+  if (!normalized.group) {
+    throw createInvalidStructuredPageError('Structured pages require a group.')
+  }
+
+  if (!normalized.contentModel) {
+    throw createInvalidStructuredPageError('Structured pages require a contentModel.')
+  }
+
+  assertStorageImagesInValue(normalized, `Structured page ${key} image`)
+  return normalized
 }
 
 async function getSiteContentDocument(documentId) {
@@ -54,6 +199,65 @@ async function getSiteContentDocument(documentId) {
 async function getStructuredPageDocument(key) {
   try {
     return await getDb().collection(STRUCTURED_PAGE_COLLECTION).doc(key).get()
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+}
+
+async function listStructuredPageRecordsFromFirestore() {
+  try {
+    const snapshot = await getDb().collection(STRUCTURED_PAGE_COLLECTION).get()
+
+    return snapshot.docs.map((document) => ({
+      key: document.id,
+      ...stripAdminMetadata(document.data()),
+    }))
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+}
+
+async function commitStructuredPageIndex(records, actor) {
+  const db = getDb()
+  const pageCollection = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const contentCollection = db.collection(SITE_CONTENT_COLLECTION)
+  const pageIndex = buildPageIndexDocument(records)
+  const batch = db.batch()
+
+  batch.set(contentCollection.doc(PAGE_INDEX_DOCUMENT), {
+    ...pageIndex,
+    updatedBy: actor,
+    updatedAt: getServerTimestamp(),
+  })
+
+  records.forEach((page) => {
+    batch.set(pageCollection.doc(page.key), {
+      ...page,
+      updatedBy: actor,
+      updatedAt: getServerTimestamp(),
+    })
+  })
+
+  return { batch, pageCollection, pageIndex }
+}
+
+async function writeStructuredPageSet(nextRecords, actor, { removedKey = '' } = {}) {
+  try {
+    const { batch, pageCollection } = await commitStructuredPageIndex(nextRecords, actor)
+
+    if (removedKey) {
+      batch.delete(pageCollection.doc(removedKey))
+    }
+
+    await batch.commit()
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
@@ -164,11 +368,34 @@ exports.getSiteShellContent = async function getSiteShellContent() {
     throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
   }
 
-  const data = snapshot.data()
-  delete data.updatedBy
-  delete data.updatedAt
+  return cloneData(stripAdminMetadata(snapshot.data()))
+}
 
-  return cloneData(data)
+exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor) {
+  const normalized = normalizeSiteShellDraft(draft)
+
+  try {
+    await getDb()
+      .collection(SITE_CONTENT_COLLECTION)
+      .doc(SITE_SHELL_DOCUMENT)
+      .set({
+        ...normalized,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+      })
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  return normalized
+}
+
+exports.resetSiteShellContentToSeed = async function resetSiteShellContentToSeed(actor) {
+  return exports.saveSiteShellContent(getSiteShellSeed(), actor)
 }
 
 exports.getStructuredPageContent = async function getStructuredPageContent(key) {
@@ -179,10 +406,42 @@ exports.getStructuredPageContent = async function getStructuredPageContent(key) 
   }
 
   const data = snapshot.data()
-  delete data.updatedBy
-  delete data.updatedAt
+  return cloneData(stripAdminMetadata(data))
+}
 
-  return cloneData(data)
+exports.saveStructuredPageContent = async function saveStructuredPageContent(key, draft, actor) {
+  const normalized = normalizeStructuredPageDraft(String(key ?? '').trim(), draft)
+  const currentRecords = await listStructuredPageRecordsFromFirestore()
+  const nextByKey = new Map(currentRecords.map((page) => [page.key, page]))
+
+  nextByKey.set(normalized.key, normalized)
+
+  await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor))
+
+  return normalized
+}
+
+exports.resetStructuredPageContentToSeed = async function resetStructuredPageContentToSeed(key, actor) {
+  const normalizedKey = String(key ?? '').trim()
+
+  if (!normalizedKey) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  const currentRecords = await listStructuredPageRecordsFromFirestore()
+  const nextByKey = new Map(currentRecords.map((page) => [page.key, page]))
+  const seedPage = getStructuredPageSeed(normalizedKey)
+
+  if (seedPage) {
+    const normalized = normalizeStructuredPageDraft(normalizedKey, seedPage)
+    nextByKey.set(normalizedKey, normalized)
+    await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor))
+    return normalized
+  }
+
+  nextByKey.delete(normalizedKey)
+  await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor), { removedKey: normalizedKey })
+  return null
 }
 
 exports.listStructuredPages = async function listStructuredPages() {

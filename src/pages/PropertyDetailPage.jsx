@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import heroBeach from '../content/hero_beach.png'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
-import { buildWixImageUrl } from '../lib/wixImage'
+import { buildRemoteImageUrl } from '../lib/remoteImage'
 
 function PropertyContentSection({ title, html, children, className = '' }) {
   const normalizedHtml = normalizeSiteHtml(html)
@@ -104,18 +103,16 @@ export function PropertyDetailPage() {
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
   const bannerImageUrl = property.heroImage?.url
-    ? buildWixImageUrl(property.heroImage, { width: 1600, height: 540 })
+    ? buildRemoteImageUrl(property.heroImage, { width: 1600, height: 540 })
     : activeImage?.url
-      ? buildWixImageUrl(activeImage, { width: 1600, height: 540 })
-      : heroBeach
+      ? buildRemoteImageUrl(activeImage, { width: 1600, height: 540 })
+      : ''
 
   return (
     <article className="property-page property-page--template">
       <section
         className="property-banner"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 26, 54, 0.18), rgba(7, 26, 54, 0.18)), url(${bannerImageUrl})`,
-        }}
+        style={bannerImageUrl ? { backgroundImage: `linear-gradient(rgba(7, 26, 54, 0.18), rgba(7, 26, 54, 0.18)), url(${bannerImageUrl})` } : undefined}
         aria-hidden="true"
       />
 
@@ -133,7 +130,7 @@ export function PropertyDetailPage() {
                   className="property-gallery-image"
                   decoding="async"
                   loading="eager"
-                  src={buildWixImageUrl(activeImage, { width: 1600, height: 520 })}
+                  src={buildRemoteImageUrl(activeImage, { width: 1600, height: 520 })}
                 />
               </div>
 
@@ -150,7 +147,7 @@ export function PropertyDetailPage() {
                         alt={image.alt || `${property.name} view ${imageIndex + 1}`}
                         decoding="async"
                         loading="lazy"
-                        src={buildWixImageUrl(image, { width: 420, height: 300 })}
+                        src={buildRemoteImageUrl(image, { width: 420, height: 300 })}
                       />
                     </button>
                   ))}

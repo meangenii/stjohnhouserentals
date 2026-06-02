@@ -1,11 +1,11 @@
 import {
-  getSiteShellContent,
-  getStructuredPageContent,
+  getSiteShellContent as getSiteShellSeed,
+  getStructuredPageContent as getStructuredPageSeed,
   listLegacySnapshotPages,
-  listPageInventory,
-  listStructuredPages,
+  listPageInventory as listPageInventorySeed,
+  listStructuredPages as listStructuredPagesSeed,
 } from '../../shared/siteContent.js'
-import { getJson } from './api'
+import { deleteJson, getJson, postJson } from './api'
 import { resolveContentAssets } from './contentAssets'
 
 const siteContentSource = import.meta.env.VITE_SITE_CONTENT_SOURCE ?? 'local'
@@ -19,7 +19,7 @@ function resolveSeedContent(value) {
 
 function getResolvedSiteShellSeed() {
   if (!resolvedSiteShellSeed) {
-    resolvedSiteShellSeed = resolveSeedContent(getSiteShellContent())
+    resolvedSiteShellSeed = resolveSeedContent(getSiteShellSeed())
   }
 
   return resolvedSiteShellSeed
@@ -27,7 +27,7 @@ function getResolvedSiteShellSeed() {
 
 function getResolvedStructuredPageSeed(key) {
   if (!resolvedStructuredPageCache.has(key)) {
-    const page = getStructuredPageContent(key)
+    const page = getStructuredPageSeed(key)
     resolvedStructuredPageCache.set(key, page ? resolveSeedContent(page) : null)
   }
 
@@ -51,11 +51,35 @@ async function fetchApiContent(path, fallback) {
   }
 }
 
+function requireLiveSiteContentEditing() {
+  if (!isSiteContentEditingEnabled()) {
+    throw new Error(
+      'Site shell and structured page editing require VITE_SITE_CONTENT_SOURCE to be api, firebase, or firebase-preferred.',
+    )
+  }
+}
+
+function getRawStructuredPageSeedList() {
+  return listStructuredPagesSeed()
+}
+
+function getRawPageInventorySeedList() {
+  return listPageInventorySeed()
+}
+
+function getAdminPagePath(key) {
+  return `/admin/content/pages/${encodeURIComponent(String(key ?? '').trim())}`
+}
+
 export function getSiteContentSourceMode() {
   return siteContentSource
 }
 
 export function isApiBackedSiteContentSource() {
+  return apiBackedContentSources.has(siteContentSource)
+}
+
+export function isSiteContentEditingEnabled() {
   return apiBackedContentSources.has(siteContentSource)
 }
 
@@ -68,11 +92,11 @@ export function readStructuredPageContent(key) {
 }
 
 export function readPageInventory() {
-  return listPageInventory()
+  return getRawPageInventorySeedList()
 }
 
 export function readStructuredPageSummaries() {
-  return listStructuredPages()
+  return getRawStructuredPageSeedList()
 }
 
 export function readLegacySnapshotPageSummaries() {
@@ -85,4 +109,57 @@ export async function fetchSiteShellContent() {
 
 export async function fetchStructuredPageContent(key) {
   return fetchApiContent(`pages/${key}`, () => readStructuredPageContent(key))
+}
+
+export async function fetchAdminSiteShellContent() {
+  if (!isApiBackedSiteContentSource()) {
+    return getSiteShellSeed()
+  }
+
+  return getJson('/content/site-shell')
+}
+
+export async function fetchAdminStructuredPageContent(key) {
+  if (!isApiBackedSiteContentSource()) {
+    return getStructuredPageSeed(key)
+  }
+
+  return getJson(`/content/pages/${encodeURIComponent(String(key ?? '').trim())}`)
+}
+
+export async function fetchAdminStructuredPageDirectory() {
+  if (!isApiBackedSiteContentSource()) {
+    return {
+      source: 'local',
+      checkedAt: null,
+      pages: getRawStructuredPageSeedList(),
+      inventory: getRawPageInventorySeedList(),
+    }
+  }
+
+  return getJson('/content/pages')
+}
+
+export async function saveAdminSiteShellContent(draft, options = {}) {
+  requireLiveSiteContentEditing()
+  const payload = await postJson('/admin/content/site-shell', { draft }, options)
+  return payload?.siteShell ?? null
+}
+
+export async function resetAdminSiteShellContent(options = {}) {
+  requireLiveSiteContentEditing()
+  const payload = await deleteJson('/admin/content/site-shell', options)
+  return payload?.siteShell ?? null
+}
+
+export async function saveAdminStructuredPageContent(key, draft, options = {}) {
+  requireLiveSiteContentEditing()
+  const payload = await postJson(getAdminPagePath(key), { draft }, options)
+  return payload?.page ?? null
+}
+
+export async function resetAdminStructuredPageContent(key, options = {}) {
+  requireLiveSiteContentEditing()
+  const payload = await deleteJson(getAdminPagePath(key), options)
+  return payload?.page ?? null
 }

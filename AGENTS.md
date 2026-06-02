@@ -20,7 +20,7 @@ The long-term product is a focused CMS for content-driven rental sites. The shor
 - Current visual and content reference: `https://www.stjohnhouserentals.com/`
 - Run `npm run snapshot:site` before making parity-sensitive route or content changes
 - App-facing snapshot data lives in `src/content/liveSiteSnapshot.json`
-- Raw HTML parity references live in `reference/live-site/<date>/html/`
+- Sanitized HTML parity references live in `reference/live-site/<date>/html/`
 - Public route structure should stay close to the current site unless there is a clear reason to improve it
 
 ## Repo Map

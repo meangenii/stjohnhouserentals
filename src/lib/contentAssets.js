@@ -1,36 +1,13 @@
-import aboutEssentialsPool from '../content/about_carved_door_pool.jpg'
-import aboutHeroAnaberg from '../content/about_hero_anaberg.jpg'
-import aboutStoryParrotfish from '../content/about_parrotfish.jpg'
-import heroBeach from '../content/hero_beach.png'
-import homeAboutPool from '../content/home_about_pool.jpg'
-import homeDiscoverCollage from '../content/home_discover_collage.png'
-import homeWhyChooseUs from '../content/home_why_choose_us.jpg'
-import localAttractionsMap from '../content/map.png'
-import siteLogo from '../content/site_logo.png'
-import { buildWixImageUrl } from './wixImage'
-
-const contentAssetRegistry = {
-  aboutEssentialsPool,
-  aboutHeroAnaberg,
-  aboutStoryParrotfish,
-  homeAboutPool,
-  homeDiscoverCollage,
-  homeHeroBeach: heroBeach,
-  homeWhyChooseUs,
-  localAttractionsMap,
-  siteLogo,
-}
+import { buildRemoteImageUrl } from './remoteImage'
 
 function resolveContentImage(image) {
   if (!image || image.kind !== 'image') {
     return image
   }
 
-  const src = image.assetId ? contentAssetRegistry[image.assetId] ?? '' : String(image.url ?? '').trim()
-
   return {
     ...image,
-    src,
+    src: String(image.url ?? '').trim(),
   }
 }
 
@@ -55,17 +32,9 @@ export function getContentImageSrc(image, options = {}) {
     return ''
   }
 
-  if (image.assetId) {
-    return image.src || ''
-  }
-
   if (image.url) {
-    return buildWixImageUrl(image, options) || image.src || image.url
+    return buildRemoteImageUrl(image, options) || image.src || image.url
   }
 
   return image.src || ''
-}
-
-export function getRegisteredContentAsset(assetId) {
-  return contentAssetRegistry[assetId] ?? ''
 }

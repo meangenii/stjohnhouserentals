@@ -10,9 +10,20 @@ import {
 import { getFirebaseApp, isFirebaseConfigured } from './firebase'
 
 const authEmulatorHost = String(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_HOST ?? '').trim()
+const adminAutoLoginEmail = String(import.meta.env.VITE_ADMIN_AUTO_LOGIN_EMAIL ?? '').trim()
+const adminAutoLoginPassword = String(import.meta.env.VITE_ADMIN_AUTO_LOGIN_PASSWORD ?? '')
 
 let authInstance = null
 let authEmulatorConnected = false
+
+function isLocalAdminHost() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const hostname = String(window.location.hostname ?? '').toLowerCase()
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+}
 
 export function getAdminAuth() {
   if (!isFirebaseConfigured()) {
@@ -88,4 +99,19 @@ export async function getAdminIdToken(forceRefresh = false) {
   }
 
   return user.getIdToken(forceRefresh)
+}
+
+export function getAdminAutoLoginCredentials() {
+  if (!isLocalAdminHost()) {
+    return null
+  }
+
+  if (!adminAutoLoginEmail || !adminAutoLoginPassword) {
+    return null
+  }
+
+  return {
+    email: adminAutoLoginEmail,
+    password: adminAutoLoginPassword,
+  }
 }

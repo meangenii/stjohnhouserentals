@@ -80,7 +80,7 @@ const featuredRentalListings = [
     summary: 'Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Point Rendezvous',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/b5efc4_61e1555a2a2e4b709f0d8ca8985a8b62~mv2.avif/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Arco%20Iris-Double%20Rainbow.avif',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Farco-iris%2Farco-iris-hero.avif?alt=media&token=3b6c4ced-9562-4a87-ae20-62032d2e1301',
       alt: 'Available Rentals',
       title: '',
     },
@@ -91,7 +91,7 @@ const featuredRentalListings = [
     summary: 'Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Maria Bluff',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/b5efc4_4f140ccc87964f95a068407e0c12feea~mv2.avif/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/02-Beyond-the-Sea-Aerial.avif',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeyond-the-sea%2Fbeyond-the-sea-hero.avif?alt=media&token=1cfb3e62-3767-4e53-96fd-3600daab9534',
       alt: 'Available Rentals',
       title: '',
     },
@@ -102,7 +102,7 @@ const featuredRentalListings = [
     summary: 'Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Upper Carolina',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/b5efc4_82416d5327cd4e85bb6fe542b2bf4921~mv2.jpg/v1/fill/w_147,h_39,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Coral%20Sky-Pool-View_edited_edited.jpg',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcoral-sky-villa%2Fcoral-sky-villa-hero.jpg?alt=media&token=5e3e46f9-fbf7-4177-aa9f-5802132a28f5',
       alt: 'Available Rentals',
       title: '',
     },
@@ -113,7 +113,7 @@ const featuredRentalListings = [
     summary: 'Max 7 Guests 2 Bedrooms + Loft 2 Baths Pool Hot Tub Internet Mamey Peak',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/64053b_a381a051afe74ff880118a683b5d13f4~mv2.png/v1/fill/w_90,h_60,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Notre%20Ciel.png',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fnotre-ciel%2Fnotre-ciel-hero.png?alt=media&token=984d24d0-0ee4-4bcf-83c6-00618a85a82d',
       alt: 'Available Rentals',
       title: '',
     },
@@ -124,7 +124,7 @@ const featuredRentalListings = [
     summary: 'Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/b5efc4_2e89ba6da6b54fd1b535cf4e676838bc~mv2.jpg/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-SLV-View_edited.jpg',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-la-vie%2Fsol-la-vie-hero.jpg?alt=media&token=bb6e0a9f-1923-4384-92ba-f59ee9dd8fcb',
       alt: 'Available Rentals',
       title: '',
     },
@@ -135,7 +135,7 @@ const featuredRentalListings = [
     summary: 'Max 4 Guests 1 Bedroom + Loft 2 Baths Internet Coral Bay',
     image: {
       kind: 'image',
-      url: 'https://static.wixstatic.com/media/64053b_13f8663417054f61ade20db1a6e39f5c~mv2.png/v1/fill/w_90,h_68,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/The%20Little%20Easy.png',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fthe-little-easy%2Fthe-little-easy-hero.png?alt=media&token=580f7825-795c-4bdc-94bf-e93f4aa8c581',
       alt: 'Available Rentals',
       title: '',
     },
@@ -173,7 +173,7 @@ const structuredSitePages = {
       lead: 'Find the perfect vacation home for your next island adventure.',
       image: {
         kind: 'image',
-        assetId: 'homeHeroBeach',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-hero-beach.png?alt=media&token=cb795e85-03fa-4116-b677-46ff8844ace3',
         alt: 'Trunk Bay view across bright blue water on St. John',
       },
     },
@@ -188,7 +188,7 @@ const structuredSitePages = {
       action: { label: 'Browse Rentals', path: '/st-john-rentals' },
       image: {
         kind: 'image',
-        assetId: 'homeWhyChooseUs',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-why-choose-us.jpg?alt=media&token=6ef187f8-498f-46f8-bb6f-494bfef2d7e4',
         alt: 'Pink plumeria flowers overlooking St. John waters',
       },
     },
@@ -196,7 +196,7 @@ const structuredSitePages = {
       title: 'Discover the magic and beauty of St. John in the U.S. Virgin Islands',
       image: {
         kind: 'image',
-        assetId: 'homeDiscoverCollage',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-discover-collage.png?alt=media&token=aa6b5043-4b3f-4a69-828b-df7fd2d823fa',
         alt: 'St. John bay collage with coastal views and boats',
       },
       features: [
@@ -231,7 +231,7 @@ const structuredSitePages = {
       bodyOutro: ' do not handle bookings.',
       image: {
         kind: 'image',
-        assetId: 'homeAboutPool',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-about-pool.jpg?alt=media&token=78b8f199-00f1-4b12-a268-c79ad594a71a',
         alt: 'Pool deck overlooking villa and turquoise ocean at Still Waters Villa',
       },
     },
@@ -247,7 +247,7 @@ const structuredSitePages = {
       title: 'Celebrating 25 years this season!',
       image: {
         kind: 'image',
-        assetId: 'aboutHeroAnaberg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-hero-anaberg.jpg?alt=media&token=64ab32e0-36ff-4b14-9cea-faf42db662c1',
         alt: 'Anaberg ruins overlooking St. John waters',
       },
     },
@@ -265,7 +265,7 @@ const structuredSitePages = {
       ],
       image: {
         kind: 'image',
-        assetId: 'aboutStoryParrotfish',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-story-parrotfish.jpg?alt=media&token=bc6353fc-dcd2-40f3-b029-716953fbfd8a',
         alt: 'Parrotfish swimming in clear Caribbean water',
       },
     },
@@ -276,7 +276,7 @@ const structuredSitePages = {
         "is essential to making your stay unforgettable. Whether you're visiting for a week or planning an extended stay, we have a home for you. From cozy cottages to spacious villas, we offer properties in some of the most desirable locations on St. John, giving you access to pristine beaches, hiking trails, and breathtaking views.",
       image: {
         kind: 'image',
-        assetId: 'aboutEssentialsPool',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-essentials-pool.jpg?alt=media&token=967cc593-037f-45ba-88ec-83fdad09a707',
         alt: 'Pool deck overlooking villa and turquoise ocean',
       },
     },
@@ -314,7 +314,7 @@ const structuredSitePages = {
       title: 'Advertise on St. John House Rentals',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/ede627_b458d88f60da4566a0285c92798f0774~mv2.jpg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fadvertise%2Fadvertise-hero.jpg?alt=media&token=f194d972-8913-45bb-af4e-007d19a87105',
         alt: 'Sunlight reflecting across calm blue water',
       },
     },
@@ -364,14 +364,14 @@ const structuredSitePages = {
       tagline: 'From Beaches to Restaurants - Find It Here!',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flocalattractions%2Flocalattractions-hero.avif?alt=media&token=a38b6970-a845-464e-85e4-990f801817cd',
         alt: 'Trunk Bay viewed from above with turquoise water and white sand',
       },
     },
     map: {
       image: {
         kind: 'image',
-        assetId: 'localAttractionsMap',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flocal-attractions%2Flocal-attractions-map.png?alt=media&token=87e1d606-c537-4d29-ac48-a6f972b04c50',
         alt: 'Virgin Islands National Park map of St. John',
       },
       action: { label: 'View Full Map' },
@@ -398,7 +398,7 @@ const structuredSitePages = {
       title: 'Property For Sale',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_0af116d3fda94cab9898dc51cf33dd77~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-hero.avif?alt=media&token=0e47922b-337e-4b70-88e1-a8b7eb9664ef',
         alt: 'Sunny St. John ridge with bay views',
       },
     },
@@ -410,7 +410,7 @@ const structuredSitePages = {
       ],
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_6d3187f374f04f81a52a51be49c8a3c7~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-story.avif?alt=media&token=e66b3a09-2770-48b3-97d3-000a8554368e',
         alt: 'Stone tower and tropical plants overlooking St. John waters',
       },
     },
@@ -422,7 +422,7 @@ const structuredSitePages = {
       ],
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_3c05a421d934451a9680a7216002dc24~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-details.avif?alt=media&token=c4952cab-fd06-454e-9d74-d939f16944e1',
         alt: 'Cruz Bay shoreline and sky',
       },
       contact: {
@@ -444,7 +444,7 @@ const structuredSitePages = {
       title: 'Rental Accommodations',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/11062b_dd6ed5b1a0294c2f9107c8c6e80a33d1~mv2.jpg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Frentalaccommodations%2Frentalaccommodations-hero.jpg?alt=media&token=2772fb38-19fe-4647-805f-47a7b2a38b0c',
         alt: 'Seaside neighborhood on St. John',
       },
     },
@@ -468,7 +468,7 @@ const structuredSitePages = {
       title: 'Car Barge Information',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_971bc1f62448471297f979f7390629da~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-hero.avif?alt=media&token=3399e572-c1b0-433d-a8d7-6d7f175bbf5c',
         alt: 'Car barges lined up at the dock',
       },
     },
@@ -501,7 +501,7 @@ const structuredSitePages = {
         },
         image: {
           kind: 'image',
-          url: 'https://static.wixstatic.com/media/b5efc4_5d1227f8bfe0474d95adc7d25196a775~mv2.avif',
+          url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-0.avif?alt=media&token=17cd8a66-278c-4f07-84f1-27e42d961160',
           alt: 'Love City car ferry',
         },
         schedules: [
@@ -552,7 +552,7 @@ const structuredSitePages = {
         },
         image: {
           kind: 'image',
-          url: 'https://static.wixstatic.com/media/b5efc4_f045011a181c4bc3b6eb416b8b98be53~mv2.avif',
+          url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-1.avif?alt=media&token=a69d42aa-fce7-4893-a98b-2f96b4437423',
           alt: 'Big Red Barge',
         },
         schedules: [
@@ -596,7 +596,7 @@ const structuredSitePages = {
     hero: {
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg/v1/fit/w_2500,h_1330,al_c/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpassengerferry%2Fpassengerferry-hero.jpg?alt=media&token=9b1693e3-ae5f-4144-81be-89f7531886e5',
         alt: 'Passenger ferries docked in Cruz Bay',
         title: 'passenger-ferry-harbor.jpg',
       },
@@ -667,7 +667,7 @@ const structuredSitePages = {
       tagline: 'Rent a car to explore all that St. John has to offer',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_6bf78c0201a34e879b21263e1e283553~mv2.avif',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-hero.avif?alt=media&token=76382cc1-fb7f-41fa-8ba9-81c655a695eb',
         alt: 'Jeep driving along a St. John road',
       },
     },
@@ -684,7 +684,7 @@ const structuredSitePages = {
       dependablePhone: '1-800-522-3076',
       detailImage: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/b5efc4_70547ca9cb5f4d48807f3639ffdc0096~mv2.jpg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-detail.jpg?alt=media&token=758653b6-9397-46cd-babf-a31cd7ab2746',
         alt: 'Red jeep parked on a St. John road',
       },
     },
@@ -701,7 +701,7 @@ const structuredSitePages = {
       lead: 'Rent a charter boat for an unforgettable St. John adventure.',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/ede627_58e29e33d0fd408a947face9bf3459de~mv2.jpg',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-hero.jpg?alt=media&token=c1f9f54c-98ed-4043-8460-4f4b8fca861b',
         alt: 'Charter boat cruising blue water near Whistling Cay',
       },
     },
@@ -711,7 +711,7 @@ const structuredSitePages = {
         'Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.',
       image: {
         kind: 'image',
-        url: 'https://static.wixstatic.com/media/9d128c_44abcdda393b4a0cb2d88c577092b4f1~mv2.png',
+        url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-intro.png?alt=media&token=272743e6-b148-4a2a-afe2-5d5919802a87',
         alt: 'Sailboat charter cruising St. John waters',
       },
     },
@@ -814,7 +814,7 @@ export const siteShellContent = {
     logo: {
       kind: 'image',
       alt: 'St. John House Rentals',
-      assetId: 'siteLogo',
+      url: 'https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fsite-shell%2Fsite-logo.png?alt=media&token=caf40282-c50b-4d17-9159-5b4b8ef4dad9',
     },
     primaryNav: primaryNavItems,
   },

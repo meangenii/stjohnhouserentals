@@ -6,6 +6,9 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "hosting": {
     "site": "sjhr-f502d",
     "public": "dist",

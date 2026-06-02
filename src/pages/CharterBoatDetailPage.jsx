@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getCharterBySlug } from '../lib/charterRepository'
-import { buildWixImageUrl } from '../lib/wixImage'
+import { buildRemoteImageUrl } from '../lib/remoteImage'
 
 export function CharterBoatDetailPage() {
   const { slug = '' } = useParams()
@@ -75,7 +75,7 @@ export function CharterBoatDetailPage() {
               className="detail-hero-image"
               decoding="async"
               loading="eager"
-              src={buildWixImageUrl(charter.heroImage, { width: 1400, height: 960, mode: 'fit' })}
+              src={buildRemoteImageUrl(charter.heroImage, { width: 1400, height: 960, mode: 'fit' })}
             />
           </div>
         ) : null}

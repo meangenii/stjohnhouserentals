@@ -53,7 +53,7 @@ Build now:
 - Public marketing routes in React
 - Shared site shell
 - Structured content seed layer for singleton pages
-- Snapshot pipeline, raw HTML archive, and catalog export for parity checks and seed refreshes
+- Snapshot pipeline, sanitized HTML archive, and catalog export for parity checks and seed refreshes
 - Local rental property detail template backed by public-safe catalog data
 - Basic function endpoints and deploy path
 - Firebase client bootstrap
@@ -79,7 +79,7 @@ The rebuild is moving from scraped reference data toward structured seed documen
 
 Parity references are still preserved in:
 
-- `reference/live-site/<date>/html/*.html`: raw HTML per tracked route
+- `reference/live-site/<date>/html/*.html`: sanitized HTML per tracked route
 - `reference/live-site/<date>/snapshot.json`: extracted metadata
 - `reference/live-site/<date>/property-catalog.json`: normalized rental property records
 - `src/content/liveSiteSnapshot.json`: app-facing parity snapshot

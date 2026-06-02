@@ -33,13 +33,16 @@ Optional:
 
 - `VITE_SITE_CONTENT_SOURCE=local` to read structured page content directly from `shared/siteContent.js`
 - `VITE_SITE_CONTENT_SOURCE=api` to read structured page content plus rental/charter catalogs from `siteApi`
-- `VITE_SITE_CONTENT_SOURCE=firebase` or `firebase-preferred` for Firebase-delivered page shell content
+- `VITE_SITE_CONTENT_SOURCE=firebase` or `firebase-preferred` for Firebase-delivered site shell and structured page content, with live admin editing routed through `siteApi`
 - `VITE_PROPERTY_DATA_SOURCE=firebase` to read rental properties from the live Firestore `cmsProperties` collection when `VITE_API_BASE_URL` points at a deployed API, and edit through Firebase-backed admin endpoints
 - `VITE_CHARTER_DATA_SOURCE=firebase` to read and edit charter listings through Firebase-backed API endpoints
 - `VITE_PROPERTY_DATA_SOURCE=mock` or `VITE_CHARTER_DATA_SOURCE=mock` for browser-local admin drafts
 - `VITE_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` when using the Auth emulator locally
+- `VITE_ADMIN_AUTO_LOGIN_EMAIL` and `VITE_ADMIN_AUTO_LOGIN_PASSWORD` for localhost-only admin auto sign-in when you do not want to manually sign in on `/admin`
 
 The Firebase client values are required for Firebase-backed admin sign-in and live editing.
+
+`VITE_ADMIN_AUTO_LOGIN_*` is intentionally ignored outside `localhost` / `127.0.0.1`. Keep those values in your local `.env` only and do not use them in a deployed build.
 
 Before attempting live seed writes, run:
 
@@ -52,6 +55,8 @@ That command verifies:
 - Cloud Firestore API is enabled for the configured project
 - Firebase Authentication Email/Password sign-in is configured
 - Local Google application default credentials are valid for Admin SDK writes
+
+For legacy media migration, the repo can fall back to your Firebase CLI refresh token if application default credentials are stale.
 
 ## Run The Frontend
 
@@ -71,7 +76,7 @@ npm run snapshot:site
 
 This pulls the live site and writes:
 
-- `reference/live-site/<date>/html/`: raw route HTML for parity checks
+- `reference/live-site/<date>/html/`: sanitized route HTML for parity checks
 - `reference/live-site/<date>/snapshot.json`: extracted page metadata
 - `reference/live-site/<date>/property-catalog.json`: normalized rental property records
 - `reference/live-site/<date>/charter-catalog.json`: normalized charter records when available
@@ -86,7 +91,29 @@ This pulls the live site and writes:
 npm run check
 ```
 
+`npm run check` now also runs `npm run assert:no-legacy-vendor` and fails if any forbidden legacy vendor string reappears in the repo.
+
 `npm run build`, `npm run emulators`, and `npm run deploy` all run `npm run content:generate` first so Cloud Functions only reads content artifacts inside `functions/src/generated/`.
+
+## Migrate Legacy Media
+
+```bash
+npm run media:migrate
+```
+
+This command:
+
+- provisions the default Firebase Storage bucket when the project has not used Firebase Storage yet
+- uploads legacy-hosted images into Firebase Storage under page-, property-, and charter-based paths
+- writes media records to Firestore under `cmsMediaLibrary`
+- rewrites the live Firestore content documents to Firebase Storage URLs
+- rewrites the tracked local seed/source files and refreshes the media manifest in `shared/mediaCatalog.js`
+
+Deploy the Storage rules after the first migration with:
+
+```bash
+npm run deploy:storage
+```
 
 ## Run Firebase Emulators
 
@@ -109,7 +136,7 @@ For end-to-end live editing in local development:
 3. Copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
 4. Start the emulators with `npm run emulators`.
 5. Create an email/password user in the Auth emulator UI.
-6. Open `/admin`, sign in, and save changes. Public property routes will read `cmsProperties` directly from Firestore in the live-hosted API flow, while `/api` emulator setups continue through `siteApi`.
+6. Open `/admin`, sign in, and use the tabs for Site Shell, Pages, Properties, and Charters. Public property routes will read `cmsProperties` directly from Firestore in the live-hosted API flow, while site shell, structured pages, and `/api` emulator setups continue through `siteApi`.
 
 To seed Firestore with the current generated catalogs:
 
@@ -117,7 +144,7 @@ To seed Firestore with the current generated catalogs:
 npm run seed:firebase-data
 ```
 
-Use `npm run seed:firebase-data -- --replace` if you want to overwrite the Firestore property and charter collections back to the current generated baseline.
+Use `npm run seed:firebase-data -- --replace` if you want to overwrite the Firestore site shell, structured pages, property catalog, and charter catalog back to the current generated baseline.
 
 For a live Firebase project, the seed command uses the Firebase Admin SDK and needs valid Google credentials such as `GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json` or refreshed application default credentials.
 
@@ -145,11 +172,12 @@ npm run deploy:firestore
 - Keep the frontend content access boundary in `src/lib/siteContentRepository.js`
 - Use `siteApi` content and catalog endpoints when you want Firebase-style delivery without changing page components
 - Use direct Firestore reads in `firebase` mode for the public `cmsProperties` catalog when `VITE_API_BASE_URL` targets the deployed API instead of `/api`
-- Use Firestore-backed canonical property and charter collections, with generated catalogs as the seed fallback when Firestore is empty
+- Use Firestore-backed canonical site shell, structured page, property, and charter documents for live admin editing
+- Keep all active site images on Firebase Storage URLs; admin saves now reject bundled or third-party image URLs
 - Keep the generated rental and charter catalogs in `public/`
 - Capture the live site with `npm run snapshot:site` for parity checks and to refresh the local seed catalogs
-- Keep raw reference HTML in `reference/live-site/<date>/html/`
+- Keep sanitized reference HTML in `reference/live-site/<date>/html/`
 - Keep public routes in `src/pages/`
 - Keep backend endpoints in `functions/src/index.js`
 - Let `npm run content:generate` mirror the shared seed documents and public catalogs into `functions/src/generated/`
-- Add CMS work only after the public rebuild is stable
+- Use `/admin` as the structured Firebase-backed editing surface instead of editing content documents manually in the console

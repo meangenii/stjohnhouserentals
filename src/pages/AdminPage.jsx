@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getAdminIdToken, observeAdminUser, signInAdmin, signOutAdmin } from '../lib/adminAuth'
+import { getAdminAutoLoginCredentials, getAdminIdToken, observeAdminUser, signInAdmin, signOutAdmin } from '../lib/adminAuth'
+import { AdminDocumentEditor } from '../components/AdminDocumentEditor'
+import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
+import { AdminStructuredPageEditor } from '../components/AdminStructuredPageEditor'
 import {
-  getCharterDataSourceMode,
   isCharterEditingEnabled,
   isFirebaseCharterData,
   listAllCharters,
@@ -11,16 +13,87 @@ import {
 } from '../lib/charterRepository'
 import { isFirebaseConfigured } from '../lib/firebase'
 import {
-  getPropertyDataSourceMode,
   isFirebasePropertyData,
   isPropertyEditingEnabled,
   listProperties,
   resetAdminProperties,
   saveAdminProperty,
 } from '../lib/propertyRepository'
-import { getSiteContentSourceMode, readPageInventory } from '../lib/siteContentRepository'
+import {
+  fetchAdminSiteShellContent,
+  fetchAdminStructuredPageContent,
+  fetchAdminStructuredPageDirectory,
+  isSiteContentEditingEnabled,
+  readStructuredPageSummaries,
+  resetAdminSiteShellContent,
+  resetAdminStructuredPageContent,
+  saveAdminSiteShellContent,
+  saveAdminStructuredPageContent,
+} from '../lib/siteContentRepository'
 
-const pageInventory = readPageInventory()
+const SITE_SHELL_HIDDEN_KEYS = ['source', 'kind', 'assetId', 'src', 'matchPaths', 'children', 'primaryNav', 'legalNav']
+const SITE_SHELL_HIDDEN_PATHS = []
+
+const CONTENT_LABEL_OVERRIDES = {
+  utility: 'Top Bar',
+  socialLink: 'Facebook Link',
+  bookingCallouts: 'Top Bar Callouts',
+  primaryEmail: 'Contact Email',
+  navLabel: 'Menu Label',
+  hero: 'Hero Banner',
+  titleLines: 'Heading Lines',
+  leadParagraphs: 'Intro Paragraphs',
+  bodyParagraphs: 'Main Paragraphs',
+  bodyHtml: 'Page Body',
+  metaDescription: 'Search Description',
+  imageGallery: 'Gallery Images',
+  image: 'Image',
+  url: 'Image URL',
+  href: 'Link URL',
+  alt: 'Image Description',
+  label: 'Link Text',
+  value: 'Text',
+  bodyLink: 'Inline Link',
+  action: 'Button',
+  trust: 'Why Choose Us',
+  discover: 'Discover Section',
+  about: 'About Section',
+  story: 'Story Section',
+  essentials: 'Essentials Section',
+  intro: 'Intro Section',
+  directory: 'Listings Section',
+  details: 'Details Section',
+  contact: 'Contact Section',
+  map: 'Map Section',
+  dining: 'Dining Section',
+  operators: 'Ferry Companies',
+  schedules: 'Schedules',
+  columns: 'Columns',
+  rates: 'Rates',
+  rows: 'Rate Rows',
+  values: 'Values',
+  lines: 'List Items',
+  sections: 'Sections',
+  companies: 'Companies',
+  features: 'Features',
+  leftParagraphs: 'Left Column Text',
+  rightParagraphs: 'Right Column Text',
+  contactLines: 'Contact Details',
+  bookingHelpParts: 'Booking Help Text',
+  referenceLink: 'Reference Link',
+  detailImage: 'Detail Image',
+  footer: 'Footer',
+  header: 'Header',
+  logo: 'Logo',
+  copyright: 'Copyright Line',
+  designCredit: 'Footer Credit',
+  redHook: 'Red Hook Ferry',
+  crownBay: 'Crown Bay Ferry',
+  safety: 'Safety Section',
+  field: 'Field',
+  placeholder: 'Placeholder Text',
+  submitLabel: 'Button Text',
+}
 
 function makeToken() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -35,6 +108,15 @@ function repairSnapshotText(text = '') {
     .replaceAll('\u00e2\u20ac\u201d', '\u2014')
     .replaceAll('\u00c2\u00a0', ' ')
     .replaceAll('\u00c2', '')
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }
 
 function linesToText(values = []) {
@@ -75,6 +157,25 @@ function createReviewEditor(entry = {}) {
   }
 }
 
+function createImageEditor(image = {}) {
+  return {
+    id: makeToken(),
+    url: String(image.url ?? '').trim(),
+    alt: repairSnapshotText(image.alt ?? ''),
+    title: repairSnapshotText(image.title ?? ''),
+  }
+}
+
+function createGalleryAssets(galleryImages = []) {
+  return galleryImages
+    .map((image) => ({
+      url: String(image.url ?? '').trim(),
+      alt: repairSnapshotText(image.alt ?? '').trim(),
+      title: repairSnapshotText(image.title ?? '').trim(),
+    }))
+    .filter((image) => image.url)
+}
+
 function createEmptyFormState() {
   return {
     originalSlug: '',
@@ -96,6 +197,7 @@ function createEmptyFormState() {
     bookingContactName: '',
     bookingEmail: '',
     bookingNote: '',
+    galleryImages: [],
     amenityGroups: [createAmenityEditor({ title: 'Amenities' })],
     reviewEntries: [createReviewEditor()],
   }
@@ -119,6 +221,18 @@ function createInitialReviewEntries(property = {}) {
   return reviewText ? [createReviewEditor({ quote: reviewText })] : [createReviewEditor()]
 }
 
+function createInitialGalleryImages(property = {}) {
+  if (Array.isArray(property.gallery) && property.gallery.length > 0) {
+    return property.gallery.map((image) => createImageEditor(image))
+  }
+
+  if (property.heroImage?.url) {
+    return [createImageEditor(property.heroImage)]
+  }
+
+  return []
+}
+
 function createFormState(property) {
   return {
     originalSlug: property.adminOriginalSlug ?? property.slug,
@@ -140,6 +254,7 @@ function createFormState(property) {
     bookingContactName: repairSnapshotText(property.booking?.contactName ?? ''),
     bookingEmail: repairSnapshotText(property.booking?.email ?? ''),
     bookingNote: repairSnapshotText(property.booking?.note ?? ''),
+    galleryImages: createInitialGalleryImages(property),
     amenityGroups: createInitialAmenityGroups(property),
     reviewEntries: createInitialReviewEntries(property),
   }
@@ -159,6 +274,14 @@ function buildPropertyDraft(formState) {
       author: repairSnapshotText(entry.author).trim(),
     }))
     .filter((entry) => entry.quote)
+  const gallery = createGalleryAssets(formState.galleryImages)
+  const heroImage = formState.heroImageUrl.trim()
+    ? {
+        url: formState.heroImageUrl.trim(),
+        alt: repairSnapshotText(formState.heroImageAlt).trim(),
+        title: repairSnapshotText(formState.name).trim(),
+      }
+    : gallery[0] ?? null
 
   return {
     name: repairSnapshotText(formState.name).trim(),
@@ -181,22 +304,98 @@ function buildPropertyDraft(formState) {
       email: repairSnapshotText(formState.bookingEmail).trim(),
       note: repairSnapshotText(formState.bookingNote).trim(),
     },
-    heroImage: formState.heroImageUrl.trim()
-      ? {
-          url: formState.heroImageUrl.trim(),
-          alt: repairSnapshotText(formState.heroImageAlt).trim(),
-          title: repairSnapshotText(formState.name).trim(),
-        }
-      : null,
-    gallery: formState.heroImageUrl.trim()
-      ? [
-          {
-            url: formState.heroImageUrl.trim(),
-            alt: repairSnapshotText(formState.heroImageAlt).trim(),
-            title: repairSnapshotText(formState.name).trim(),
-          },
-        ]
-      : [],
+    heroImage,
+    gallery,
+  }
+}
+
+function paragraphListToHtml(values = []) {
+  return values
+    .map((value) => String(value ?? '').trim())
+    .filter(Boolean)
+    .map((value) => `<p>${escapeHtml(value)}</p>`)
+    .join('\n')
+}
+
+function amenityGroupsToHtml(groups = []) {
+  return groups
+    .flatMap((group) => {
+      const title = String(group?.title ?? '').trim()
+      const items = parseLineList(group?.itemsText ?? '')
+      const lines = []
+
+      if (title) {
+        lines.push(`<h4>${escapeHtml(title)}</h4>`)
+      }
+
+      items.forEach((item) => {
+        lines.push(`<p>${escapeHtml(item)}</p>`)
+      })
+
+      return lines
+    })
+    .join('\n')
+}
+
+function reviewEntriesToHtml(entries = []) {
+  return entries
+    .flatMap((entry) => {
+      const quote = repairSnapshotText(entry?.quote ?? '').trim()
+      const author = repairSnapshotText(entry?.author ?? '').trim()
+      const lines = []
+
+      if (author) {
+        lines.push(`<h6>${escapeHtml(author)}</h6>`)
+      }
+
+      if (quote) {
+        lines.push(`<p>${escapeHtml(quote)}</p>`)
+      }
+
+      return lines
+    })
+    .join('\n')
+}
+
+function buildPropertyPreviewModel(formState) {
+  const facts = parseLineList(formState.highlightsText)
+  const descriptionParagraphs = parseParagraphList(formState.descriptionText)
+  const gallery = createGalleryAssets(formState.galleryImages)
+  const heroImage = formState.heroImageUrl.trim()
+    ? {
+        url: formState.heroImageUrl.trim(),
+        alt: repairSnapshotText(formState.heroImageAlt).trim(),
+        title: repairSnapshotText(formState.name).trim(),
+      }
+    : gallery[0] ?? null
+  const amenityHtml = amenityGroupsToHtml(formState.amenityGroups)
+  const reviewsHtml = reviewEntriesToHtml(formState.reviewEntries)
+  const bedrooms = Number(formState.bedrooms) || 0
+
+  return {
+    slug: repairSnapshotText(formState.slug).trim(),
+    name: repairSnapshotText(formState.name).trim() || 'Untitled Property',
+    bedrooms,
+    bedroomLabel: bedrooms > 0 ? `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}` : '',
+    bathrooms: Number(formState.bathrooms) || 0,
+    maxGuests: Number(formState.maxGuests) || 0,
+    location: repairSnapshotText(formState.location).trim(),
+    price: repairSnapshotText(formState.price).trim(),
+    shortDescription: repairSnapshotText(formState.shortDescription).trim(),
+    facts,
+    descriptionHtml:
+      descriptionParagraphs.length > 0
+        ? paragraphListToHtml(descriptionParagraphs)
+        : String(formState.existingDescriptionHtml ?? '').trim(),
+    amenitiesHtml: amenityHtml || String(formState.existingAmenitiesHtml ?? '').trim(),
+    reviewsHtml: reviewsHtml || String(formState.existingReviewsHtml ?? '').trim(),
+    heroImage,
+    gallery,
+    booking: {
+      contactName: repairSnapshotText(formState.bookingContactName).trim(),
+      email: repairSnapshotText(formState.bookingEmail).trim(),
+      note: repairSnapshotText(formState.bookingNote).trim(),
+    },
   }
 }
 
@@ -290,27 +489,44 @@ function CharterListItem({ active, charter, onSelect }) {
   )
 }
 
-function formatDataSourceLabel(mode) {
-  switch (mode) {
-    case 'mock':
-      return 'browser-local'
-    case 'firebase':
-      return 'firebase'
-    case 'api':
-      return 'api read-only'
-    default:
-      return 'local read-only'
-  }
+function PageListItem({ active, page, onSelect }) {
+  return (
+    <button
+      className={`admin-property-button ${active ? 'admin-property-button--active' : ''}`.trim()}
+      type="button"
+      onClick={() => onSelect(page)}
+    >
+      <strong>{repairSnapshotText(page.label || page.key)}</strong>
+      <span>{repairSnapshotText(page.title || 'Untitled page')}</span>
+      <span>{page.path}</span>
+    </button>
+  )
+}
+
+function AdminTabButton({ active, detail, label, onClick }) {
+  return (
+    <button
+      className={`admin-tab-button ${active ? 'admin-tab-button--active' : ''}`.trim()}
+      type="button"
+      onClick={onClick}
+    >
+      <strong>{label}</strong>
+      {detail ? <span>{detail}</span> : null}
+    </button>
+  )
 }
 
 export function AdminPage() {
+  const adminAutoLoginCredentials = getAdminAutoLoginCredentials()
+  const adminAutoLoginEnabled = Boolean(adminAutoLoginCredentials)
+  const adminAutoLoginAttemptedRef = useRef(false)
+  const [activeTab, setActiveTab] = useState('pages')
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
   const [formState, setFormState] = useState(createEmptyFormState())
   const [editorState, setEditorState] = useState({ mode: 'create', activeSlug: '' })
   const [feedback, setFeedback] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
   const propertyEditingEnabled = isPropertyEditingEnabled()
-  const propertyDataSourceMode = getPropertyDataSourceMode()
   const propertyUsesFirebase = isFirebasePropertyData()
 
   const [charterWorkspaceState, setCharterWorkspaceState] = useState({ status: 'loading', charters: [] })
@@ -319,16 +535,39 @@ export function AdminPage() {
   const [charterFeedback, setCharterFeedback] = useState('')
   const [charterSaveStatus, setCharterSaveStatus] = useState('idle')
   const charterEditingEnabled = isCharterEditingEnabled()
-  const charterDataSourceMode = getCharterDataSourceMode()
   const charterUsesFirebase = isFirebaseCharterData()
-  const requiresAdminSignIn = propertyUsesFirebase || charterUsesFirebase
+
+  const [siteShellWorkspaceState, setSiteShellWorkspaceState] = useState({
+    status: 'loading',
+    message: '',
+    shell: null,
+  })
+  const [siteShellDraft, setSiteShellDraft] = useState(null)
+  const [siteShellFeedback, setSiteShellFeedback] = useState('')
+  const [siteShellSaveStatus, setSiteShellSaveStatus] = useState('idle')
+
+  const [pageWorkspaceState, setPageWorkspaceState] = useState(() => ({
+    status: 'loading',
+    pages: readStructuredPageSummaries(),
+    message: '',
+  }))
+  const [pageEditorState, setPageEditorState] = useState({ status: 'idle', activeKey: '', draft: null })
+  const [pageFeedback, setPageFeedback] = useState('')
+  const [pageSaveStatus, setPageSaveStatus] = useState('idle')
+
+  const siteContentEditingEnabled = isSiteContentEditingEnabled()
+  const requiresAdminSignIn = propertyUsesFirebase || charterUsesFirebase || siteContentEditingEnabled
   const [authState, setAuthState] = useState(() => ({
     status: requiresAdminSignIn ? (isFirebaseConfigured() ? 'loading' : 'unconfigured') : 'disabled',
     user: null,
   }))
-  const [authFormState, setAuthFormState] = useState({ email: '', password: '' })
+  const [authFormState, setAuthFormState] = useState(() => ({
+    email: adminAutoLoginCredentials?.email ?? '',
+    password: '',
+  }))
   const [authFeedback, setAuthFeedback] = useState('')
   const [authFeedbackStatus, setAuthFeedbackStatus] = useState('idle')
+  const [autoLoginStatus, setAutoLoginStatus] = useState(adminAutoLoginEnabled ? 'pending' : 'disabled')
 
   useEffect(() => {
     let cancelled = false
@@ -409,6 +648,94 @@ export function AdminPage() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
+    async function loadSiteShellWorkspace() {
+      try {
+        const shell = await fetchAdminSiteShellContent()
+
+        if (cancelled) {
+          return
+        }
+
+        setSiteShellWorkspaceState({ status: 'ready', shell, message: '' })
+        setSiteShellDraft(shell)
+      } catch (error) {
+        if (!cancelled) {
+          setSiteShellWorkspaceState({
+            status: 'error',
+            shell: null,
+            message: error instanceof Error ? error.message : 'Unable to load the site shell.',
+          })
+          setSiteShellDraft(null)
+        }
+      }
+    }
+
+    loadSiteShellWorkspace()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStructuredPagesWorkspace() {
+      try {
+        const directory = await fetchAdminStructuredPageDirectory()
+
+        if (cancelled) {
+          return
+        }
+
+        const pages = Array.isArray(directory?.pages) && directory.pages.length > 0 ? directory.pages : readStructuredPageSummaries()
+
+        setPageWorkspaceState({
+          status: 'ready',
+          pages,
+          message: '',
+        })
+
+        const firstPage = pages[0]
+
+        if (!firstPage?.key) {
+          setPageEditorState({ status: 'idle', activeKey: '', draft: null })
+          return
+        }
+
+        const page = await fetchAdminStructuredPageContent(firstPage.key)
+
+        if (cancelled) {
+          return
+        }
+
+        setPageEditorState({
+          status: 'ready',
+          activeKey: firstPage.key,
+          draft: page ?? firstPage,
+        })
+      } catch (error) {
+        if (!cancelled) {
+          setPageWorkspaceState({
+            status: 'error',
+            pages: readStructuredPageSummaries(),
+            message: error instanceof Error ? error.message : 'Unable to load structured pages.',
+          })
+          setPageEditorState({ status: 'error', activeKey: '', draft: null })
+        }
+      }
+    }
+
+    loadStructuredPagesWorkspace()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     if (!requiresAdminSignIn) {
       return undefined
     }
@@ -424,6 +751,60 @@ export function AdminPage() {
       })
     })
   }, [requiresAdminSignIn])
+
+  useEffect(() => {
+    if (!requiresAdminSignIn || !adminAutoLoginCredentials || authState.user || authState.status !== 'signed-out') {
+      return undefined
+    }
+
+    if (adminAutoLoginAttemptedRef.current) {
+      return undefined
+    }
+
+    let cancelled = false
+    adminAutoLoginAttemptedRef.current = true
+
+    async function signInAutomatically() {
+      try {
+        setAutoLoginStatus('saving')
+        setAuthFeedback('Signing into Firebase automatically for this local admin workspace...')
+        setAuthFeedbackStatus('saving')
+        await signInAdmin(adminAutoLoginCredentials.email, adminAutoLoginCredentials.password)
+
+        if (cancelled) {
+          return
+        }
+
+        setAuthFormState((currentState) => ({
+          ...currentState,
+          email: adminAutoLoginCredentials.email,
+          password: '',
+        }))
+        setAuthFeedback('Signed in automatically for live admin editing.')
+        setAuthFeedbackStatus('idle')
+        setAutoLoginStatus('success')
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setAuthFormState((currentState) => ({
+          ...currentState,
+          email: adminAutoLoginCredentials.email,
+          password: '',
+        }))
+        setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign in to Firebase automatically.')
+        setAuthFeedbackStatus('error')
+        setAutoLoginStatus('error')
+      }
+    }
+
+    signInAutomatically()
+
+    return () => {
+      cancelled = true
+    }
+  }, [adminAutoLoginCredentials, authState.status, authState.user, requiresAdminSignIn])
 
   async function getAdminRequestOptions() {
     if (!requiresAdminSignIn) {
@@ -448,6 +829,7 @@ export function AdminPage() {
 
     try {
       setAuthFeedbackStatus('saving')
+      setAutoLoginStatus(adminAutoLoginEnabled ? 'manual' : 'disabled')
       await signInAdmin(authFormState.email.trim(), authFormState.password)
       setAuthFormState((currentState) => ({ ...currentState, password: '' }))
       setAuthFeedback('Signed in to Firebase admin editing.')
@@ -461,6 +843,7 @@ export function AdminPage() {
   async function handleAdminSignOut() {
     try {
       setAuthFeedbackStatus('saving')
+      setAutoLoginStatus(adminAutoLoginEnabled ? 'manual' : 'disabled')
       await signOutAdmin()
       setAuthFeedback('Signed out of Firebase admin editing.')
       setAuthFeedbackStatus('idle')
@@ -468,6 +851,74 @@ export function AdminPage() {
       setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign out of Firebase.')
       setAuthFeedbackStatus('error')
     }
+  }
+
+  async function loadCurrentSiteShellIntoEditor() {
+    try {
+      setSiteShellWorkspaceState((current) => ({ ...current, status: 'loading', message: '' }))
+      const shell = await fetchAdminSiteShellContent()
+      setSiteShellWorkspaceState({ status: 'ready', shell, message: '' })
+      setSiteShellDraft(shell)
+      setSiteShellFeedback('Reloaded the live site shell document.')
+      setSiteShellSaveStatus('idle')
+    } catch (error) {
+      setSiteShellWorkspaceState({
+        status: 'error',
+        shell: null,
+        message: error instanceof Error ? error.message : 'Unable to load the site shell.',
+      })
+      setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to reload the site shell.')
+      setSiteShellSaveStatus('error')
+    }
+  }
+
+  async function loadStructuredPageIntoEditor(pageKey) {
+    if (!pageKey) {
+      return
+    }
+
+    try {
+      setPageEditorState((current) => ({ ...current, status: 'loading', activeKey: pageKey }))
+      const page = await fetchAdminStructuredPageContent(pageKey)
+      setPageEditorState({
+        status: 'ready',
+        activeKey: pageKey,
+        draft: page ?? {},
+      })
+      setPageFeedback('')
+      setPageSaveStatus('idle')
+    } catch (error) {
+      setPageEditorState({ status: 'error', activeKey: pageKey, draft: null })
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to load the structured page.')
+      setPageSaveStatus('error')
+    }
+  }
+
+  async function reloadStructuredPageWorkspace(preferredKey = '') {
+    const directory = await fetchAdminStructuredPageDirectory()
+    const pages = Array.isArray(directory?.pages) && directory.pages.length > 0 ? directory.pages : readStructuredPageSummaries()
+    const nextKey = preferredKey || pages[0]?.key || ''
+
+    setPageWorkspaceState({
+      status: 'ready',
+      pages,
+      message: '',
+    })
+
+    if (!nextKey) {
+      setPageEditorState({ status: 'idle', activeKey: '', draft: null })
+      return null
+    }
+
+    const page = await fetchAdminStructuredPageContent(nextKey)
+
+    setPageEditorState({
+      status: 'ready',
+      activeKey: nextKey,
+      draft: page ?? pages.find((entry) => entry.key === nextKey) ?? {},
+    })
+
+    return page
   }
 
   function openCreateForm() {
@@ -486,6 +937,49 @@ export function AdminPage() {
     setFormState((currentState) => ({
       ...currentState,
       [field]: value,
+    }))
+  }
+
+  function updateGalleryImage(imageId, field, value) {
+    setFormState((currentState) => ({
+      ...currentState,
+      galleryImages: currentState.galleryImages.map((image) =>
+        image.id === imageId ? { ...image, [field]: value } : image,
+      ),
+    }))
+  }
+
+  function addGalleryImage() {
+    setFormState((currentState) => ({
+      ...currentState,
+      galleryImages: [...currentState.galleryImages, createImageEditor()],
+    }))
+  }
+
+  function moveGalleryImage(imageId, direction) {
+    setFormState((currentState) => {
+      const currentIndex = currentState.galleryImages.findIndex((image) => image.id === imageId)
+      const nextIndex = currentIndex + direction
+
+      if (currentIndex === -1 || nextIndex < 0 || nextIndex >= currentState.galleryImages.length) {
+        return currentState
+      }
+
+      const nextGalleryImages = [...currentState.galleryImages]
+      const [selectedImage] = nextGalleryImages.splice(currentIndex, 1)
+      nextGalleryImages.splice(nextIndex, 0, selectedImage)
+
+      return {
+        ...currentState,
+        galleryImages: nextGalleryImages,
+      }
+    })
+  }
+
+  function removeGalleryImage(imageId) {
+    setFormState((currentState) => ({
+      ...currentState,
+      galleryImages: currentState.galleryImages.filter((image) => image.id !== imageId),
     }))
   }
 
@@ -697,12 +1191,96 @@ export function AdminPage() {
     }
   }
 
-  const isLoading = workspaceState.status === 'loading'
+  async function handleSelectStructuredPage(page) {
+    await loadStructuredPageIntoEditor(page?.key ?? '')
+  }
+
+  async function handleSiteShellSubmit(event) {
+    event.preventDefault()
+
+    try {
+      setSiteShellSaveStatus('saving')
+      const requestOptions = await getAdminRequestOptions()
+      const savedSiteShell = await saveAdminSiteShellContent(siteShellDraft ?? {}, requestOptions)
+      setSiteShellWorkspaceState({ status: 'ready', shell: savedSiteShell, message: '' })
+      setSiteShellDraft(savedSiteShell)
+      setSiteShellFeedback('Saved changes to the live site shell document.')
+      setSiteShellSaveStatus('idle')
+    } catch (error) {
+      setSiteShellSaveStatus('error')
+      setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to save the site shell.')
+    }
+  }
+
+  async function handleResetSiteShell() {
+    if (!window.confirm('Restore the Firebase site shell document to the generated baseline?')) {
+      return
+    }
+
+    try {
+      setSiteShellSaveStatus('saving')
+      const requestOptions = await getAdminRequestOptions()
+      const restoredSiteShell = await resetAdminSiteShellContent(requestOptions)
+      setSiteShellWorkspaceState({ status: 'ready', shell: restoredSiteShell, message: '' })
+      setSiteShellDraft(restoredSiteShell)
+      setSiteShellFeedback('Restored the site shell document to the generated baseline.')
+      setSiteShellSaveStatus('idle')
+    } catch (error) {
+      setSiteShellSaveStatus('error')
+      setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to restore the site shell.')
+    }
+  }
+
+  async function handleStructuredPageSubmit(event) {
+    event.preventDefault()
+
+    if (!pageEditorState.activeKey) {
+      return
+    }
+
+    try {
+      setPageSaveStatus('saving')
+      const requestOptions = await getAdminRequestOptions()
+      const savedPage = await saveAdminStructuredPageContent(pageEditorState.activeKey, pageEditorState.draft ?? {}, requestOptions)
+      await reloadStructuredPageWorkspace(savedPage?.key ?? pageEditorState.activeKey)
+      setPageFeedback(`Saved changes to ${savedPage?.navLabel || savedPage?.key || pageEditorState.activeKey}.`)
+      setPageSaveStatus('idle')
+    } catch (error) {
+      setPageSaveStatus('error')
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to save the structured page.')
+    }
+  }
+
+  async function handleResetStructuredPage() {
+    if (!pageEditorState.activeKey) {
+      return
+    }
+
+    if (!window.confirm('Restore this structured page document to the generated baseline?')) {
+      return
+    }
+
+    try {
+      setPageSaveStatus('saving')
+      const requestOptions = await getAdminRequestOptions()
+      await resetAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
+      await reloadStructuredPageWorkspace(pageEditorState.activeKey)
+      setPageFeedback(`Restored ${pageEditorState.activeKey} to the generated baseline.`)
+      setPageSaveStatus('idle')
+    } catch (error) {
+      setPageSaveStatus('error')
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to restore the structured page.')
+    }
+  }
+
   const properties = workspaceState.properties ?? []
-  const structuredPageCount = pageInventory.filter((page) => page.source === 'structured').length
-  const legacySnapshotPageCount = pageInventory.filter((page) => page.source === 'legacy-snapshot').length
+  const structuredPages = pageWorkspaceState.pages ?? []
+  const selectedStructuredPage =
+    structuredPages.find((page) => page.key === pageEditorState.activeKey) ?? structuredPages[0] ?? null
   const propertySaveEnabled = propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user))
+  const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
+  const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
 
   return (
     <article className="admin-page">
@@ -710,16 +1288,35 @@ export function AdminPage() {
         <div className="eyebrow">Admin</div>
         <h1>Content workspace</h1>
         <p>
-          This route is intentionally hidden from the public navigation. Use it to review site routes
-          and manage property and charter data while the broader CMS is still structured in code.
+          This route is intentionally hidden from the public navigation. Use it to edit live content in
+          focused sections instead of working directly in Firebase.
         </p>
-        <div className="admin-chip-row">
-          <span className="admin-chip">Route: /admin</span>
-          <span className="admin-chip">Site content source: {getSiteContentSourceMode()}</span>
-          <span className="admin-chip">Structured pages: {structuredPageCount}</span>
-          <span className="admin-chip">Legacy snapshot pages: {legacySnapshotPageCount}</span>
-          <span className="admin-chip">Property source: {formatDataSourceLabel(propertyDataSourceMode)}</span>
-          <span className="admin-chip">Charter source: {formatDataSourceLabel(charterDataSourceMode)}</span>
+
+        <div className="admin-tab-row">
+          <AdminTabButton
+            active={activeTab === 'site-shell'}
+            detail="Header, footer, contact"
+            label="Header & Footer"
+            onClick={() => setActiveTab('site-shell')}
+          />
+          <AdminTabButton
+            active={activeTab === 'pages'}
+            detail="Homepage and inner pages"
+            label="Page Content"
+            onClick={() => setActiveTab('pages')}
+          />
+          <AdminTabButton
+            active={activeTab === 'properties'}
+            detail="Rental listings"
+            label="Properties"
+            onClick={() => setActiveTab('properties')}
+          />
+          <AdminTabButton
+            active={activeTab === 'charters'}
+            detail="Boat listings"
+            label="Charters"
+            onClick={() => setActiveTab('charters')}
+          />
         </div>
 
         {requiresAdminSignIn ? (
@@ -740,8 +1337,8 @@ export function AdminPage() {
 
             {authState.status === 'unconfigured' ? (
               <p className="admin-note">
-                Firebase client configuration is missing. Fill in the `VITE_FIREBASE_*` values before
-                using Firebase-backed editing.
+                Firebase client configuration is missing. Fill in the `VITE_FIREBASE_*` values before using
+                Firebase-backed editing.
               </p>
             ) : null}
 
@@ -754,7 +1351,12 @@ export function AdminPage() {
               </p>
             ) : null}
 
-            {authState.status === 'signed-out' ? (
+            {authState.status === 'signed-out' && adminAutoLoginEnabled && (autoLoginStatus === 'pending' || autoLoginStatus === 'saving') ? (
+              <p className="admin-note">Automatic localhost sign-in is enabled for this admin workspace.</p>
+            ) : null}
+
+            {authState.status === 'signed-out' &&
+            (!adminAutoLoginEnabled || autoLoginStatus === 'error' || autoLoginStatus === 'success' || autoLoginStatus === 'manual') ? (
               <form className="admin-form" onSubmit={handleAdminSignIn}>
                 <div className="admin-form-grid">
                   <label className="admin-field">
@@ -794,302 +1396,750 @@ export function AdminPage() {
       </section>
 
       <section className="page-section admin-shell">
-        <div className="admin-layout">
-          <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <div className="eyebrow">Properties</div>
-                <h2>Add and edit rental properties</h2>
-              </div>
-              <div className="admin-inline-actions">
-                <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
-                  New property
-                </button>
-                {propertyEditingEnabled ? (
-                  <button
-                    className="button-link button-link--ghost admin-action"
-                    type="button"
-                    onClick={handleResetLocalEdits}
-                  >
-                    {propertyUsesFirebase ? 'Restore Firebase catalog' : 'Reset local edits'}
+        <div className="admin-panel-stack">
+          {activeTab === 'site-shell' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Header & Footer</div>
+                  <h2>Edit the site-wide content visitors see on every page</h2>
+                </div>
+                <div className="admin-inline-actions">
+                  <button className="button-link button-link--ghost admin-action" type="button" onClick={loadCurrentSiteShellIntoEditor}>
+                    Refresh
                   </button>
-                ) : null}
+                  {siteContentEditingEnabled ? (
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetSiteShell}>
+                      Reset changes
+                    </button>
+                  ) : null}
+                </div>
               </div>
-            </div>
 
-            {!propertyEditingEnabled ? (
-              <p className="admin-note">
-                Property editing is read only in the current mode. Set `VITE_PROPERTY_DATA_SOURCE` to
-                `mock` for browser-local drafts or `firebase` for shared live editing.
-              </p>
-            ) : null}
+              {!siteContentEditingEnabled ? (
+                <p className="admin-note">Header and footer editing is not available in the current content mode.</p>
+              ) : null}
 
-            {propertyUsesFirebase && !authState.user ? (
-              <p className="admin-note">
-                Property saves are routed through Firebase-backed admin endpoints and require a signed-in
-                Firebase user.
-              </p>
-            ) : null}
+              {siteContentEditingEnabled && !authState.user ? (
+                <p className="admin-note">Sign in before saving changes.</p>
+              ) : null}
 
-            {workspaceState.status === 'error' ? (
-              <p className="admin-empty">{workspaceState.message}</p>
-            ) : null}
-
-            <div className="admin-property-grid">
-              <div className="admin-property-list">
-                {isLoading ? <p className="admin-empty">Loading property catalog...</p> : null}
-
-                {!isLoading && properties.length === 0 ? (
-                  <p className="admin-empty">No properties are available yet. Start with a new draft.</p>
-                ) : null}
-
-                {properties.map((property) => (
-                  <PropertyListItem
-                    active={editorState.mode === 'edit' && editorState.activeSlug === property.slug}
-                    key={property.slug}
-                    property={property}
-                    onSelect={openEditForm}
-                  />
-                ))}
-              </div>
+              {siteShellWorkspaceState.status === 'error' ? <p className="admin-empty">{siteShellWorkspaceState.message}</p> : null}
 
               <div className="admin-editor">
                 <div className="admin-editor-header">
                   <div>
-                    <div className="eyebrow">{editorState.mode === 'create' ? 'New property' : 'Editing property'}</div>
-                    <h3>{editorState.mode === 'create' ? 'Create a property draft' : repairSnapshotText(formState.name)}</h3>
+                    <div className="eyebrow">Global Content</div>
+                    <h3>Header, footer, and contact details</h3>
                   </div>
-                  {editorState.mode === 'edit' && editorState.activeSlug ? (
-                    <Link className="button-link button-link--ghost admin-action" to={`/rental-properties/${editorState.activeSlug}`}>
-                      Open public route
-                    </Link>
-                  ) : null}
                 </div>
 
-                {feedback ? <p className={`admin-feedback admin-feedback--${saveStatus}`}>{feedback}</p> : null}
+                {siteShellFeedback ? (
+                  <p className={`admin-feedback admin-feedback--${siteShellSaveStatus}`}>{siteShellFeedback}</p>
+                ) : null}
 
-                <form className="admin-form" onSubmit={handleSubmit}>
-                  <div className="admin-form-grid">
-                    <label className="admin-field">
-                      <span>Name</span>
-                      <input
-                        type="text"
-                        value={formState.name}
-                        onChange={(event) => updateFormState('name', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+                {siteShellWorkspaceState.status === 'loading' ? (
+                  <p className="admin-empty">Loading header and footer content...</p>
+                ) : (
+                  <form className="admin-form" onSubmit={handleSiteShellSubmit}>
+                    <p className="admin-note">Edit the live words, links, and images below. Site structure is fixed.</p>
+                    <AdminDocumentEditor
+                      value={siteShellDraft}
+                      onChange={setSiteShellDraft}
+                      disabled={!siteContentSaveEnabled}
+                      hiddenKeys={SITE_SHELL_HIDDEN_KEYS}
+                      hiddenPaths={SITE_SHELL_HIDDEN_PATHS}
+                      labelOverrides={CONTENT_LABEL_OVERRIDES}
+                      allowStructureChanges={false}
+                      presentation="content"
+                    />
 
-                    <label className="admin-field">
-                      <span>Slug</span>
-                      <input
-                        type="text"
-                        value={formState.slug}
-                        onChange={(event) => updateFormState('slug', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+                    <div className="admin-form-actions">
+                      <button
+                        className="button-link button-link--primary admin-submit"
+                        type="submit"
+                        disabled={!siteContentSaveEnabled || siteShellSaveStatus === 'saving'}
+                      >
+                        {siteShellSaveStatus === 'saving' ? 'Saving...' : 'Save changes'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </section>
+          ) : null}
 
-                    <label className="admin-field">
-                      <span>Bedrooms</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formState.bedrooms}
-                        onChange={(event) => updateFormState('bedrooms', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+          {activeTab === 'pages' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Page Content</div>
+                  <h2>Edit the copy, links, and images on each page</h2>
+                </div>
+                {selectedStructuredPage ? (
+                  <div className="admin-inline-actions">
+                    <button
+                      className="button-link button-link--ghost admin-action"
+                      type="button"
+                      onClick={() => loadStructuredPageIntoEditor(selectedStructuredPage.key)}
+                    >
+                      Refresh
+                    </button>
+                    {siteContentEditingEnabled ? (
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        type="button"
+                        onClick={handleResetStructuredPage}
+                      >
+                        Reset changes
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
 
-                    <label className="admin-field">
-                      <span>Bathrooms</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        value={formState.bathrooms}
-                        onChange={(event) => updateFormState('bathrooms', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+              {!siteContentEditingEnabled ? (
+                <p className="admin-note">Page editing is not available in the current content mode.</p>
+              ) : null}
 
-                    <label className="admin-field">
-                      <span>Max guests</span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formState.maxGuests}
-                        onChange={(event) => updateFormState('maxGuests', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+              {siteContentEditingEnabled && !authState.user ? (
+                <p className="admin-note">Sign in before saving changes.</p>
+              ) : null}
 
-                    <label className="admin-field">
-                      <span>Price</span>
-                      <input
-                        type="text"
-                        value={formState.price}
-                        onChange={(event) => updateFormState('price', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+              {pageWorkspaceState.status === 'error' ? <p className="admin-empty">{pageWorkspaceState.message}</p> : null}
 
-                    <label className="admin-field admin-field--wide">
-                      <span>Location</span>
-                      <input
-                        type="text"
-                        value={formState.location}
-                        onChange={(event) => updateFormState('location', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+              <div className="admin-property-grid">
+                <div className="admin-property-list">
+                  {pageWorkspaceState.status === 'loading' ? <p className="admin-empty">Loading structured pages...</p> : null}
 
-                    <label className="admin-field admin-field--wide">
-                      <span>Short description</span>
-                      <textarea
-                        rows="3"
-                        value={formState.shortDescription}
-                        onChange={(event) => updateFormState('shortDescription', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+                  {pageWorkspaceState.status === 'ready' && structuredPages.length === 0 ? (
+                    <p className="admin-empty">No structured pages are available yet.</p>
+                  ) : null}
 
-                    <label className="admin-field admin-field--wide">
-                      <span>Highlights</span>
-                      <textarea
-                        rows="5"
-                        value={formState.highlightsText}
-                        onChange={(event) => updateFormState('highlightsText', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+                  {structuredPages.map((page) => (
+                    <PageListItem
+                      active={pageEditorState.activeKey === page.key}
+                      key={page.key}
+                      page={page}
+                      onSelect={handleSelectStructuredPage}
+                    />
+                  ))}
+                </div>
 
-                    <label className="admin-field admin-field--wide">
-                      <span>Description paragraphs</span>
-                      <textarea
-                        rows="8"
-                        value={formState.descriptionText}
-                        onChange={(event) => updateFormState('descriptionText', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Hero image URL</span>
-                      <input
-                        type="url"
-                        value={formState.heroImageUrl}
-                        onChange={(event) => updateFormState('heroImageUrl', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Hero image alt text</span>
-                      <input
-                        type="text"
-                        value={formState.heroImageAlt}
-                        onChange={(event) => updateFormState('heroImageAlt', event.target.value)}
-                        disabled={!propertySaveEnabled}
-                      />
-                    </label>
+                <div className="admin-editor">
+                  <div className="admin-editor-header">
+                    <div>
+                      <div className="eyebrow">Selected Page</div>
+                      <h3>{repairSnapshotText(selectedStructuredPage?.label || 'Select a page')}</h3>
+                    </div>
+                    {selectedStructuredPage?.path ? (
+                      <Link className="button-link button-link--ghost admin-action" to={selectedStructuredPage.path}>
+                        Open public route
+                      </Link>
+                    ) : null}
                   </div>
 
-                  <section className="admin-subsection">
-                    <div className="admin-subsection-header">
-                      <h4>Amenity groups</h4>
-                      <button className="button-link button-link--ghost admin-action" type="button" onClick={addAmenityGroup}>
-                        Add group
-                      </button>
-                    </div>
+                  <p className="admin-note">Edit only the content visitors see on this page.</p>
 
-                    <div className="admin-collection-list">
-                      {formState.amenityGroups.map((group) => (
-                        <div className="admin-collection-card" key={group.id}>
-                          <label className="admin-field">
-                            <span>Group title</span>
-                            <input
-                              type="text"
-                              value={group.title}
-                              onChange={(event) => updateAmenityGroup(group.id, 'title', event.target.value)}
-                              disabled={!propertySaveEnabled}
-                            />
-                          </label>
-                          <label className="admin-field">
-                            <span>Items</span>
-                            <textarea
-                              rows="5"
-                              value={group.itemsText}
-                              onChange={(event) => updateAmenityGroup(group.id, 'itemsText', event.target.value)}
-                              disabled={!propertySaveEnabled}
-                            />
-                          </label>
-                          <button
-                            className="button-link button-link--ghost admin-action"
-                            type="button"
-                            onClick={() => removeAmenityGroup(group.id)}
-                          >
-                            Remove group
+                  {pageFeedback ? <p className={`admin-feedback admin-feedback--${pageSaveStatus}`}>{pageFeedback}</p> : null}
+
+                  {pageEditorState.status === 'loading' ? <p className="admin-empty">Loading structured page content...</p> : null}
+
+                  {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
+                    <form className="admin-form" onSubmit={handleStructuredPageSubmit}>
+                      <p className="admin-note">Edit the page copy and images below. Page structure is fixed for this site.</p>
+                      <AdminStructuredPageEditor
+                        disabled={!siteContentSaveEnabled}
+                        page={pageEditorState.draft}
+                        onChange={(updater) =>
+                          setPageEditorState((current) => ({
+                            ...current,
+                            draft: typeof updater === 'function' ? updater(current.draft) : updater,
+                          }))
+                        }
+                      />
+
+                      <div className="admin-form-actions">
+                        <button
+                        className="button-link button-link--primary admin-submit"
+                        type="submit"
+                        disabled={!siteContentSaveEnabled || pageSaveStatus === 'saving'}
+                      >
+                        {pageSaveStatus === 'saving' ? 'Saving...' : 'Save changes'}
+                      </button>
+                      </div>
+                    </form>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === 'properties' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Properties</div>
+                  <h2>Add and edit rental properties</h2>
+                </div>
+                <div className="admin-inline-actions">
+                  <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
+                    New property
+                  </button>
+                  {propertyEditingEnabled ? (
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetLocalEdits}>
+                      {propertyUsesFirebase ? 'Restore Firebase catalog' : 'Reset local edits'}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {!propertyEditingEnabled ? (
+                <p className="admin-note">
+                  Property editing is read only in the current mode. Set `VITE_PROPERTY_DATA_SOURCE` to `mock`
+                  for browser-local drafts or `firebase` for shared live editing.
+                </p>
+              ) : null}
+
+              {propertyUsesFirebase && !authState.user ? (
+                <p className="admin-note">
+                  Property saves are routed through Firebase-backed admin endpoints and require a signed-in
+                  Firebase user.
+                </p>
+              ) : null}
+
+              {workspaceState.status === 'error' ? <p className="admin-empty">{workspaceState.message}</p> : null}
+
+              <div className="admin-property-grid">
+                <div className="admin-property-list">
+                  {workspaceState.status === 'loading' ? <p className="admin-empty">Loading property catalog...</p> : null}
+
+                  {workspaceState.status === 'ready' && properties.length === 0 ? (
+                    <p className="admin-empty">No properties are available yet. Start with a new draft.</p>
+                  ) : null}
+
+                  {properties.map((property) => (
+                    <PropertyListItem
+                      active={editorState.mode === 'edit' && editorState.activeSlug === property.slug}
+                      key={property.slug}
+                      property={property}
+                      onSelect={openEditForm}
+                    />
+                  ))}
+                </div>
+
+                <div className="admin-editor">
+                  <div className="admin-editor-header">
+                    <div>
+                      <div className="eyebrow">{editorState.mode === 'create' ? 'New property' : 'Editing property'}</div>
+                      <h3>{editorState.mode === 'create' ? 'Create a property draft' : repairSnapshotText(formState.name)}</h3>
+                    </div>
+                    {editorState.mode === 'edit' && editorState.activeSlug ? (
+                      <Link className="button-link button-link--ghost admin-action" to={`/rental-properties/${editorState.activeSlug}`}>
+                        Open public route
+                      </Link>
+                    ) : null}
+                  </div>
+
+                  {feedback ? <p className={`admin-feedback admin-feedback--${saveStatus}`}>{feedback}</p> : null}
+
+                  <div className="admin-editor-workspace">
+                    <form className="admin-form" onSubmit={handleSubmit}>
+                      <div className="admin-form-grid">
+                        <label className="admin-field">
+                          <span>Name</span>
+                          <input
+                            type="text"
+                            value={formState.name}
+                            onChange={(event) => updateFormState('name', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>Slug</span>
+                          <input
+                            type="text"
+                            value={formState.slug}
+                            onChange={(event) => updateFormState('slug', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>Bedrooms</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={formState.bedrooms}
+                            onChange={(event) => updateFormState('bedrooms', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>Bathrooms</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            value={formState.bathrooms}
+                            onChange={(event) => updateFormState('bathrooms', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>Max guests</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={formState.maxGuests}
+                            onChange={(event) => updateFormState('maxGuests', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field">
+                          <span>Price</span>
+                          <input
+                            type="text"
+                            value={formState.price}
+                            onChange={(event) => updateFormState('price', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Location</span>
+                          <input
+                            type="text"
+                            value={formState.location}
+                            onChange={(event) => updateFormState('location', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Short description</span>
+                          <textarea
+                            rows="3"
+                            value={formState.shortDescription}
+                            onChange={(event) => updateFormState('shortDescription', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Highlights</span>
+                          <textarea
+                            rows="5"
+                            value={formState.highlightsText}
+                            onChange={(event) => updateFormState('highlightsText', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Description paragraphs</span>
+                          <textarea
+                            rows="8"
+                            value={formState.descriptionText}
+                            onChange={(event) => updateFormState('descriptionText', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Hero image URL</span>
+                          <input
+                            type="url"
+                            value={formState.heroImageUrl}
+                            onChange={(event) => updateFormState('heroImageUrl', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+
+                        <label className="admin-field admin-field--wide">
+                          <span>Hero image alt text</span>
+                          <input
+                            type="text"
+                            value={formState.heroImageAlt}
+                            onChange={(event) => updateFormState('heroImageAlt', event.target.value)}
+                            disabled={!propertySaveEnabled}
+                          />
+                        </label>
+                      </div>
+
+                      <section className="admin-subsection">
+                        <div className="admin-subsection-header">
+                          <div>
+                            <h4>House images</h4>
+                            <p className="admin-note">These images power the property gallery shown on the public house page.</p>
+                          </div>
+                          <button className="button-link button-link--ghost admin-action" type="button" onClick={addGalleryImage}>
+                            Add image
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  </section>
 
-                  <section className="admin-subsection">
-                    <div className="admin-subsection-header">
-                      <h4>Reviews</h4>
-                      <button className="button-link button-link--ghost admin-action" type="button" onClick={addReviewEntry}>
-                        Add review
-                      </button>
-                    </div>
+                        <div className="admin-image-grid">
+                          {formState.galleryImages.length === 0 ? (
+                            <p className="admin-empty">No gallery images yet. Add the full house gallery here.</p>
+                          ) : null}
 
-                    <div className="admin-collection-list">
-                      {formState.reviewEntries.map((entry) => (
-                        <div className="admin-collection-card" key={entry.id}>
+                          {formState.galleryImages.map((image, index) => (
+                            <div className="admin-image-card" key={image.id}>
+                              {image.url ? (
+                                <div className="admin-image-thumb">
+                                  <img alt={image.alt || `Property image ${index + 1}`} loading="lazy" src={image.url} />
+                                </div>
+                              ) : (
+                                <div className="admin-image-placeholder">Add an image URL to preview it here.</div>
+                              )}
+
+                              <div className="admin-image-card-meta">
+                                <strong>Gallery image {index + 1}</strong>
+                                <span>{index === 0 ? 'First thumbnail in the public gallery' : 'Shown in the public gallery strip'}</span>
+                              </div>
+
+                              <label className="admin-field admin-field--wide">
+                                <span>Image URL</span>
+                                <input
+                                  type="url"
+                                  value={image.url}
+                                  onChange={(event) => updateGalleryImage(image.id, 'url', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+
+                              <label className="admin-field">
+                                <span>Alt text</span>
+                                <input
+                                  type="text"
+                                  value={image.alt}
+                                  onChange={(event) => updateGalleryImage(image.id, 'alt', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+
+                              <label className="admin-field">
+                                <span>Title</span>
+                                <input
+                                  type="text"
+                                  value={image.title}
+                                  onChange={(event) => updateGalleryImage(image.id, 'title', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+
+                              <div className="admin-inline-actions">
+                                <button
+                                  className="button-link button-link--ghost admin-action"
+                                  type="button"
+                                  onClick={() => moveGalleryImage(image.id, -1)}
+                                  disabled={!propertySaveEnabled || index === 0}
+                                >
+                                  Move earlier
+                                </button>
+                                <button
+                                  className="button-link button-link--ghost admin-action"
+                                  type="button"
+                                  onClick={() => moveGalleryImage(image.id, 1)}
+                                  disabled={!propertySaveEnabled || index === formState.galleryImages.length - 1}
+                                >
+                                  Move later
+                                </button>
+                                <button
+                                  className="button-link button-link--ghost admin-action"
+                                  type="button"
+                                  onClick={() => removeGalleryImage(image.id)}
+                                  disabled={!propertySaveEnabled}
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="admin-subsection">
+                        <div className="admin-subsection-header">
+                          <h4>Amenity groups</h4>
+                          <button className="button-link button-link--ghost admin-action" type="button" onClick={addAmenityGroup}>
+                            Add group
+                          </button>
+                        </div>
+
+                        <div className="admin-collection-list">
+                          {formState.amenityGroups.map((group) => (
+                            <div className="admin-collection-card" key={group.id}>
+                              <label className="admin-field">
+                                <span>Group title</span>
+                                <input
+                                  type="text"
+                                  value={group.title}
+                                  onChange={(event) => updateAmenityGroup(group.id, 'title', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+                              <label className="admin-field">
+                                <span>Items</span>
+                                <textarea
+                                  rows="5"
+                                  value={group.itemsText}
+                                  onChange={(event) => updateAmenityGroup(group.id, 'itemsText', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+                              <button
+                                className="button-link button-link--ghost admin-action"
+                                type="button"
+                                onClick={() => removeAmenityGroup(group.id)}
+                              >
+                                Remove group
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="admin-subsection">
+                        <div className="admin-subsection-header">
+                          <h4>Reviews</h4>
+                          <button className="button-link button-link--ghost admin-action" type="button" onClick={addReviewEntry}>
+                            Add review
+                          </button>
+                        </div>
+
+                        <div className="admin-collection-list">
+                          {formState.reviewEntries.map((entry) => (
+                            <div className="admin-collection-card" key={entry.id}>
+                              <label className="admin-field">
+                                <span>Quote</span>
+                                <textarea
+                                  rows="4"
+                                  value={entry.quote}
+                                  onChange={(event) => updateReviewEntry(entry.id, 'quote', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+                              <label className="admin-field">
+                                <span>Author</span>
+                                <input
+                                  type="text"
+                                  value={entry.author}
+                                  onChange={(event) => updateReviewEntry(entry.id, 'author', event.target.value)}
+                                  disabled={!propertySaveEnabled}
+                                />
+                              </label>
+                              <button
+                                className="button-link button-link--ghost admin-action"
+                                type="button"
+                                onClick={() => removeReviewEntry(entry.id)}
+                              >
+                                Remove review
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+
+                      <section className="admin-subsection">
+                        <div className="admin-subsection-header">
+                          <h4>Booking contact</h4>
+                        </div>
+
+                        <div className="admin-form-grid">
                           <label className="admin-field">
-                            <span>Quote</span>
+                            <span>Contact name</span>
+                            <input
+                              type="text"
+                              value={formState.bookingContactName}
+                              onChange={(event) => updateFormState('bookingContactName', event.target.value)}
+                              disabled={!propertySaveEnabled}
+                            />
+                          </label>
+
+                          <label className="admin-field">
+                            <span>Email</span>
+                            <input
+                              type="email"
+                              value={formState.bookingEmail}
+                              onChange={(event) => updateFormState('bookingEmail', event.target.value)}
+                              disabled={!propertySaveEnabled}
+                            />
+                          </label>
+
+                          <label className="admin-field admin-field--wide">
+                            <span>Booking note</span>
                             <textarea
                               rows="4"
-                              value={entry.quote}
-                              onChange={(event) => updateReviewEntry(entry.id, 'quote', event.target.value)}
+                              value={formState.bookingNote}
+                              onChange={(event) => updateFormState('bookingNote', event.target.value)}
                               disabled={!propertySaveEnabled}
                             />
                           </label>
-                          <label className="admin-field">
-                            <span>Author</span>
-                            <input
-                              type="text"
-                              value={entry.author}
-                              onChange={(event) => updateReviewEntry(entry.id, 'author', event.target.value)}
-                              disabled={!propertySaveEnabled}
-                            />
-                          </label>
-                          <button
-                            className="button-link button-link--ghost admin-action"
-                            type="button"
-                            onClick={() => removeReviewEntry(entry.id)}
-                          >
-                            Remove review
-                          </button>
                         </div>
-                      ))}
-                    </div>
-                  </section>
+                      </section>
 
-                  <section className="admin-subsection">
-                    <div className="admin-subsection-header">
-                      <h4>Booking contact</h4>
-                    </div>
+                      <div className="admin-form-actions">
+                        <button
+                          className="button-link button-link--primary admin-submit"
+                          type="submit"
+                          disabled={!propertySaveEnabled || saveStatus === 'saving'}
+                        >
+                          {saveStatus === 'saving' ? 'Saving...' : editorState.mode === 'create' ? 'Create property' : 'Save property'}
+                        </button>
+                        <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
+                          Clear form
+                        </button>
+                      </div>
+                    </form>
 
+                    <div className="admin-live-preview-column">
+                      <AdminPropertyPreview
+                        key={[
+                          propertyPreviewModel.slug,
+                          propertyPreviewModel.heroImage?.url,
+                          ...propertyPreviewModel.gallery.map((image) => image.url),
+                        ]
+                          .filter(Boolean)
+                          .join('|')}
+                        property={propertyPreviewModel}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === 'charters' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Charter Boats</div>
+                  <h2>Add and edit charter boat listings</h2>
+                </div>
+                <div className="admin-inline-actions">
+                  <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>
+                    New charter
+                  </button>
+                  {charterEditingEnabled ? (
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetCharterEdits}>
+                      {charterUsesFirebase ? 'Restore Firebase catalog' : 'Reset local edits'}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
+              {!charterEditingEnabled ? (
+                <p className="admin-note">
+                  Charter editing is read only in the current mode. Set `VITE_CHARTER_DATA_SOURCE` to `mock`
+                  for browser-local drafts or `firebase` for shared live editing.
+                </p>
+              ) : null}
+
+              {charterUsesFirebase && !authState.user ? (
+                <p className="admin-note">
+                  Charter saves are routed through Firebase-backed admin endpoints and require a signed-in
+                  Firebase user.
+                </p>
+              ) : null}
+
+              {charterWorkspaceState.status === 'error' ? <p className="admin-empty">{charterWorkspaceState.message}</p> : null}
+
+              <div className="admin-property-grid">
+                <div className="admin-property-list">
+                  {charterWorkspaceState.status === 'loading' ? <p className="admin-empty">Loading charter catalog...</p> : null}
+
+                  {charterWorkspaceState.status === 'ready' && charterWorkspaceState.charters.length === 0 ? (
+                    <p className="admin-empty">No charters available yet. Start with a new draft.</p>
+                  ) : null}
+
+                  {charterWorkspaceState.charters.map((charter) => (
+                    <CharterListItem
+                      active={charterEditorState.mode === 'edit' && charterEditorState.activeSlug === charter.slug}
+                      key={charter.slug}
+                      charter={charter}
+                      onSelect={openEditCharterForm}
+                    />
+                  ))}
+                </div>
+
+                <div className="admin-editor">
+                  <div className="admin-editor-header">
+                    <div>
+                      <div className="eyebrow">{charterEditorState.mode === 'create' ? 'New charter' : 'Editing charter'}</div>
+                      <h3>
+                        {charterEditorState.mode === 'create'
+                          ? 'Create a charter draft'
+                          : repairSnapshotText(charterFormState.name)}
+                      </h3>
+                    </div>
+                    {charterEditorState.mode === 'edit' && charterEditorState.activeSlug ? (
+                      <Link className="button-link button-link--ghost admin-action" to={`/charter-boat-rentals/${charterEditorState.activeSlug}`}>
+                        Open public route
+                      </Link>
+                    ) : null}
+                  </div>
+
+                  {charterFeedback ? (
+                    <p className={`admin-feedback admin-feedback--${charterSaveStatus}`}>{charterFeedback}</p>
+                  ) : null}
+
+                  <form className="admin-form" onSubmit={handleCharterSubmit}>
                     <div className="admin-form-grid">
                       <label className="admin-field">
-                        <span>Contact name</span>
+                        <span>Name</span>
                         <input
                           type="text"
-                          value={formState.bookingContactName}
-                          onChange={(event) => updateFormState('bookingContactName', event.target.value)}
-                          disabled={!propertySaveEnabled}
+                          value={charterFormState.name}
+                          onChange={(event) => updateCharterFormState('name', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field">
+                        <span>Slug</span>
+                        <input
+                          type="text"
+                          value={charterFormState.slug}
+                          onChange={(event) => updateCharterFormState('slug', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field admin-field--wide">
+                        <span>
+                          <input
+                            type="checkbox"
+                            checked={charterFormState.active}
+                            onChange={(event) => updateCharterFormState('active', event.target.checked)}
+                            disabled={!charterSaveEnabled}
+                          />
+                          {' '}Active (visible on public charter page)
+                        </span>
+                      </label>
+
+                      <label className="admin-field admin-field--wide">
+                        <span>Short description</span>
+                        <textarea
+                          rows="3"
+                          value={charterFormState.shortDescription}
+                          onChange={(event) => updateCharterFormState('shortDescription', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field">
+                        <span>Phone number</span>
+                        <input
+                          type="text"
+                          value={charterFormState.phoneNumber}
+                          onChange={(event) => updateCharterFormState('phoneNumber', event.target.value)}
+                          disabled={!charterSaveEnabled}
                         />
                       </label>
 
@@ -1097,290 +2147,74 @@ export function AdminPage() {
                         <span>Email</span>
                         <input
                           type="email"
-                          value={formState.bookingEmail}
-                          onChange={(event) => updateFormState('bookingEmail', event.target.value)}
-                          disabled={!propertySaveEnabled}
+                          value={charterFormState.email}
+                          onChange={(event) => updateCharterFormState('email', event.target.value)}
+                          disabled={!charterSaveEnabled}
                         />
                       </label>
 
                       <label className="admin-field admin-field--wide">
-                        <span>Booking note</span>
+                        <span>Website</span>
+                        <input
+                          type="url"
+                          value={charterFormState.website}
+                          onChange={(event) => updateCharterFormState('website', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field admin-field--wide">
+                        <span>Hero image URL</span>
+                        <input
+                          type="url"
+                          value={charterFormState.heroImageUrl}
+                          onChange={(event) => updateCharterFormState('heroImageUrl', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field admin-field--wide">
+                        <span>Hero image alt text</span>
+                        <input
+                          type="text"
+                          value={charterFormState.heroImageAlt}
+                          onChange={(event) => updateCharterFormState('heroImageAlt', event.target.value)}
+                          disabled={!charterSaveEnabled}
+                        />
+                      </label>
+
+                      <label className="admin-field admin-field--wide">
+                        <span>Description paragraphs</span>
                         <textarea
-                          rows="4"
-                          value={formState.bookingNote}
-                          onChange={(event) => updateFormState('bookingNote', event.target.value)}
-                          disabled={!propertySaveEnabled}
+                          rows="8"
+                          value={charterFormState.descriptionText}
+                          onChange={(event) => updateCharterFormState('descriptionText', event.target.value)}
+                          disabled={!charterSaveEnabled}
                         />
                       </label>
                     </div>
-                  </section>
 
-                  <div className="admin-form-actions">
-                    <button className="button-link button-link--primary admin-submit" type="submit" disabled={!propertySaveEnabled || saveStatus === 'saving'}>
-                      {saveStatus === 'saving'
-                        ? 'Saving...'
-                        : editorState.mode === 'create'
-                          ? 'Create property'
-                          : 'Save property'}
-                    </button>
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
-                      Clear form
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </section>
-
-          <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <div className="eyebrow">Charter Boats</div>
-                <h2>Add and edit charter boat listings</h2>
-              </div>
-              <div className="admin-inline-actions">
-                <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>
-                  New charter
-                </button>
-                {charterEditingEnabled ? (
-                  <button
-                    className="button-link button-link--ghost admin-action"
-                    type="button"
-                    onClick={handleResetCharterEdits}
-                  >
-                    {charterUsesFirebase ? 'Restore Firebase catalog' : 'Reset local edits'}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            {!charterEditingEnabled ? (
-              <p className="admin-note">
-                Charter editing is read only in the current mode. Set `VITE_CHARTER_DATA_SOURCE` to
-                `mock` for browser-local drafts or `firebase` for shared live editing.
-              </p>
-            ) : null}
-
-            {charterUsesFirebase && !authState.user ? (
-              <p className="admin-note">
-                Charter saves are routed through Firebase-backed admin endpoints and require a signed-in
-                Firebase user.
-              </p>
-            ) : null}
-
-            {charterWorkspaceState.status === 'error' ? (
-              <p className="admin-empty">{charterWorkspaceState.message}</p>
-            ) : null}
-
-            <div className="admin-property-grid">
-              <div className="admin-property-list">
-                {charterWorkspaceState.status === 'loading' ? (
-                  <p className="admin-empty">Loading charter catalog...</p>
-                ) : null}
-
-                {charterWorkspaceState.status === 'ready' && charterWorkspaceState.charters.length === 0 ? (
-                  <p className="admin-empty">No charters available yet. Start with a new draft.</p>
-                ) : null}
-
-                {charterWorkspaceState.charters.map((charter) => (
-                  <CharterListItem
-                    active={charterEditorState.mode === 'edit' && charterEditorState.activeSlug === charter.slug}
-                    key={charter.slug}
-                    charter={charter}
-                    onSelect={openEditCharterForm}
-                  />
-                ))}
-              </div>
-
-              <div className="admin-editor">
-                <div className="admin-editor-header">
-                  <div>
-                    <div className="eyebrow">
-                      {charterEditorState.mode === 'create' ? 'New charter' : 'Editing charter'}
+                    <div className="admin-form-actions">
+                      <button
+                        className="button-link button-link--primary admin-submit"
+                        type="submit"
+                        disabled={!charterSaveEnabled || charterSaveStatus === 'saving'}
+                      >
+                        {charterSaveStatus === 'saving'
+                          ? 'Saving...'
+                          : charterEditorState.mode === 'create'
+                            ? 'Create charter'
+                            : 'Save charter'}
+                      </button>
+                      <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>
+                        Clear form
+                      </button>
                     </div>
-                    <h3>
-                      {charterEditorState.mode === 'create'
-                        ? 'Create a charter draft'
-                        : repairSnapshotText(charterFormState.name)}
-                    </h3>
-                  </div>
-                  {charterEditorState.mode === 'edit' && charterEditorState.activeSlug ? (
-                    <Link
-                      className="button-link button-link--ghost admin-action"
-                      to={`/charter-boat-rentals/${charterEditorState.activeSlug}`}
-                    >
-                      Open public route
-                    </Link>
-                  ) : null}
+                  </form>
                 </div>
-
-                {charterFeedback ? (
-                  <p className={`admin-feedback admin-feedback--${charterSaveStatus}`}>{charterFeedback}</p>
-                ) : null}
-
-                <form className="admin-form" onSubmit={handleCharterSubmit}>
-                  <div className="admin-form-grid">
-                    <label className="admin-field">
-                      <span>Name</span>
-                      <input
-                        type="text"
-                        value={charterFormState.name}
-                        onChange={(event) => updateCharterFormState('name', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field">
-                      <span>Slug</span>
-                      <input
-                        type="text"
-                        value={charterFormState.slug}
-                        onChange={(event) => updateCharterFormState('slug', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>
-                        <input
-                          type="checkbox"
-                          checked={charterFormState.active}
-                          onChange={(event) => updateCharterFormState('active', event.target.checked)}
-                          disabled={!charterSaveEnabled}
-                        />
-                        {' '}Active (visible on public charter page)
-                      </span>
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Short description</span>
-                      <textarea
-                        rows="3"
-                        value={charterFormState.shortDescription}
-                        onChange={(event) => updateCharterFormState('shortDescription', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field">
-                      <span>Phone number</span>
-                      <input
-                        type="text"
-                        value={charterFormState.phoneNumber}
-                        onChange={(event) => updateCharterFormState('phoneNumber', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field">
-                      <span>Email</span>
-                      <input
-                        type="email"
-                        value={charterFormState.email}
-                        onChange={(event) => updateCharterFormState('email', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Website</span>
-                      <input
-                        type="url"
-                        value={charterFormState.website}
-                        onChange={(event) => updateCharterFormState('website', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Hero image URL</span>
-                      <input
-                        type="url"
-                        value={charterFormState.heroImageUrl}
-                        onChange={(event) => updateCharterFormState('heroImageUrl', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Hero image alt text</span>
-                      <input
-                        type="text"
-                        value={charterFormState.heroImageAlt}
-                        onChange={(event) => updateCharterFormState('heroImageAlt', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-
-                    <label className="admin-field admin-field--wide">
-                      <span>Description paragraphs</span>
-                      <textarea
-                        rows="8"
-                        value={charterFormState.descriptionText}
-                        onChange={(event) => updateCharterFormState('descriptionText', event.target.value)}
-                        disabled={!charterSaveEnabled}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="admin-form-actions">
-                    <button
-                      className="button-link button-link--primary admin-submit"
-                      type="submit"
-                      disabled={!charterSaveEnabled || charterSaveStatus === 'saving'}
-                    >
-                      {charterSaveStatus === 'saving'
-                        ? 'Saving...'
-                        : charterEditorState.mode === 'create'
-                          ? 'Create charter'
-                          : 'Save charter'}
-                    </button>
-                    <button
-                      className="button-link button-link--ghost admin-action"
-                      type="button"
-                      onClick={openCreateCharterForm}
-                    >
-                      Clear form
-                    </button>
-                  </div>
-                </form>
               </div>
-            </div>
-          </section>
-
-          <section className="admin-panel">
-            <div className="admin-panel-header">
-              <div>
-                <div className="eyebrow">Pages</div>
-                <h2>Current site routes</h2>
-              </div>
-            </div>
-
-            <div className="admin-pages-grid">
-              {pageInventory.map((page) => {
-                const isDynamicRoute = page.path.includes(':')
-
-                return (
-                  <article className="admin-page-card" key={page.key}>
-                    <div className="admin-page-card-top">
-                      <span className="admin-route-tag">{page.source}</span>
-                      <span className="admin-route-group">{page.group}</span>
-                    </div>
-                    <h3>{repairSnapshotText(page.label)}</h3>
-                    <p>{repairSnapshotText(page.title)}</p>
-                    <code>{page.path}</code>
-                    {!isDynamicRoute ? (
-                      <Link className="button-link button-link--ghost admin-action" to={page.path}>
-                        Open route
-                      </Link>
-                    ) : (
-                      <span className="admin-note">Dynamic route template</span>
-                    )}
-                  </article>
-                )
-              })}
-            </div>
-          </section>
+            </section>
+          ) : null}
         </div>
       </section>
     </article>

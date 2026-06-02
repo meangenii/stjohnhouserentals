@@ -1,5 +1,6 @@
 const propertyCatalog = require('./generated/livePropertyCatalog.json')
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const PROPERTY_COLLECTION = 'cmsProperties'
 
@@ -273,6 +274,8 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
   if (!slug || !name) {
     throw new Error('Invalid property data: name and slug are required.')
   }
+
+  assertStorageImagesInValue(draft, `Property ${name || slug} image`)
 
   const factsSource = Array.isArray(draft?.highlights) ? draft.highlights : draft?.facts
   const facts = Array.isArray(factsSource) ? factsSource.map((fact) => String(fact).trim()).filter(Boolean) : []

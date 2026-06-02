@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-01T23:16:19.966Z",
+  "generatedAt": "2026-06-02T16:47:30.888Z",
   "siteShell": {
     "source": "structured-seed",
     "contact": {
@@ -20,7 +20,7 @@
       "logo": {
         "kind": "image",
         "alt": "St. John House Rentals",
-        "assetId": "siteLogo"
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fsite-shell%2Fsite-logo.png?alt=media&token=caf40282-c50b-4d17-9159-5b4b8ef4dad9"
       },
       "primaryNav": [
         {
@@ -676,7 +676,7 @@
         "lead": "Find the perfect vacation home for your next island adventure.",
         "image": {
           "kind": "image",
-          "assetId": "homeHeroBeach",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-hero-beach.png?alt=media&token=cb795e85-03fa-4116-b677-46ff8844ace3",
           "alt": "Trunk Bay view across bright blue water on St. John"
         }
       },
@@ -693,7 +693,7 @@
         },
         "image": {
           "kind": "image",
-          "assetId": "homeWhyChooseUs",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-why-choose-us.jpg?alt=media&token=6ef187f8-498f-46f8-bb6f-494bfef2d7e4",
           "alt": "Pink plumeria flowers overlooking St. John waters"
         }
       },
@@ -701,7 +701,7 @@
         "title": "Discover the magic and beauty of St. John in the U.S. Virgin Islands",
         "image": {
           "kind": "image",
-          "assetId": "homeDiscoverCollage",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-discover-collage.png?alt=media&token=aa6b5043-4b3f-4a69-828b-df7fd2d823fa",
           "alt": "St. John bay collage with coastal views and boats"
         },
         "features": [
@@ -737,7 +737,7 @@
         "bodyOutro": " do not handle bookings.",
         "image": {
           "kind": "image",
-          "assetId": "homeAboutPool",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-about-pool.jpg?alt=media&token=78b8f199-00f1-4b12-a268-c79ad594a71a",
           "alt": "Pool deck overlooking villa and turquoise ocean at Still Waters Villa"
         }
       }
@@ -753,7 +753,7 @@
         "title": "Celebrating 25 years this season!",
         "image": {
           "kind": "image",
-          "assetId": "aboutHeroAnaberg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-hero-anaberg.jpg?alt=media&token=64ab32e0-36ff-4b14-9cea-faf42db662c1",
           "alt": "Anaberg ruins overlooking St. John waters"
         }
       },
@@ -771,7 +771,7 @@
         ],
         "image": {
           "kind": "image",
-          "assetId": "aboutStoryParrotfish",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-story-parrotfish.jpg?alt=media&token=bc6353fc-dcd2-40f3-b029-716953fbfd8a",
           "alt": "Parrotfish swimming in clear Caribbean water"
         }
       },
@@ -781,7 +781,7 @@
         "lead": "is essential to making your stay unforgettable. Whether you're visiting for a week or planning an extended stay, we have a home for you. From cozy cottages to spacious villas, we offer properties in some of the most desirable locations on St. John, giving you access to pristine beaches, hiking trails, and breathtaking views.",
         "image": {
           "kind": "image",
-          "assetId": "aboutEssentialsPool",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fabout%2Fabout-essentials-pool.jpg?alt=media&token=967cc593-037f-45ba-88ec-83fdad09a707",
           "alt": "Pool deck overlooking villa and turquoise ocean"
         }
       }
@@ -819,7 +819,7 @@
         "title": "Advertise on St. John House Rentals",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/ede627_b458d88f60da4566a0285c92798f0774~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fadvertise%2Fadvertise-hero.jpg?alt=media&token=f194d972-8913-45bb-af4e-007d19a87105",
           "alt": "Sunlight reflecting across calm blue water"
         }
       },
@@ -898,14 +898,14 @@
         "tagline": "From Beaches to Restaurants - Find It Here!",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_ec591c9803094221a5b2f4897ff0f3d5~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flocalattractions%2Flocalattractions-hero.avif?alt=media&token=a38b6970-a845-464e-85e4-990f801817cd",
           "alt": "Trunk Bay viewed from above with turquoise water and white sand"
         }
       },
       "map": {
         "image": {
           "kind": "image",
-          "assetId": "localAttractionsMap",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flocal-attractions%2Flocal-attractions-map.png?alt=media&token=87e1d606-c537-4d29-ac48-a6f972b04c50",
           "alt": "Virgin Islands National Park map of St. John"
         },
         "action": {
@@ -1381,7 +1381,7 @@
         "title": "Property For Sale",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_0af116d3fda94cab9898dc51cf33dd77~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-hero.avif?alt=media&token=0e47922b-337e-4b70-88e1-a8b7eb9664ef",
           "alt": "Sunny St. John ridge with bay views"
         }
       },
@@ -1393,7 +1393,7 @@
         ],
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_6d3187f374f04f81a52a51be49c8a3c7~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-story.avif?alt=media&token=e66b3a09-2770-48b3-97d3-000a8554368e",
           "alt": "Stone tower and tropical plants overlooking St. John waters"
         }
       },
@@ -1405,7 +1405,7 @@
         ],
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_3c05a421d934451a9680a7216002dc24~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpropertyforsale%2Fpropertyforsale-details.avif?alt=media&token=c4952cab-fd06-454e-9d74-d939f16944e1",
           "alt": "Cruz Bay shoreline and sky"
         },
         "contact": {
@@ -1430,7 +1430,7 @@
         "title": "Rental Accommodations",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/11062b_dd6ed5b1a0294c2f9107c8c6e80a33d1~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Frentalaccommodations%2Frentalaccommodations-hero.jpg?alt=media&token=2772fb38-19fe-4647-805f-47a7b2a38b0c",
           "alt": "Seaside neighborhood on St. John"
         }
       },
@@ -1447,7 +1447,7 @@
             "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Point Rendezvous",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/b5efc4_61e1555a2a2e4b709f0d8ca8985a8b62~mv2.avif/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Arco%20Iris-Double%20Rainbow.avif",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Farco-iris%2Farco-iris-hero.avif?alt=media&token=3b6c4ced-9562-4a87-ae20-62032d2e1301",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1458,7 +1458,7 @@
             "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Maria Bluff",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/b5efc4_4f140ccc87964f95a068407e0c12feea~mv2.avif/v1/fill/w_147,h_83,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/02-Beyond-the-Sea-Aerial.avif",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeyond-the-sea%2Fbeyond-the-sea-hero.avif?alt=media&token=1cfb3e62-3767-4e53-96fd-3600daab9534",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1469,7 +1469,7 @@
             "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Upper Carolina",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/b5efc4_82416d5327cd4e85bb6fe542b2bf4921~mv2.jpg/v1/fill/w_147,h_39,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-Coral%20Sky-Pool-View_edited_edited.jpg",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcoral-sky-villa%2Fcoral-sky-villa-hero.jpg?alt=media&token=5e3e46f9-fbf7-4177-aa9f-5802132a28f5",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1480,7 +1480,7 @@
             "summary": "Max 7 Guests 2 Bedrooms + Loft 2 Baths Pool Hot Tub Internet Mamey Peak",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/64053b_a381a051afe74ff880118a683b5d13f4~mv2.png/v1/fill/w_90,h_60,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Notre%20Ciel.png",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fnotre-ciel%2Fnotre-ciel-hero.png?alt=media&token=984d24d0-0ee4-4bcf-83c6-00618a85a82d",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1491,7 +1491,7 @@
             "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/b5efc4_2e89ba6da6b54fd1b535cf4e676838bc~mv2.jpg/v1/fill/w_147,h_56,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/HERO-SLV-View_edited.jpg",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-la-vie%2Fsol-la-vie-hero.jpg?alt=media&token=bb6e0a9f-1923-4384-92ba-f59ee9dd8fcb",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1502,7 +1502,7 @@
             "summary": "Max 4 Guests 1 Bedroom + Loft 2 Baths Internet Coral Bay",
             "image": {
               "kind": "image",
-              "url": "https://static.wixstatic.com/media/64053b_13f8663417054f61ade20db1a6e39f5c~mv2.png/v1/fill/w_90,h_68,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/The%20Little%20Easy.png",
+              "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fthe-little-easy%2Fthe-little-easy-hero.png?alt=media&token=580f7825-795c-4bdc-94bf-e93f4aa8c581",
               "alt": "Available Rentals",
               "title": ""
             }
@@ -1521,7 +1521,7 @@
         "title": "Car Barge Information",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_971bc1f62448471297f979f7390629da~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-hero.avif?alt=media&token=3399e572-c1b0-433d-a8d7-6d7f175bbf5c",
           "alt": "Car barges lined up at the dock"
         }
       },
@@ -1560,7 +1560,7 @@
           },
           "image": {
             "kind": "image",
-            "url": "https://static.wixstatic.com/media/b5efc4_5d1227f8bfe0474d95adc7d25196a775~mv2.avif",
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-0.avif?alt=media&token=17cd8a66-278c-4f07-84f1-27e42d961160",
             "alt": "Love City car ferry"
           },
           "schedules": [
@@ -1656,7 +1656,7 @@
           },
           "image": {
             "kind": "image",
-            "url": "https://static.wixstatic.com/media/b5efc4_f045011a181c4bc3b6eb416b8b98be53~mv2.avif",
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-1.avif?alt=media&token=a69d42aa-fce7-4893-a98b-2f96b4437423",
             "alt": "Big Red Barge"
           },
           "schedules": [
@@ -1737,7 +1737,7 @@
       "hero": {
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg/v1/fit/w_2500,h_1330,al_c/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpassengerferry%2Fpassengerferry-hero.jpg?alt=media&token=9b1693e3-ae5f-4144-81be-89f7531886e5",
           "alt": "Passenger ferries docked in Cruz Bay",
           "title": "passenger-ferry-harbor.jpg"
         }
@@ -1867,7 +1867,7 @@
         "tagline": "Rent a car to explore all that St. John has to offer",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_6bf78c0201a34e879b21263e1e283553~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-hero.avif?alt=media&token=76382cc1-fb7f-41fa-8ba9-81c655a695eb",
           "alt": "Jeep driving along a St. John road"
         }
       },
@@ -1978,7 +1978,7 @@
         "dependablePhone": "1-800-522-3076",
         "detailImage": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/b5efc4_70547ca9cb5f4d48807f3639ffdc0096~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-detail.jpg?alt=media&token=758653b6-9397-46cd-babf-a31cd7ab2746",
           "alt": "Red jeep parked on a St. John road"
         }
       }
@@ -1995,7 +1995,7 @@
         "lead": "Rent a charter boat for an unforgettable St. John adventure.",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/ede627_58e29e33d0fd408a947face9bf3459de~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-hero.jpg?alt=media&token=c1f9f54c-98ed-4043-8460-4f4b8fca861b",
           "alt": "Charter boat cruising blue water near Whistling Cay"
         }
       },
@@ -2004,7 +2004,7 @@
         "paragraph": "Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.",
         "image": {
           "kind": "image",
-          "url": "https://static.wixstatic.com/media/9d128c_44abcdda393b4a0cb2d88c577092b4f1~mv2.png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-intro.png?alt=media&token=272743e6-b148-4a2a-afe2-5d5919802a87",
           "alt": "Sailboat charter cruising St. John waters"
         }
       },
@@ -2040,7 +2040,7 @@
       "bodyHtml": "<h1>Privacy Policy</h1>\n<p>Your privacy matters to us.</p>\n<h2><span>This privacy policy has been compiled to better serve</span></h2>\n<p>those who are concerned with how their ‘Personally Identifiable Information’ (PII) is being used online. PII, as described in US privacy law and information security, is information that can be used on its own or with other information to identify, contact, or locate a single person, or to identify an individual in context. Please read our privacy policy carefully to get a clear understanding of how we collect, use, protect or otherwise handle your Personally Identifiable Information in accordance with our website.</p>\n<p>What personal information do we collect from the people that visit our blog, website or app?<br>\nWhen ordering or registering on our site, as appropriate, you may be asked to enter your name, email address or other details to help you with your experience.<br>\n<br>\nWhen do we collect information?<br>\nWe collect information from you when you or enter information on our site.<br>\nwhen they email me.&nbsp;<br>\n<br>\nHow do we use your information?<br>\nWe may use the information we collect from you when you register, make a purchase, sign up for our newsletter, respond to a survey or marketing communication, surf the website, or use certain other site features in the following ways:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• To follow up with them after correspondence (live chat, email or phone inquiries)<br>\n<br>\nHow do we protect your information?<br>\nWe do not use vulnerability scanning and/or scanning to PCI standards.<br>\nWe use regular Malware Scanning.<br>\nYour personal information is contained behind secured networks and is only accessible by a limited number of persons who have special access rights to such systems, and are required to keep the information confidential. In addition, all sensitive/credit information you supply is encrypted via Secure Socket Layer (SSL) technology.<br>\nWe implement a variety of security measures when a user enters, submits, or accesses their information to maintain the safety of your personal information.<br>\nAll transactions are processed through a gateway provider and are not stored or processed on our servers.<br>\n<br>\nDo we use ‘cookies’?<br>\nWe do not use cookies for tracking purposes<br>\nYou can choose to have your computer warn you each time a cookie is being sent, or you can choose to turn off all cookies. You do this through your browser settings. Since the browser is a little different, look at your browser’s Help Menu to learn the correct way to modify your cookies.<br>\nIf you turn cookies off.<br>\n<br>\nThird-party disclosure<br>\nWe do not sell, trade, or otherwise transfer to outside parties your Personally Identifiable Information unless we provide users with advance notice. This does not include website hosting partners and other parties who assist us in operating our website, conducting our business, or serving our users, so long as those parties agree to keep this information confidential. We may also release information when it’s release is appropriate to comply with the law, enforce our site policies, or protect ours or others’ rights, property or safety.<br>\nHowever, non-personally identifiable visitor information may be provided to other parties for marketing, advertising, or other uses.<br>\n<br>\nThird-party links<br>\nOccasionally, at our discretion, we may include or offer third-party products or services on our website. These third-party sites have separate and independent privacy policies. We, therefore, have no responsibility or liability for the content and activities of these linked sites. Nonetheless, we seek to protect the integrity of our site and welcome any feedback about these sites.<br>\n<br>\nGoogle<br>\nGoogle’s advertising requirements can be summed up by Google’s Advertising Principles. They are put in place to provide a positive experience for users. <span><a href=\"https://support.google.com/adwordspolicy/answer/1316548?hl=en\" target=\"_blank\" rel=\"noreferrer noopener\">https://support.google.com/adwordspolicy/answer/1316548?hl=en</a></span><br>\nWe use Google AdSense Advertising on our website.<br>\nGoogle, as a third-party vendor, uses cookies to serve ads on our site. Google’s use of the DART cookie enables it to serve ads to our users based on previous visits to our site and other sites on the Internet. Users may opt-out of the use of the DART cookie by visiting the Google Ad and Content Network privacy policy.<br>\n<br>\nWe have implemented the following:<br>\nWe, along with third-party vendors such as Google use first-party cookies (such as the Google Analytics cookies) and third-party cookies (such as the DoubleClick cookie) or other third-party identifiers together to compile data regarding user interactions with ad impressions and other ad service functions as they relate to our website.<br>\n<br>\nOpting out:<br>\nUsers can set preferences for how Google advertises to you using the Google Ad Settings page. Alternatively, you can opt out by visiting the Network Advertising Initiative Opt-Out page or by using the Google Analytics Opt-Out Browser Add-on.<br>\n<br>\nCalifornia Online Privacy Protection Act<br>\nCalOPPA is the first state law in the nation to require commercial websites and online services to post a privacy policy. The law’s reach stretches well beyond California to require any person or company in the United States (and conceivably the world) that operates websites collecting Personally Identifiable Information from California consumers to post a conspicuous privacy policy on its website stating exactly the information being collected and those individuals or companies with whom it is being shared. – See more at <span><a href=\"http://consumercal.org/california-online-privacy-protection-act-caloppa/#sthash.0FdRbT51.dpuf\" target=\"_blank\" rel=\"noreferrer noopener\">http://consumercal.org/california-online-privacy-protection-act-caloppa/#sthash.0FdRbT51.dpuf</a></span><br>\n<br>\nAccording to CalOPPA, we agree to the following:<br>\nUsers can visit our site anonymously.<br>\nOnce this privacy policy is created, we will add a link to it on our homepage or as a minimum, on the first significant page after entering our website.<br>\nOur Privacy Policy link includes the word ‘Privacy’ and can easily be found on the page specified above.<br>\nYou will be notified of any Privacy Policy changes:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• On our Privacy Policy Page<br>\nCan change your personal information:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• By emailing us<br>\n<br>\nHow does our site handle Do Not Track signals?<br>\nWe honor Do Not Track signals and Do Not Track, plant cookies, or use advertising when a Do Not Track (DNT) browser mechanism is in place.<br>\n<br>\nDoes our site allow third-party behavioral tracking?<br>\nIt’s also important to note that we do not allow third-party behavioral tracking<br>\n<br>\nCOPPA (Children Online Privacy Protection Act)<br>\nWhen it comes to the collection of personal information from children under the age of 13 years old, the Children’s Online Privacy Protection Act (COPPA) puts parents in control. The Federal Trade Commission, United States’ consumer protection agency, enforces the COPPA Rule, which spells out what operators of websites and online services must do to protect children’s privacy and safety online.<br>\nWe do not specifically market to children under the age of 13 years old.<br>\n<br>\nFair Information Practices<br>\nThe Fair Information Practices Principles form the backbone of privacy law in the United States and the concepts they include have played a significant role in the development of data protection laws around the globe. Understanding the Fair Information Practice Principles and how they should be implemented is critical to comply with the various privacy laws that protect personal information.<br>\nIn order to be in line with Fair Information Practices we will take the following responsive action, should a data breach occur:<br>\nWe will notify you via email<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Within 7 business days<br>\nWe will notify the users via in-site notification<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Within 7 business days<br>\nWe also agree to the Individual Redress Principle which requires that individuals have the right to legally pursue enforceable rights against data collectors and processors who fail to adhere to the law. This principle requires not only that individuals have enforceable rights against data users, but also that individuals have recourse to courts or government agencies to investigate and/or prosecute non-compliance by data processors.<br>\n<br>\nCAN-SPAM Act<br>\nThe CAN-SPAM Act is a law that sets the rules for commercial email, establishes requirements for commercial messages, gives recipients the right to have emails stopped from being sent to them, and spells out tough penalties for violations.<br>\n<br>\nWe collect your email address in order to:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Send information, respond to inquiries, and/or other requests or questions<br>\n<br>\nTo be in accordance with CANSPAM, we agree to the following:<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Not use false or misleading subjects or email addresses.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Identify the message as an advertisement in some reasonable way.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Include the physical address of our business or site headquarters.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Monitor third-party email marketing services for compliance, if one is used.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Honor opt-out/unsubscribe requests quickly.<br>\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;• Allow users to unsubscribe by using the link at the bottom of each email.<br>\nIf at any time you would like to unsubscribe from receiving future emails, you can email us at<br>\n<span><a href=\"mailto:stjohnlinks@gmail.com\" target=\"_self\">stjohnlinks@gmail.com</a></span> and we will promptly remove you from ALL correspondence.</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/ede627_ae406026ffdd4db786914ff1452b1f7f~mv2.png/v1/fill/w_121,h_90,al_c,q_85,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/ede627_ae406026ffdd4db786914ff1452b1f7f~mv2.png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fprivacypolicy%2Fprivacypolicy-gallery-01.png?alt=media&token=6a8a6ef0-80ca-4218-a9a7-fa20b4786cb7",
           "alt": "fry.PNG",
           "title": ""
         }
@@ -2058,7 +2058,7 @@
       "bodyHtml": "<h1>Terms of Agreement</h1>\n<p>Terms governing your use of this website and our services.</p>\n<h2><span>Acceptance of Terms</span></h2>\n<p>The following rules and regulations apply to all visitors and users of this website. By accessing St John Links websites, stjohnlinks.com, stjohnhouserentals.com and coralbaystjohn.com, the user acknowledges acceptance of these terms and conditions.</p>\n<p>General Disclaimer.<br>\nALL INFORMATION PROVIDED ON THIS WEBSITE IS PROVIDED “AS IS” WITH ALL FAULTS WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED. WE WARRANT NEITHER THAT ACCESS TO St John Links WILL BE UNINTERRUPTED NOR THAT MATERIAL APPEARING THEREON WILL BE ERROR-FREE. THERE MAY BE DELAYS, OMISSIONS, OR INTERRUPTIONS AND INACCURACIES IN THE INFORMATION AVAILABLE THROUGH St John Links. St John Links DISCLAIMS ALL WARRANTIES, EXPRESSED OR IMPLIED, INCLUDING, WITHOUT LIMITATION, THOSE OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.<br>\nSt John Links SHALL NOT UNDER ANY CIRCUMSTANCES BE LIABLE TO ANY PERSON FOR ANY INDIRECT, SPECIAL, CONSEQUENTIAL, OR INCIDENTAL DAMAGES, INCLUDING, WITHOUT LIMITATION, DAMAGES RESULTING FROM USE OR INABILITY TO USE THIS WEBSITE, DAMAGES RESULTING FROM THE USE OF OR RELIANCE ON THE INFORMATION PRESENTED, LOSS OF PROFITS OR REVENUES, LOSS OF INFORMATION OR COSTS OF REPLACEMENT GOODS, EVEN IF St John Links HAS BEEN ADVISED IN ADVANCE OF THE POSSIBILITY OF SUCH DAMAGES.<br>\nAccuracy of Information.<br>\nAlthough St John Links has attempted to provide accurate information on its website, St John Links assumes no responsibility for the accuracy of the information. St John Links does not make any representations, nor do we endorse the accuracy, completeness, timeliness, or reliability of information available through St John Links. We do not guarantee that content has been posted with the permission of the copyright or the proprietary owner. You may rely on such materials solely at your own risk. We are not responsible for materials contained in postings, but we do reserve the right to remove or modify such materials at our sole discretion for any reason.<br>\nLinks to Other Sites.<br>\nFor your easy accessibility, St John Links may include links to sites on the Internet that are owned or operated by third parties. By linking to such third-party site, you shall review and agree to that site’s rules of use before using such site. You also agree that St John Links has no control over the content of that site and cannot assume any responsibility for material created or published by such third-party sites. In addition, a link to a non- St John Links site does not imply that St John Links endorses the site or the products or services referenced in such third-party site.<br>\nElectronic Commerce<br>\nWe offer users of St John Links the opportunity to purchase goods and services via the internet. While we will take reasonable security precautions concerning electronic transmission of data or communications, we disclaim any liability for interception of such data or communications. You agree that we shall not be under a duty to inquire as to the authority or propriety of any information or instructions given to us by you and we shall be entitled to act upon any such information or instructions, and we will not be liable for any loss, cost, expense or other liability arising out of any such instructions.<br>\n <br>\nLimit On Our Liability<br>\nSt John Links, its officers and directors, are not liable for incidental, indirect, consequential, special, punitive, or exemplary damages of any kind, including lost revenues or profits, loss of business or loss of data, in any way related to this service or for any claim, loss or injury based on errors or omission, interruptions or any other inaccuracies appearing on St John Links (including without limitation as a result of breach of any warranty or other term of this Agreement). Any claim against us shall be limited to the amount you paid, if any, to us for use of St John Links.<br>\nGoverning Law<br>\nBY CONTINUING TO USE St John Links, YOU AGREE TO ABIDE BY THIS SITE’S TERMS OF USE.</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/ede627_55e5e38935d14ac895741c4d2280de29~mv2.jpg/v1/fill/w_120,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/ede627_55e5e38935d14ac895741c4d2280de29~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Ftermsofagreement%2Ftermsofagreement-gallery-01.jpg?alt=media&token=82402561-a152-41c7-a8e2-59d4a6c2d4f5",
           "alt": "water.jpg",
           "title": ""
         }
@@ -2088,32 +2088,32 @@
       "bodyHtml": "<h2>Title 1</h2>\n<h4>Title 2</h4>\n<p>Text 1</p>\n<p>Text 2</p>\n<p>Text 3</p>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>TESTING****</h5>\n<h5>The Island Hook Bracelet</h5>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>Title</h5>\n<h5>Title</h5>\n<h2>Title</h2>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h1>Jewelry</h1>\n<p>Capture the spirit of St. John with unique, handcrafted jewelry</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/55d98a_3287270d83ef4efabfdd1f52d0dc6ec2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/wolfgang-hasselmann-1ICIhK-ElJs-unsplash-edited.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fjewelry%2Fjewelry-gallery-01.jpg?alt=media&token=efcbe0e1-28d7-4f09-82a8-4a151803ccff",
           "alt": "",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/b5efc4_d0e7db6196774a62af289a3ccd8c7563~mv2.jpg/v1/fill/w_144,h_77,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Social%20Image_edited.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fpassengerferry%2Fpassengerferry-hero.jpg?alt=media&token=9b1693e3-ae5f-4144-81be-89f7531886e5",
           "alt": "Image (2).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/b5efc4_b531a597961440d0a246634801d1fda6~mv2.avif/v1/fill/w_147,h_29,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Island-hook-Bracelet.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fjewelry%2Fjewelry-gallery-03.avif?alt=media&token=76208e64-8712-4042-85d9-d2e042b091e6",
           "alt": "Image (2).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/9d128c_d751e296d5ed41cfa9bff5cba2a99843~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(2).png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohnbook%2Fstjohnbook-gallery-01.png?alt=media&token=a79acfea-0bf4-480f-8bcf-ea08629ea19c(2).png",
           "alt": "Image (2).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/9d128c_9dd4293510bd43a084a9e7d47d33b81e~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(4).png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohnbook%2Fstjohnbook-gallery-02.png?alt=media&token=ee4358cc-ee4d-4eb9-8af5-01b890ae8998(4).png",
           "alt": "Image (4).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/b5efc4_bb911bb7ccab485d9967e0d6c34f0ab5~mv2.avif/v1/fill/w_160,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/b5efc4_bb911bb7ccab485d9967e0d6c34f0ab5~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fjewelry%2Fjewelry-gallery-06.avif?alt=media&token=276335ad-e9ab-4c7d-9074-9b04995c27b9",
           "alt": "Jewelry HERO.avif",
           "title": ""
         }
@@ -2131,17 +2131,17 @@
       "bodyHtml": "<h1>Helpful St. John Links</h1>\n<p>Discover local resources and links for your convenience.</p>\n<h2><span>Whether you’re actively planning your next escape</span></h2>\n<p>to St. John or just taking a quick virtual break during a busy day, thanks for visiting us!</p>\n<p>St John Links helps you plan your special Caribbean vacation to our beautiful island and provides all the essential information you need while you're here! Returning to paradise? We’ve got tips on things to do, where to stay, and \"things you need to know,\" like how to get around and where to find the everyday services you need while visiting paradise. First-time visitor? Start here!</p>\n\n\n\n<p>Our information page includes tips on island manners, important phone numbers, Western Union services, and much more. With picture-perfect weather, a diverse community, and beautiful places of worship, you’ll feel right at home. We’ve also included medical info such as hospitals, clinics, and other emergency numbers, just in case. US citizens don’t need a passport to visit – we’re part of the US! However, we’ve also got passport information if needed. If you’re staying for a while and hope to volunteer, you can help our seniors or join the volunteers keeping our National Park pristine. Make a difference!</p>\n<p>Looking for a St. John Virgin Island rental home, vacation villa, or intimate Caribbean cottage in Cruz Bay or Coral Bay? How about a relaxing day sail or an exciting sports fishing adventure? St John Links has it all – boat rentals, charter boats, snorkeling, world-class sailing, fishing, and horseback riding. And when you need a break from vacationing, we have some of the best massage therapists around! When planning your vacation on the beautiful island of St. John, consider everything that can make your trip even more memorable. The St John Links website helps you find the right accommodation, transportation, and everyday services. St. John is the most natural and beautiful US Virgin Island, home to world-class beaches, rich tropical foliage, and endemic birds. Check out books written by local authors, and use our map and ferry information to help you navigate around. Your trip may include hiking trails, snorkeling tours, or simply exploring in your rental car – it’s your vacation!</p>\n\n\n\n<p>St. John restaurants offer everything from fine dining to casual meals. Discover more about our paradise today!</p>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h2>Useful websites and links</h2>\n<h2>Tourist Places</h2>\n<h2>Place 7</h2>\n<p>Location</p>\n<p>Washington, USA</p>\n<h2>Stores</h2>\n<h2>Place 6</h2>\n<p>Location</p>\n<p>Pensilvânia, USA</p>\n<h2>Restaurants</h2>\n<h2>Place 5</h2>\n<p>Location</p>\n<p>Filadèlfia, PA, USA</p>\n<h2>Landmarks</h2>\n<h2>Place 4</h2>\n<p>Location</p>\n<p>New York, NY, USA</p>\n<h2>Government</h2>\n<h2>Place 3</h2>\n<p>Location</p>\n<p>Colorado, USA</p>\n<h2>Emergency</h2>\n<h2>Place 2</h2>\n<p>Location</p>\n<p>Boston, MA, USA</p>\n<h2>Beaches</h2>\n<h2>Place 1</h2>\n<p>Location</p>\n<p>Miami, FL, USA</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/9d128c_5d3604d25c5448a0a49cdacca6966916~mv2.png/v1/fill/w_160,h_60,al_c,q_85,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/9d128c_5d3604d25c5448a0a49cdacca6966916~mv2.png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flinks%2Flinks-gallery-01.png?alt=media&token=f4f772b4-3485-48e1-bbe0-5da7e7f42221",
           "alt": "1 Page Header.png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/9d128c_181efe89fdc74feeac009bdd9181b12e~mv2.png/v1/fill/w_125,h_122,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/image%2021.png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flinks%2Flinks-gallery-02.png?alt=media&token=d70f2117-868d-4800-a5a8-8d42766a5a6e",
           "alt": "Icons representing local services, tourism, and transportation links",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/9d128c_f0e42b8b2d0c4945aaf40d92f3a3086d~mv2.png/v1/fill/w_125,h_122,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/image%2021%20(1).png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Flinks%2Flinks-gallery-03.png?alt=media&token=32f064ca-1e36-4693-96dc-4158d3208e77(1).png",
           "alt": "St John Links has it all – boat rentals and charter boats, snorkeling, world-class sailing, fishing, and horseback riding.",
           "title": ""
         }
@@ -2159,22 +2159,22 @@
       "bodyHtml": "<h5>Texto</h5>\n<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h5>Title</h5>\n<h5>Title</h5>\n<h2>Title</h2>\n<h1>St. John Books</h1>\n<p>Stories, guides, and insights inspired by the island of St. John</p>\n<p>Description 1</p>\n<p>Description 2</p>\n<p>Description 3</p>\n<h2>Title 1</h2>\n<h4>Title 2</h4>\n<p>Text 1</p>\n<p>Text 2</p>\n<p>Text 3</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/9d128c_d751e296d5ed41cfa9bff5cba2a99843~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(2).png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohnbook%2Fstjohnbook-gallery-01.png?alt=media&token=a79acfea-0bf4-480f-8bcf-ea08629ea19c(2).png",
           "alt": "Image (2).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/9d128c_9dd4293510bd43a084a9e7d47d33b81e~mv2.png/v1/fill/w_91,h_91,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Image%20(4).png",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohnbook%2Fstjohnbook-gallery-02.png?alt=media&token=ee4358cc-ee4d-4eb9-8af5-01b890ae8998(4).png",
           "alt": "Image (4).png",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/135d29_71ef937f429749f28f446e6e4e673038~mv2.jpg/v1/fill/w_131,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/135d29_71ef937f429749f28f446e6e4e673038~mv2.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmonarch-cottage%2Fmonarch-cottage-gallery-16.jpg?alt=media&token=f81ec233-2a26-4582-97c6-dc1c60d05a45",
           "alt": "Pool-and-Spa.jpg",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/55d98a_3287270d83ef4efabfdd1f52d0dc6ec2~mv2.jpg/v1/fill/w_147,h_98,al_c,q_80,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/wolfgang-hasselmann-1ICIhK-ElJs-unsplash-edited.jpg",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fjewelry%2Fjewelry-gallery-01.jpg?alt=media&token=efcbe0e1-28d7-4f09-82a8-4a151803ccff",
           "alt": "",
           "title": ""
         }
@@ -2192,12 +2192,12 @@
       "bodyHtml": "<h2>Beaches</h2>\n<h2>Emergency</h2>\n<h2>Government</h2>\n<h2>Landmarks</h2>\n<h2>Restaurants</h2>\n<h2>Stores</h2>\n<h2>Tourist Places</h2>\n<h3>*********TESTING*****Carol Aaron Art</h3>\n<h1>Art</h1>\n<p>Explore the creativity and culture of St. John through local artistry</p>",
       "imageGallery": [
         {
-          "url": "https://static.wixstatic.com/media/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif/v1/fit/w_480,h_361,q_90,enc_avif,quality_auto/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fart%2Fart-gallery-01.avif?alt=media&token=6eda463f-87ab-444c-afe6-d3e30b083658",
           "alt": "",
           "title": ""
         },
         {
-          "url": "https://static.wixstatic.com/media/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif/v1/fill/w_120,h_90,al_c,q_80,usm_0.66_1.00_0.01,blur_3,enc_avif,quality_auto/b5efc4_8b6a117bc8c64cedb7bc4e459e99ede9~mv2.avif",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fart%2Fart-gallery-01.avif?alt=media&token=6eda463f-87ab-444c-afe6-d3e30b083658",
           "alt": "Coral Bay Sky.avif",
           "title": ""
         }

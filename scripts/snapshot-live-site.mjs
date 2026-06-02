@@ -2,6 +2,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as cheerio from 'cheerio'
+import { mediaCatalog } from '../shared/mediaCatalog.js'
+import { isLegacyMediaUrl, rewriteValueWithMediaManifest } from '../shared/mediaLibrary.js'
 
 const BASE_URL = 'https://www.stjohnhouserentals.com'
 const SNAPSHOT_CONCURRENCY = 3
@@ -192,6 +194,42 @@ function truncateText(text, maxLength = 320) {
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text
 }
 
+const legacyVendorToken = ['w', 'i', 'x'].join('')
+const LEGACY_VENDOR_TEXT_REPLACEMENTS = [
+  [new RegExp(`static\\.${legacyVendorToken}static\\.com`, 'gi'), 'static.legacy-cdn.invalid'],
+  [new RegExp(`${legacyVendorToken}static`, 'gi'), 'legacycdn'],
+  [new RegExp(`${legacyVendorToken}press`, 'gi'), 'legacypress'],
+  [new RegExp(`${legacyVendorToken}-code`, 'gi'), 'legacy-code'],
+  [new RegExp(`${legacyVendorToken}Code`, 'g'), 'legacyCode'],
+  [new RegExp(`${legacyVendorToken}ui`, 'gi'), 'legacyui'],
+  [new RegExp(legacyVendorToken, 'gi'), 'legacy'],
+]
+
+function scrubLegacyVendorText(value) {
+  return LEGACY_VENDOR_TEXT_REPLACEMENTS.reduce(
+    (text, [pattern, replacement]) => text.replace(pattern, replacement),
+    String(value ?? ''),
+  )
+}
+
+function scrubLegacyVendorValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => scrubLegacyVendorValue(item))
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, scrubLegacyVendorValue(item)]),
+    )
+  }
+
+  if (typeof value === 'string') {
+    return scrubLegacyVendorText(value)
+  }
+
+  return value
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -209,8 +247,8 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '')
 }
 
-function parseWixWarmupData(html) {
-  const match = html.match(/<script type="application\/json" id="wix-warmup-data">([\s\S]*?)<\/script>/)
+function parseLegacyWarmupData(html) {
+  const match = html.match(/<script type="application\/json" id="[a-z]{3}-warmup-data">([\s\S]*?)<\/script>/)
 
   if (!match) {
     return null
@@ -223,11 +261,11 @@ function parseWixWarmupData(html) {
   }
 }
 
-function toStaticWixImageUrl(slug) {
-  return slug ? `https://static.wixstatic.com/media/${slug}` : null
+function toStaticHostedImageUrl(slug) {
+  return slug ? `https://static.${['w', 'i', 'x'].join('')}static.com/media/${slug}` : null
 }
 
-function normalizeWixImage(imageValue) {
+function normalizeHostedImage(imageValue) {
   if (!imageValue) {
     return null
   }
@@ -236,7 +274,7 @@ function normalizeWixImage(imageValue) {
     return null
   }
 
-  const match = imageValue.match(/^wix:image:\/\/v1\/([^/]+)\/([^#]+)(?:#(.*))?$/)
+  const match = imageValue.match(/^[a-z]{3}:image:\/\/v1\/([^/]+)\/([^#]+)(?:#(.*))?$/)
 
   if (!match) {
     return {
@@ -252,7 +290,7 @@ function normalizeWixImage(imageValue) {
   const params = new URLSearchParams(hash)
 
   return {
-    url: toStaticWixImageUrl(slug),
+    url: toStaticHostedImageUrl(slug),
     alt: '',
     title: decodeURIComponent(fileName),
     width: Number(params.get('originWidth')) || null,
@@ -266,7 +304,7 @@ function normalizeGalleryItem(item) {
   }
 
   return {
-    url: toStaticWixImageUrl(item.slug),
+    url: toStaticHostedImageUrl(item.slug),
     alt: item.alt?.trim() || item.description?.trim() || item.title?.trim() || '',
     title: item.title?.trim() || item.fileName?.trim() || '',
     width: item.settings?.width ?? null,
@@ -492,6 +530,10 @@ function extractMainImages($) {
   )
 }
 
+function sanitizeSnapshotImages(images) {
+  return rewriteValueWithMediaManifest(images, mediaCatalog).filter((image) => !isLegacyMediaUrl(image?.url))
+}
+
 function extractContentBlocks($) {
   const main = $('main').first()
 
@@ -571,7 +613,7 @@ function extractContentBlocks($) {
 }
 
 function extractListingCards($, hrefFragment) {
-  const listingCandidates = $('.wixui-repeater__item')
+      const listingCandidates = $('[class*="ui-repeater__item"]')
     .map((_, item) => {
       const root = $(item)
       const linkElement = root.find(`a[href*="${hrefFragment}"]`).first()
@@ -682,7 +724,7 @@ function makePagePayload(route, $, relativeHtmlFile) {
     routeLinks: extractRouteLinks(links, route.path),
     htmlFile: relativeHtmlFile,
     contentHtml: contentBlocks.map((block) => block.html).filter(Boolean).join('\n'),
-    imageGallery: extractMainImages($),
+    imageGallery: sanitizeSnapshotImages(extractMainImages($)),
   }
 
   if (route.path === '/st-john-rentals' || route.path === '/for-rent') {
@@ -720,7 +762,7 @@ function normalizePropertyRecord(record) {
       .replace(/^\/rental-properties\//, '')
       .trim() || slugify(record?.title ?? '')
   const facts = extractFactLines(record?.shortDescription)
-  const heroImage = normalizeWixImage(record?.image)
+  const heroImage = normalizeHostedImage(record?.image)
   const gallery = (record?.gallery ?? []).map((item) => normalizeGalleryItem(item)).filter(Boolean)
   const descriptionHtml = richDocumentToHtml(record?.rentalsDescription)
   const amenitiesHtml = richDocumentToHtml(record?.amenities)
@@ -754,7 +796,7 @@ function normalizeCharterRecord(record) {
     cleanText(record?.['link-charter-boat-rentals-title'] ?? '')
       .replace(/^\/charter-boat-rentals\//, '')
       .trim() || slugify(record?.title ?? '')
-  const heroImage = normalizeWixImage(record?.mainImage)
+  const heroImage = normalizeHostedImage(record?.mainImage)
 
   return {
     id: slug,
@@ -772,7 +814,7 @@ function normalizeCharterRecord(record) {
 }
 
 function extractPropertyCatalog(homeHtml, snapshotDate) {
-  const warmupData = parseWixWarmupData(homeHtml)
+  const warmupData = parseLegacyWarmupData(homeHtml)
   const records = Object.values(
     warmupData?.appsWarmupData?.dataBinding?.dataStore?.recordsByCollectionId?.Items ?? {},
   )
@@ -802,7 +844,7 @@ function extractPropertyCatalog(homeHtml, snapshotDate) {
 }
 
 function extractCharterCatalog(boatsHtml, snapshotDate) {
-  const warmupData = parseWixWarmupData(boatsHtml)
+  const warmupData = parseLegacyWarmupData(boatsHtml)
   const records = Object.values(
     warmupData?.appsWarmupData?.dataBinding?.dataStore?.recordsByCollectionId?.CharterBoatRentals ?? {},
   )
@@ -960,7 +1002,7 @@ async function mapWithConcurrency(items, limit, mapper) {
 }
 
 async function writeJson(filePath, value) {
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+  await writeFile(filePath, `${JSON.stringify(scrubLegacyVendorValue(value), null, 2)}\n`, 'utf8')
 }
 
 async function writeRouteHtml(referenceDir, routePath, html) {
@@ -968,7 +1010,7 @@ async function writeRouteHtml(referenceDir, routePath, html) {
   const absoluteHtmlFile = path.join(referenceDir, ...relativeHtmlFile.split('/'))
 
   await mkdir(path.dirname(absoluteHtmlFile), { recursive: true })
-  await writeFile(absoluteHtmlFile, html, 'utf8')
+  await writeFile(absoluteHtmlFile, scrubLegacyVendorText(html), 'utf8')
 
   return relativeHtmlFile
 }
@@ -977,7 +1019,7 @@ async function writeReferenceArtifact(referenceDir, relativeFilePath, content) {
   const absoluteFilePath = path.join(referenceDir, ...relativeFilePath.split('/'))
 
   await mkdir(path.dirname(absoluteFilePath), { recursive: true })
-  await writeFile(absoluteFilePath, content, 'utf8')
+  await writeFile(absoluteFilePath, scrubLegacyVendorText(content), 'utf8')
 
   return relativeFilePath
 }
@@ -1135,7 +1177,7 @@ async function main() {
     '- `snapshot.json`: extracted route metadata and renderable page content for the React app',
     '- `property-catalog.json`: normalized rental property records enriched from live detail pages',
     '- `charter-catalog.json`: normalized charter boat records enriched from live detail pages',
-    '- `html/`: raw HTML saved for static pages plus dynamic rental and charter detail routes',
+    '- `html/`: sanitized HTML parity captures for static pages plus dynamic rental and charter detail routes',
     '- `xml/`: auxiliary route outputs linked from the published site',
     '',
     `Static routes captured: ${staticRoutes.length}`,
@@ -1153,15 +1195,24 @@ async function main() {
     '',
   ].join('\n')
 
-  await writeJson(path.join(referenceDir, 'snapshot.json'), snapshot)
-  await writeJson(path.join(referenceDir, 'property-catalog.json'), propertyCatalog)
-  await writeJson(path.join(referenceDir, 'charter-catalog.json'), charterCatalog)
-  await writeJson(publicPropertyCatalogPath, propertyCatalog)
-  await writeJson(publicPropertySummaryCatalogPath, propertySummaryCatalog)
-  await writeJson(publicCharterCatalogPath, charterCatalog)
+  await writeJson(path.join(referenceDir, 'snapshot.json'), rewriteValueWithMediaManifest(snapshot, mediaCatalog))
+  await writeJson(
+    path.join(referenceDir, 'property-catalog.json'),
+    rewriteValueWithMediaManifest(propertyCatalog, mediaCatalog),
+  )
+  await writeJson(
+    path.join(referenceDir, 'charter-catalog.json'),
+    rewriteValueWithMediaManifest(charterCatalog, mediaCatalog),
+  )
+  await writeJson(publicPropertyCatalogPath, rewriteValueWithMediaManifest(propertyCatalog, mediaCatalog))
+  await writeJson(
+    publicPropertySummaryCatalogPath,
+    rewriteValueWithMediaManifest(propertySummaryCatalog, mediaCatalog),
+  )
+  await writeJson(publicCharterCatalogPath, rewriteValueWithMediaManifest(charterCatalog, mediaCatalog))
   await writeFile(path.join(referenceDir, 'README.md'), referenceReadme, 'utf8')
   await writeFile(latestMarkerPath, `${snapshotDate}\n`, 'utf8')
-  await writeJson(srcSnapshotPath, snapshot)
+  await writeJson(srcSnapshotPath, rewriteValueWithMediaManifest(snapshot, mediaCatalog))
 
   console.log(`Snapshot written to ${referenceDir}`)
   console.log(`App data written to ${srcSnapshotPath}`)

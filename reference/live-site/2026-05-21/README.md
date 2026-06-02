@@ -5,7 +5,7 @@ Captured from https://www.stjohnhouserentals.com on 2026-05-21.
 Generated files:
 
 - `snapshot.json`: extracted route metadata used by the React rebuild
-- `property-catalog.json`: normalized rental property records extracted from Wix warmup data
+- `property-catalog.json`: normalized rental property records extracted from Legacy warmup data
 - `html/`: raw HTML saved for route-by-route parity checks
 
 Tracked routes:
