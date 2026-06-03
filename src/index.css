@@ -5,6 +5,12 @@
   --brand-blue: #2269ff;
   --brand-navy: #0b2b5f;
   --brand-navy-deep: #07214a;
+  --brand-orange: #dd803b;
+  --brand-orange-hover: #dd803b;
+  --brand-orange-fill-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAANSURBVBhXY7jbYP0fAAZuApiqV+cwAAAAAElFTkSuQmCC");
+  --accent-header-size: 0.98rem;
+  --accent-header-weight: 400;
+  --accent-header-spacing: 0.01em;
   --home-band: #1d2f63;
   --footer-blue: #6ea7dd;
   --surface-pale: #f5fbff;
@@ -18,6 +24,8 @@
   --chrome-width: 1940px;
   --page-width: 1180px;
   --wide-width: 1380px;
+  --page-hero-height: clamp(18rem, 31vw, 25rem);
+  --page-hero-image-aspect: 16 / 5;
   --font-body: 'DM Sans', 'Segoe UI', sans-serif;
   --font-display: 'Unna', Georgia, serif;
   color: var(--text);
@@ -326,7 +334,7 @@ img {
 .home-hero-overlay {
   display: grid;
   place-items: center;
-  min-height: clamp(18rem, 31vw, 25rem);
+  min-height: var(--page-hero-height);
   padding: 3rem 1rem 3.4rem;
   background: linear-gradient(180deg, rgba(7, 19, 46, 0.14) 0%, rgba(7, 19, 46, 0.12) 100%);
 }
@@ -466,10 +474,11 @@ img {
 
 .home-trust-eyebrow {
   margin: 0;
-  color: #f38a36;
+  color: var(--brand-orange);
   font-family: var(--font-display);
-  font-size: 0.98rem;
-  letter-spacing: 0.04em;
+  font-size: var(--accent-header-size);
+  font-weight: var(--accent-header-weight);
+  letter-spacing: var(--accent-header-spacing);
   text-transform: uppercase;
 }
 
@@ -492,6 +501,9 @@ img {
 }
 
 .home-trust-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: fit-content;
   max-width: 100%;
   margin-top: 2.25rem;
@@ -503,6 +515,7 @@ img {
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 700;
+  line-height: 1;
   text-decoration: none;
 }
 
@@ -587,7 +600,9 @@ img {
   display: grid;
   place-items: center;
   border-radius: 0.8rem;
-  background: #ea8a36;
+  background-color: transparent;
+  background-image: var(--brand-orange-fill-image);
+  background-repeat: repeat;
 }
 
 .home-discover-feature-icon svg {
@@ -818,10 +833,11 @@ img {
 .eyebrow {
   display: inline-block;
   margin-bottom: 0.75rem;
-  color: var(--brand-blue);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  color: var(--brand-orange);
+  font-family: var(--font-display);
+  font-size: var(--accent-header-size);
+  font-weight: var(--accent-header-weight);
+  letter-spacing: var(--accent-header-spacing);
   text-transform: uppercase;
 }
 
@@ -857,7 +873,7 @@ img {
 }
 
 .about-page-hero {
-  min-height: 250px;
+  min-height: var(--page-hero-height);
   background-position: center 54%;
   background-repeat: no-repeat;
   background-size: cover;
@@ -874,7 +890,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 250px;
+  min-height: var(--page-hero-height);
   padding: 2.5rem 0;
 }
 
@@ -917,11 +933,11 @@ img {
 
 .about-page-kicker {
   margin: 0 0 0.65rem;
-  color: #f38a36;
+  color: var(--brand-orange);
   font-family: var(--font-display);
-  font-size: 0.98rem;
-  font-weight: 400;
-  letter-spacing: 0.02em;
+  font-size: var(--accent-header-size);
+  font-weight: var(--accent-header-weight);
+  letter-spacing: var(--accent-header-spacing);
   text-transform: uppercase;
 }
 
@@ -935,9 +951,9 @@ img {
   line-height: 1.18;
 }
 
-.about-page-story-copy p,
+.about-page-story-copy p:not(.about-page-kicker),
 .about-page-story-body p,
-.about-page-essentials-copy p {
+.about-page-essentials-copy p:not(.about-page-kicker) {
   margin: 0;
   color: #8c9bb0;
   font-size: clamp(1rem, 1.16vw, 1.14rem);
@@ -981,7 +997,7 @@ img {
 
 .advertise-page-hero,
 .advertise-page-hero-inner {
-  min-height: clamp(18rem, 31vw, 37.5rem);
+  min-height: var(--page-hero-height);
 }
 
 .advertise-page-hero {
@@ -1125,15 +1141,25 @@ img {
 }
 
 .advertise-page-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   justify-self: start;
-  padding: 1rem 2.3rem;
+  min-height: 60px;
+  padding: 0 2.75rem 1px;
   border: 0;
-  border-radius: 1rem;
+  border-radius: 16px;
   color: #ffffff;
-  background: #e38435;
+  background-color: transparent;
+  background-image: var(--brand-orange-fill-image);
+  background-repeat: repeat;
   box-shadow: none;
-  font-size: 1rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0;
+  appearance: none;
   cursor: pointer;
   transition:
     background-color 150ms ease,
@@ -1142,7 +1168,8 @@ img {
 
 .advertise-page-submit:hover,
 .advertise-page-submit:focus-visible {
-  background: #d77829;
+  background-color: transparent;
+  background-image: var(--brand-orange-fill-image);
   transform: translateY(-1px);
 }
 
@@ -1151,7 +1178,7 @@ img {
 }
 
 .rental-accommodations-hero {
-  min-height: clamp(16rem, 31vw, 25rem);
+  min-height: var(--page-hero-height);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1166,7 +1193,7 @@ img {
 .rental-accommodations-hero-inner {
   display: grid;
   place-items: center;
-  min-height: clamp(16rem, 31vw, 25rem);
+  min-height: var(--page-hero-height);
   padding: 3rem 1rem 3.3rem;
 }
 
@@ -1386,7 +1413,7 @@ img {
 }
 
 .property-for-sale-hero {
-  min-height: clamp(16rem, 27vw, 19rem);
+  min-height: var(--page-hero-height);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1402,7 +1429,7 @@ img {
 .property-for-sale-hero-inner {
   display: grid;
   place-items: center;
-  min-height: clamp(16rem, 27vw, 19rem);
+  min-height: var(--page-hero-height);
   padding: 2.5rem 1rem;
 }
 
@@ -1531,7 +1558,7 @@ img {
 .car-barge-hero-media img {
   width: 100%;
   display: block;
-  aspect-ratio: 3.1 / 1;
+  aspect-ratio: var(--page-hero-image-aspect);
   object-fit: cover;
 }
 
@@ -1649,7 +1676,7 @@ img {
 .car-barge-rates,
 .car-barge-note {
   padding-top: 1.3rem;
-  border-top: 1px solid #de8b4b;
+  border-top: 1px solid var(--brand-orange);
 }
 
 .car-barge-schedule-block + .car-barge-schedule-block,
@@ -1748,7 +1775,7 @@ img {
 .passenger-ferry-hero-image {
   width: 100%;
   display: block;
-  aspect-ratio: 2.9 / 1;
+  aspect-ratio: var(--page-hero-image-aspect);
   object-fit: cover;
 }
 
@@ -1834,7 +1861,7 @@ img {
 }
 
 .st-john-car-rentals-hero {
-  min-height: clamp(20rem, 41vw, 33rem);
+  min-height: var(--page-hero-height);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1847,7 +1874,7 @@ img {
 }
 
 .st-john-car-rentals-hero-inner {
-  min-height: clamp(20rem, 41vw, 33rem);
+  min-height: var(--page-hero-height);
   display: grid;
   place-items: center;
   gap: 1.2rem;
@@ -1954,7 +1981,7 @@ img {
 }
 
 .charter-boats-hero {
-  min-height: clamp(19rem, 31vw, 26rem);
+  min-height: var(--page-hero-height);
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -1969,7 +1996,7 @@ img {
 }
 
 .charter-boats-hero-inner {
-  min-height: clamp(19rem, 31vw, 26rem);
+  min-height: var(--page-hero-height);
   display: grid;
   place-items: center;
   gap: 1rem;
@@ -2176,7 +2203,7 @@ img {
 }
 
 .local-attractions-hero {
-  min-height: clamp(22rem, 40vw, 37.75rem);
+  min-height: var(--page-hero-height);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -2185,7 +2212,7 @@ img {
 .local-attractions-hero-overlay {
   display: grid;
   place-items: center;
-  min-height: inherit;
+  min-height: var(--page-hero-height);
   padding: 3.5rem 1rem 3.8rem;
   background: linear-gradient(180deg, rgba(7, 19, 46, 0.28) 0%, rgba(7, 19, 46, 0.42) 100%);
 }
@@ -2311,8 +2338,8 @@ img {
 
 .local-attractions-dining-list {
   overflow: hidden;
-  border: 1px solid #e1bea0;
-  background: #f1c8a6;
+  border: 1px solid var(--brand-orange-hover);
+  background: var(--brand-orange);
 }
 
 .local-attractions-dining-row {
@@ -2321,7 +2348,7 @@ img {
 }
 
 .local-attractions-dining-row + .local-attractions-dining-row {
-  border-top: 1px solid rgba(126, 89, 54, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
 }
 
 .local-attractions-restaurant-entry {
@@ -2334,7 +2361,7 @@ img {
 }
 
 .local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
-  border-top: 1px solid rgba(126, 89, 54, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.24);
 }
 
 .local-attractions-restaurant-entry p {
@@ -2582,7 +2609,7 @@ img {
 
 .detail-hero-image {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: var(--page-hero-image-aspect);
   object-fit: cover;
 }
 
@@ -2600,7 +2627,7 @@ img {
 
 .property-banner {
   width: min(100%, calc(100vw - 2rem));
-  min-height: clamp(16rem, 29vw, 28rem);
+  min-height: var(--page-hero-height);
   margin: 0 auto;
   background-position: center;
   background-repeat: no-repeat;
@@ -2783,9 +2810,9 @@ img {
   margin: 0;
   color: #000000;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 5vw, 4.8rem);
+  font-size: clamp(2.17rem, 3.36vw, 3.29rem);
   font-weight: 400;
-  line-height: 1.02;
+  line-height: 1.08;
 }
 
 .property-template-rule {
@@ -3156,7 +3183,7 @@ img {
 }
 
 .status-pill--offline {
-  color: #a45a16;
+  color: var(--brand-orange);
   background: #fff1e4;
 }
 
@@ -3447,12 +3474,7 @@ img {
 
   .local-attractions-dining-row:not(.local-attractions-dining-row--single) .local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
     border-top: 0;
-    border-left: 1px solid rgba(126, 89, 54, 0.18);
-  }
-
-  .rental-accommodations-hero,
-  .rental-accommodations-hero-inner {
-    min-height: 25rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.24);
   }
 
   .rental-accommodations-hero-inner,
@@ -3487,11 +3509,6 @@ img {
 
   .rental-accommodations-card-body h2 {
     font-size: 2rem;
-  }
-
-  .property-for-sale-hero,
-  .property-for-sale-hero-inner {
-    min-height: 19rem;
   }
 
   .property-for-sale-hero-inner,
@@ -3657,11 +3674,6 @@ img {
   .home-trust {
     padding-top: 2.35rem;
     padding-bottom: 2.25rem;
-  }
-
-  .about-page-hero,
-  .about-page-hero-inner {
-    min-height: 400px;
   }
 
   .about-page-hero h1 {
@@ -3841,7 +3853,7 @@ img {
   }
 
   .home-hero-overlay {
-    min-height: 25.2rem;
+    min-height: var(--page-hero-height);
     padding: 3.45rem 2rem 3.65rem;
   }
 
@@ -4001,10 +4013,6 @@ img {
   .about-page-story-inner,
   .about-page-essentials-inner {
     width: min(1440px, calc(100% - 5rem));
-  }
-
-  .property-banner {
-    min-height: 196px;
   }
 
   .property-hero-inner {

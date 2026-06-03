@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ListingCard } from '../components/ListingCard'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
+import { comparePropertyNames } from '../lib/propertySort'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function buildListingItem(property, actionLabel) {
@@ -32,7 +33,7 @@ export function HouseRentalsPage() {
           typeof property.slug === 'string' &&
           typeof property.name === 'string' &&
           typeof property.path === 'string',
-      )
+      ).sort(comparePropertyNames)
     : []
 
   useEffect(() => {

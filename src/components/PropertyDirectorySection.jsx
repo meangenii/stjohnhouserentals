@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listBedroomGroups } from '../lib/propertyRepository'
+import { comparePropertyNames } from '../lib/propertySort'
 
 const preferredBedroomOrder = new Map([1, 2, 3, 4, 5, 6].map((bedrooms, index) => [bedrooms, index]))
 
@@ -48,7 +49,7 @@ export function PropertyDirectorySection({ title, groups: providedGroups = null 
               typeof property.slug === 'string' &&
               typeof property.path === 'string' &&
               typeof property.name === 'string',
-          )
+          ).sort(comparePropertyNames)
         : [],
     }))
     .filter((group) => group.properties.length > 0)
