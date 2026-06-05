@@ -2915,6 +2915,61 @@ img {
   line-height: 1.08;
 }
 
+.property-template-section--reviews .property-rich-copy {
+  margin-top: 1rem;
+}
+
+.property-rich-copy .property-review-list,
+.admin-property-preview-rich-copy .property-review-list {
+  display: grid;
+  gap: clamp(2rem, 3vw, 2.85rem);
+}
+
+.property-rich-copy .property-review-entry,
+.admin-property-preview-rich-copy .property-review-entry {
+  display: grid;
+  gap: 0;
+}
+
+.property-rich-copy .property-review-title,
+.admin-property-preview-rich-copy .property-review-title {
+  margin: 0;
+  color: #000000;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.15vw, 2.05rem);
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.property-rich-copy .property-review-title a,
+.admin-property-preview-rich-copy .property-review-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.property-rich-copy .property-review-title strong,
+.admin-property-preview-rich-copy .property-review-title strong {
+  font-weight: inherit;
+}
+
+.property-rich-copy .property-review-title + .property-review-body,
+.admin-property-preview-rich-copy .property-review-title + .property-review-body {
+  margin-top: 0.22rem;
+}
+
+.property-rich-copy .property-review-body,
+.admin-property-preview-rich-copy .property-review-body {
+  margin: 0;
+  color: var(--brand-navy);
+  font-size: clamp(1.06rem, 1.26vw, 1.16rem);
+  line-height: 1.46;
+}
+
+.property-rich-copy .property-review-body + .property-review-body,
+.admin-property-preview-rich-copy .property-review-body + .property-review-body {
+  margin-top: 0.58rem;
+}
+
 .property-rich-copy ul,
 .property-rich-copy ol {
   margin: 1.1rem 0 0 1.35rem;
@@ -4512,6 +4567,19 @@ button.admin-auth-badge {
 .admin-property-preview-facts .property-fact-line {
   font-size: 1rem;
   line-height: 1.24;
+}
+
+.admin-property-preview-rich-copy .property-review-list {
+  gap: 1.8rem;
+}
+
+.admin-property-preview-rich-copy .property-review-title {
+  font-size: clamp(1.35rem, 1.95vw, 1.7rem);
+}
+
+.admin-property-preview-rich-copy .property-review-body {
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
 .admin-preview-rich-copy > *:first-child,

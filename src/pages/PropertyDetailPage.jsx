@@ -4,8 +4,16 @@ import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
-function PropertyContentSection({ title, html, children, className = '', compactTail = false, listSections = false }) {
-  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections })
+function PropertyContentSection({
+  title,
+  html,
+  children,
+  className = '',
+  compactTail = false,
+  listSections = false,
+  reviewEntries = false,
+}) {
+  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
 
@@ -255,7 +263,7 @@ export function PropertyDetailPage() {
 
           <PropertyContentSection compactTail html={property.descriptionHtml} title="Description" />
           <PropertyContentSection html={property.amenitiesHtml} listSections title="Amenities" />
-          <PropertyContentSection html={property.reviewsHtml} title="Reviews" />
+          <PropertyContentSection className="property-template-section--reviews" html={property.reviewsHtml} reviewEntries title="Reviews" />
 
           {property.previousProperty || property.nextProperty ? (
             <nav aria-label="Adjacent properties" className="property-adjacent-nav">

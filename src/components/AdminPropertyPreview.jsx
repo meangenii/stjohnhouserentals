@@ -31,9 +31,20 @@ function PreviewTextArea({ disabled, label, onChange, placeholder = '', rows = 5
   )
 }
 
-function PreviewSection({ title, html, children, controls, actions = null, compactTail = false, listSections = false }) {
+function PreviewSection({
+  title,
+  html,
+  children,
+  controls,
+  actions = null,
+  compactTail = false,
+  listSections = false,
+  reviewEntries = false,
+}) {
   const normalizedHtml =
-    compactTail || listSections ? formatPropertyRichHtml(html, { compactTail, listSections }) : normalizeSiteHtml(html)
+    compactTail || listSections || reviewEntries
+      ? formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
+      : normalizeSiteHtml(html)
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
   const hasControls = Boolean(controls)
@@ -370,6 +381,7 @@ export function AdminPropertyPreview({
               ) : null
             }
             html={property?.reviewsHtml}
+            reviewEntries
             title="Reviews"
           />
 
