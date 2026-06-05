@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
-function PropertyContentSection({ title, html, children, className = '' }) {
-  const normalizedHtml = normalizeSiteHtml(html)
+function PropertyContentSection({ title, html, children, className = '', compactTail = false, listSections = false }) {
+  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections })
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
 
@@ -245,14 +245,16 @@ export function PropertyDetailPage() {
             <PropertyContentSection title="Short Description">
               <div className="property-fact-stack">
                 {shortDescriptionLines.map((line) => (
-                  <p key={line}>{line}</p>
+                  <div className="property-fact-line" key={line}>
+                    {line}
+                  </div>
                 ))}
               </div>
             </PropertyContentSection>
           ) : null}
 
-          <PropertyContentSection html={property.descriptionHtml} title="Description" />
-          <PropertyContentSection html={property.amenitiesHtml} title="Amenities" />
+          <PropertyContentSection compactTail html={property.descriptionHtml} title="Description" />
+          <PropertyContentSection html={property.amenitiesHtml} listSections title="Amenities" />
           <PropertyContentSection html={property.reviewsHtml} title="Reviews" />
 
           {property.previousProperty || property.nextProperty ? (

@@ -1,3 +1,4 @@
+import { EditableImage, EditableRichHtml, EditableText } from './AdminInlinePageEdit'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 
 function getImageSrc(image) {
@@ -14,13 +15,23 @@ export function ContentPage({ page }) {
       <div className="snapshot-page-inner">
         {contentHtml ? (
           <div className="snapshot-flow">
-            {!hasHtmlHeading && page.title ? <h1>{page.title}</h1> : null}
-            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+            {!hasHtmlHeading && page.title ? (
+              <EditableText as="h1" label="Page Title" multiline path={['title']} rows={2} value={page.title}>
+                {page.title}
+              </EditableText>
+            ) : null}
+            <EditableRichHtml className="snapshot-rich-html" html={contentHtml} path={['bodyHtml']} title="Page Body" />
           </div>
         ) : (
           <header className="snapshot-fallback">
-            <h1>{page.title || page.navLabel}</h1>
-            {page.metaDescription ? <p>{page.metaDescription}</p> : null}
+            <EditableText as="h1" label="Page Title" multiline path={['title']} rows={2} value={page.title || page.navLabel}>
+              {page.title || page.navLabel}
+            </EditableText>
+            {page.metaDescription ? (
+              <EditableText as="p" label="Search Description" multiline path={['metaDescription']} rows={4} value={page.metaDescription}>
+                {page.metaDescription}
+              </EditableText>
+            ) : null}
           </header>
         )}
 
@@ -28,10 +39,12 @@ export function ContentPage({ page }) {
           <section className="snapshot-gallery" aria-label={`${page.navLabel} image gallery`}>
             {imageGallery.map((image, index) => (
               <figure className="snapshot-gallery-item" key={`${getImageSrc(image)}-${index}`}>
-                <img
+                <EditableImage
                   alt={image.alt || `${page.navLabel} image ${index + 1}`}
                   className="snapshot-gallery-image"
                   decoding="async"
+                  image={image}
+                  path={['imageGallery', index]}
                   loading="lazy"
                   src={getImageSrc(image)}
                 />

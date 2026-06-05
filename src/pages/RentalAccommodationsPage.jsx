@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -148,19 +149,26 @@ export function RentalAccommodationsPage() {
 
   return (
     <article className="rental-accommodations-page">
-      <section
+      <EditableBackgroundSection
+        as="section"
         className="rental-accommodations-hero"
+        image={page.hero.image}
+        path={['hero', 'image']}
         style={heroImageUrl ? { backgroundImage: `linear-gradient(rgba(8, 23, 52, 0.12), rgba(8, 23, 52, 0.12)), url(${heroImageUrl})` } : undefined}
       >
         <div className="rental-accommodations-hero-inner">
-          <h1>{page.hero.title}</h1>
+          <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
+            {page.hero.title}
+          </EditableText>
         </div>
-      </section>
+      </EditableBackgroundSection>
 
       <section className="rental-accommodations-directory">
         <div className="rental-accommodations-directory-inner">
           <header className="rental-accommodations-directory-header">
-            <h2>{page.directory.title}</h2>
+            <EditableText as="h2" label="Directory Title" path={['directory', 'title']} value={page.directory.title}>
+              {page.directory.title}
+            </EditableText>
 
             <form className="rental-accommodations-filter-row" onSubmit={handleSubmit}>
               <input
@@ -179,7 +187,9 @@ export function RentalAccommodationsPage() {
                 disabled={summaryState.status === 'loading'}
                 type="submit"
               >
-                {page.directory.filterActionLabel}
+                <EditableText as="span" label="Filter Button Text" path={['directory', 'filterActionLabel']} value={page.directory.filterActionLabel}>
+                  {page.directory.filterActionLabel}
+                </EditableText>
               </button>
             </form>
           </header>

@@ -1,5 +1,6 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { AdminRichTextEditor } from './AdminRichTextEditor'
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
@@ -170,13 +171,7 @@ function HtmlField({ label, value, onChange, disabled }) {
 
   return (
     <div className="admin-content-html-field">
-      <TextAreaField
-        disabled={disabled}
-        label={label}
-        onChange={onChange}
-        rows={14}
-        value={value ?? ''}
-      />
+      <AdminRichTextEditor disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
 
       {normalizedHtml ? (
         <div className="admin-document-preview admin-document-preview--copy">

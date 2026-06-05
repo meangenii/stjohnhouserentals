@@ -10,7 +10,23 @@ function isActiveChildItem(pathname, child) {
   return isActiveNavItem(pathname, child.matchPaths ?? [child.path])
 }
 
-function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
+function NavText({ children, className, interactive, to, ...rest }) {
+  if (interactive) {
+    return (
+      <Link className={className} to={to} {...rest}>
+        {children}
+      </Link>
+    )
+  }
+
+  return (
+    <span className={`${className} site-link--static`.trim()} {...rest}>
+      {children}
+    </span>
+  )
+}
+
+function SiteMenu({ ariaLabel, interactive = true, items, pathname, navClassName = 'site-nav' }) {
   const [openMenuLabel, setOpenMenuLabel] = useState('')
   const navRef = useRef(null)
 
@@ -48,6 +64,14 @@ function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
         const isActive = isActiveNavItem(pathname, item.matchPaths)
 
         if (item.children?.length) {
+          if (!interactive) {
+            return (
+              <span className={`site-nav-link site-link--static ${isActive ? 'active' : ''}`.trim()} key={item.label}>
+                {item.label}
+              </span>
+            )
+          }
+
           const isOpen = openMenuLabel === item.label
 
           return (
@@ -75,15 +99,16 @@ function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
 
               <div aria-label={`${item.label} submenu`} className="site-subnav" role="menu">
                 {item.children.map((child) => (
-                  <Link
+                  <NavText
                     className={`site-subnav-link ${isActiveChildItem(pathname, child) ? 'active' : ''}`.trim()}
+                    interactive={interactive}
                     key={child.path}
                     role="menuitem"
                     to={child.path}
                     onClick={() => setOpenMenuLabel('')}
                   >
                     {child.label}
-                  </Link>
+                  </NavText>
                 ))}
               </div>
             </div>
@@ -91,23 +116,22 @@ function SiteMenu({ ariaLabel, items, pathname, navClassName = 'site-nav' }) {
         }
 
         return (
-          <Link
+          <NavText
             className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
+            interactive={interactive}
             key={item.path}
             to={item.path}
             onClick={() => setOpenMenuLabel('')}
           >
             {item.label}
-          </Link>
+          </NavText>
         )
       })}
     </nav>
   )
 }
 
-export function SiteLayout() {
-  const location = useLocation()
-  const siteShell = useSiteShellContent()
+export function SiteFrame({ children, interactive = true, pathname, siteShell }) {
   const siteNavItems = siteShell.header.primaryNav
   const footerNavItems = siteShell.footer.primaryNav
   const footerMetaItems = siteShell.footer.legalNav
@@ -120,17 +144,26 @@ export function SiteLayout() {
         <div className="utility-bar">
           <div className="utility-inner">
             <div className="utility-social">
-              <a
-                className="utility-social-link"
-                href={utility.socialLink.href}
-                rel="noreferrer noopener"
-                target="_blank"
-              >
-                <span aria-hidden="true" className="utility-facebook">
-                  f
+              {interactive ? (
+                <a
+                  className="utility-social-link"
+                  href={utility.socialLink.href}
+                  rel="noreferrer noopener"
+                  target="_blank"
+                >
+                  <span aria-hidden="true" className="utility-facebook">
+                    f
+                  </span>
+                  <span>{utility.socialLink.label}</span>
+                </a>
+              ) : (
+                <span className="utility-social-link site-link--static">
+                  <span aria-hidden="true" className="utility-facebook">
+                    f
+                  </span>
+                  <span>{utility.socialLink.label}</span>
                 </span>
-                <span>{utility.socialLink.label}</span>
-              </a>
+              )}
             </div>
 
             <p className="utility-message">{utility.message}</p>
@@ -145,50 +178,54 @@ export function SiteLayout() {
 
         <div className="masthead">
           <div className="masthead-inner">
-            <Link aria-label="St. John House Rentals home" className="site-logo-link" to="/">
+            <NavText aria-label="St. John House Rentals home" className="site-logo-link" interactive={interactive} to="/">
               <img alt={logo.alt} className="site-logo" src={logo.src} />
-            </Link>
+            </NavText>
 
             <div className="masthead-nav">
-              <a className="content-jump-link" href="#main-content">
-                Skip to Main Content
-              </a>
+              {interactive ? (
+                <a className="content-jump-link" href="#main-content">
+                  Skip to Main Content
+                </a>
+              ) : null}
 
-              <SiteMenu ariaLabel="Primary" items={siteNavItems} key={`primary-${location.pathname}`} pathname={location.pathname} />
+              <SiteMenu ariaLabel="Primary" interactive={interactive} items={siteNavItems} key={`primary-${pathname}`} pathname={pathname} />
             </div>
           </div>
         </div>
       </header>
 
       <main className="site-main" id="main-content">
-        <Outlet />
+        {children}
       </main>
 
       <footer className="site-footer">
         <div className="footer-top">
           <div className="footer-top-inner">
-            <Link aria-label="St. John House Rentals home" className="footer-logo-link" to="/">
+            <NavText aria-label="St. John House Rentals home" className="footer-logo-link" interactive={interactive} to="/">
               <img alt={logo.alt} className="footer-logo" src={logo.src} />
-            </Link>
+            </NavText>
 
             <div className="footer-nav-group">
               <SiteMenu
                 ariaLabel="Footer"
                 items={footerNavItems}
-                key={`footer-${location.pathname}`}
+                interactive={interactive}
+                key={`footer-${pathname}`}
                 navClassName="site-nav footer-nav"
-                pathname={location.pathname}
+                pathname={pathname}
               />
 
               <nav aria-label="Footer legal" className="footer-meta-nav">
                 {footerMetaItems.map((item) => (
-                  <Link
-                    className={isActiveNavItem(location.pathname, item.matchPaths) ? 'active' : ''}
+                  <NavText
+                    className={isActiveNavItem(pathname, item.matchPaths) ? 'active' : ''}
+                    interactive={interactive}
                     key={`footer-meta-${item.path}`}
                     to={item.path}
                   >
                     {item.label}
-                  </Link>
+                  </NavText>
                 ))}
               </nav>
             </div>
@@ -203,5 +240,16 @@ export function SiteLayout() {
         </div>
       </footer>
     </div>
+  )
+}
+
+export function SiteLayout() {
+  const location = useLocation()
+  const siteShell = useSiteShellContent()
+
+  return (
+    <SiteFrame pathname={location.pathname} siteShell={siteShell}>
+      <Outlet />
+    </SiteFrame>
   )
 }

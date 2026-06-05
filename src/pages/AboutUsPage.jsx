@@ -1,3 +1,4 @@
+import { EditableBackgroundSection, EditableImage, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -9,21 +10,31 @@ export function AboutUsPage() {
 
   return (
     <div className="about-page">
-      <section className="about-page-hero" style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}>
+      <EditableBackgroundSection
+        as="section"
+        className="about-page-hero"
+        image={page.hero.image}
+        path={['hero', 'image']}
+        style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
+      >
         <div className="about-page-hero-inner">
-          <h1>{page.hero.title}</h1>
+          <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
+            {page.hero.title}
+          </EditableText>
         </div>
-      </section>
+      </EditableBackgroundSection>
 
       <section className="about-page-story">
         <div className="about-page-story-inner">
           <div className="about-page-story-grid">
             <div className="about-page-story-media">
               {storyImageUrl ? (
-                <img
+                <EditableImage
                   alt={page.story.image.alt || page.story.title}
                   decoding="async"
                   fetchPriority="low"
+                  image={page.story.image}
+                  path={['story', 'image']}
                   loading="lazy"
                   src={storyImageUrl}
                 />
@@ -31,17 +42,25 @@ export function AboutUsPage() {
             </div>
 
             <div className="about-page-story-copy">
-              <p className="about-page-kicker">{page.story.kicker}</p>
-              <h2>{page.story.title}</h2>
-              {page.story.leadParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+              <EditableText as="p" className="about-page-kicker" label="Story Kicker" path={['story', 'kicker']} value={page.story.kicker}>
+                {page.story.kicker}
+              </EditableText>
+              <EditableText as="h2" label="Story Title" multiline path={['story', 'title']} rows={3} value={page.story.title}>
+                {page.story.title}
+              </EditableText>
+              {page.story.leadParagraphs.map((paragraph, index) => (
+                <EditableText as="p" key={`${index}-${paragraph}`} label={`Lead Paragraph ${index + 1}`} multiline path={['story', 'leadParagraphs', index]} rows={4} value={paragraph}>
+                  {paragraph}
+                </EditableText>
               ))}
             </div>
           </div>
 
           <div className="about-page-story-body">
-            {page.story.bodyParagraphs.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+            {page.story.bodyParagraphs.map((paragraph, index) => (
+              <EditableText as="p" key={`${index}-${paragraph}`} label={`Body Paragraph ${index + 1}`} multiline path={['story', 'bodyParagraphs', index]} rows={5} value={paragraph}>
+                {paragraph}
+              </EditableText>
             ))}
           </div>
         </div>
@@ -51,17 +70,25 @@ export function AboutUsPage() {
         <div className="about-page-essentials-inner">
           <div className="about-page-essentials-grid">
             <div className="about-page-essentials-copy">
-              <p className="about-page-kicker">{page.essentials.kicker}</p>
-              <h2>{page.essentials.title}</h2>
-              <p>{page.essentials.lead}</p>
+              <EditableText as="p" className="about-page-kicker" label="Essentials Kicker" path={['essentials', 'kicker']} value={page.essentials.kicker}>
+                {page.essentials.kicker}
+              </EditableText>
+              <EditableText as="h2" label="Essentials Title" multiline path={['essentials', 'title']} rows={3} value={page.essentials.title}>
+                {page.essentials.title}
+              </EditableText>
+              <EditableText as="p" label="Essentials Lead" multiline path={['essentials', 'lead']} rows={5} value={page.essentials.lead}>
+                {page.essentials.lead}
+              </EditableText>
             </div>
 
             <div className="about-page-essentials-media">
               {essentialsImageUrl ? (
-                <img
+                <EditableImage
                   alt={page.essentials.image.alt || page.essentials.title}
                   decoding="async"
                   fetchPriority="low"
+                  image={page.essentials.image}
+                  path={['essentials', 'image']}
                   loading="lazy"
                   src={essentialsImageUrl}
                 />

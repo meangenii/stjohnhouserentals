@@ -1,13 +1,21 @@
+import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
-function PhoneLinks({ phones, separator = '/' }) {
+function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
   return phones.map((phone, index) => (
     <span key={phone}>
       {index > 0 ? separator : ''}
-      <a className="st-john-car-rentals-phone" href={`tel:${phone.replace(/[^0-9+]/g, '')}`}>
+      <EditableText
+        as="a"
+        className="st-john-car-rentals-phone"
+        href={`tel:${phone.replace(/[^0-9+]/g, '')}`}
+        label={`Phone ${index + 1}`}
+        path={[...pathPrefix, index]}
+        value={phone}
+      >
         {phone}
-      </a>
+      </EditableText>
     </span>
   ))
 }
@@ -19,8 +27,11 @@ export function StJohnCarRentalsPage() {
 
   return (
     <article className="st-john-car-rentals-page">
-      <section
+      <EditableBackgroundSection
+        as="section"
         className="st-john-car-rentals-hero"
+        image={page.hero.image}
+        path={['hero', 'image']}
         style={
           heroImageUrl
             ? {
@@ -30,58 +41,85 @@ export function StJohnCarRentalsPage() {
         }
       >
         <div className="st-john-car-rentals-hero-inner">
-          <h1>{page.hero.title}</h1>
-          <p>{page.hero.tagline}</p>
+          <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
+            {page.hero.title}
+          </EditableText>
+          <EditableText as="p" label="Hero Tagline" multiline path={['hero', 'tagline']} rows={4} value={page.hero.tagline}>
+            {page.hero.tagline}
+          </EditableText>
         </div>
-      </section>
+      </EditableBackgroundSection>
 
       <section className="st-john-car-rentals-directory">
         <div className="st-john-car-rentals-directory-inner">
           <div className="st-john-car-rentals-directory-grid">
             <div className="st-john-car-rentals-copy">
-              <h2>{page.directory.title}</h2>
-              <p>{page.directory.introParagraph}</p>
+              <EditableText as="h2" label="Directory Title" multiline path={['directory', 'title']} rows={3} value={page.directory.title}>
+                {page.directory.title}
+              </EditableText>
+              <EditableText as="p" label="Intro Paragraph" multiline path={['directory', 'introParagraph']} rows={5} value={page.directory.introParagraph}>
+                {page.directory.introParagraph}
+              </EditableText>
 
               <div className="st-john-car-rentals-list">
-                {page.directory.companies.map((company) => (
+                {page.directory.companies.map((company, companyIndex) => (
                   <p className="st-john-car-rentals-entry" key={company.name}>
                     {company.website ? (
-                      <a className="st-john-car-rentals-name" href={company.website} rel="noreferrer" target="_blank">
-                        {company.name}
-                      </a>
+                      <EditableLink
+                        className="st-john-car-rentals-name"
+                        destination={company.website}
+                        destinationLabel="Company Website"
+                        destinationPath={['directory', 'companies', companyIndex, 'website']}
+                        external
+                        label={company.name}
+                        labelLabel="Company Name"
+                        labelPath={['directory', 'companies', companyIndex, 'name']}
+                      />
                     ) : (
-                      <span>{company.name}</span>
+                      <EditableText as="span" label="Company Name" path={['directory', 'companies', companyIndex, 'name']} value={company.name}>
+                        {company.name}
+                      </EditableText>
                     )}{' '}
-                    <PhoneLinks phones={company.phones} separator={company.separator ?? '/'} />
+                    <PhoneLinks pathPrefix={['directory', 'companies', companyIndex, 'phones']} phones={company.phones} separator={company.separator ?? '/'} />
                   </p>
                 ))}
               </div>
 
               <div className="st-john-car-rentals-notes">
-                <p>{page.directory.airportParagraph}</p>
+                <EditableText as="p" label="Airport Paragraph" multiline path={['directory', 'airportParagraph']} rows={6} value={page.directory.airportParagraph}>
+                  {page.directory.airportParagraph}
+                </EditableText>
 
                 <p>
                   Budget Car Rental on St Thomas:{' '}
-                  <PhoneLinks phones={page.directory.budgetPhones} separator={' or '} />
+                  <PhoneLinks pathPrefix={['directory', 'budgetPhones']} phones={page.directory.budgetPhones} separator=" or " />
                 </p>
 
                 <p>
-                  {page.directory.dependableParagraph}{' '}
-                  <a
+                  <EditableText as="span" label="Dependable Paragraph" multiline path={['directory', 'dependableParagraph']} rows={5} value={page.directory.dependableParagraph}>
+                    {page.directory.dependableParagraph}
+                  </EditableText>{' '}
+                  <EditableText
+                    as="a"
                     className="st-john-car-rentals-phone"
                     href={`tel:${page.directory.dependablePhone.replace(/[^0-9+]/g, '')}`}
+                    label="Dependable Phone"
+                    path={['directory', 'dependablePhone']}
+                    value={page.directory.dependablePhone}
                   >
                     {page.directory.dependablePhone}
-                  </a>
+                  </EditableText>
                 </p>
               </div>
             </div>
 
             <div className="st-john-car-rentals-media">
               {detailImageUrl ? (
-                <img
+                <EditableImage
                   alt={page.directory.detailImage.alt || 'Red jeep on St. John road'}
                   decoding="async"
+                  image={page.directory.detailImage}
+                  path={['directory', 'detailImage']}
                   loading="lazy"
                   src={detailImageUrl}
                 />

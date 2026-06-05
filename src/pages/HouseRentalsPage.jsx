@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
+import { EditableText } from '../components/AdminInlinePageEdit'
 import { ListingCard } from '../components/ListingCard'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
-function buildListingItem(property, actionLabel) {
+function buildListingItem(property) {
   return {
-    actionLabel,
     item: {
       name: property.name,
       path: property.path,
@@ -64,12 +64,22 @@ export function HouseRentalsPage() {
     <article className="snapshot-page">
       <div className="snapshot-page-inner">
         <div className="snapshot-flow">
-          <p>{page.intro.eyebrow}</p>
-          <h1>{page.title}</h1>
-          <p>{page.intro.lead}</p>
-          <h2>{page.intro.title}</h2>
-          {page.intro.paragraphs.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+          <EditableText as="p" label="Intro Eyebrow" path={['intro', 'eyebrow']} value={page.intro.eyebrow}>
+            {page.intro.eyebrow}
+          </EditableText>
+          <EditableText as="h1" label="Page Title" multiline path={['title']} rows={2} value={page.title}>
+            {page.title}
+          </EditableText>
+          <EditableText as="p" label="Intro Lead" multiline path={['intro', 'lead']} rows={4} value={page.intro.lead}>
+            {page.intro.lead}
+          </EditableText>
+          <EditableText as="h2" label="Intro Title" multiline path={['intro', 'title']} rows={3} value={page.intro.title}>
+            {page.intro.title}
+          </EditableText>
+          {page.intro.paragraphs.map((paragraph, index) => (
+            <EditableText as="p" key={`${index}-${paragraph}`} label={`Intro Paragraph ${index + 1}`} multiline path={['intro', 'paragraphs', index]} rows={5} value={paragraph}>
+              {paragraph}
+            </EditableText>
           ))}
         </div>
 
@@ -79,13 +89,23 @@ export function HouseRentalsPage() {
 
         {state.status === 'ready' ? (
           <section className="snapshot-listings" aria-label={page.directory.title}>
-            <div className="snapshot-listing-grid">
-              {visibleProperties.map((property) => {
-                const listing = buildListingItem(property, page.directory.actionLabel)
-                return <ListingCard actionLabel={listing.actionLabel} item={listing.item} key={property.slug} />
-              })}
-            </div>
-          </section>
+              <div className="snapshot-listing-grid">
+                {visibleProperties.map((property) => {
+                  const listing = buildListingItem(property)
+                  return (
+                    <ListingCard
+                      actionLabel={
+                        <EditableText as="span" label="Listing Action Label" path={['directory', 'actionLabel']} value={page.directory.actionLabel}>
+                          {page.directory.actionLabel}
+                        </EditableText>
+                      }
+                      item={listing.item}
+                      key={property.slug}
+                    />
+                  )
+                })}
+              </div>
+            </section>
         ) : state.status === 'ready' ? (
           <p className="admin-empty">Property listings are unavailable right now.</p>
         ) : null}

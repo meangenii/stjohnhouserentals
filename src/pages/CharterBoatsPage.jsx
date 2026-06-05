@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { listCharters } from '../lib/charterRepository'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -96,8 +97,11 @@ export function CharterBoatsPage() {
 
   return (
     <article className="charter-boats-page">
-      <section
+      <EditableBackgroundSection
+        as="section"
         className="charter-boats-hero"
+        image={page.hero.image}
+        path={['hero', 'image']}
         style={
           heroImageUrl
             ? {
@@ -107,22 +111,37 @@ export function CharterBoatsPage() {
         }
       >
         <div className="charter-boats-hero-inner">
-          <h1>{page.hero.title}</h1>
-          <p>{page.hero.lead}</p>
+          <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
+            {page.hero.title}
+          </EditableText>
+          <EditableText as="p" label="Hero Lead" multiline path={['hero', 'lead']} rows={4} value={page.hero.lead}>
+            {page.hero.lead}
+          </EditableText>
         </div>
-      </section>
+      </EditableBackgroundSection>
 
       <section className="charter-boats-intro">
         <div className="charter-boats-intro-inner">
           <div className="charter-boats-intro-grid">
             <div className="charter-boats-intro-copy">
-              <h2>{page.intro.title}</h2>
-              <p>{page.intro.paragraph}</p>
+              <EditableText as="h2" label="Intro Title" multiline path={['intro', 'title']} rows={3} value={page.intro.title}>
+                {page.intro.title}
+              </EditableText>
+              <EditableText as="p" label="Intro Paragraph" multiline path={['intro', 'paragraph']} rows={6} value={page.intro.paragraph}>
+                {page.intro.paragraph}
+              </EditableText>
             </div>
 
             <div className="charter-boats-intro-media">
               {introImageUrl ? (
-                <img alt={page.intro.image.alt || 'Sailboat charter cruising St. John waters'} decoding="async" loading="lazy" src={introImageUrl} />
+                <EditableImage
+                  alt={page.intro.image.alt || 'Sailboat charter cruising St. John waters'}
+                  decoding="async"
+                  image={page.intro.image}
+                  path={['intro', 'image']}
+                  loading="lazy"
+                  src={introImageUrl}
+                />
               ) : null}
             </div>
           </div>
@@ -131,7 +150,9 @@ export function CharterBoatsPage() {
 
       <section className="charter-boats-directory">
         <div className="charter-boats-directory-inner">
-          <h2>{page.directory.title}</h2>
+          <EditableText as="h2" label="Directory Title" multiline path={['directory', 'title']} rows={3} value={page.directory.title}>
+            {page.directory.title}
+          </EditableText>
 
           <div className="charter-boats-grid">
             {state.charters.map((charter) => (
@@ -143,17 +164,29 @@ export function CharterBoatsPage() {
 
       <section className="charter-boats-safety">
         <div className="charter-boats-safety-inner">
-          <h3>{page.safety.title}</h3>
+          <EditableText as="h3" label="Safety Title" multiline path={['safety', 'title']} rows={3} value={page.safety.title}>
+            {page.safety.title}
+          </EditableText>
 
           <div className="charter-boats-safety-copy">
-            {page.safety.sections.map((section) => (
+            {page.safety.sections.map((section, index) => (
               <div key={section.label}>
-                <p className="charter-boats-safety-label">{section.label}</p>
+                <EditableText as="p" className="charter-boats-safety-label" label={`Safety Label ${index + 1}`} path={['safety', 'sections', index, 'label']} value={section.label}>
+                  {section.label}
+                </EditableText>
                 <p>
-                  {section.paragraph}{' '}
-                  <a href={section.href} rel="noreferrer" target="_blank">
-                    {section.href}
-                  </a>
+                  <EditableText as="span" label={`Safety Paragraph ${index + 1}`} multiline path={['safety', 'sections', index, 'paragraph']} rows={4} value={section.paragraph}>
+                    {section.paragraph}
+                  </EditableText>{' '}
+                  <EditableLink
+                    destination={section.href}
+                    destinationLabel="Link URL"
+                    destinationPath={['safety', 'sections', index, 'href']}
+                    external
+                    label={section.href}
+                    labelLabel="Link Text"
+                    labelPath={['safety', 'sections', index, 'href']}
+                  />
                 </p>
               </div>
             ))}
