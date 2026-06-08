@@ -178,6 +178,7 @@ function normalizePropertyRecord(record) {
     adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/rental-properties/${record.slug}`).trim(),
     name: String(record.name).trim(),
+    active: record.active !== false,
     price: String(record.price ?? '').trim(),
     bedrooms: Number(record.bedrooms) || 0,
     bathrooms: Number(record.bathrooms) || 0,
@@ -224,6 +225,14 @@ function groupProperties(properties) {
   return Array.from(groups.values())
 }
 
+function isPublishedProperty(property) {
+  return property?.active !== false
+}
+
+function getPublishedProperties(properties) {
+  return Array.isArray(properties) ? properties.filter((property) => isPublishedProperty(property)) : []
+}
+
 function attachAdjacentProperties(property, properties) {
   const index = properties.findIndex((candidate) => candidate.slug === property.slug)
 
@@ -252,6 +261,7 @@ function summarizeProperty(property) {
     adminOriginalSlug: property.adminOriginalSlug ?? property.slug,
     path: property.path,
     name: property.name,
+    active: property.active !== false,
     price: property.price,
     shortDescription: property.shortDescription,
     bedrooms: property.bedrooms,
@@ -368,6 +378,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     adminOriginalSlug: originalSlug || slug,
     path: `/rental-properties/${slug}`,
     name,
+    active: draft?.active !== false,
     templateVariant: normalizePropertyTemplateVariant(draft?.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT),
     price: String(draft?.price ?? '').trim(),
     bedrooms: Number(draft?.bedrooms) || 0,
@@ -535,17 +546,22 @@ function assertUniquePropertySlug(properties, nextSlug, originalSlug) {
 
 exports.listBedroomGroups = async function listBedroomGroups() {
   const catalog = await getCanonicalPropertyCatalog()
-  return cloneData(catalog.propertyGroups)
+  return cloneData(groupProperties(getPublishedProperties(catalog.propertySummaries)))
 }
 
 exports.listProperties = async function listProperties() {
+  const catalog = await getCanonicalPropertyCatalog()
+  return cloneData(getPublishedProperties(catalog.properties))
+}
+
+exports.listAllProperties = async function listAllProperties() {
   const catalog = await getCanonicalPropertyCatalog()
   return cloneData(catalog.properties)
 }
 
 exports.listPropertySummaries = async function listPropertySummaries() {
   const catalog = await getCanonicalPropertyCatalog()
-  return cloneData(catalog.propertySummaries)
+  return cloneData(getPublishedProperties(catalog.propertySummaries))
 }
 
 exports.getPropertyBySlug = async function getPropertyBySlug(slug) {
@@ -554,11 +570,11 @@ exports.getPropertyBySlug = async function getPropertyBySlug(slug) {
     .map((variant) => catalog.propertyIndex.get(variant))
     .find(Boolean)
 
-  if (!property) {
+  if (!property || !isPublishedProperty(property)) {
     return null
   }
 
-  return cloneData(attachAdjacentProperties(property, catalog.properties))
+  return cloneData(attachAdjacentProperties(property, getPublishedProperties(catalog.properties)))
 }
 
 exports.savePropertyRecord = async function savePropertyRecord(draft, originalSlug, adminUser) {

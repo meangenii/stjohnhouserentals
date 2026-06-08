@@ -126,6 +126,7 @@ function normalizePropertyRecord(record) {
     adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/rental-properties/${record.slug}`).trim(),
     name: String(record.name).trim(),
+    active: record.active !== false,
     price: String(record.price ?? '').trim(),
     bedrooms: Number(record.bedrooms) || 0,
     bathrooms: Number(record.bathrooms) || 0,
@@ -168,6 +169,7 @@ function normalizePropertySummaryRecord(record) {
     adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/rental-properties/${record.slug}`).trim(),
     name: String(record.name).trim(),
+    active: record.active !== false,
     price: String(record.price ?? '').trim(),
     shortDescription: normalizePropertyShortDescription(record.shortDescription, legacyLines),
     bedrooms: Number(record.bedrooms) || 0,
@@ -195,6 +197,14 @@ function groupProperties(properties) {
   })
 
   return Array.from(groups.values())
+}
+
+function isPublishedProperty(property) {
+  return property?.active !== false
+}
+
+function getPublishedProperties(properties) {
+  return Array.isArray(properties) ? properties.filter((property) => isPublishedProperty(property)) : []
 }
 
 function attachAdjacentProperties(property, properties) {
@@ -414,6 +424,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     adminOriginalSlug: originalSlug || slug,
     path: `/rental-properties/${slug}`,
     name,
+    active: draft?.active !== false,
     templateVariant: normalizePropertyTemplateVariant(draft?.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT),
     price: String(draft?.price ?? '').trim(),
     bedrooms: Number(draft?.bedrooms) || 0,
@@ -570,6 +581,10 @@ async function loadSummaryCatalog() {
   return isApiBackedSiteContentSource() ? loadRemoteSummaryCatalog() : loadLocalSummaryCatalog()
 }
 
+async function loadAdminRemoteCatalog(options = {}) {
+  return getJson('/admin/properties/catalog', options).then((payload) => buildCatalogFromPayload(payload))
+}
+
 function summarizeProperty(property) {
   return {
     id: property.id,
@@ -577,6 +592,7 @@ function summarizeProperty(property) {
     adminOriginalSlug: property.adminOriginalSlug ?? property.slug,
     path: property.path,
     name: property.name,
+    active: property.active !== false,
     price: property.price,
     shortDescription: property.shortDescription,
     bedrooms: property.bedrooms,
@@ -613,17 +629,32 @@ export function isPropertyEditingEnabled() {
 
 export async function listBedroomGroups() {
   const catalog = await loadSummaryCatalog()
-  return cloneData(catalog.groups)
+  return cloneData(groupProperties(getPublishedProperties(catalog.properties)))
 }
 
 export async function listProperties() {
+  const catalog = await loadCatalog()
+  return cloneData(getPublishedProperties(catalog.properties))
+}
+
+export async function listAllProperties(options = {}) {
+  if (isMockPropertyData() || usesDirectFirestorePropertyReads()) {
+    const catalog = await loadCatalog()
+    return cloneData(catalog.properties)
+  }
+
+  if ((isFirebasePropertyData() || isApiPropertyData()) && options.authToken) {
+    const adminCatalog = await loadAdminRemoteCatalog(options)
+    return cloneData(adminCatalog.properties)
+  }
+
   const catalog = await loadCatalog()
   return cloneData(catalog.properties)
 }
 
 export async function listPropertySummaries() {
   const catalog = await loadSummaryCatalog()
-  return cloneData(catalog.properties.map((property) => summarizeProperty(property)))
+  return cloneData(getPublishedProperties(catalog.properties).map((property) => summarizeProperty(property)))
 }
 
 export async function getPropertyBySlug(slug) {
@@ -632,11 +663,11 @@ export async function getPropertyBySlug(slug) {
     .map((variant) => catalog.index.get(variant))
     .find(Boolean)
 
-  if (!property) {
+  if (!property || !isPublishedProperty(property)) {
     return null
   }
 
-  return cloneData(attachAdjacentProperties(property, catalog.properties))
+  return cloneData(attachAdjacentProperties(property, getPublishedProperties(catalog.properties)))
 }
 
 export async function saveAdminProperty(draft, originalSlug, options = {}) {

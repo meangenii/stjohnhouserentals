@@ -1,6 +1,8 @@
 import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
+import { AdminMediaManager } from './AdminMediaManager'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 
 function pathToKey(path = []) {
@@ -129,7 +131,11 @@ function InlinePopover({ active, anchorRef, onClose, title, children }) {
     return null
   }
 
-  return (
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  return createPortal(
     <div
       ref={popoverRef}
       className="admin-inline-popover"
@@ -142,7 +148,8 @@ function InlinePopover({ active, anchorRef, onClose, title, children }) {
         </button>
       </div>
       <div className="admin-inline-popover-body">{children}</div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
@@ -290,7 +297,7 @@ export function EditableLink({
   )
 }
 
-function ImagePopoverFields({ field, image = {}, path }) {
+function ImagePopoverFields({ field, image = {}, path, title = 'Image' }) {
   return (
     <>
       <label className="admin-field">
@@ -307,6 +314,14 @@ function ImagePopoverFields({ field, image = {}, path }) {
           <input type="text" value={image?.title ?? ''} onChange={(event) => field.updatePath([...path, 'title'], event.target.value)} />
         </label>
       ) : null}
+      <AdminMediaManager
+        currentUrl={image?.url ?? ''}
+        disabled={field.disabled}
+        onClear={() => field.updatePath([...path, 'url'], '')}
+        onSelect={(nextUrl) => field.updatePath([...path, 'url'], nextUrl)}
+        preferredOwnerType="page"
+        title={`${title} Media`}
+      />
     </>
   )
 }
@@ -343,7 +358,7 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
       />
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Image">
-        <ImagePopoverFields field={field} image={image} path={path} />
+        <ImagePopoverFields field={field} image={image} path={path} title="Image" />
       </InlinePopover>
     </>
   )
@@ -390,7 +405,7 @@ export function EditableBackgroundSection({
       </Component>
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Background Image">
-        <ImagePopoverFields field={field} image={image} path={path} />
+        <ImagePopoverFields field={field} image={image} path={path} title="Background Image" />
       </InlinePopover>
     </>
   )

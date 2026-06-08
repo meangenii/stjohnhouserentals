@@ -3,9 +3,14 @@ function normalizeString(value) {
 }
 
 export const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
-const LEGACY_STATIC_MEDIA_PATTERN = /^https:\/\/static\.[a-z]{3}static\.com\/media\//i
+const legacyVendorToken = ['w', 'i', 'x'].join('')
+const LEGACY_STATIC_MEDIA_HOST_PATTERN = '(?:[a-z]{3}static\\.com|legacy-cdn\\.invalid)'
+const LEGACY_STATIC_MEDIA_PATTERN = new RegExp(`^https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/`, 'i')
 const LEGACY_PROTOCOL_MEDIA_PATTERN = /^[a-z]{3}:image:\/\/v1\//i
-const LEGACY_MEDIA_MATCHER = /https:\/\/static\.[a-z]{3}static\.com\/media\/[^\s"'()<>]+|[a-z]{3}:image:\/\/v1\/[^\s"'()<>]+/gi
+const LEGACY_MEDIA_MATCHER = new RegExp(
+  `https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/[^\\s"'()<>]+|[a-z]{3}:image://v1/[^\\s"'()<>]+`,
+  'gi',
+)
 
 export const EMPTY_MEDIA_MANIFEST = {
   generatedAt: '',
@@ -33,13 +38,13 @@ export function getCanonicalLegacyMediaUrl(value) {
   const protocolMatch = candidate.match(/^[a-z]{3}:image:\/\/v1\/([^/]+(?:\.[a-z0-9]+)?)\//i)
 
   if (protocolMatch) {
-    return `https://static.${['w', 'i', 'x'].join('')}static.com/media/${protocolMatch[1]}`
+    return `https://static.${legacyVendorToken}static.com/media/${protocolMatch[1]}`
   }
 
-  const staticMatch = candidate.match(/^(https:\/\/static\.[a-z]{3}static\.com\/media\/[^/?#]+)/i)
+  const staticMatch = candidate.match(new RegExp(`^https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/([^/?#]+)`, 'i'))
 
   if (staticMatch) {
-    return staticMatch[1]
+    return `https://static.${legacyVendorToken}static.com/media/${staticMatch[1]}`
   }
 
   return ''

@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-06-08T16:16:22.507Z",
+  "capturedAt": "2026-06-08T17:25:26.662Z",
   "snapshotDate": "2026-06-08",
   "source": "https://www.stjohnhouserentals.com/",
-  "propertyCount": 68,
+  "propertyCount": 81,
   "properties": [
     {
       "id": "christmas-cottage",
@@ -28,10 +28,10 @@
       }
     },
     {
-      "id": "island-gardens",
-      "slug": "island-gardens",
-      "path": "/rental-properties/island-gardens",
-      "name": "Island Gardens",
+      "id": "cruz-bay-vista",
+      "slug": "cruz-bay-vista",
+      "path": "/rental-properties/cruz-bay-vista",
+      "name": "Cruz Bay Vista",
       "bedrooms": 1,
       "bathrooms": 1,
       "maxGuests": 2,
@@ -39,15 +39,16 @@
         "Max 2 Guests",
         "Studio",
         "1 Bath",
+        "Pool",
         "Internet",
-        "Coral Bay, St John VI"
+        "Cruz Bay"
       ],
       "heroImage": {
-        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-hero.png?alt=media&token=c54fcebc-7db5-4a6e-8830-750924df6b4f",
         "alt": "",
-        "title": "Island-Gardens.jpg",
-        "width": 640,
-        "height": 428
+        "title": "Cruz Bay Vista.png",
+        "width": 500,
+        "height": 332
       }
     },
     {
@@ -97,6 +98,29 @@
         "title": "In-Harmony-Retreat portada.jpg",
         "width": 600,
         "height": 429
+      }
+    },
+    {
+      "id": "island-gardens",
+      "slug": "island-gardens",
+      "path": "/rental-properties/island-gardens",
+      "name": "Island Gardens",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "Studio",
+        "1 Bath",
+        "Internet",
+        "Coral Bay, St John VI"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+        "alt": "",
+        "title": "Island-Gardens.jpg",
+        "width": 640,
+        "height": 428
       }
     },
     {
@@ -195,6 +219,30 @@
       }
     },
     {
+      "id": "ocean-garden",
+      "slug": "ocean-garden",
+      "path": "/rental-properties/ocean-garden",
+      "name": "Ocean Garden",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Internet",
+        "Hot Tub",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-hero.png?alt=media&token=3a3efea9-830c-4a93-b581-e453b08a5d2c",
+        "alt": "",
+        "title": "Ocean Garden.png",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
       "id": "paradise-carest",
       "slug": "paradise-carest",
       "path": "/rental-properties/paradise-carest",
@@ -267,6 +315,54 @@
       }
     },
     {
+      "id": "tropical-orchid",
+      "slug": "tropical-orchid",
+      "path": "/rental-properties/tropical-orchid",
+      "name": "Tropical Orchid",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Hot Tub",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-hero.png?alt=media&token=a9d19bc5-ceff-486b-a8a5-3cd3421025fd",
+        "alt": "",
+        "title": "Tropical Orchid.png",
+        "width": 900,
+        "height": 746
+      }
+    },
+    {
+      "id": "white-seagull",
+      "slug": "white-seagull",
+      "path": "/rental-properties/white-seagull",
+      "name": "White Seagull",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-hero.jpg?alt=media&token=ae2872c4-83ef-4f28-b513-3502104b7dd6",
+        "alt": "",
+        "title": "White Seagull.jpg",
+        "width": 900,
+        "height": 675
+      }
+    },
+    {
       "id": "windwardside-guest-cottage",
       "slug": "windwardside-guest-cottage",
       "path": "/rental-properties/windwardside-guest-cottage",
@@ -312,6 +408,31 @@
         "title": "Windwardside Main House.png",
         "width": 900,
         "height": 531
+      }
+    },
+    {
+      "id": "banana-sweet",
+      "slug": "banana-sweet",
+      "path": "/rental-properties/banana-sweet",
+      "name": "Banana Sweet",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Beds",
+        "1 Bath",
+        "Backup Power",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-hero.avif?alt=media&token=0693ac72-0ff5-4d94-9b00-f210dcbb3561",
+        "alt": "",
+        "title": "16-Sunrise.avif",
+        "width": 1200,
+        "height": 900
       }
     },
     {
@@ -592,6 +713,30 @@
       }
     },
     {
+      "id": "skyflower",
+      "slug": "skyflower",
+      "path": "/rental-properties/skyflower",
+      "name": "Skyflower",
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "3 Baths",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-hero.png?alt=media&token=d56fdeb1-131a-48e6-ab4a-e0f3bf9b49bd",
+        "alt": "",
+        "title": "Skyflower.png",
+        "width": 500,
+        "height": 371
+      }
+    },
+    {
       "id": "sol-cottage-villa",
       "slug": "sol-cottage-villa",
       "path": "/rental-properties/sol-cottage-villa",
@@ -664,6 +809,31 @@
       }
     },
     {
+      "id": "villa-fantasea",
+      "slug": "villa-fantasea",
+      "path": "/rental-properties/villa-fantasea",
+      "name": "Villa FantaSea",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-hero.png?alt=media&token=c99891ad-4810-414f-87e3-22a6cac54320",
+        "alt": "",
+        "title": "Villa FantaSea.png",
+        "width": 900,
+        "height": 600
+      }
+    },
+    {
       "id": "villa-madeline",
       "slug": "villa-madeline",
       "path": "/rental-properties/villa-madeline",
@@ -709,6 +879,30 @@
         "title": "03-st-john-villa-waterklip-pool-800x540.avif",
         "width": 800,
         "height": 540
+      }
+    },
+    {
+      "id": "a-tropical-paradise",
+      "slug": "a-tropical-paradise",
+      "path": "/rental-properties/a-tropical-paradise",
+      "name": "A Tropical Paradise",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Internet",
+        "Frank Bay, walk to Cruz Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-hero.jpg?alt=media&token=54cf1f36-befa-486f-8d44-1ce019f2a452",
+        "alt": "",
+        "title": "A Tropical Paradise.jpg",
+        "width": 380,
+        "height": 506
       }
     },
     {
@@ -1051,6 +1245,31 @@
       }
     },
     {
+      "id": "treetops",
+      "slug": "treetops",
+      "path": "/rental-properties/treetops",
+      "name": "Treetops",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux Mountain"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-hero.png?alt=media&token=249d3080-c6ad-42a9-b692-e65530f7c96d",
+        "alt": "",
+        "title": "Treetops.png",
+        "width": 900,
+        "height": 449
+      }
+    },
+    {
       "id": "villa-bijou",
       "slug": "villa-bijou",
       "path": "/rental-properties/villa-bijou",
@@ -1097,6 +1316,30 @@
         "title": "13-Villa-Madeira-aerial-above-800x540.avif",
         "width": 800,
         "height": 540
+      }
+    },
+    {
+      "id": "bay-rum-breeze",
+      "slug": "bay-rum-breeze",
+      "path": "/rental-properties/bay-rum-breeze",
+      "name": "Bay Rum Breeze",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Estate Carolina"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-hero.png?alt=media&token=0e694202-340f-49be-a7be-4f22ec21018a",
+        "alt": "",
+        "title": "Bay Rum Breeze.png",
+        "width": 500,
+        "height": 333
       }
     },
     {
@@ -1439,6 +1682,55 @@
       }
     },
     {
+      "id": "sol-inclination",
+      "slug": "sol-inclination",
+      "path": "/rental-properties/sol-inclination",
+      "name": "Sol Inclination",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 9,
+      "facts": [
+        "Max 9 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Skytop"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-hero.png?alt=media&token=7ca1f822-deb5-43a1-8a4b-a3498680de5c",
+        "alt": "",
+        "title": "Sol Inclination.png",
+        "width": 900,
+        "height": 674
+      }
+    },
+    {
+      "id": "south-shore-villa",
+      "slug": "south-shore-villa",
+      "path": "/rental-properties/south-shore-villa",
+      "name": "South Shore Villa",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "facts": [
+        "Max 8",
+        "4",
+        "4.5 baths",
+        "Pool",
+        "Internet",
+        "South Shore"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-hero.png?alt=media&token=2cbe9ae1-189b-418a-8a15-7398f56d06d4",
+        "alt": "",
+        "title": "South Shore Villa.png",
+        "width": 500,
+        "height": 375
+      }
+    },
+    {
       "id": "villa-de-paz",
       "slug": "villa-de-paz",
       "path": "/rental-properties/villa-de-paz",
@@ -1561,6 +1853,31 @@
         "title": "Seacove Villa.png",
         "width": 800,
         "height": 472
+      }
+    },
+    {
+      "id": "villa-carlota",
+      "slug": "villa-carlota",
+      "path": "/rental-properties/villa-carlota",
+      "name": "Villa Carlota",
+      "bedrooms": 5,
+      "bathrooms": 6.5,
+      "maxGuests": 12,
+      "facts": [
+        "Max 12",
+        "5",
+        "6.5 baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Upper Peter Bay"
+      ],
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-hero.png?alt=media&token=c5d09758-1fe8-47b6-a94a-02d5125cffb7",
+        "alt": "",
+        "title": "Villa Carlota.png",
+        "width": 800,
+        "height": 533
       }
     },
     {

@@ -9,6 +9,7 @@ const {
 const { HttpError, requireAdminUser } = require('./firebaseAdmin')
 const {
   getPropertyBySlug,
+  listAllProperties,
   listBedroomGroups,
   listProperties,
   listPropertySummaries,
@@ -213,6 +214,16 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         property: savedProperty,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/properties/catalog') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        properties: await listAllProperties(),
       })
       return
     }

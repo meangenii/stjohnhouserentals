@@ -1,8 +1,8 @@
 {
-  "capturedAt": "2026-06-08T16:16:22.507Z",
+  "capturedAt": "2026-06-08T17:25:26.662Z",
   "snapshotDate": "2026-06-08",
   "source": "https://www.stjohnhouserentals.com/",
-  "propertyCount": 68,
+  "propertyCount": 81,
   "properties": [
     {
       "id": "christmas-cottage",
@@ -83,96 +83,167 @@
       "pageTitle": "Christmas Cottage | St John House Rental"
     },
     {
-      "id": "island-gardens",
-      "slug": "island-gardens",
-      "path": "/rental-properties/island-gardens",
-      "name": "Island Gardens",
+      "id": "cruz-bay-vista",
+      "slug": "cruz-bay-vista",
+      "path": "/rental-properties/cruz-bay-vista",
+      "name": "Cruz Bay Vista",
       "templateVariant": "fully-sectioned",
-      "price": "$150.00/Night",
+      "price": "$414.00/Night",
       "bedrooms": 1,
       "bathrooms": 1,
       "maxGuests": 2,
-      "shortDescription": "Max 2 Guests\nStudio\n1 Bath\nInternet\nCoral Bay, St John VI",
+      "shortDescription": "Max 2 Guests\nStudio\n1 Bath\nPool\nInternet\nCruz Bay",
       "facts": [
         "Max 2 Guests",
         "Studio",
         "1 Bath",
+        "Pool",
         "Internet",
-        "Coral Bay, St John VI"
+        "Cruz Bay"
       ],
-      "location": "Coral Bay, St John VI",
+      "location": "Cruz Bay",
       "heroImage": {
-        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-hero.png?alt=media&token=c54fcebc-7db5-4a6e-8830-750924df6b4f",
         "alt": "",
-        "title": "Island-Gardens.jpg",
-        "width": 640,
-        "height": 428
+        "title": "Cruz Bay Vista.png",
+        "width": 500,
+        "height": 332
       },
       "gallery": [
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-01.jpg?alt=media&token=5b2e0e5b-f43a-4712-bfb7-20a484fcc5ec",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-01.webp?alt=media&token=82c1be2c-eccf-41d1-9975-48dda1c75284",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 428
+          "width": 1200,
+          "height": 801
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-02.jpg?alt=media&token=0a46a9b6-fdde-4c63-b094-8f33d3aebbbf",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-02.avif?alt=media&token=6f7d08a3-63f6-4947-ae99-1b0d27d90026",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 428
+          "width": 1200,
+          "height": 1799
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-03.jpg?alt=media&token=37159f0b-e38b-44f5-82e9-c2313f3ad419",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-03.avif?alt=media&token=55968b71-75a7-41b2-816d-82860e688051",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 428
+          "width": 1200,
+          "height": 801
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-04.jpg?alt=media&token=26e58964-833b-4fbf-8990-01f14ce04482",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-04.avif?alt=media&token=5dc38ede-f95c-4cab-8a4f-4978f02b8e39",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 446
+          "width": 1200,
+          "height": 801
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-05.jpg?alt=media&token=d61a3e08-4254-42ec-9019-8226bcb9ae65",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-05.webp?alt=media&token=cdc8d044-3d35-46ff-bee1-64dfbc1836cc",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 428
+          "width": 1200,
+          "height": 801
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-06.jpg?alt=media&token=3ab7b2a7-7ffb-4de5-906f-f44d3a1e1048",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-06.avif?alt=media&token=71437a43-256e-4439-8588-7547e7283310",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 380
+          "width": 1200,
+          "height": 800
         },
         {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-07.jpg?alt=media&token=20e9fd58-5650-4290-bd02-e4bf86b37ab2",
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-07.webp?alt=media&token=aba8f582-3e21-4c64-a96c-f533a4975c0f",
           "alt": "",
           "title": "",
-          "width": 640,
-          "height": 434
+          "width": 1200,
+          "height": 799
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-08.avif?alt=media&token=288c236f-f13f-441e-82b9-218e27a8cd9f",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 829
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-09.webp?alt=media&token=12ddd7bc-9d06-4f1f-85d8-0347aa4c5684",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 801
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-10.webp?alt=media&token=9231edd5-d067-457d-b40f-b550d8ff7463",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 799
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-11.webp?alt=media&token=0179b163-2675-4ad4-886a-c97deb5baaf6",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 1796
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-12.webp?alt=media&token=07e3a1bc-d991-4c3a-9c3c-e7abb997714f",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 1796
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-13.avif?alt=media&token=2047596b-d94f-4020-87f2-c4bcb2f5c89e",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 1796
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-gallery-14.jpg?alt=media&token=8034ca2d-a08d-4791-9276-da5994dbefad",
+          "alt": "",
+          "title": "",
+          "width": 1200,
+          "height": 799
         }
       ],
-      "descriptionHtml": "<p>At the same time, the location offers easy access to Cruz Bay via the ‘dollar bus’. Car rentals are optional. Separate and autonomous, living is simple and independent. The tidy and serene studio is arranged for comfort. The arched door frames your view of the surrounding lush tropical mountain landscape.</p>\n<p>Enjoy basking in the splendor of the outdoors on the spacious wrap-around deck perched on the upper level to catch the constant island breezes. Island Gardens driveway is on level ground and makes for trouble-free access and parking.<br /><br />Local landmarks including Skinny Legs, and Jolly Dog, are all within easy walking distance. Enjoy plenty of nightly entertainment. You’ll pass the local grocery store and several gift shops along the way—all a simple 5-minute walk. Yoga classes convene several times a week at the Calabash Boom Housing (hitch a ride with the owner/ Marcia). Or if Pilates is your preference, classes are available at the Agricultural Pavilion. The VITRAN passes hourly. Two-thirds of St. John is a U.S. national park with historic ruins, protected beaches, and hiking trails.<br /><br />Boating, snorkeling, fishing, windsurfing, paddle boarding, surfing, and scuba diving are just some of the adventures that await you. Catch the island shuttle bus, to world-class beaches for the day. Hike the many trails on the eastern end of St. John, or head to the bustling town of Cruz Bay–for a dollar. Bars and restaurants, quaint boutiques and island ferry excursions are all conveniently located to the studio.</p>\n<p><strong>Island Gardens Rates\t\t</strong><br /></p>\n<p><strong>Summer</strong></p>\n<p><strong>June 15 – November 15</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$650/Week</p>\n<p>$1800/Month</p>\n<p><strong>Fall </strong></p>\n<p><strong>November 16 – December 14</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$800/Week</p>\n<p>$2000/Month</p>\n<p><strong>High Season</strong></p>\n<p><strong>December 15 – April 30</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$950/Week</p>\n<p>$3500/Month</p>\n<p><strong>Spring</strong></p>\n<p><strong>May 1 – June 14</strong><br />(3 Night Minimum)</p>\n<p>$150/Night</p>\n<p>$850/Week</p>\n<p>$2800/Month</p>\n<p>+12.5% Hotel Tax</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Marcia</p>\n<p><a href=\"mailto:islandrootstoursusvi@gmail.com?subject=Island_Gardens_SJL&amp;cc=stjohnlinks@gmail.com\" target=\"_blank\" rel=\"noreferrer\">islandrootstoursusvi@gmail.com</a> Email us with your desired schedule</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Rates are based on double occupancy.</p>\n<p>50% deposit is required at the time of booking/balance due 14 days prior to arrival.</p>\n<p>100% Refund on cancellations more than 14 days prior to arrival.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
-      "amenitiesHtml": "<p>Internet</p>",
+      "descriptionHtml": "<p>Suite 4W (Cruz Bay Vista) catches glorious morning and afternoon sun and warm trade winds. This suite was completely remodeled from top to bottom with all new flooring, kitchen and bathroom. Bedroom has a new master king size bed (and all new bedding). This suite sleeps two comfortably and is perfect for a couple celebrating an anniversary, birthday or honeymoon! Lavender Hill is the perfect location to easily walk to restaurants, shopping and all that cruz bay has to offer. This suite offers a beautiful vista of Cruz Bay harbor and pool views from its two decks. For your beach outings, the unit offers beach chairs, towels, and a cooler.</p>\n<p>Base nightly rates vary and additional per person per night charges and other fees may apply.</p>\n<p>To view more information, photos and reviews please visit VRBO at:</p>\n<p><a href=\"https://www.vrbo.com/2106805?dateless=true\" target=\"_blank\">Cruz Bay Vista – Lavender Hill One Bedroom Condo – Walk to town. (</a><a href=\"http://vrbo.com\" target=\"_blank\" rel=\"noreferrer\">vrbo.com</a><a href=\"https://www.vrbo.com/2106805?dateless=true\" target=\"_blank\">)</a></p>\n<p>To book direct, please contact James M. Miller Property Management at:</p>\n<p><a href=\"mailto:miller.marc17@yahoo.com\" target=\"_blank\" rel=\"noreferrer\">miller.marc17@yahoo.com</a></p>",
+      "amenitiesHtml": "<h3><strong>Essentials</strong></h3>\n<p>Wireless internet</p>\n<p>WiFi</p>\n<p>Towels provided</p>\n<p>Linens provided</p>\n<p>Air conditioning</p>\n<p>Hair dryer</p>\n<p>Shampoo</p>\n<p>Toilet paper</p>\n<p>Basic soaps</p>\n<h3><strong>Kitchen</strong></h3>\n<p>Kitchen</p>\n<p>Refrigerator</p>\n<p>Dishwasher</p>\n<p>Microwave</p>\n<p>Stove</p>\n<p>Oven</p>\n<p>Dishes &amp; utensils</p>\n<p>Coffee maker</p>\n<p>Coffee grinder</p>\n<p>Blender</p>\n<p>Ice maker</p>\n<p>Toaster</p>\n<h3><strong>Pool &amp; spa</strong></h3>\n<p>Communal pool</p>\n<p>For the condo complex</p>\n<h3><strong>Outside</strong></h3>\n<p>Beach towels</p>\n<h3><strong>Safety</strong></h3>\n<p>Carbon monoxide detector (host has indicated there is a carbon monoxide detector on the property)</p>\n<p>Smoke detector (host has indicated there is a smoke detector on the property)</p>\n<h3><strong>Location type</strong></h3>\n<p>Water view</p>\n<h3><strong>Suitability</strong></h3>\n<p>Minimum age to rent: 25 years old</p>\n<h3><strong>Pets</strong></h3>\n<p>No pets allowed</p>",
       "reviewsHtml": "",
       "reviewEntries": [],
       "externalLinks": [
         {
-          "href": "mailto:islandrootstoursusvi@gmail.com?subject=Island_Gardens_SJL&cc=stjohnlinks%40gmail.com",
-          "label": "islandrootstoursusvi@gmail.com",
+          "href": "https://www.vrbo.com/2106805?dateless=true",
+          "label": "Cruz Bay Vista – Lavender Hill One Bedroom Condo – Walk to town. (",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "http://vrbo.com",
+          "label": "vrbo.com",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "https://www.vrbo.com/2106805?dateless=true",
+          "label": ")",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:miller.marc17@yahoo.com",
+          "label": "miller.marc17@yahoo.com",
           "isMailto": true,
           "isPhone": false,
           "isInternal": false
         }
       ],
-      "pageTitle": "Island Gardens | St John House Rental"
+      "pageTitle": "Cruz Bay Vista | St John House Rental"
     },
     {
       "id": "harbor-lights",
@@ -505,6 +576,98 @@
         }
       ],
       "pageTitle": "In Harmony Retreat | St John House Rental"
+    },
+    {
+      "id": "island-gardens",
+      "slug": "island-gardens",
+      "path": "/rental-properties/island-gardens",
+      "name": "Island Gardens",
+      "templateVariant": "fully-sectioned",
+      "price": "$150.00/Night",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "shortDescription": "Max 2 Guests\nStudio\n1 Bath\nInternet\nCoral Bay, St John VI",
+      "facts": [
+        "Max 2 Guests",
+        "Studio",
+        "1 Bath",
+        "Internet",
+        "Coral Bay, St John VI"
+      ],
+      "location": "Coral Bay, St John VI",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+        "alt": "",
+        "title": "Island-Gardens.jpg",
+        "width": 640,
+        "height": 428
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-01.jpg?alt=media&token=5b2e0e5b-f43a-4712-bfb7-20a484fcc5ec",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 428
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-02.jpg?alt=media&token=0a46a9b6-fdde-4c63-b094-8f33d3aebbbf",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 428
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-03.jpg?alt=media&token=37159f0b-e38b-44f5-82e9-c2313f3ad419",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 428
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-04.jpg?alt=media&token=26e58964-833b-4fbf-8990-01f14ce04482",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 446
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-05.jpg?alt=media&token=d61a3e08-4254-42ec-9019-8226bcb9ae65",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 428
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-06.jpg?alt=media&token=3ab7b2a7-7ffb-4de5-906f-f44d3a1e1048",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 380
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-gallery-07.jpg?alt=media&token=20e9fd58-5650-4290-bd02-e4bf86b37ab2",
+          "alt": "",
+          "title": "",
+          "width": 640,
+          "height": 434
+        }
+      ],
+      "descriptionHtml": "<p>At the same time, the location offers easy access to Cruz Bay via the ‘dollar bus’. Car rentals are optional. Separate and autonomous, living is simple and independent. The tidy and serene studio is arranged for comfort. The arched door frames your view of the surrounding lush tropical mountain landscape.</p>\n<p>Enjoy basking in the splendor of the outdoors on the spacious wrap-around deck perched on the upper level to catch the constant island breezes. Island Gardens driveway is on level ground and makes for trouble-free access and parking.<br /><br />Local landmarks including Skinny Legs, and Jolly Dog, are all within easy walking distance. Enjoy plenty of nightly entertainment. You’ll pass the local grocery store and several gift shops along the way—all a simple 5-minute walk. Yoga classes convene several times a week at the Calabash Boom Housing (hitch a ride with the owner/ Marcia). Or if Pilates is your preference, classes are available at the Agricultural Pavilion. The VITRAN passes hourly. Two-thirds of St. John is a U.S. national park with historic ruins, protected beaches, and hiking trails.<br /><br />Boating, snorkeling, fishing, windsurfing, paddle boarding, surfing, and scuba diving are just some of the adventures that await you. Catch the island shuttle bus, to world-class beaches for the day. Hike the many trails on the eastern end of St. John, or head to the bustling town of Cruz Bay–for a dollar. Bars and restaurants, quaint boutiques and island ferry excursions are all conveniently located to the studio.</p>\n<p><strong>Island Gardens Rates\t\t</strong><br /></p>\n<p><strong>Summer</strong></p>\n<p><strong>June 15 – November 15</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$650/Week</p>\n<p>$1800/Month</p>\n<p><strong>Fall </strong></p>\n<p><strong>November 16 – December 14</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$800/Week</p>\n<p>$2000/Month</p>\n<p><strong>High Season</strong></p>\n<p><strong>December 15 – April 30</strong><br />(3 Night Minimum)<br />$150/Night</p>\n<p>$950/Week</p>\n<p>$3500/Month</p>\n<p><strong>Spring</strong></p>\n<p><strong>May 1 – June 14</strong><br />(3 Night Minimum)</p>\n<p>$150/Night</p>\n<p>$850/Week</p>\n<p>$2800/Month</p>\n<p>+12.5% Hotel Tax</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Marcia</p>\n<p><a href=\"mailto:islandrootstoursusvi@gmail.com?subject=Island_Gardens_SJL&amp;cc=stjohnlinks@gmail.com\" target=\"_blank\" rel=\"noreferrer\">islandrootstoursusvi@gmail.com</a> Email us with your desired schedule</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Rates are based on double occupancy.</p>\n<p>50% deposit is required at the time of booking/balance due 14 days prior to arrival.</p>\n<p>100% Refund on cancellations more than 14 days prior to arrival.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
+      "amenitiesHtml": "<p>Internet</p>",
+      "reviewsHtml": "",
+      "reviewEntries": [],
+      "externalLinks": [
+        {
+          "href": "mailto:islandrootstoursusvi@gmail.com?subject=Island_Gardens_SJL&cc=stjohnlinks%40gmail.com",
+          "label": "islandrootstoursusvi@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Island Gardens | St John House Rental"
     },
     {
       "id": "island-vibes",
@@ -1101,6 +1264,160 @@
         }
       ],
       "pageTitle": "MandeVilla at Ixora | St John House Rental"
+    },
+    {
+      "id": "ocean-garden",
+      "slug": "ocean-garden",
+      "path": "/rental-properties/ocean-garden",
+      "name": "Ocean Garden",
+      "templateVariant": "fully-sectioned",
+      "price": "$379/Night",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "shortDescription": "Max 2 Guests\n1 Bedroom\n1 Bath\nInternet\nHot Tub\nGreat Cruz Bay",
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Internet",
+        "Hot Tub",
+        "Great Cruz Bay"
+      ],
+      "location": "Great Cruz Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-hero.png?alt=media&token=3a3efea9-830c-4a93-b581-e453b08a5d2c",
+        "alt": "",
+        "title": "Ocean Garden.png",
+        "width": 900,
+        "height": 675
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-01.png?alt=media&token=83a45efd-c573-459b-99ae-6ccfc201defe",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-02.png?alt=media&token=3c943e51-1d6d-4733-b1bf-dc327023a2c4",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-03.png?alt=media&token=8cc0283f-4b5a-41f8-844a-06e0b7925709",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 450
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-04.png?alt=media&token=be087b6c-9604-486f-9d76-c69c40c236cb",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-05.png?alt=media&token=92272239-bd3e-424f-9cc9-d0a095219f8a",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-06.png?alt=media&token=f993e142-7d2d-4f9b-b9b4-491f1641d840",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 577
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-07.png?alt=media&token=7c58e9d4-c2ab-48f6-86e6-6f5695b36d17",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-08.png?alt=media&token=8c5ab00d-c4ab-4b9a-bdb7-b7230ca2425b",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-09.jpg?alt=media&token=722368c8-8d84-4e0b-8f1f-25bb89daadcb",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-10.png?alt=media&token=81c03cee-5600-4e6b-935a-83795c583f92",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-11.png?alt=media&token=5d61b637-523f-4226-88fa-7f6df433b9c0",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 471
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-12.png?alt=media&token=378bd387-1ef9-453f-9ac2-db3d98d99034",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-13.png?alt=media&token=4ed626ec-48f3-46f2-bfa7-ea32b150b269",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-gallery-14.png?alt=media&token=79bed8b4-e141-4a4a-8486-c443569efbcd",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        }
+      ],
+      "descriptionHtml": "<p><strong>Ocean Garden</strong> with Hot Tub offers Spectacular Views of Ocean Bays and Islands all the way to St. Croix. This villa is nestled in the hills with a garden walk to Hot Tub/Spa.</p>\n<p>The bedroom is appointed with a hand-carved mahogany, queen bed and offers direct access to the veranda. The living area offers a comfortable seating area, fully equipped kitchen, and sliding glass door to the veranda with a gas BBQ grill.</p>\n<p>​Off the veranda, a few steps down leads you through a tranquil garden walk through 20&#39; tall boulders to a private hot tub. Surround yourself with the natural beauty of this tropical retreat.  If desired there is air conditioning. However, the trade winds offer an airy, cool breeze if you prefer not to use the air conditioning.</p>\n<p>After a day at the beach and exploring the island, sit back, have a glass of your favorite beverage, and breathe in the sights of the ocean from your private veranda or SPA.<br /></p>\n<p><strong>Ocean Garden Nightly Rates</strong></p>\n<p>(7 night minimum)<br />$379 a night<br /><br />+12.5% Hotel Tax</p>\n<p>+$125 Cleaning Fee</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Jacquelin Perry</p>\n<p><a href=\"mailto:jperry00830@gmail.com?subject=Ocean_Garden_SJL\" target=\"_blank\" rel=\"noreferrer\">jperry00830@gmail.com</a> Email us with your desired schedule and number of people in your party or Call Us</p>\n<p><a href=\"tel:340-626-8609\" target=\"_blank\" rel=\"noreferrer\">340-626-8609</a></p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Not suitable for children.</p>\n<p>No smoking on this property or in the parking area.</p>\n<p>Check in 3:00 pm Check out 10:00 am</p>\n<p>Credit Cards are accepted.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
+      "amenitiesHtml": "<p>Beach towels</p>\n<p>Beach chairs</p>\n<p>Cooler</p>\n<p>Float noodles</p>\n<p>Hair dryer</p>\n<p>Iron and ironing board.</p>",
+      "reviewsHtml": "<p>Jacqueline was an amazing hostess. She met us near her home and gave us the grand tour of her beautiful home. There is an amazing pool that over looks the valley and out towards St.Croix, a hot tub down stairs that boasts the same view. The linens and towels were clean and the bed was very comfortable. She has a smart TV in the room and we were able to watch TV when we weren’t out exploring. There was a refrigerator, shower, sink, iron and ironing board, and bug spray and sun screen available. We will absolutely be back for the beautiful views, nice breeze and great hostess<em>. - </em>Jessie C.</p>",
+      "reviewEntries": [
+        {
+          "quote": "Jacqueline was an amazing hostess. She met us near her home and gave us the grand tour of her beautiful home. There is an amazing pool that over looks the valley and out towards St.Croix, a hot tub down stairs that boasts the same view. The linens and towels were clean and the bed was very comfortable. She has a smart TV in the room and we were able to watch TV when we weren’t out exploring. There was a refrigerator, shower, sink, iron and ironing board, and bug spray and sun screen available. We will absolutely be back for the beautiful views, nice breeze and great hostess.",
+          "author": "Jessie C."
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:jperry00830@gmail.com?subject=Ocean_Garden_SJL",
+          "label": "jperry00830@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "tel:340-626-8609",
+          "label": "340-626-8609",
+          "isMailto": false,
+          "isPhone": true,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Ocean Garden | St John House Rental"
     },
     {
       "id": "paradise-carest",
@@ -1812,6 +2129,307 @@
       "pageTitle": "The Little Easy | St John House Rental"
     },
     {
+      "id": "tropical-orchid",
+      "slug": "tropical-orchid",
+      "path": "/rental-properties/tropical-orchid",
+      "name": "Tropical Orchid",
+      "templateVariant": "fully-sectioned",
+      "price": "$389.00/Night",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "shortDescription": "Max 2 Guests\n1 Bedroom\n1 Bath\nHot Tub\nInternet\nGreat Cruz Bay",
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Hot Tub",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "location": "Great Cruz Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-hero.png?alt=media&token=a9d19bc5-ceff-486b-a8a5-3cd3421025fd",
+        "alt": "",
+        "title": "Tropical Orchid.png",
+        "width": 900,
+        "height": 746
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-01.png?alt=media&token=faa03468-2add-45d9-ab75-32b13347cf05",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 746
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-02.png?alt=media&token=04f3e650-97c0-48db-828e-ae2ab00fe943",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 487
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-03.png?alt=media&token=23e43b72-1aca-499b-9f35-15a6b59c1573",
+          "alt": "",
+          "title": "",
+          "width": 525,
+          "height": 700
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-04.png?alt=media&token=94cd2dea-e35e-45fd-a72c-b8797e84eea5",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 450
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-05.png?alt=media&token=c20de8d9-8707-41bb-aafb-3b855601a418",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-06.png?alt=media&token=f419ba24-5ee1-464d-b708-28d37f58fb82",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-07.png?alt=media&token=cc53e184-de74-428c-9ea2-be89a9b47614",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 516
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-08.png?alt=media&token=b1b36dbc-e3b3-4aa5-95bf-1657a32642f6",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-09.png?alt=media&token=31140a13-79ab-4496-8d0b-4f8e00b60728",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 496
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-10.png?alt=media&token=61097bf8-2302-414a-aad7-dbedcbcaa79c",
+          "alt": "",
+          "title": "",
+          "width": 579,
+          "height": 700
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-11.png?alt=media&token=9f67202b-05e8-438a-8941-8f2b91a58562",
+          "alt": "",
+          "title": "",
+          "width": 450,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-12.png?alt=media&token=db33f3de-7b3c-4135-93b0-174a1feec9e4",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 530
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-13.png?alt=media&token=4c9ee506-e4f0-40eb-a5b9-07a54ab380ab",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 597
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-14.png?alt=media&token=7abd6c74-9348-4272-a218-3078c56ab2cb",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-gallery-15.png?alt=media&token=cfa3b337-1810-4b4b-a32a-e10066ad6cbe",
+          "alt": "",
+          "title": "",
+          "width": 768,
+          "height": 576
+        }
+      ],
+      "descriptionHtml": "<p>Tropical Orchid<strong> </strong>boasts two private decks. One veranda that overlooks the hills with spectacular blue Caribbean views facing South towards Saint Croix, the islands of Frenchman&#39;s Cap and Little St James. In addition, located off the kitchen is a private patio with a BBQ Grill with steps up to the Hot Tub deck.</p>\n<p>The bedroom is appointed with hand-carved mahogany, a queen bed, a vanity sink, a seating area, and direct access to the veranda. The living area offers a comfortable seating area, and fully equipped kitchen, complete with a dishwasher. The trade winds offer an airy, cool breeze, but air- conditioning is offered if you prefer. After a day at the beach and exploring the island, sit back, have a glass of your favorite beverage, and breathe in the sights of the ocean from your veranda or private lounge deck.</p>\n<p>Villa Tropical Orchid, is located only 1.2 miles from the town of Cruz Bay and about 3 miles to the North Shore beaches. This Villa is for two adults or a single traveler, not appropriate for children. For your comfort this is a non-smoking property.<br /></p>\n<p>Just For Two Adults</p>\n<p>Private Patio and Lounge Deck</p>\n<p>Full Kitchen, Dishwasher, BBQ Grill</p>\n<p>Private off-street parking</p>\n<p>​Air conditioning​</p>\n<p>​This exquisite, top floor villa offers vaulted ceilings with views from lounge deck and veranda.<br /></p>\n<p><strong>Tropical Orchid Nightly Rates</strong><br /></p>\n<p>1-2 Guests  $389<br />+12.5% Hotel Tax</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Jacquelin Perry</p>\n<p><a href=\"mailto:jperry00830@gmail.com?subject=Tropical_Orchid_SJL\" target=\"_blank\" rel=\"noreferrer\">jperry00830@gmail.com</a> us with your desired schedule and number of people in your party</p>\n<p>or Call Us</p>\n<p><a href=\"tel:340-626-8609\" target=\"_blank\" rel=\"noreferrer\">340-626-8609</a></p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Not suitable for children.</p>\n<p>No smoking on this property or in the parking area.</p>\n<p>Check in 3:00 pm Check out 10:00 am</p>\n<p>Credit Cards are accepted.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
+      "amenitiesHtml": "<p>Bathroom</p>\n<p>Dishwasher</p>\n<p>BBQ Grill</p>\n<p>Private entry door</p>\n<p>​Air conditioned</p>\n<p>Living room and bathroom to the left</p>\n<p>Kitchen with access to back patio with BBQ and Hot Tub</p>\n<p>Bedroom with direct access to the front balcony and living room</p>\n<p>Private off-street parking on flat terrain</p>",
+      "reviewsHtml": "<p>It was just the perfect spot. It is close enough to town to be convenient, but not so close that you were in it. Had a great view of the harbor, the accommodations are perfect for a couple. She was very helpful but left us to our own to enjoy. I would highly recommend this rental and will be back! - Mark B.</p>",
+      "reviewEntries": [
+        {
+          "quote": "It was just the perfect spot. It is close enough to town to be convenient, but not so close that you were in it. Had a great view of the harbor, the accommodations are perfect for a couple. She was very helpful but left us to our own to enjoy. I would highly recommend this rental and will be back!",
+          "author": "Mark B."
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:jperry00830@gmail.com?subject=Tropical_Orchid_SJL",
+          "label": "jperry00830@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "tel:340-626-8609",
+          "label": "340-626-8609",
+          "isMailto": false,
+          "isPhone": true,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Tropical Orchid | St John House Rental"
+    },
+    {
+      "id": "white-seagull",
+      "slug": "white-seagull",
+      "path": "/rental-properties/white-seagull",
+      "name": "White Seagull",
+      "templateVariant": "fully-sectioned",
+      "price": "$552.00/Night",
+      "bedrooms": 1,
+      "bathrooms": 1,
+      "maxGuests": 2,
+      "shortDescription": "Max 2 Guests\n1 Bedroom\n1 Bath\nPool\nInternet\nGreat Cruz Bay",
+      "facts": [
+        "Max 2 Guests",
+        "1 Bedroom",
+        "1 Bath",
+        "Pool",
+        "Internet",
+        "Great Cruz Bay"
+      ],
+      "location": "Great Cruz Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-hero.jpg?alt=media&token=ae2872c4-83ef-4f28-b513-3502104b7dd6",
+        "alt": "",
+        "title": "White Seagull.jpg",
+        "width": 900,
+        "height": 675
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-01.jpg?alt=media&token=85cdc7e6-a7be-40e6-96c2-9fca7a8c4210",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-02.jpg?alt=media&token=67472e3f-9e70-402e-b3b7-ee051d9f4932",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-03.jpg?alt=media&token=74916218-63d4-4103-9d68-b9526bd48c0e",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-04.png?alt=media&token=93812bf8-6f04-487a-9dea-efe2f3550f3b",
+          "alt": "",
+          "title": "",
+          "width": 450,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-05.png?alt=media&token=87a43a1d-6aa5-48b3-a22e-12aeec25cc66",
+          "alt": "",
+          "title": "",
+          "width": 450,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-06.jpg?alt=media&token=3f8b96c9-8eae-4e7a-9c6a-bf0d529cb614",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-07.jpg?alt=media&token=181ad5e5-a68d-4f26-b1a6-8b21646ee8c0",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-08.jpg?alt=media&token=cbc1fe92-6154-4b3f-b4ae-3175fff20c26",
+          "alt": "",
+          "title": "",
+          "width": 300,
+          "height": 400
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-09.jpg?alt=media&token=a9982d12-0f6a-4d7f-ad93-f5cc1853031c",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-10.jpg?alt=media&token=0c14d387-8894-448e-93fb-3e616cb77fcd",
+          "alt": "",
+          "title": "",
+          "width": 600,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-11.jpg?alt=media&token=146e9e6a-6958-435c-bba2-fd39b99fae58",
+          "alt": "",
+          "title": "",
+          "width": 450,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-gallery-12.jpg?alt=media&token=e75c218f-8fb8-431b-9355-e83b9b5a9dbe",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        }
+      ],
+      "descriptionHtml": "<p>White Seagull is Just For Two- Elegance at a great price!</p>\n<p>Perched atop the hillside in Great Cruz Bay, White Seagull has views of Chocolate Hole, Hart Bay, and Great Cruz Bay from your living room. Watch the sunrise in the morning and set at night, a unique feature for homes on St. John. Take in the sprawling views of St Croix and St. Thomas, the other two U.S. virgin islands, from your personal rooftop balcony while the tropical breezes keep you cool.</p>\n<p>Designed and built with love, the details of this studio are like no other because your space is not limited to the one-room suite. There are 3 levels for you to enjoy: The Primary Studio, the upper private Sky Lounge that is only accessible through your space, and the lower courtyard that is shared with the owner&#39;s residence.</p>\n<p>This Primary Studio is a one-room suite tastefully furnished with a gorgeous hand-carved Mahogany King bed, and treasured heirloom antiques that draw you into the historic charm of the region. The well-appointed living room area will make you feel like royalty. The suite is divided by sliding French doors separating the bedroom/living area from the kitchenette and bathroom. The kitchenette is equipped with everything you need to create a special meal or a lunch for the beach.</p>\n<p>The Private Sky Lounge has views that are simply stunning day or night. Savor your favorite drink or frosty tropical beverage while gazing far beyond the shores. At night, stargaze or view the sparkling lights of St. Thomas – how romantic!</p>\n<p>The lower level Courtyard provides a lap pool to float your cares away in the refreshing waters while taking in the ocean views. There you’ll also find a BBQ grill for preparing a delicious meal to start your evening activities. The owner&#39;s home is adjacent to the courtyard for convenient access to local knowledge and assistance, should you need any. Parking is private off-street beside the ornate double wooden doors to the courtyard gracing the entrance to your studio.</p>\n<p>This hilltop accommodation is located only 1.2 miles from the town of Cruz Bay and about 5 minutes to the North Shore beaches. St. John is known for the 4-wheel drive Jeeps. We drive on the LEFT and fun driving up and down roads, around curves at slow speeds of 20 to 30 miles per hour. Getting to your studio is easy with paved roads and the private off-street parking area is easy to access.</p>\n<p><br /><strong>White Seagull Nightly Rates</strong><br /></p>\n<p>(5-7 night minimum)</p>\n<p>1-2 Guests  $662<br /><br />+12.5% Hotel Tax</p>\n<p>+$125 Cleaning Fee</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Jacquelin Perry</p>\n<p><a href=\"mailto:jperry00830@gmail.com?subject=White_Seagull_SJL\" target=\"_blank\">jperry00830@gmail.com</a> Email us with your desired schedule and number of people in your party or Call Us</p>\n<p><a href=\"tel:340-626-8609\" target=\"_blank\" rel=\"noreferrer\">340-626-8609</a> <strong>Office/Reservations</strong></p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Please contact us for discounts and specials.</p>\n<p>Not suitable for children.</p>\n<p>No smoking on this property or in the parking area.</p>\n<p>Check in 3:00 pm Check out 10:00 am</p>\n<p>Credit Cards are accepted.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
+      "amenitiesHtml": "<p>3 Private Balconies</p>\n<p>Living Area</p>\n<p>Kitchenette</p>\n<p>Dressing Room</p>\n<p>Pool</p>\n<p>BBQ</p>\n<p><strong>Provided for you:</strong> Beach towels,  Beach chairs, cooler, float noodles, hair dryer, iron and ironing board.</p>",
+      "reviewsHtml": "<p>The property is better than represented! The view is one of the best, the pool is perfect and the sun deck can't be beat. ​Jacqueline is gracious hostess and assures that you have everything you might need. The kitchenette is small but functional, beach chairs and towels are provided and the breeze thru the unit eliminated any need for A/C. St. John is back up on its' feet and visitors are greeted warmly by all. This was our 4th visit to STJ and we will return....we look forward to seeing Jacqueline again. So many beaches so little time!&nbsp;<em> - </em>​Sandy C.</p>",
+      "reviewEntries": [
+        {
+          "quote": "The property is better than represented! The view is one of the best, the pool is perfect and the sun deck can't be beat. Jacqueline is gracious hostess and assures that you have everything you might need. The kitchenette is small but functional, beach chairs and towels are provided and the breeze thru the unit eliminated any need for A/C. St. John is back up on its' feet and visitors are greeted warmly by all. This was our 4th visit to STJ and we will return....we look forward to seeing Jacqueline again. So many beaches so little time!",
+          "author": "Sandy C."
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:jperry00830@gmail.com?subject=White_Seagull_SJL",
+          "label": "jperry00830@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "tel:340-626-8609",
+          "label": "340-626-8609",
+          "isMailto": false,
+          "isPhone": true,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "White Seagull | St John House Rental"
+    },
+    {
       "id": "windwardside-guest-cottage",
       "slug": "windwardside-guest-cottage",
       "path": "/rental-properties/windwardside-guest-cottage",
@@ -2231,6 +2849,179 @@
         }
       ],
       "pageTitle": "Windwardside Main House | St John House Rental"
+    },
+    {
+      "id": "banana-sweet",
+      "slug": "banana-sweet",
+      "path": "/rental-properties/banana-sweet",
+      "name": "Banana Sweet",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "shortDescription": "Max 4 Guests\n2 Beds\n1 Bath\nBackup Power\nHot Tub\nInternet\nCoral Bay",
+      "facts": [
+        "Max 4 Guests",
+        "2 Beds",
+        "1 Bath",
+        "Backup Power",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "location": "Coral Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-hero.avif?alt=media&token=0693ac72-0ff5-4d94-9b00-f210dcbb3561",
+        "alt": "",
+        "title": "16-Sunrise.avif",
+        "width": 1200,
+        "height": 900
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-01.avif?alt=media&token=061197f0-e1a9-4bc1-b164-632517aca7cf",
+          "alt": "1-Exterior.avif",
+          "title": "1-Exterior.avif",
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-02.avif?alt=media&token=df6cba97-ca75-4c28-8e59-884f888fce71",
+          "alt": "2-Sign.avif",
+          "title": "2-Sign.avif",
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-03.avif?alt=media&token=356b429c-273f-4066-8708-328c3bef5b75",
+          "alt": "3-Living Area3.avif",
+          "title": "3-Living Area3.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-04.avif?alt=media&token=9773c7cd-ce97-4421-a7ec-f86a7ffe169c",
+          "alt": "4-Living Area.avif",
+          "title": "4-Living Area.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-05.avif?alt=media&token=2952dda7-74ce-41cc-8a3c-109d3f65d146",
+          "alt": "5-Living Area2.avif",
+          "title": "5-Living Area2.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-06.avif?alt=media&token=012951a4-5660-4148-a2ab-217ec9726921",
+          "alt": "6-Kitchen.avif",
+          "title": "6-Kitchen.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-07.avif?alt=media&token=11bf3287-f77c-4d10-b0dc-eac9ee8ce1c7",
+          "alt": "7-Bed1.avif",
+          "title": "7-Bed1.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-08.avif?alt=media&token=8e6436bf-c6b7-4a11-b50d-8e76a3a5ae9b",
+          "alt": "8-Bed2.avif",
+          "title": "8-Bed2.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-09.avif?alt=media&token=ee193dfa-8aa6-46a0-886d-3a6e2b9e0931",
+          "alt": "9-Bath.avif",
+          "title": "9-Bath.avif",
+          "width": 1200,
+          "height": 1603
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-10.avif?alt=media&token=0dedbe24-5c72-4cbe-b62f-7cf86a20e2be",
+          "alt": "10-Grill.avif",
+          "title": "10-Grill.avif",
+          "width": 1200,
+          "height": 900
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-11.avif?alt=media&token=c9d9c541-16e3-4c78-a33a-1c909a35c82e",
+          "alt": "11-Patio.avif",
+          "title": "11-Patio.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-12.avif?alt=media&token=c90ef04e-8e38-44b6-aef7-fed09e6ef5e9",
+          "alt": "12-Patio2.avif",
+          "title": "12-Patio2.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-13.avif?alt=media&token=26ce5ea5-790f-4518-abbe-743911463c0a",
+          "alt": "13-Ruins.avif",
+          "title": "13-Ruins.avif",
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-14.avif?alt=media&token=b254a675-8291-47bc-8e91-a721f57298e5",
+          "alt": "14-Aerial.avif",
+          "title": "14-Aerial.avif",
+          "width": 1200,
+          "height": 800
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-gallery-15.avif?alt=media&token=7aa3d830-fc85-47a4-8b5f-cfbe09d996af",
+          "alt": "15-Parking.avif",
+          "title": "15-Parking.avif",
+          "width": 1200,
+          "height": 898
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-hero.avif?alt=media&token=0693ac72-0ff5-4d94-9b00-f210dcbb3561",
+          "alt": "16-Sunrise.avif",
+          "title": "16-Sunrise.avif",
+          "width": 1200,
+          "height": 900
+        }
+      ],
+      "descriptionHtml": "<p>Welcome to Banana Sweet in beautiful Coral Bay with its quaint, funky, laid-back shops, restaurants and music scene.  This is a surprisingly spacious, recently redecorated, open floor plan apartment for two, overlooking the Carolina Valley and Hurricane Hole.  You can’t beat the location which is a short 15 minute drive to the beautiful North Shore beaches.</p>\n<p>Come and enjoy the comfortable, partially covered patio with nearly constant tropical breezes while you sit by the banana trees. It is the perfect place to catch a Coral Bay sunrise while enjoying your morning coffee or dining al fresco after a relaxing day at the beach.  The roomy apartment has one bedroom with a queen bed, a full bath, and a fully equipped kitchen. There is a large dining and living area which faces a wall of windows that open to an expansive view of the Carolina Valley and the historic ruins of the Carolina Estate.  This mainly solar powered home is also equipped with Tesla Powerwalls which ensure constant power even in the event of an electric outage.  The apartment comes outfitted with AC in the bedrooms, WiFi, TV with Dish Network, a large outdoor deck with grill, and a washer/dryer for guest use.  Beach chairs, coolers, and beach towels are provided so you have everything you need for a day at the beach.  If you enjoy hiking, there are many trails to enjoy that are very close by.</p>\n<p>This lower level apartment is part of a two unit home.  There is a large, flat parking area and the apartment entrance is totally private.  Due to its location an SUV or Jeep is required.</p>\n<p><strong>Banana Sweet Nightly Rates</strong></p>\n<p><strong>Winter</strong></p>\n<p><strong>November 15 - April 30</strong></p>\n<p>(5 night minimum)</p>\n<p>$235</p>\n<p>Summer</p>\n<p>May 1 - November 14</p>\n<p>(5 night minimum)</p>\n<p>$215</p>\n<p><strong>Holiday Rates</strong></p>\n<p>(5 night minimum)</p>\n<p><strong>Winter Holiday</strong></p>\n<p><strong>December 15 - January 4</strong></p>\n<p>$275</p>\n<p>+12.5% Hotel Tax</p>\n<p>+$100 Cleaning Fee</p>\n<p>+$250 Refundable Security Deposit</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Lori Walker</p>\n<p><a href=\"mailto:bananasweetstj@gmail.com?subject=Banana_Sweet_SJL\" target=\"_blank\" rel=\"noreferrer\">bananasweetstj@gmail.com</a> Email for Availability</p>\n<p>or Call Us</p>\n<p><a href=\"tel:201-230-4444\" target=\"_blank\" rel=\"noreferrer\">201-230-4444</a> Office/Reservations</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Children are welcome.</p>\n<p>Check in 4:00pm</p>\n<p>This is a non-smoking villa, however, smoking is permitted outside in the exterior deck areas.</p>\n<p>50% deposit &amp; signed contract are required at the time of booking/balance due 60 days prior to arrival.</p>\n<p>Reservations within 60 days of arrival require 100% Booking Fees paid.</p>\n<p>Payments accepted: Check, Bank Wire, or PayPal.</p>\n<p>Deposit by Check or Bank Wire, only.</p>\n<p>20% Cancellation Fee.</p>\n<p>No refunds, unless exact dates are re-rented.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>",
+      "amenitiesHtml": "<h4><strong>Top family-friendly amenities</strong></h4>\n<p>Kitchen</p>\n<p>Microwave</p>\n<p>Living/Dining area</p>\n<h4><strong>Popular amenities</strong></h4>\n<p>Hot tub</p>\n<p>Washer</p>\n<p>Dryer</p>\n<p>Free WiFi</p>\n<p>Air conditioning</p>\n<h4><strong>Outdoor Space</strong></h4>\n<p>Parking available</p>\n<p>Barbecue grill</p>\n<h4><strong>Essentials</strong></h4>\n<p>Wireless internet</p>\n<p>Free wifi</p>\n<p>Wifi speed: 100+ Mbps (good for 1–2 people or up to 6 devices)</p>\n<p>Towels provided</p>\n<p>Linens provided</p>\n<p>Air conditioning</p>\n<p>Hair dryer</p>\n<p>Toilet paper</p>\n<p>Paper towels</p>\n<p>Iron &amp; board</p>\n<h4><strong>Kitchen</strong></h4>\n<p>Kitchenette</p>\n<p>Refrigerator</p>\n<p>Dishwasher</p>\n<p>Microwave</p>\n<p>Stove</p>\n<p>Oven</p>\n<p>Grill</p>\n<h4><strong>Dishes &amp; utensils</strong></h4>\n<p>Dining table</p>\n<p>Coffee maker</p>\n<p>Coffee grinder</p>\n<p>Blender</p>\n<p>Ice maker</p>\n<p>Toaster</p>\n<h4><strong>Pool &amp; spa</strong></h4>\n<p>Spa whirlpool</p>\n<h4><strong>Outside</strong></h4>\n<p>Outdoor furniture</p>\n<p>Beach chairs</p>\n<p>Beach towels</p>\n<h4><strong>Pets</strong></h4>\n<p>No pets allowed</p>\n<h4><strong>Entertainment</strong></h4>\n<p>Television</p>\n<h4><strong>Laundry</strong></h4>\n<p>Washing machine</p>\n<p>Dryer</p>\n<h4><strong>Parking</strong></h4>\n<p>Spaces for 1 cars or jeep</p>\n<h4><strong>Safety</strong></h4>\n<p>Carbon monoxide detector (host has indicated there is a carbon monoxide detector on the property)</p>\n<p>Smoke detector (host has indicated there is a smoke detector on the property)</p>\n<p>Deadbolt lock</p>\n<p>Fire extinguisher</p>\n<p>First aid kit</p>\n<p>Exterior lighting</p>\n<p>Emergency Services contact</p>\n<p>911</p>\n<h4><strong>Suitability</strong></h4>\n<p>Long-term renters welcome</p>\n<p>Minimum age limit for renters</p>\n<h4><strong>Notes</strong></h4>\n<p>The lower unit can also be rented if available. There may be seperate travelers renting the lower studio apartment.</p>",
+      "reviewsHtml": "<p>Banana Sweet has everything you need for a great stay. It’s spacious, the view is fabulous and the house is fully outfitted. We enjoyed the hot tub! The drive up is rough and a little challenging but not unusual in Coral Bay. - Holly S.</p>\n<p><br></p>\n<p>We very much enjoyed our stay at Banana Sweet. The place was clean and comfortable, the views from the deck panoramic, and the hosts were helpful and well organized. Coral Bay is a very cool spot and there is endless places to explore. Great trip! Thank you! - Scott D.</p>",
+      "reviewEntries": [
+        {
+          "quote": "Banana Sweet has everything you need for a great stay. It’s spacious, the view is fabulous and the house is fully outfitted. We enjoyed the hot tub! The drive up is rough and a little challenging but not unusual in Coral Bay.",
+          "author": "Holly S."
+        },
+        {
+          "quote": "We very much enjoyed our stay at Banana Sweet. The place was clean and comfortable, the views from the deck panoramic, and the hosts were helpful and well organized. Coral Bay is a very cool spot and there is endless places to explore. Great trip! Thank you!",
+          "author": "Scott D."
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:bananasweetstj@gmail.com?subject=Banana_Sweet_SJL",
+          "label": "bananasweetstj@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "tel:201-230-4444",
+          "label": "201-230-4444",
+          "isMailto": false,
+          "isPhone": true,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Banana Sweet | St John House Rental"
     },
     {
       "id": "brezza-di-mare",
@@ -4412,6 +5203,111 @@
       "pageTitle": "Sea Palace Retreat | St John House Rental"
     },
     {
+      "id": "skyflower",
+      "slug": "skyflower",
+      "path": "/rental-properties/skyflower",
+      "name": "Skyflower",
+      "templateVariant": "fully-sectioned",
+      "price": "$303.00/Night",
+      "bedrooms": 2,
+      "bathrooms": 3,
+      "maxGuests": 4,
+      "shortDescription": "Max 4 Guests\n2 Bedrooms\n3 Baths\nHot Tub\nInternet\nBordeaux",
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "3 Baths",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux"
+      ],
+      "location": "Bordeaux",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-hero.png?alt=media&token=d56fdeb1-131a-48e6-ab4a-e0f3bf9b49bd",
+        "alt": "",
+        "title": "Skyflower.png",
+        "width": 500,
+        "height": 371
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-gallery-01.png?alt=media&token=20cdae4b-c0eb-4f2b-b8e9-11ddbcf8c6e7",
+          "alt": "",
+          "title": "",
+          "width": 500,
+          "height": 371
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-gallery-02.png?alt=media&token=fbec80f3-57a1-465b-8c99-02a377c01a3e",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 151
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-gallery-03.png?alt=media&token=1cc7afed-f66e-4f7a-b855-2b4bb971ab6e",
+          "alt": "",
+          "title": "",
+          "width": 600,
+          "height": 227
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-gallery-04.png?alt=media&token=d05aa94c-7d6e-49c0-babf-a8e4dd52fa71",
+          "alt": "",
+          "title": "",
+          "width": 600,
+          "height": 227
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-gallery-05.png?alt=media&token=649669cc-90c4-454e-981f-6b852c3c0448",
+          "alt": "",
+          "title": "",
+          "width": 500,
+          "height": 374
+        }
+      ],
+      "descriptionHtml": "<p>High above sleepy Coral Bay on Bordeaux Mountain sits Skyflower, named after the beautiful blue Plumbago which grows in profusion on the property. This 2 BR/3 BA home is in the West Indian style with Great House and bedrooms in separate buildings. Two people have access to only upper unit and lower unit will be unoccupied and locked. The panoramic views from all rooms are spectacular, overlooking the British Virgins, St Johns East End, and Coral Bay. Skyflower provides an enchanting Caribbean experience and the ultimate in privacy for honeymooners, two couples, or a small family. The Great House provides dining and entertainment space and a separate, two story building houses two equal size bedrooms and baths. 1500 square feet of deck unites the buildings into one indoor/outdoor living space. The kitchen is a fully equipped “cooks” kitchen with stainless appliances, marble countertops, quality utensils, and good lighting. Dining is inside on an antique family dining table or “al fresco” under the covered deck. Separation of the bedrooms from the Great House and from one another assures privacy for all guests. On the same level as the Great House the upper bedroom has a king sized, hand carved mahogany four poster bed with comfortable bath with a door to the private outdoor shower. The downstairs bedroom with adjoining living area is accessed by an outside staircase. This bedroom has 2 twin beds which can be joined to make up as a king. A lovely bath opens unto a tiled garden shower.</p>\n<p>Base nightly rates vary and additional per person per night charges and other fees may apply.</p>\n<p>To view more information, photos and reviews please visit VRBO at:</p>\n<p><a href=\"https://www.vrbo.com/182267?dateless=true\" target=\"_blank\">Great Reviews, Amazing 50 mile views! (</a><a href=\"http://vrbo.com\" target=\"_blank\" rel=\"noreferrer\">vrbo.com</a><a href=\"https://www.vrbo.com/182267?dateless=true\" target=\"_blank\">)</a></p>\n<p>To book direct, please contact James M. Miller Property Management at:</p>\n<p><a href=\"mailto:miller.marc17@yahoo.com?subject=skyflower%20SJL\" target=\"_blank\" rel=\"noreferrer\">miller.marc17@yahoo.com</a></p>",
+      "amenitiesHtml": "<h3>Top family-friendly amenities</h3>\n<p>Microwave</p><p>Kitchen</p>\n<h3>Popular amenities</h3>\n<p>Parking available</p><p>Hot Tub</p><p>Washer</p><p>Barbecue grill</p><p>Dryer</p><p>Outdoor Space</p><p>Ocean view</p>\n<h3>Languages spoken</h3>\n<p>English</p>\n<h3>Pool/Spa</h3>\n<p>Hot tub</p>\n<h3>Internet</h3>\n<p>Available in the villa: WiFi</p>\n<h3>Parking and transportation</h3>\n<p>Parking on site</p>\n<h3>Kitchen</h3>\n<p>Coffee/tea maker</p><p>Cookware, dishware, and utensils</p><p>Dishwasher</p><p>Ice maker</p><p>Microwave</p><p>Oven</p><p>Refrigerator</p><p>Stovetop</p><p>Toaster</p>\n<h3>Dining</h3>\n<p>Dining table</p>\n<h3>Bedrooms</h3>\n<p>2 bedrooms</p><p>Bedsheets provided</p>\n<h3>Bathroom</h3>\n<p>3 bathrooms</p>\n<h3>Living spaces</h3>\n<p>Dining table</p>\n<h3>Entertainment</h3>\n<p>Cable/satellite channels</p><p>DVD player</p><p>Stereo</p>\n<h3>Outdoor areas</h3>\n<p>Balcony</p><p>Barbecue grill</p><p>Garden</p>\n<h3>Laundry</h3>\n<p>Laundromat nearby</p><p>Washing machine</p>\n<h3>Pets</h3>\n<p>No pets allowed</p>\n<h3>Suitability/Accessibility</h3>\n<p>Smoke-free property</p>\n<h3>Services and conveniences</h3>\n<p>Phone</p>\n<h3>Location highlights</h3>\n<p>Near a health/beauty spa</p><p>Near a hospital</p>\n<h3>Things to do</h3>\n<p>Basketball nearby</p><p>Birdwatching nearby</p><p>Ecotours nearby</p><p>Fishing nearby</p><p>Golfing nearby</p><p>Hiking/biking trails nearby</p><p>Horseback riding nearby</p><p>Kayaking nearby</p><p>Motor boating nearby</p><p>Sailing nearby</p><p>Scuba diving nearby</p><p>Snorkeling nearby</p><p>Surfing/bodyboarding nearby</p><p>Swimming nearby</p><p>Whale watching nearby</p><p>Wildlife walks nearby</p><p>Windsurfing nearby</p>\n<h3>General</h3>\n<p>Garden</p><p>Property does not allow children</p>\n<h3>Safety features</h3>\n<p>Carbon monoxide detector (host has indicated there is a carbon monoxide detector on the property)</p><p>Smoke detector (host has indicated there is a smoke detector on the property)</p>",
+      "reviewsHtml": "<p>We would rent Skyflower again in a heartbeat and HIGHLY recommend Skyflower to anyone who is looking for an exceptional home, comfort and ultimate relaxation! And - yes - the most breathtakingly spectacular views on St. John!!!!!!</p>",
+      "reviewEntries": [
+        {
+          "quote": "We would rent Skyflower again in a heartbeat and HIGHLY recommend Skyflower to anyone who is looking for an exceptional home, comfort and ultimate relaxation! And - yes",
+          "author": "the most breathtakingly spectacular views on St. John!!!!!!"
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "https://www.vrbo.com/182267?dateless=true",
+          "label": "Great Reviews, Amazing 50 mile views! (",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "http://vrbo.com",
+          "label": "vrbo.com",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "https://www.vrbo.com/182267?dateless=true",
+          "label": ")",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:miller.marc17@yahoo.com?subject=skyflower+SJL",
+          "label": "miller.marc17@yahoo.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Skyflower | St John House Rental"
+    },
+    {
       "id": "sol-cottage-villa",
       "slug": "sol-cottage-villa",
       "path": "/rental-properties/sol-cottage-villa",
@@ -5139,6 +6035,310 @@
       "pageTitle": "Sunset Paradise | St John House Rental"
     },
     {
+      "id": "villa-fantasea",
+      "slug": "villa-fantasea",
+      "path": "/rental-properties/villa-fantasea",
+      "name": "Villa FantaSea",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "maxGuests": 4,
+      "shortDescription": "Max 4 Guests\n2 Bedrooms\n2 Baths\nPool\nHot Tub\nInternet\nCoral Bay",
+      "facts": [
+        "Max 4 Guests",
+        "2 Bedrooms",
+        "2 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Coral Bay"
+      ],
+      "location": "Coral Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-hero.png?alt=media&token=c99891ad-4810-414f-87e3-22a6cac54320",
+        "alt": "",
+        "title": "Villa FantaSea.png",
+        "width": 900,
+        "height": 600
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-01.png?alt=media&token=a8b33785-17cb-4bd2-9d0b-8934a13b2f1e",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-02.png?alt=media&token=a27642af-1f37-415f-b5be-fab0c8d65308",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-03.png?alt=media&token=cc3f264e-7b4f-4a38-b3d1-d6a6132aa7de",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-04.png?alt=media&token=de6e49ba-b99a-41b1-8c49-6988355d7b16",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-05.png?alt=media&token=17397ae6-b1fa-4be5-9493-b52f77e9642c",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-06.png?alt=media&token=24651768-ca79-43e4-b946-7957a18f571f",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-07.png?alt=media&token=69b8f0cb-82c7-4499-ae77-e9c9f49a49bb",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-08.png?alt=media&token=d00779ad-1d72-4b10-b200-c466aa6bf03d",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-09.png?alt=media&token=2ec021a1-8c2f-450d-84c1-faac81b8d5e9",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-10.png?alt=media&token=2dae29d1-f508-45dc-a865-a9c4ef6d188d",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-11.png?alt=media&token=fea41ab7-37f9-49c3-840e-886ebbf65c9f",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-12.png?alt=media&token=4b536d5b-805b-4c42-a7a8-bb010471d60b",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-13.png?alt=media&token=009d1eff-cb13-4dc8-a424-b310d94b1750",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-14.png?alt=media&token=65b08725-8ad9-4ec4-b2d5-9b65e58c8e75",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-15.png?alt=media&token=67d10209-805d-4f4b-a43c-ce43726bdf1a",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-16.png?alt=media&token=4fb56339-33e3-4e11-a61d-3e8395b6ef1d",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-17.png?alt=media&token=d4ce71b1-2b2b-4749-8900-95bb721253ab",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-18.png?alt=media&token=14d99cc9-7640-4dc8-b683-43f0adb1d2ee",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-19.png?alt=media&token=688a81ed-a93c-4442-b6a1-5863aebd1524",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-20.png?alt=media&token=4f285ba8-acc7-44d0-8450-dc50148d5a38",
+          "alt": "",
+          "title": "",
+          "width": 400,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-21.png?alt=media&token=5425e9ad-cc2a-4abb-bc07-2e8651bc9626",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-22.png?alt=media&token=0b981b7c-c608-49b4-80da-9c7da12c1869",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-23.png?alt=media&token=1c0c22ef-64eb-43cf-91d3-e6d933018acc",
+          "alt": "",
+          "title": "",
+          "width": 441,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-24.png?alt=media&token=e9091caf-ff9c-4fe2-850d-2369291bf110",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-25.png?alt=media&token=c90e4d38-2ecb-4030-a919-ec3fe85e8df1",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-26.png?alt=media&token=8476560d-eafe-472a-8f69-c07ca1c5843a",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-27.png?alt=media&token=3da28606-9f97-4978-8b06-5daab50e3d44",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-28.png?alt=media&token=086702cd-cb56-40d4-9b2a-9d7f46edb32b",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-29.png?alt=media&token=d5061bd9-2661-4a54-a1fb-7f974c90f951",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-30.png?alt=media&token=e88ce27c-2d27-40a3-87aa-dbbc5bca37b1",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-31.png?alt=media&token=b455e212-0935-433f-a816-6625c2da13bd",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-32.jpg?alt=media&token=9405fc69-f865-4e7a-9698-a05d9a298036",
+          "alt": "",
+          "title": "",
+          "width": 1040,
+          "height": 1404
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-33.png?alt=media&token=a48b4c84-0d13-4dd4-a2df-6c1e875f6e18",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-34.png?alt=media&token=203d0e91-c509-46ab-81c7-74dc6758077c",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-35.png?alt=media&token=1f79e55d-7d08-4082-8f7a-133845739043",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 671
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-gallery-36.png?alt=media&token=70cea20a-0cff-4bfa-bc51-0c2987935ee5",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 506
+        }
+      ],
+      "descriptionHtml": "<p>Located in Coral Bay Villa FantaSea (Previously Villa Lair-a’Mar with 50+ 5 Star VRBO reviews) has been completely remodeled from top to bottom with a painstaking eye on fine design details and guest comfort. Villa FantaSea caters very comfortably to both couples and families with children 9 and older up to a maximum of 4.<br /><br />The single-level floor plan provides easy access to all this villa has to offer and the oversize drive with turn-around space is an island rarity. The battery backup from whole house solar and Tesla Walls ensures the fun doesn’t stop when the power goes out.<br /><br />Enjoy the privacy and refreshing water in the plunge pool or soak up the sun in the modern chaise lounge chairs. An outdoor dining area and weber grill round out the alfresco enjoyment.<br /><br />This immaculate home boasts a FULL HOUSE air-conditioned open floor plan with high-end, comfortable furnishings. The large living area makes entertaining or lounging a relaxing, engaging experience.</p>\n<p><br />The modern kitchen features all new appliances, quartz countertops, a gas cook-top dual-zone oven, built-in microwave, dual-zone beverage cooler, high-end lighting, and all of the small appliances, accessories, and dinnerware one would expect.<br /></p>\n<p><strong>Villa FantaSea  Rates</strong><br /></p>\n<p><strong>Winter</strong></p>\n<p><strong>January 1st-April 22nd</strong></p>\n<p>(7-night minimum)</p>\n<p>1-4 Guests $4025.00/week</p>\n<p><strong>Summer</strong><br /><strong>April 23rd-October 31st</strong><br />(7-night minimum)<br />1-4 Guests $3500.00/week</p>\n<p><strong>Fall</strong><br /><strong>November 1st-December 16th</strong><br />(7-night minimum)<br />1-4 Guests $4025.00/week</p>\n<p><strong>Holiday</strong><br /><strong>December 17th-December 31st</strong><br />(7-night minimum)<br />1-4 Guests $4900.00/week<br /></p>\n<p><strong>Rates and dates are subject to change.</strong><br /><a href=\"mailto:host@villafantasea.com\" target=\"_blank\" rel=\"noreferrer\">host@villafantasea.com</a></p>\n<h4>Policy and Notes</h4>\n<p><strong>Payment Schedule</strong><br />50% due at time of booking. The remaining balance is due 60 days before arrival.</p>\n<p><strong>Cancellation Policy</strong><br />100% of paid prepayments are refundable when canceled 61 days before arrival or earlier. No refunds if cancelled after.</p>\n<p><strong>Damage deposit</strong><br />A pre-authorization of $500 is due 1 day before arrival and released 5 days after departure</p>\n<p><strong>Notes</strong><br />For longer or shorter stays or a custom direct quote , contact us at <a href=\"mailto:Host@VillaFantasea.com\">Host@VillaFantasea.com</a>.</p>\n<p>Longer stays are designated by 14 days or more, and Shorter stays are less than 5 nights.</p>\n<p>Wheelchair accessible | Smoking not allowed | Credit cards accepted</p>\n<p>Each of the two large, air-conditioned Private King Suites feature brand new Purple Premier Mattresses and has direct access to the expansive deck and pool area that showcases panoramic views of Coral Bay, the East End, and the BVI’s.</p>",
+      "amenitiesHtml": "<p>Air-conditioned</p>\n<p>Pool</p>\n<p>Kitchen</p>\n<p>Oven</p>\n<p>Microwave</p>\n<p>Cooler</p>\n<p>High-end Lighting</p>\n<p>Dinnerware</p>",
+      "reviewsHtml": "",
+      "reviewEntries": [],
+      "externalLinks": [
+        {
+          "href": "mailto:host@villafantasea.com",
+          "label": "host@villafantasea.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:Host@VillaFantasea.com",
+          "label": "Host@VillaFantasea.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Villa FantaSea | St John House Rental"
+    },
+    {
       "id": "villa-madeline",
       "slug": "villa-madeline",
       "path": "/rental-properties/villa-madeline",
@@ -5523,6 +6723,175 @@
         }
       ],
       "pageTitle": "Waterklip | St John House Rental"
+    },
+    {
+      "id": "a-tropical-paradise",
+      "slug": "a-tropical-paradise",
+      "path": "/rental-properties/a-tropical-paradise",
+      "name": "A Tropical Paradise",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "shortDescription": "Max 6 Guests\n3 Bedrooms\n3 Baths\nPool\nInternet\nFrank Bay, walk to Cruz Bay",
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Internet",
+        "Frank Bay, walk to Cruz Bay"
+      ],
+      "location": "Frank Bay, walk to Cruz Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-hero.jpg?alt=media&token=54cf1f36-befa-486f-8d44-1ce019f2a452",
+        "alt": "",
+        "title": "A Tropical Paradise.jpg",
+        "width": 380,
+        "height": 506
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-01.jpg?alt=media&token=56969eee-f70d-4761-ae3e-52d52b64a9eb",
+          "alt": "",
+          "title": "",
+          "width": 380,
+          "height": 506
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-02.jpg?alt=media&token=e41d651e-f37c-4ca2-9109-c53ca2d51eb9",
+          "alt": "",
+          "title": "",
+          "width": 266,
+          "height": 400
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-03.jpg?alt=media&token=20be2c47-eb3f-41ff-945f-6dea55651cf4",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-04.jpg?alt=media&token=b91e78c0-8a4a-4129-aa72-c6781ec38e55",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-05.jpg?alt=media&token=f6a6469b-6949-482d-bc25-9aac15f3e387",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-06.jpg?alt=media&token=61be3db0-0823-44e7-bbc4-98f5c4e2512c",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-07.jpg?alt=media&token=2cd91c37-2814-44fc-be38-44e498038642",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-08.jpg?alt=media&token=499cbe7d-d042-4826-a578-cbe002c73071",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-09.jpg?alt=media&token=a488a79f-fc85-4650-aff5-02c3f75a6d8e",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-10.jpg?alt=media&token=c7b2522b-dcd2-4d42-b593-f20eaa30b80f",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-11.jpg?alt=media&token=fe740162-de98-4583-9ce5-da4495767e9d",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-12.jpg?alt=media&token=5033c909-ac14-41d2-a29d-7ebb245f67be",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-13.jpg?alt=media&token=94e5757c-e43b-4dfe-8913-72916f1ad27d",
+          "alt": "",
+          "title": "",
+          "width": 737,
+          "height": 415
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-gallery-14.jpg?alt=media&token=a9c66f31-37c8-440f-a706-7ec727a98459",
+          "alt": "",
+          "title": "",
+          "width": 266,
+          "height": 400
+        }
+      ],
+      "descriptionHtml": "<p>Tropical Blessings is one of six spacious luxury condominium villas located on quaint and quiet Seagrape Lane, just a 10 minute walk from Cruz Bay, the center of activity on St. John. In addition to its proximity to town, Tropical Blessings is just a five minute walk to Frank Bay where you’ll find a small local beach that is rarely occupied by more than one or two people.</p>\n<p>Aside from the beauty of Tropical Blessings itself, its location offers the best of both worlds with both privacy and convenience. At Tropical Blessings you’ll delight in a three bedroom luxury accommodation with central air conditioning, WiFi, and cable TV.<br /><br />You’ll be greeted each day with a gorgeous view of Turner Bay where you can see the smaller cays of Great St. James and French Cap on the horizon. You’ll appreciate yet another captivating view beyond Frank Bay to St. Thomas.<br /><br />Tropical Blessings is a spacious 2,000 enclosed square feet. The design comprises an island blend of open space and privacy that you’ll love. From this living area one need only open the sliders out onto the balcony. From here one is mesmerized by views of Turner Bay with images of French Cap and Great St. James in the distance. One can also turn and catch views of St. Thomas, too, portions of it visible across the way beyond the wildlife bird sanctuary and Frank Bay. The spectacular views of this villa are a short walk of about two blocks to the small beach at Frank Bay, rarely occupied by more than a few, and a lovely snorkeling spot.<br /><br />Step outside the great room if you wish to dine alfresco on the main terrace where you’ll also find a lounging area.<br /><br />The indoor dining area simply and beautifully accommodates six guests for dining. If you prefer to be more casual, step outside again onto that main balcony and you can set the teak table to enjoy any meal as the gentle Caribbean breezes drift by. The main balcony also includes a sitting area, also furnished with teak, just a nice place to sit with or without a beverage and feel, without doubt, entirely content.<br /><br />A long granite breakfast bar separates the kitchen from the rest of the great room, the open space of which makes both the living area and the dining area seem distinctly defined but harmoniously included as the other major sections of this spacious island living design.</p>\n<p><br />The living area carries forward the overall comfortable tropical theme. Sofa and love seat, accompanied by a custom chair and other beautiful accent furniture make this a great place relax to and visit and maybe watch a movie on the 50′ flat screen TV.<br /><br />The open design of the great room at Tropical Blessings includes a very generously equipped gourmet kitchen. One has the option of getting into some serious cooking here. You will find a generous abundance of cookware, dish ware, flat ware, mixing bowls, utensils, china, linens, and a collection of useful kitchen gadgets. You’ll even find a copy of the Joy of Cooking in case you need to make hollandaise sauce and can’t for the life of you remember how. Of course, there’s the prerequisite coffee maker, a very nice toaster, and a built in microwave.<br /><br />The appliances and mahogany cabinetry are appropriately high end, and the owner has provided a generous selection of spices for your in-house culinary endeavors. These spices will undoubtedly prove useful too if you decide to make use of one of two gas grilles on the pool terrace.<br /><br />The three bedrooms and three baths, like the rest of the villa are beautifully appointed. The  primary bedroom is large and luxurious and includes an incredibly comfortable king size bed as well as a desk where you can work at your lap top, a flat screen TV, designer furnishings, and a large bathroom with a walk in shower. There’s plenty of space. Step outside and you’ll find yourself on a lovely private terrace designed for two.<br /><br />The three bedrooms at Tropical Blessings are each so appealing, all decorated so individually, imaginatively, personally, and colorfully, whether it be the stunning primary suite with king bed and private balcony for two, the Coral Room with two queen beds, or the charming Aqua Room with two twin beds that can easily be converted to a king.<br /><br />The Aqua Room is colorfully decorated, has two twin beds, and will invite anyone to enjoy its own distinctive charm. Each bedroom has its own private bath with a large walk in shower.</p>\n<p><br />Outside the Aqua Room a custom office nook and lending library area has been built in with a wide and varied selection of books to choose from and a beautiful custom desk surface where you can work comfortably, or at least spread the work out, look at it, then put it away without guilt since at least you did look at it. Don’t forget: didn’t you come to forget?<br /></p>\n<p><strong>Shared Pool</strong><br />Step outside, meander down some gently sloped steps through a courtyard setting and you’ll come to the shared pool, a wonderful place to stroll down with a morning cup of coffee as you plan your excursions for the day, relax in a lounge chair with a good book, take a dip to cool off, barbecue dinner on one of the gas grilles, or indulge in a quiet moonlight swim.<br /></p>\n<p><strong>A Tropical Paradise &quot;Tropical Blessings&quot; Nightly Rates</strong><br /></p>\n<p><strong>High Season</strong></p>\n<p><strong>January 4 - April 14</strong></p>\n<p>(7 night minimum)</p>\n<p>1-6 Guests  $649</p>\n<p><strong>Low Season</strong></p>\n<p><strong>April 15 -  December 20</strong></p>\n<p>(5 night minimum)</p>\n<p>1-6 Guests  $529</p>\n<p><strong>Holidays</strong></p>\n<p><strong>December 20 - January 3</strong></p>\n<p>(10 night minimum)</p>\n<p>1-6 Guests  $750</p>\n<p>+12.5% Hotel Tax</p>\n<p>+$150 Non-refundable Security Fee</p>\n<p>+$150 Cleaning Fee</p>\n<p><strong>CLOSED FOR SEPTEMBER</strong></p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Karla Gustafson</p>\n<p><a href=\"mailto:relax.tropicalblessings@gmail.com?subject=Tropical%20Blessings%20SJL\" target=\"_blank\">EMAIL</a> us with your desired schedule and number of people in your party</p>\n<p>On occasion, there are gaps in our calendar and in such cases we might be willing to accommodate a shorter stay for a minimum of four days.</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>50% deposit, a separate check for the $150 Cleaning &amp; Security Fees, and the completed Rental Agreement are required at the time of booking/balance due 60 days prior to arrival.</p>\n<p>Check-in time is 3:00 PM. Check out time is 10:00 AM.</p>\n<p>Inquire about children.</p>\n<p>No smoking or pets.</p>\n<p>No refunds, unless exact dates are re-rented.</p>\n<p>Trip Cancellation Insurance is highly recommended year-round.</p>\n<p><strong>Privacy Policy</strong></p>\n<p>We will never share or use your personal information for any other reason than to contact you regarding Tropical Blessings at Palm Terrace. Special Note: Please be aware that we do not accept wire transfer payments unless we make an exception for a very last minute reservation. For your own protection, If ever asked to wire funds, always call the owner to confirm that the request is legitimate.</p>\n<p>NOTE: AT&amp;T and Sprint are the on-island cell phone carriers. If you have Verizon or T-Mobile, etc. you will be charged exorbitant roaming charges. You might want to bring a prepaid calling card if you wish to use the villa land line for long distance calls.</p>",
+      "amenitiesHtml": "<p>Central air-conditioning.</p>\n<p>Free WiFi and cable TV.</p>\n<p>Three bedrooms with private baths.</p>\n<p>Very spacious accommodations – 2,000 enclosed square feet.</p>\n<p>Two covered outside terraces.</p>\n<p>All linens, beach towels, beach chairs, and a cooler supplied.</p>\n<p>Hair dryer available.</p>\n<p>Washer, dryer, dishwasher, built-in microwave.</p>\n<p>Full-sized side by side refrigerator/freezer with ice maker and in-door ice and cold water dispenser. Coffee maker, blender, dishware – and just about everything you would hope to find in a fully and generously equipped gourmet kitchen.</p>\n<p>CD, DVD player. Lots of DVD’s and games.</p>\n<p>Office area and lending library with a wide and varied selection of books.</p>\n<p>Shared pool in a garden setting with lounge chairs and gas grilles.</p>\n<p>Spectacular views of Turner Bay, and beyond Frank Bay to St. Thomas.</p>\n<p>Fabulous location – a five minute walk to the beach, a ten minute walk into town.</p>",
+      "reviewsHtml": "<p><a href=\"https://www.facebook.com/share/1A5iUbxVXD/\"><u>Like us on Facebook!</u></a></p>\n<p><br></p>\n<h6><a href=\"https://www.tripadvisor.com/ShowUserReviews-g147410-d729815-r926473250-Palm_Terrace_Villas-Cruz_Bay_St_John_U_S_Virgin_Islands.html\" rel=\"noopener\" target=\"_blank\">Great condo in a great location</a></h6>\n<p>Great rental and location! Comfy beds and spotless large living area! Had everything you need for a wonderful stay with a well equipped kitchen. Stay here and you won’t regret walk to town or drive…..&nbsp;</p>\n<p>- Amy S.&nbsp;</p>",
+      "reviewEntries": [
+        {
+          "quote": "Like us on Facebook!",
+          "author": "Guest review"
+        },
+        {
+          "quote": "Great rental and location! Comfy beds and spotless large living area! Had everything you need for a wonderful stay with a well equipped kitchen. Stay here and you won’t regret walk to town or drive…..",
+          "author": "Guest review"
+        },
+        {
+          "quote": "- Amy S.",
+          "author": "Guest review"
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:relax.tropicalblessings@gmail.com?subject=Tropical+Blessings+SJL",
+          "label": "EMAIL",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "https://www.facebook.com/share/1A5iUbxVXD/",
+          "label": "Like us on Facebook!",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "https://www.tripadvisor.com/ShowUserReviews-g147410-d729815-r926473250-Palm_Terrace_Villas-Cruz_Bay_St_John_U_S_Virgin_Islands.html",
+          "label": "Great condo in a great location",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "A Tropical Paradise | St John House Rental"
     },
     {
       "id": "alta-vista",
@@ -9102,6 +10471,170 @@
       "pageTitle": "Southern Exposure | St John House Rental"
     },
     {
+      "id": "treetops",
+      "slug": "treetops",
+      "path": "/rental-properties/treetops",
+      "name": "Treetops",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 3,
+      "bathrooms": 3,
+      "maxGuests": 6,
+      "shortDescription": "Max 6 Guests\n3 Bedrooms\n3 Baths\nPool\nHot Tub\nInternet\nBordeaux Mountain",
+      "facts": [
+        "Max 6 Guests",
+        "3 Bedrooms",
+        "3 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Bordeaux Mountain"
+      ],
+      "location": "Bordeaux Mountain",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-hero.png?alt=media&token=249d3080-c6ad-42a9-b692-e65530f7c96d",
+        "alt": "",
+        "title": "Treetops.png",
+        "width": 900,
+        "height": 449
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-01.png?alt=media&token=4ddf9d5c-787d-4cf1-a3a1-4aca6573b37c",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 449
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-02.png?alt=media&token=1a3c0d0f-47b9-458a-9cbd-996d927002ea",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-03.png?alt=media&token=3b503a6b-c83c-4443-9eb2-45e6575cd0df",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-04.png?alt=media&token=6acbbf36-7e2e-4af1-982d-a37ff6728f2e",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-05.png?alt=media&token=e3e43742-2c59-43e8-a7ed-961ec8d331f2",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 478
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-06.png?alt=media&token=b3011e3c-81ee-41a3-88e2-125af018e2c8",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-07.png?alt=media&token=6f6e90f8-acdd-434d-81e4-35d0ddb1a3e7",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 238
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-08.png?alt=media&token=fb409bfd-54cf-4968-aed6-49cbf8a781e7",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-09.png?alt=media&token=8f1a45cf-49f1-4528-b923-8534bfcabc28",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 675
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-10.png?alt=media&token=d67dd7e2-1975-4f19-9c7d-5b872eb3a515",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-11.png?alt=media&token=c5e475c0-7822-4566-92e9-76e911491436",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-12.png?alt=media&token=dcf0a316-2e32-4ea3-b1d2-e02e6f57d9fd",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 265
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-13.png?alt=media&token=9c4bab51-6320-4ab4-8f7d-557b4bd95c47",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 238
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-gallery-14.png?alt=media&token=d2a48810-8cac-4c0f-b0e0-04d5b175c6f3",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 527
+        }
+      ],
+      "descriptionHtml": "<p>Treetops is a fully equipped rental home on St. John, one of the Caribbean’s most unspoiled treasures. Located near the center of the island, this 3 bedroom, 3 bath vacation rental is the perfect base for exploring St. John’s many different beaches, from the North Shore to the East End. The village of Coral Bay is close by, and Cruz Bay is also just a short drive away. Whether you’re looking for family fun, a relaxing and indulgent honeymoon, or an adventure holiday, Treetops is the perfect base for your Virgin Island explorations.</p>\n<p><br />Mornings on the deck watching the hummingbirds flit past over a cup of coffee. Afternoons spent playing in the pool, napping in the hammock, or lounging poolside with a good book. Evening cocktails or relaxing in the hot tub. And at the end of it all, drift off to sleep to the gentle breeze, the sounds of nature, and the subtle perfume of the native bay rum trees.<br /><br />Treetops is furnished with everything you would expect from a vacation villa and more. Cable TV, a DVD player, a Bluetooth speaker, and WiFi provide entertainment at night or on the rare occasions when it rains for more than a short time.<br /><br />The expansive chef’s kitchen includes all the tools you have at home, as well as some you may not. A large oven, gas stove, microwave, toaster, blender, food processor, toaster oven, electric griddle, slow cooker, electric popcorn popper, coffee grinder, and coffee maker make preparing any meal a breeze, and the wine cooler saves space in the fridge for your groceries.<br /><br />A wide range of both indoor and outdoor flatware and glasses can be found in the cabinets, as well as ample mixing bowls, cutlery, and serving-ware. Placemats and napkins provide the finishing touches to your meals at home, and a washer and dryer mean you can pack less and save space for souvenirs.</p>\n<p><br />Be prepared for some of the best sleep of your life at Treetops. After a full day of beach going, hiking, touring or watersports, the comfort of your home away from home awaits you. The primary bedroom has a king-sized bed and Tempur-Pedic mattress.<br /><br />The lower guestroom has a comfortable king-sized bed, and the upper guestroom can be made up with either two twin beds or one king-sized bed. All sheets are soft, 100 percent cotton, and there are extra blankets in each room for cooler nights.<br /><br />Each of the three bedrooms has an en-suite bathroom with shower, and there is also a hose for rinsing off sandy feet and an outdoor shower for when you feel like being close to nature. All towels are provided. Each room also has a walk-in closet complete with plenty of hangers and shelf space, as well as anti-humidity heaters to keep your clothes fresh.</p>\n<p><strong>Treetops Nightly Rates</strong><br /></p>\n<p><strong>High Season</strong><strong> </strong></p>\n<p><strong>November 1 – March 31</strong></p>\n<p>(7 night minimum)<br />1-6 Guests  $400<br /></p>\n<p><strong>Low Season</strong><strong> </strong></p>\n<p><strong>April 1 – October 31</strong></p>\n<p>(5 night minimum)<br />1-6 Guests  $450</p>\n<p>+12.5% Hotel Tax<br /><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p><strong>Booking Contact:</strong></p>\n<p>Kelly</p>\n<p><a href=\"mailto:stjohntreetops@gmail.com?subject=Treetops_SJL\" target=\"_blank\" rel=\"noreferrer\">stjohntreetops@gmail.com</a> Email us with your desired schedule and number of people in your party</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>Not suitable for children <strong>under age 8.</strong></p>",
+      "amenitiesHtml": "<p>Pool,</p>\n<p>Hot tub,</p>\n<p>Six poolside lounge chairs,</p>\n<p>Hammock,</p>\n<p>Outdoor shower,</p>\n<p>High-speed wireless internet,</p>\n<p>Cable TV, and DVD player,</p>\n<p>Stereo system and Bluetooth speaker,</p>\n<p>Air-conditioning in primary bedroom,</p>\n<p>Wine fridge in the dining room</p>\n<p><strong>Features</strong></p>\n<p>Three bedrooms with walk-in closets, Three en-suite bathrooms with showers<br />Fully equipped chef’s kitchen<br />Indoor dining area with seating for six<br />Comfortable living room with pull-out sofa bed<br />Ceiling fans in all rooms<br />Spacious pool deck with dining table for six<br />Driveway with large parking area<br />Laundry room with washer, dryer, ironing board and iron<br />Eco-friendly solar panels on the roof</p>\n<p><strong>Equipment</strong></p>\n<p>Beach chairs, Beach parasol, Pool toys, Pool rafts and noodles<br />Beach towels, Snorkel gear<br />Hard cooler and cooler bags<br />Weber gas grill<br />Landline for local calls<br />Hairdryers</p>",
+      "reviewsHtml": "<p>The Treetops house at Bordeaux Mountain is the ideal home for travelers who want to get the greatest pleasure from St. John, and it is the perfect setting that complements the beauty of the island.</p>\n<p>- Jorge and Marcia</p>\n<p>(Quito, Ecuador)</p>\n<p><br></p>\n<p>We had another wonderful stay in Treetops. We love Treetops; the house is perfect, the air up here is clean, and it smells wonderful with all the Bay Rum trees. Thank you for sharing your home with us!</p>\n<p>- Carl, Melissa, Alexandra, Aurora and Carleigh</p>",
+      "reviewEntries": [
+        {
+          "quote": "The Treetops house at Bordeaux Mountain is the ideal home for travelers who want to get the greatest pleasure from St. John, and it is the perfect setting that complements the beauty of the island.",
+          "author": "Guest review"
+        },
+        {
+          "quote": "- Jorge and Marcia",
+          "author": "Guest review"
+        },
+        {
+          "quote": "(Quito, Ecuador)",
+          "author": "Guest review"
+        },
+        {
+          "quote": "We had another wonderful stay in Treetops. We love Treetops; the house is perfect, the air up here is clean, and it smells wonderful with all the Bay Rum trees. Thank you for sharing your home with us!",
+          "author": "Guest review"
+        },
+        {
+          "quote": "- Carl, Melissa, Alexandra, Aurora and Carleigh",
+          "author": "Guest review"
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "mailto:stjohntreetops@gmail.com?subject=Treetops_SJL",
+          "label": "stjohntreetops@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Treetops | St John House Rental"
+    },
+    {
       "id": "villa-bijou",
       "slug": "villa-bijou",
       "path": "/rental-properties/villa-bijou",
@@ -9534,6 +11067,92 @@
         }
       ],
       "pageTitle": "Villa Madeira | St John House Rental"
+    },
+    {
+      "id": "bay-rum-breeze",
+      "slug": "bay-rum-breeze",
+      "path": "/rental-properties/bay-rum-breeze",
+      "name": "Bay Rum Breeze",
+      "templateVariant": "fully-sectioned",
+      "price": "$597.00/Night",
+      "bedrooms": 4,
+      "bathrooms": 3.5,
+      "maxGuests": 8,
+      "shortDescription": "Max 8 Guests\n4 Bedrooms\n3.5 Baths\nPool\nInternet\nEstate Carolina",
+      "facts": [
+        "Max 8 Guests",
+        "4 Bedrooms",
+        "3.5 Baths",
+        "Pool",
+        "Internet",
+        "Estate Carolina"
+      ],
+      "location": "Estate Carolina",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-hero.png?alt=media&token=0e694202-340f-49be-a7be-4f22ec21018a",
+        "alt": "",
+        "title": "Bay Rum Breeze.png",
+        "width": 500,
+        "height": 333
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-gallery-01.png?alt=media&token=7340d27d-9d9a-4122-8f8d-113a575584d2",
+          "alt": "",
+          "title": "",
+          "width": 500,
+          "height": 333
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-gallery-02.png?alt=media&token=7b61f7c9-7345-49ae-bf59-aa8417eec630",
+          "alt": "",
+          "title": "",
+          "width": 700,
+          "height": 234
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-gallery-03.png?alt=media&token=a6fe5c7b-b156-42ff-a518-9820a0637dcc",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 178
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-gallery-04.png?alt=media&token=ec3e6e0e-722a-4280-95bc-3baab909a84f",
+          "alt": "",
+          "title": "",
+          "width": 500,
+          "height": 375
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-gallery-05.png?alt=media&token=b890d3e7-8376-4316-9178-bcffe4fd0ae4",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 135
+        }
+      ],
+      "descriptionHtml": "<p>Welcome to Bay Rum Breeze, your private slice of paradise. This elegant 4-bedroom villa  offers spectacular panoramic views of Coral Bay and the British Virgin Islands from every  room. Designed with comfort, relaxation, and style in mind, Bay Rum Breeze is the perfect  retreat for couples, families, and friends seeking an unforgettable Caribbean escape.</p>\n<p>Step inside through the mahogany doors and into a tropical-inspired vestibule, complete  with lush plants and the soothing sound of the pool fountain. The villa’s open-concept  layout features a spacious great room with vaulted ceilings, exotic Brazilian granite  counters, seating for eight, stainless steel appliances, a walk-in pantry, laundry room, and  a convenient powder room. Slide open the mahogany glass doors and let the cool island  breezes flow through the space as you unwind on the plush sectional and enjoy the 50” TV.</p>\n<p>Outdoor Living at Its Finest</p>\n<p>Island living is best experienced outdoors, and Bay Rum Breeze delivers:</p>\n<p>• A covered veranda with cushioned chaise lounges, a dining area, and a built-in gas</p>\n<p>grill</p>\n<p>• A sun deck just steps down from the veranda with additional loungers, Adirondack</p>\n<p>chairs, and a glider around the pool</p>\n<p>• A dedicated stargazing deck—perfect for watching shooting stars, enjoying sunrise</p>\n<p>co ee, or simply soaking in endless ocean views</p>\n<p>Four Spacious Bedrooms</p>\n<p>All four bedrooms are generously sized, positioned to capture the incredible views, and  offer excellent privacy. Each features air conditioning and ceiling fans for maximum comfort.</p>\n<p>• Primary Suite: Separate from the main house via a covered walkway; includes a</p>\n<p>walk-in closet and an island-stone outdoor shower.</p>\n<p>• Upper Bedroom: King bed, private deck, and private outdoor shower.</p>\n<p>• Lower Bedroom: Two extra-long twin beds that can convert to a king, plus an</p>\n<p>outdoor shower and private deck.</p>\n<p>• Fourth Bedroom: King bed with a cozy sitting area and beautiful views.</p>\n<p>Enjoy the rare luxury of private outdoor showers—each crafted with island stone and</p>\n<p>positioned to take full advantage of the surrounding scenery.</p>\n<p>Sustainable &amp; Reliable</p>\n<p>No power worries during your stay—Bay Rum Breeze is fully solar-powered with Tesla</p>\n<p>battery backup.</p>\n<p>Additional Information</p>\n<p>• Sleeps up to 8 guests</p>\n<p>• Pool on site (no hot tub)</p>\n<p>• Pricing is based on the number of guests (including children). Only registered paying</p>\n<p>guests are permitted on the property.</p>\n<p>Come experience the beauty, comfort, and tranquility of Bay Rum Breeze—where every sunrise, breeze, and starlit night is unforgettable.</p>\n<p>To view more information, photos and reviews please visit VRBO at:</p>\n<p><a href=\"https://www.vrbo.com/1973708?dateless=true\" target=\"_blank\" rel=\"noreferrer\">Bay Rum Breeze 4 bedroom villa 3 full baths and 1 half bath. Great views. (vrbo.com)</a></p>\n<p>To book direct, please contact James M. Miller Property Management at:</p>\n<p><a href=\"mailto:miller.marc17@yahoo.com\" target=\"_blank\" rel=\"noreferrer\">miller.marc17@yahoo.com</a></p>",
+      "amenitiesHtml": "<h3>Top family-friendly amenities</h3>\n<p>Microwave</p><p>Kitchen</p>\n<h3>Popular amenities</h3>\n<p>Pool</p><p>Parking available</p><p>Washer</p><p>Barbecue grill</p><p>Air conditioning</p><p>Outdoor Space</p><p>Free WiFi</p>\n<h3>Languages spoken</h3>\n<p>English</p>\n<h3>Beach</h3>\n<p>Beach loungers</p><p>Beach towels</p>\n<h3>Pool/Spa</h3>\n<p>Outdoor pool</p><p>Private pool</p>\n<h3>Internet</h3>\n<p>Available in the house: Free WiFi</p>\n<h3>Parking and transportation</h3>\n<p>Parking on site</p>\n<h3>Kitchen</h3>\n<p>Blender</p><p>Coffee/tea maker</p><p>Cookware, dishware, and utensils</p><p>Dishwasher</p><p>Microwave</p><p>Oven</p><p>Refrigerator</p><p>Stovetop</p>\n<h3>Bedrooms</h3>\n<p>4 bedrooms</p><p>Bedsheets provided</p>\n<h3>Bathroom</h3>\n<p>3.5 bathrooms</p><p>Hair dryer</p><p>Shower</p><p>Soap</p><p>Towels provided</p>\n<h3>Entertainment</h3>\n<p>Smart TV</p>\n<h3>Outdoor areas</h3>\n<p>Balcony</p><p>Barbecue grill</p><p>Outdoor furniture</p>\n<h3>Laundry</h3>\n<p>Washing machine</p>\n<h3>Comfort</h3>\n<p>Air conditioning</p>\n<h3>Pets</h3>\n<p>No pets allowed</p>\n<h3>Suitability/Accessibility</h3>\n<p>Smoke-free property</p>\n<h3>Safety features</h3>\n<p>Carbon monoxide detector (host has indicated there is a carbon monoxide detector on the property)</p><p>Smoke detector (host has indicated there is a smoke detector on the property)</p><p>First aid kit</p><p>Fire extinguisher</p>",
+      "reviewsHtml": "",
+      "reviewEntries": [],
+      "externalLinks": [
+        {
+          "href": "https://www.vrbo.com/1973708?dateless=true",
+          "label": "Bay Rum Breeze 4 bedroom villa 3 full baths and 1 half bath. Great views. (vrbo.com)",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:miller.marc17@yahoo.com",
+          "label": "miller.marc17@yahoo.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Bay Rum Breeze | St John House Rental"
     },
     {
       "id": "beija-flor",
@@ -12784,6 +14403,295 @@
       "pageTitle": "Serenity Vista Villa | St John House Rental"
     },
     {
+      "id": "sol-inclination",
+      "slug": "sol-inclination",
+      "path": "/rental-properties/sol-inclination",
+      "name": "Sol Inclination",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 9,
+      "shortDescription": "Max 9 Guests\n4 Bedrooms\n4.5 Baths\nPool\nHot Tub\nInternet\nSkytop",
+      "facts": [
+        "Max 9 Guests",
+        "4 Bedrooms",
+        "4.5 Baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Skytop"
+      ],
+      "location": "Skytop",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-hero.png?alt=media&token=7ca1f822-deb5-43a1-8a4b-a3498680de5c",
+        "alt": "",
+        "title": "Sol Inclination.png",
+        "width": 900,
+        "height": 674
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-01.png?alt=media&token=12b1988b-3fc2-480b-ac69-6876a47dcbb3",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 674
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-02.png?alt=media&token=1c9b4aef-5348-4428-8c40-d8bb5064b5d3",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 674
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-03.png?alt=media&token=8acd2877-0dd8-47d1-94a2-fce228b212a3",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 674
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-04.png?alt=media&token=3e30fc35-4260-4975-b2da-93ed84f035f0",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-05.png?alt=media&token=7e4ed4af-c00b-4e7c-bfe8-8faf7aadd146",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-06.png?alt=media&token=08a3b68e-1a4f-4bcf-8312-dca2bb169537",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-07.png?alt=media&token=e9949285-c179-498c-b420-78f0debbd39a",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 599
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-08.png?alt=media&token=8ba96946-531d-4f0c-bd5f-89257b374214",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 599
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-09.png?alt=media&token=4cdb1aa3-cab6-4661-854c-fa0152997b45",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-10.png?alt=media&token=e7f34671-b2f5-46c3-bd41-f64f4095d55c",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-11.png?alt=media&token=f40e192b-d92f-43af-b301-a6810a5d7103",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-12.png?alt=media&token=7ecedd58-876c-479a-91c8-f7f4a05ec842",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-13.png?alt=media&token=06c27c20-8ba8-4f90-9580-65e47e426b6f",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 596
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-14.png?alt=media&token=e34d436e-e3f3-465f-a822-8cbf1614d5f0",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-15.png?alt=media&token=4b1c5c5e-c1fa-4e5a-987b-2a09f787141f",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-gallery-16.png?alt=media&token=2dc1ab23-8b66-4c1a-a694-57e32d99d96d",
+          "alt": "",
+          "title": "",
+          "width": 900,
+          "height": 600
+        }
+      ],
+      "descriptionHtml": "<p>Sol Inclination is a sun-drenched, secluded, tropical island retreat. This stunning 4 bedroom 4.5 bath luxury villa, located in Skytop, on the very top of Estate Fish Bay, commands nearly 360-degree sweeping views that will truly leave you breathless. Enjoy captivating sunrises over Ram’s Head and sunsets into Chocolate Hole.<br /><br />Expansive, panoramic ocean postcard views and the unspoiled greenbelt of the National Park await you at every turn. Few properties on St. John can rival the dramatic natural beauty of this location. Elegant and spacious, Sol Inclination is extraordinarily private, YET less than 3.5 miles to the center of Cruz Bay shopping and dining.<br /><br />This villa’s premier quality and exceptional design are evident throughout. Polished granite, travertine and glass mosaic tiles cover all surfaces. Eight-foot mahogany interior doors, Weather Shield mahogany-interior doors and fully-screened windows and mahogany details throughout lend a warm and rich feel. The custom design, state-of-the-art appliances, fixtures, and electronics found throughout will pamper you.<br /><br />The two-level Great Households the living, dining, and kitchen areas, two equally luxurious primary suites, a media room, study, half bath, laundry room, as well as huge upper and lower covered verandas. Just a few steps from the Great House lawn you will find the knife-edge swimming pool, spacious sundecks and Jacuzzi spa – all with forever sunrise to sunset views. The Great House interior living space is 2920 square ft. and the exterior decking is 1700 square ft.<br /><br />The living room features 8’x 8′ French doors that open out to the covered veranda and large 6’X 4’ windows which take advantage of the views and plenty of sunshine. An oversized sofa covered with plump cushions &amp; pillows – all cozy woven fabrics with pastel green tones and the comfortable wicker barrel chairs invite you to relax. A tall bar cabinet is available for making those tropical delights while you gaze at the sunset or enjoy the see-through fireplace (a rare Caribbean treat!), surrounded by a native stone wall.<br /><br />A distressed wood game table with four chairs will keep you entertained on those stay at home nights or you can keep up on current events from your 32” flat-panel LCD TV. A DVD/CD player VCR and stereo with indoor and outdoor speakers complete your entertainment package.<br /><br />Travertine tiled stairs and paths wind you through the two masonry buildings and stunning outdoor living areas nestled among native stone formations. Lush, vibrantly colorful landscaping and native stonework surround you.<br /></p>\n<p><strong>Sol Inclination Nightly Rates</strong><br /></p>\n<p><strong>Winter</strong></p>\n<p><strong>December 15 – April 14</strong></p>\n<p>1-4 Guests  $766</p>\n<p>5-6 Guests  $1016</p>\n<p>7-8 Guests  $1266</p>\n<p><strong>Summer</strong></p>\n<p><strong>April 15 – December 14 </strong><br />1-4 Guests  $658<br />5-6 Guests  $908<br />7-8 Guests  $1158<br /></p>\n<p>+12.5% USVI Hotel Tax</p>\n<p><strong>Note: Until confirmed, rates are subject to change without notice.</strong></p>\n<p>To view more information, photos and reviews please visit VRBO at:</p>\n<p><a href=\"https://www.vrbo.com/1951906?unitId=2514428\" target=\"_blank\" rel=\"noreferrer\">Sol Inclination~ spectacular views, updated in and out, backup power!</a></p>\n<p>To book direct, please contact James M. Miller Property Management at:</p>\n<p><a href=\"mailto:miller.marc17@yahoo.com?subject=Sol_Inclination_SJL\" target=\"_blank\" rel=\"noreferrer\">miller.marc17@yahoo.com</a> also, for holiday rates and with requested dates and number in your party</p>\n<p><strong>Rental and Cancellation Policy</strong></p>\n<p>4 Guests - Access to main house, only.</p>\n<p>For an extra cleaning fee guest cottage available.</p>",
+      "amenitiesHtml": "<p>Formal Living Area,<br />Formal Dining Room,<br />Fully Equipped Kitchen,<br />Two King Air Conditioned Suites,<br />Two Queen Air Conditioned Suites,<br />Linens &amp; Bath Towels,<br />Fully equipped kitchen,<br />UV Water Filter System,<br />Laundry room with front load washer/dryer stack,<br />Iron/Ironing Board,<br />2 Color 32″ Flat Panel LCD TV with Cable, DVD<br />Color 27″ Flat Panel LCD TV with Cable, DVD<br />Stereo System with CD Player,<br />Wireless DSL<br />Large safe for your valuables<br />18X11 Knife-Edge 5 foot deep pool<br />Jacuzzi Spa<br />Washer &amp; Dryer<br />Vermont Castings Gas Grill<br />Beach chairs, beach towels, &amp; coolers</p>",
+      "reviewsHtml": "<p><strong>Private Mountain Top Paradise</strong></p>\n<p>This property exceeded all expectations!! Every aspect of this visit was positive. We hated to leave and will definitely be back!!!</p>\n<p><br></p>\n<p><strong>Best spot imaginable</strong></p>\n<p>The house and guesthouse are lovely. The kitchen is surprisingly well-equipped. The views are beyond spectacular. The drive up to the house never ceased to be thrilling! We had a couple of minor issues after arrival and James, the manager, could not have been more responsive. On our next trip to St. John we would love to rent this property again.</p>\n<p><br></p>\n<p><strong>Amazing property with fabulous views</strong></p>\n<p>My husband and I stayed in this property with our 3 adult sons and 1 significant other. The houses are amazing and the views are spectacular. As previously noted, the drive the first time can be daunting but after the first trip, it quickly becomes routine. The many deck levels provide something for everyone. It was tempting to just stay at the house and relax, hang out in the pool and jacuzzi and enjoy the views. The pictures are a true representation of the house. James was readily available to help with any questions we had with regards to the property or the area. We were happy to return to St. John post-Irma. The island itself is definitely ready for visitors.</p>",
+      "reviewEntries": [
+        {
+          "quote": "Private Mountain Top Paradise",
+          "author": "Guest review"
+        },
+        {
+          "quote": "This property exceeded all expectations!! Every aspect of this visit was positive. We hated to leave and will definitely be back!!!",
+          "author": "Guest review"
+        },
+        {
+          "quote": "Best spot imaginable",
+          "author": "Guest review"
+        },
+        {
+          "quote": "The house and guesthouse are lovely. The kitchen is surprisingly well-equipped. The views are beyond spectacular. The drive up to the house never ceased to be thrilling! We had a couple of minor issues after arrival and James, the manager, could not have been more responsive. On our next trip to St. John we would love to rent this property again.",
+          "author": "Guest review"
+        },
+        {
+          "quote": "Amazing property with fabulous views",
+          "author": "Guest review"
+        },
+        {
+          "quote": "My husband and I stayed in this property with our 3 adult sons and 1 significant other. The houses are amazing and the views are spectacular. As previously noted, the drive the first time can be daunting but after the first trip, it quickly becomes routine. The many deck levels provide something for everyone. It was tempting to just stay at the house and relax, hang out in the pool and jacuzzi and enjoy the views. The pictures are a true representation of the house. James was readily available to help with any questions we had with regards to the property or the area. We were happy to return to St. John post-Irma. The island itself is definitely ready for visitors.",
+          "author": "Guest review"
+        }
+      ],
+      "externalLinks": [
+        {
+          "href": "https://www.vrbo.com/1951906?unitId=2514428",
+          "label": "Sol Inclination~ spectacular views, updated in and out, backup power!",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:miller.marc17@yahoo.com?subject=Sol_Inclination_SJL",
+          "label": "miller.marc17@yahoo.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Sol Inclination | St John House Rental"
+    },
+    {
+      "id": "south-shore-villa",
+      "slug": "south-shore-villa",
+      "path": "/rental-properties/south-shore-villa",
+      "name": "South Shore Villa",
+      "templateVariant": "fully-sectioned",
+      "price": "$700.00/Night",
+      "bedrooms": 4,
+      "bathrooms": 4.5,
+      "maxGuests": 8,
+      "shortDescription": "Max 8\n4\n4.5 baths\nPool\nInternet\nSouth Shore",
+      "facts": [
+        "Max 8",
+        "4",
+        "4.5 baths",
+        "Pool",
+        "Internet",
+        "South Shore"
+      ],
+      "location": "South Shore",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-hero.png?alt=media&token=2cbe9ae1-189b-418a-8a15-7398f56d06d4",
+        "alt": "",
+        "title": "South Shore Villa.png",
+        "width": 500,
+        "height": 375
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-gallery-01.png?alt=media&token=0b1c7e72-0712-4f5f-8839-8f1cecc70982",
+          "alt": "",
+          "title": "",
+          "width": 500,
+          "height": 375
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-gallery-02.png?alt=media&token=3cbd8677-9ca1-4ea2-b4d4-43d23d5e2ae6",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 130
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-gallery-03.png?alt=media&token=f78779ea-3a4e-4bd4-b254-ee4951f8b163",
+          "alt": "",
+          "title": "",
+          "width": 700,
+          "height": 232
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-gallery-04.png?alt=media&token=5892180c-1d77-46a5-bad8-e50e58a098c3",
+          "alt": "",
+          "title": "",
+          "width": 700,
+          "height": 246
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-gallery-05.png?alt=media&token=d85dcb15-d048-40de-b045-b7170680d018",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 179
+        }
+      ],
+      "descriptionHtml": "<p>South Shore Villa is a custom-built luxury villa, high on top of a mountain overlooking the blue waters of the Caribbean and pristine green forests of the National Park. With spectacular views and breezes this is the ultimate private getaway location. South Shore Villa is secluded yet only a 15-minute drive to Cruz Bay. Located adjacent to the US Virgin Island’s National Park boundaries and perched high atop a mountain overlooking the azure waters of the Caribbean, the South Shore Villa is the ultimate in private luxury vacation living.</p>\n<p>The South Shore Villa is centrally air-conditioned and features four well-appointed bedrooms (all with private bathrooms), a luxurious custom kitchen with restaurant quality stainless steel appliances, a dining room, and a large living room all with panoramic views of the ocean. Of additional interest is the spectacular infinity edge swimming pool with fountains, a large travertine patio, covered veranda, and a stainless-steel barbeque for entertaining.</p>\n<p>The island of St John and the South Shore Villa is a magical place where you can enjoy your days sitting around the pool, snorkeling at the beach, or hiking in the National Park and your nights viewing the stars while surrounded by the fragrances of jasmine and orchids. Base nightly rates vary and additional per person per night charges and other fees may apply.</p>\n<p>To view more information, photos and reviews please visit VRBO at:</p>\n<p><a href=\"https://www.vrbo.com/2159847?dateless=true\" target=\"_blank\"><strong>South Shore Villa – 4 bed- 4 1/2 bath. Amazing views, Upper Skytop Road! (</strong></a><a href=\"http://vrbo.com\" target=\"_blank\" rel=\"noreferrer\"><strong>vrbo.com</strong></a><a href=\"https://www.vrbo.com/2159847?dateless=true\" target=\"_blank\"><strong>)</strong></a></p>\n<p>To book direct, please contact James M. Miller Property Management at:</p>\n<p><a href=\"mailto:miller.marc17@yahoo.com\" target=\"_blank\" rel=\"noreferrer\">miller.marc17@yahoo.com</a></p>",
+      "amenitiesHtml": "<h3>Top family-friendly amenities</h3>\n<p>Microwave</p><p>Kitchen</p><p>Living/Dining area</p>\n<h3>Popular amenities</h3>\n<p>Parking available</p><p>Pool</p><p>Washer</p><p>Barbecue grill</p><p>Air conditioning</p><p>Dryer</p>\n<h3>Languages spoken</h3>\n<p>English</p>\n<h3>Beach</h3>\n<p>Beach nearby</p>\n<h3>Pool/Spa</h3>\n<p>Outdoor pool</p><p>Private pool</p>\n<h3>Internet</h3>\n<p>Available in the house: WiFi</p>\n<h3>Parking and transportation</h3>\n<p>Parking on site</p>\n<h3>Kitchen</h3>\n<p>Blender</p><p>Coffee/tea maker</p><p>Cookware, dishware, and utensils</p><p>Dishwasher</p><p>Ice maker</p><p>Microwave</p><p>Oven</p><p>Paper towels</p><p>Refrigerator</p><p>Stovetop</p><p>Toaster</p>\n<h3>Bedrooms</h3>\n<p>4 bedrooms</p><p>Bedsheets provided</p>\n<h3>Bathroom</h3>\n<p>4.5 bathrooms</p><p>Hair dryer</p><p>Soap</p><p>Toilet paper</p><p>Towels provided</p>\n<h3>Living spaces</h3>\n<p>Living room</p>\n<h3>Entertainment</h3>\n<p>Stereo</p><p>TV with cable/satellite channels</p>\n<h3>Outdoor areas</h3>\n<p>Balcony</p><p>Barbecue grill</p>\n<h3>Laundry</h3>\n<p>Washing machine</p>\n<h3>Comfort</h3>\n<p>Air conditioning</p>\n<h3>Pets</h3>\n<p>No pets allowed</p>\n<h3>Suitability/Accessibility</h3>\n<p>Smoke-free property</p>\n<h3>Safety features</h3>\n<p>Carbon monoxide detector (host has indicated there is a carbon monoxide detector on the property)</p><p>Smoke detector (host has indicated there is a smoke detector on the property)</p>",
+      "reviewsHtml": "",
+      "reviewEntries": [],
+      "externalLinks": [
+        {
+          "href": "https://www.vrbo.com/2159847?dateless=true",
+          "label": "South Shore Villa – 4 bed- 4 1/2 bath. Amazing views, Upper Skytop Road! (",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "http://vrbo.com",
+          "label": "vrbo.com",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "https://www.vrbo.com/2159847?dateless=true",
+          "label": ")",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:miller.marc17@yahoo.com",
+          "label": "miller.marc17@yahoo.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "South Shore Villa | St John House Rental"
+    },
+    {
       "id": "villa-de-paz",
       "slug": "villa-de-paz",
       "path": "/rental-properties/villa-de-paz",
@@ -14008,6 +15916,198 @@
         }
       ],
       "pageTitle": "Seacove Villa | St John House Rental"
+    },
+    {
+      "id": "villa-carlota",
+      "slug": "villa-carlota",
+      "path": "/rental-properties/villa-carlota",
+      "name": "Villa Carlota",
+      "templateVariant": "fully-sectioned",
+      "price": "",
+      "bedrooms": 5,
+      "bathrooms": 6.5,
+      "maxGuests": 12,
+      "shortDescription": "Max 12\n5\n6.5 baths\nPool\nHot Tub\nInternet\nUpper Peter Bay",
+      "facts": [
+        "Max 12",
+        "5",
+        "6.5 baths",
+        "Pool",
+        "Hot Tub",
+        "Internet",
+        "Upper Peter Bay"
+      ],
+      "location": "Upper Peter Bay",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-hero.png?alt=media&token=c5d09758-1fe8-47b6-a94a-02d5125cffb7",
+        "alt": "",
+        "title": "Villa Carlota.png",
+        "width": 800,
+        "height": 533
+      },
+      "gallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-01.png?alt=media&token=6a552681-d935-4e2a-bbec-f7cac8a05b12",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-02.png?alt=media&token=8a698ae7-0524-4c9f-ba5b-44853e063ecd",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-03.png?alt=media&token=7ee763c8-d855-454a-9249-48648355b107",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-04.png?alt=media&token=48685caa-c64c-43df-975a-02ce919b6ad6",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-05.png?alt=media&token=fdbf4817-8f93-47b8-abc5-dacb2ed5941c",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-06.png?alt=media&token=dbb76894-32c8-440e-a773-0f63a7ac4431",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-07.png?alt=media&token=43d53315-2e79-45d2-8422-5c152afcd169",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-08.png?alt=media&token=9f3391dd-0364-42bc-90e5-a22daeaab348",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-09.png?alt=media&token=3be7fef9-88d1-42a7-9507-54f6d817e23a",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-10.png?alt=media&token=dbffc956-9e66-4988-8b96-d044d16c725f",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-11.png?alt=media&token=5ee7a7a2-6ed3-423a-a70d-e823f8dcf67d",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-12.png?alt=media&token=e3e5d0de-b7cf-4aa6-bf39-acfeea7121c2",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-13.png?alt=media&token=5e50c4e0-dc82-4a86-b770-02a7a5fd1f5e",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-14.png?alt=media&token=f577a028-a54a-451f-bff3-a5ad5258df52",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-15.png?alt=media&token=67babede-4857-4ede-a66d-fb4e9e9f1750",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-16.png?alt=media&token=11f875bb-067a-40b5-b4bc-b9f3671c66d0",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-17.png?alt=media&token=a4f5a832-0d21-4c0a-9094-3de408005cbc",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-18.png?alt=media&token=72e05fa8-000b-4248-ad2c-9990ede864ef",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-gallery-19.png?alt=media&token=c7b0bcd7-04af-41ea-9244-755ba70c8db5",
+          "alt": "",
+          "title": "",
+          "width": 800,
+          "height": 533
+        }
+      ],
+      "descriptionHtml": "<p>Perched 500 feet on a hillside in the gated enclave of Upper Peter bay is an elegant sanctuary in a mesmerizing setting. Villa Carlota was lovingly constructed by a family whose dream was to create a stylish residence adorned with art and antiques collected from their extensive world travels while preserving privacy as their family grew.<br /><br />Luxurious five bedroom, six and one half bathroom Villa with fully furnished gourmet kitchen, separate “Owner’s Cottage” with living area and kitchen, multiple verandas and patios surrounding an outdoor kitchen with grill &amp; ice maker bordering an infinity pool and spa with amazing views of the Caribbean.<br /><br />Noted for our amazing views, luxuriously appointments and privacy Villa Carlota offers five large bedroom/bath suites, large main living room and dining room, gourmet kitchen as well as a cottage with a smaller living area with an adjustable sofa sleeper, kitchenette, bath suite all across three pavilions with central A/C, high-thread count linens, ironed for your pleasure, hand carved mahogany furniture, large private balconies, thick all cotton bath towels and L’Occitane products for our guests to try. Property is completely WIFI with smart TVs featuring Dish Network as well as streaming.<br /><br />Through an electronic gate and from the driveway courtyard, a native stone entryway welcomes you; a graceful coral stone staircase curves down to the expansive terrace where an Italian baroque lion’s head fountain spouts a bubbling welcome.<br /><br />A second Italian marble fountain gurgles at the pool’s edge, a large infinity-edge pool which blends into the magnificent 180-degree view of Peter Bay below and the Caribbean Sea beyond, a vista dotted with the islets and cays of the U.S. and British Virgin Islands. All of the perfect National Park beaches, such as Trunk and Cinnamon Bays, are less than a 10-minute easy drive from Villa Carlota. Beach chairs, beach towels and cooler are provided for your trips to the beach, fill the cooler with ice from our extra large ice maker beneath the pool bar and enjoy! Rinse off in the outside stone shower on your return.<br /></p>\n<p><a href=\"https://www.vrbo.com/355348\" target=\"_blank\"><strong>Check Availability and Book your stay now</strong></a></p>\n<p><strong>Policies: </strong>Guests renting 14 days or more will receive a discounted rate to be determined, as well as additional mid-weeks approximately every three to four days. Guests renting for 28 days or more will receive a larger discount, tbd, and additional mid-weeks as well, please contact us.</p>\n<p>Villa Carlota is an entirely non-smoking villa, there is an area by the driveway entrance if someone wishes to smoke.</p>\n<p>We also do not allow any events without the Owner’s written approval such as large parties, weddings, showers, etc.</p>\n<p>A $2500 security deposit will be required to be held by your company. The security deposit will be returned within seven days of departure if there is no damage. If there is damage it will be photographed and sent with our claim.</p>\n<p>We appreciate a seven day minimum stay but we do understand that does not work for everyone, if you have someone interested in a shorter rental please contact me for appropriate pricing.</p>\n<p><strong>The seven day rate includes:</strong> a Meet and Greet when you arrive on St. John, assistance to get your rental vehicle if they have been rented on St. John, escort to the Villa which is a gated property (you will  receive keys as well as a gate remote), short tour explaining how stereo and TVs work (all TVs are Smart TVs and capable of streaming, stereo has the Sonos app for the outdoor speakers, entire property is WIFI), 24/7 access to our on-island Property Manager and a Mid-Week which consists of linen change and trash removal.</p>\n<p>We also provide our guests with beach chairs, separate beach towels and a cooler which can be filled from our extra-large ice maker under the pool bar.</p>\n<p><em><strong>Rates are subject to change.</strong></em></p>\n<p><strong>Contact Information</strong></p>\n<p><a href=\"mailto:acofficemanager2018@gmail.com\" target=\"_blank\" rel=\"noreferrer\">acofficemanager2018@gmail.com</a></p>\n<p><a href=\"tel:2486226770\" target=\"_blank\">Call us at 248-622-6770</a></p>",
+      "amenitiesHtml": "<h3>Essentials</h3>\n<p>InternetEntire property is Wireless</p><p>Linens providedRalph Lauren Hi thread Count pure Cotton Sheets</p><p>Towels ProvidedRalph Lauren Thick Pure Cotton Towels</p><p>Heating</p><p>Hair Dryer</p><p>Air conditioning Central Air</p><p>Wireless Internet</p><p>Toilet Paper</p><p>Paper Towels</p><p>Basic Soaps</p><p>Shampoo</p><p>Fitness Room/EquipmentNew Cybex Treadmill</p><p>Desk chair</p><p>Wifi speed500+ Mbps (good for 6+ people or 10+ devices)</p><p>Desk</p><p>Printer</p><p>Free wifi</p><p>Computer monitor</p>\n<h3>Kitchen</h3>\n<p>Microwave</p><p>RefrigeratorSub-zero with water &amp; ice maker in door</p><p>Dishes &amp; UtensilsVilleroy &amp; Boch dinnerware</p><p>Coffee Maker14 cup in main kitchen, 10 cup in Owner’s Cottage, espresso maker in main kitchen</p><p>Kitchengourmet kitchen with European appliances</p><p>DishwasherMiele with top shelf silverware tray</p><p>Stove</p><p>Toaster</p><p>Oven</p><p>Grill</p><p>Pantry ItemsPaper towel, coffee filters, dishwasher soap, dish soap, trash bags, area cleaners</p><p>Ice Maker</p><p>Blender</p><p>Kettle</p><p>Coffee Grinder</p><p>Dining table</p><p>Kitchen island</p>\n<h3>Pool &amp; spa</h3>\n<p>Private poolInfinity Pool with view of Peter Bay</p><p>Outdoor Pool</p><p>Spa whirlpool6 Person – wireless sound system with Bluetooth – private perfect for honeymooners</p>\n<h3>Outside</h3>\n<p>Outdoor Furniture</p><p>Beach Chairs</p><p>Beach Towels</p><p>Water Sports GearSnorkeling Gear</p>\n<h3>Entertainment</h3>\n<p>Televisiona 75-inch flat-screen smart TV in Great Room + a 40-inch flat-screen TV in kitchen; a 40-inch flat-screen TV with DVD player in 3 bedroom suites- all smart TVs with Netflix and streaming</p><p>Satellite/CableDirect TV all TVs are smart TVs with streaming capacity &amp; Netflix</p><p>DVD PlayerAll televisions have Blue Ray DVD Players</p><p>GamesBoard Games</p><p>StereoBose Lifestyle home theater system, Bose Wave SoundTouch wireless music systems in each bedroom, Bose wireless speakers outdoors</p><p>Smart TV</p>\n<h3>Baby &amp; toddler</h3>\n<p>Games for Kids</p>\n<h3>Laundry</h3>\n<p>Washing machinethree on site</p><p>Clothes dryerthree on site</p><p>Iron &amp; Board</p>",
+      "reviewsHtml": "",
+      "reviewEntries": [],
+      "externalLinks": [
+        {
+          "href": "https://www.vrbo.com/355348",
+          "label": "Check Availability and Book your stay now",
+          "isMailto": false,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "mailto:acofficemanager2018@gmail.com",
+          "label": "acofficemanager2018@gmail.com",
+          "isMailto": true,
+          "isPhone": false,
+          "isInternal": false
+        },
+        {
+          "href": "tel:2486226770",
+          "label": "Call us at 248-622-6770",
+          "isMailto": false,
+          "isPhone": true,
+          "isInternal": false
+        }
+      ],
+      "pageTitle": "Villa Carlota | St John House Rental"
     },
     {
       "id": "villa-ixora",

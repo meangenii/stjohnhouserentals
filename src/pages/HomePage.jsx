@@ -64,6 +64,9 @@ export function HomePage() {
   const trustImageUrl = getContentImageSrc(page.trust.image)
   const discoverImageUrl = getContentImageSrc(page.discover.image)
   const aboutImageUrl = getContentImageSrc(page.about.image)
+  const heroTitleLines = Array.isArray(page.hero?.titleLines)
+    ? page.hero.titleLines.map((line) => String(line ?? '').trim()).filter(Boolean)
+    : []
 
   return (
     <div className="home-page">
@@ -77,7 +80,7 @@ export function HomePage() {
         <div className="home-hero-overlay">
           <div className="home-hero-copy">
             <h1>
-              {page.hero.titleLines.map((line, index) => (
+              {heroTitleLines.map((line, index) => (
                 <EditableText as="span" key={`${index}-${line}`} label={`Hero Title Line ${index + 1}`} path={['hero', 'titleLines', index]} value={line}>
                   {line}
                 </EditableText>

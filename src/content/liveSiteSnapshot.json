@@ -1,11 +1,11 @@
 {
-  "capturedAt": "2026-06-08T16:17:10.011Z",
+  "capturedAt": "2026-06-08T17:26:20.081Z",
   "snapshotDate": "2026-06-08",
   "source": "https://www.stjohnhouserentals.com",
   "routeInventory": {
     "staticRouteCount": 19,
-    "rentalPropertyCount": 68,
-    "charterRouteCount": 5,
+    "rentalPropertyCount": 81,
+    "charterRouteCount": 0,
     "staticPaths": [
       "/",
       "/about-us",
@@ -28,10 +28,13 @@
       "/art"
     ],
     "rentalPaths": [
+      "/rental-properties/a-tropical-paradise",
       "/rental-properties/alta-vista",
       "/rental-properties/arco-iris",
       "/rental-properties/argonauta",
       "/rental-properties/astral-villa",
+      "/rental-properties/banana-sweet",
+      "/rental-properties/bay-rum-breeze",
       "/rental-properties/beija-flor",
       "/rental-properties/beyond-the-sea",
       "/rental-properties/blue-agave",
@@ -42,6 +45,7 @@
       "/rental-properties/christmas-cottage",
       "/rental-properties/cinnamon-stones",
       "/rental-properties/coral-sky-villa",
+      "/rental-properties/cruz-bay-vista",
       "/rental-properties/desert-rose-villa",
       "/rental-properties/drake%E2%80%99s-view",
       "/rental-properties/east-end-seascape",
@@ -63,6 +67,7 @@
       "/rental-properties/monarch-cottage",
       "/rental-properties/mystical-mermaid-villa",
       "/rental-properties/notre-ciel",
+      "/rental-properties/ocean-garden",
       "/rental-properties/oceana",
       "/rental-properties/oceanport-villa",
       "/rental-properties/orchid-garden",
@@ -80,20 +85,28 @@
       "/rental-properties/seacove-villa",
       "/rental-properties/seagrape-estate",
       "/rental-properties/serenity-vista-villa",
+      "/rental-properties/skyflower",
       "/rental-properties/sol-cottage-villa",
+      "/rental-properties/sol-inclination",
       "/rental-properties/sol-la-vie",
+      "/rental-properties/south-shore-villa",
       "/rental-properties/southern-exposure",
       "/rental-properties/sun%2C-moon-and-stars",
       "/rental-properties/sunset-paradise",
       "/rental-properties/the-little-easy",
+      "/rental-properties/treetops",
+      "/rental-properties/tropical-orchid",
       "/rental-properties/villa-bijou",
+      "/rental-properties/villa-carlota",
       "/rental-properties/villa-de-paz",
+      "/rental-properties/villa-fantasea",
       "/rental-properties/villa-ixora",
       "/rental-properties/villa-kia-orana",
       "/rental-properties/villa-madeira",
       "/rental-properties/villa-madeline",
       "/rental-properties/villa-south-palm",
       "/rental-properties/waterklip",
+      "/rental-properties/white-seagull",
       "/rental-properties/windwardside-guest-cottage",
       "/rental-properties/windwardside-main-house"
     ],
@@ -245,7 +258,7 @@
         }
       ],
       "htmlFile": "html/home.html",
-      "contentHtml": "<h1>Welcome to St. John House Rentals</h1>\n<p>Find the perfect vacation home for your next island adventure.</p>\n<h2>Searching for a private Caribbean villa for your next escape?</h2>\n<p>Alta Vista</p>\n<p>Arco Iris</p>\n<p>Astral Villa</p>\n<p>Beyond the Sea</p>\n<p>Cara Mia</p>\n<p>East End Seascape</p>\n<p>Hart Bay Beach House</p>\n<p>Idyllic Villa</p>\n<p>Monarch Cottage</p>\n<p>Palladio’s View</p>\n<p>Pebble Cove</p>\n<p>Sea Palms</p>\n<p>Seagrape Estate</p>\n<p>Southern Exposure</p>\n<p>Villa Bijou</p>\n<p>Villa Madeira</p>\n<p>Christmas Cottage</p>\n<p>Harbor Lights</p>\n<p>In Harmony Retreat</p>\n<p>Island Gardens</p>\n<p>Island Vibes</p>\n<p>Lavender Hill Unit 10-E</p>\n<p>Lots of Knots</p>\n<p>MandeVilla at Ixora</p>\n<p>Paradise Carest</p>\n<p>Sun, Moon and Stars</p>\n<p>The Little Easy</p>\n<p>Windwardside Guest Cottage</p>\n<p>Windwardside Main House</p>\n<p>Brezza di Mare</p>\n<p>Desert Rose Villa</p>\n<p>Fish Tales</p>\n<p>Miles Away</p>\n<p>Mystical Mermaid Villa</p>\n<p>Notre Ciel</p>\n<p>Orchid Garden</p>\n<p>Samba Azul</p>\n<p>San Costanzo</p>\n<p>Sapphire Peak</p>\n<p>Sea Palace Retreat</p>\n<p>Sol Cottage Villa</p>\n<p>Sol La Vie</p>\n<p>Sunset Paradise</p>\n<p>Villa Madeline</p>\n<p>Waterklip</p>\n<p>Beija Flor</p>\n<p>Blue Agave</p>\n<p>Cinnamon Stones</p>\n<p>Coral Sky Villa</p>\n<p>Drake’s View</p>\n<p>Great Escape</p>\n<p>Halcyon Days</p>\n<p>Hart Bay Great House</p>\n<p>Mad-de-Lis</p>\n<p>Oceanport Villa</p>\n<p>Palm Ridge</p>\n<p>Reef Bay Holiday Villa</p>\n<p>Sapphire Sunrise</p>\n<p>Serenity Vista Villa</p>\n<p>Villa Kia Orana</p>\n<p>Villa South Palm</p>\n<p>Villa de Paz</p>\n<p>Argonauta</p>\n<p>Seacove Villa</p>\n<p>Villa Ixora</p>\n<p>Casa Del Palmas</p>\n<p>Chateau Margot</p>\n<p>Oceana Villa</p>\n<p>Why Choose Us</p>\n<h2>We’ve been a trusted St. John business for over 25 years!</h2>\n<p>St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you’re looking for a way to support locals, you’ve found it!</p>\n<h2>Discover the magic and beauty of St. John in the U.S. Virgin Islands</h2>\n<p><span>Wide Selection of Properties</span></p>\n<p>From cozy vacation rentals to luxurious homes for sale, we offer properties that suit every need and budget.</p>\n<p>Special Deals</p>\n<p>Take advantage of our exclusive offers and limited-time specials to get the best value for your stay or purchase.</p>\n<p>GO Local</p>\n<p>We understand St. John like no one else. Our knowledge of the island helps us provide valuable recommendations for your stay, whether it's for property, charter boats, or car rentals..</p>\n<p>Reliable Customer Service</p>\n<p>While we don’t handle bookings directly, we connect you with trusted rental and property partners.</p>\n<h2>ABOUT ST. JOHN HOUSE RENTALS</h2>\n<p><span><span><span><span><span>Our homes are owned or run by a number of individuals and management companies, and they all do their own booking. The email link on each home’s page will get you directly to the person who can help! We at&nbsp;</span></span></span></span></span><span><span><span><span><span><a href=\"http://stjohnlinks.com/\" target=\"_blank\" rel=\"noreferrer noopener\">stjohnhouserentals.com</a></span></span></span></span></span><span><span><span><span><span>&nbsp;do not handle bookings.</span></span></span></span></span></p>",
+      "contentHtml": "<h1>Welcome to St. John House Rentals</h1>\n<p>Find the perfect vacation home for your next island adventure.</p>\n<h2>Searching for a private Caribbean villa for your next escape?</h2>\n<p>A Tropical Paradise</p>\n<p>Alta Vista</p>\n<p>Arco Iris</p>\n<p>Astral Villa</p>\n<p>Beyond the Sea</p>\n<p>Cara Mia</p>\n<p>East End Seascape</p>\n<p>Hart Bay Beach House</p>\n<p>Idyllic Villa</p>\n<p>Monarch Cottage</p>\n<p>Palladio’s View</p>\n<p>Pebble Cove</p>\n<p>Sea Palms</p>\n<p>Seagrape Estate</p>\n<p>Southern Exposure</p>\n<p>Treetops</p>\n<p>Villa Bijou</p>\n<p>Villa Madeira</p>\n<p>Christmas Cottage</p>\n<p>Cruz Bay Vista</p>\n<p>Harbor Lights</p>\n<p>In Harmony Retreat</p>\n<p>Island Gardens</p>\n<p>Island Vibes</p>\n<p>Lavender Hill Unit 10-E</p>\n<p>Lots of Knots</p>\n<p>MandeVilla at Ixora</p>\n<p>Ocean Garden</p>\n<p>Paradise Carest</p>\n<p>Sun, Moon and Stars</p>\n<p>The Little Easy</p>\n<p>Tropical Orchid</p>\n<p>White Seagull</p>\n<p>Windwardside Guest Cottage</p>\n<p>Windwardside Main House</p>\n<p>Banana Sweet</p>\n<p>Brezza di Mare</p>\n<p>Desert Rose Villa</p>\n<p>Fish Tales</p>\n<p>Miles Away</p>\n<p>Mystical Mermaid Villa</p>\n<p>Notre Ciel</p>\n<p>Orchid Garden</p>\n<p>Samba Azul</p>\n<p>San Costanzo</p>\n<p>Sapphire Peak</p>\n<p>Sea Palace Retreat</p>\n<p>Skyflower</p>\n<p>Sol Cottage Villa</p>\n<p>Sol La Vie</p>\n<p>Sunset Paradise</p>\n<p>Villa FantaSea</p>\n<p>Villa Madeline</p>\n<p>Waterklip</p>\n<p>Bay Rum Breeze</p>\n<p>Beija Flor</p>\n<p>Blue Agave</p>\n<p>Cinnamon Stones</p>\n<p>Coral Sky Villa</p>\n<p>Drake’s View</p>\n<p>Great Escape</p>\n<p>Halcyon Days</p>\n<p>Hart Bay Great House</p>\n<p>Mad-de-Lis</p>\n<p>Oceanport Villa</p>\n<p>Palm Ridge</p>\n<p>Reef Bay Holiday Villa</p>\n<p>Sapphire Sunrise</p>\n<p>Serenity Vista Villa</p>\n<p>Sol Inclination</p>\n<p>South Shore Villa</p>\n<p>Villa Kia Orana</p>\n<p>Villa South Palm</p>\n<p>Villa de Paz</p>\n<p>Argonauta</p>\n<p>Seacove Villa</p>\n<p>Villa Carlota</p>\n<p>Villa Ixora</p>\n<p>Casa Del Palmas</p>\n<p>Chateau Margot</p>\n<p>Oceana Villa</p>\n<p>Why Choose Us</p>\n<h2>We’ve been a trusted St. John business for over 25 years!</h2>\n<p>St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you’re looking for a way to support locals, you’ve found it!</p>\n<h2>Discover the magic and beauty of St. John in the U.S. Virgin Islands</h2>\n<p><span>Wide Selection of Properties</span></p>\n<p>From cozy vacation rentals to luxurious homes for sale, we offer properties that suit every need and budget.</p>\n<p>Special Deals</p>\n<p>Take advantage of our exclusive offers and limited-time specials to get the best value for your stay or purchase.</p>\n<p>GO Local</p>\n<p>We understand St. John like no one else. Our knowledge of the island helps us provide valuable recommendations for your stay, whether it's for property, charter boats, or car rentals..</p>\n<p>Reliable Customer Service</p>\n<p>While we don’t handle bookings directly, we connect you with trusted rental and property partners.</p>\n<h2>ABOUT ST. JOHN HOUSE RENTALS</h2>\n<p><span><span><span><span><span>Our homes are owned or run by a number of individuals and management companies, and they all do their own booking. The email link on each home’s page will get you directly to the person who can help! We at&nbsp;</span></span></span></span></span><span><span><span><span><span><a href=\"http://stjohnlinks.com/\" target=\"_blank\" rel=\"noreferrer noopener\">stjohnhouserentals.com</a></span></span></span></span></span><span><span><span><span><span>&nbsp;do not handle bookings.</span></span></span></span></span></p>",
       "imageGallery": []
     },
     "aboutUs": {
@@ -281,17 +294,1360 @@
       "url": "https://www.stjohnhouserentals.com/st-john-rentals",
       "navLabel": "House Rentals",
       "group": "primary",
-      "title": "",
+      "title": "Houses | St John House Rental",
       "h1": "House Rentals",
-      "metaDescription": "",
+      "metaDescription": "Browse private villas & Caribbean homes for rent on St. John. Email owners directly for bookings.",
       "canonical": "https://www.stjohnhouserentals.com/st-john-rentals",
-      "leadParagraphs": [],
-      "sectionHeadings": [],
+      "leadParagraphs": [
+        "Explore our diverse selection of rental homes and find the perfect fit.",
+        "Accommodations on St. John, with beautiful views, cool breezes, and peaceful sounds of the ocean?St. John, in the Virgin Islands, has some of the most charming and unique VI vacation home rentals.",
+        "from the page of each vacation home of interest for information. Our homes are owned or run by a number of individuals and management companies, and they all do their own booking. The email link on each home’s page will get you directly to the person who can help! We at stjohnlinks.com do not handle bookings."
+      ],
+      "sectionHeadings": [
+        "Are you looking for private vacation villas in the Caribbean?",
+        "Please send an email inquiry",
+        "Available Properties",
+        "A Tropical Paradise",
+        "Alta Vista",
+        "Arco Iris",
+        "Argonauta",
+        "Astral Villa",
+        "Banana Sweet",
+        "Bay Rum Breeze",
+        "Beija Flor",
+        "Beyond the Sea",
+        "Blue Agave",
+        "Brezza di Mare",
+        "Cara Mia",
+        "Casa Del Palmas",
+        "Chateau Margot",
+        "Christmas Cottage",
+        "Cinnamon Stones",
+        "Coral Sky Villa",
+        "Cruz Bay Vista",
+        "Desert Rose Villa",
+        "Drake’s View",
+        "East End Seascape"
+      ],
       "routeLinks": [],
       "htmlFile": "html/st-john-rentals.html",
-      "contentHtml": "",
-      "imageGallery": [],
-      "rentalListings": []
+      "contentHtml": "<h1>House Rentals</h1>\n<p>Explore our diverse selection of rental homes and find the perfect fit.</p>\n<h2>Are you looking for private vacation villas in the Caribbean?</h2>\n<p>Accommodations on St. John, with beautiful views, cool breezes, and peaceful sounds of the ocean?<br>St. John, in the Virgin Islands, has some of the most charming and unique VI vacation home rentals.</p>\n<p>Casa Del Palmas</p>\n<p>Chateau Margot</p>\n<p>Oceana Villa</p>\n<p>A Tropical Paradise</p>\n<p>Alta Vista</p>\n<p>Arco Iris</p>\n<p>Astral Villa</p>\n<p>Beyond the Sea</p>\n<p>Cara Mia</p>\n<p>East End Seascape</p>\n<p>Hart Bay Beach House</p>\n<p>Idyllic Villa</p>\n<p>Monarch Cottage</p>\n<p>Palladio’s View</p>\n<p>Pebble Cove</p>\n<p>Sea Palms</p>\n<p>Seagrape Estate</p>\n<p>Southern Exposure</p>\n<p>Treetops</p>\n<p>Villa Bijou</p>\n<p>Villa Madeira</p>\n<p>Christmas Cottage</p>\n<p>Cruz Bay Vista</p>\n<p>Harbor Lights</p>\n<p>In Harmony Retreat</p>\n<p>Island Gardens</p>\n<p>Island Vibes</p>\n<p>Lavender Hill Unit 10-E</p>\n<p>Lots of Knots</p>\n<p>MandeVilla at Ixora</p>\n<p>Ocean Garden</p>\n<p>Paradise Carest</p>\n<p>Sun, Moon and Stars</p>\n<p>The Little Easy</p>\n<p>Tropical Orchid</p>\n<p>White Seagull</p>\n<p>Windwardside Guest Cottage</p>\n<p>Windwardside Main House</p>\n<p>Banana Sweet</p>\n<p>Brezza di Mare</p>\n<p>Desert Rose Villa</p>\n<p>Fish Tales</p>\n<p>Miles Away</p>\n<p>Mystical Mermaid Villa</p>\n<p>Notre Ciel</p>\n<p>Orchid Garden</p>\n<p>Samba Azul</p>\n<p>San Costanzo</p>\n<p>Sapphire Peak</p>\n<p>Sea Palace Retreat</p>\n<p>Skyflower</p>\n<p>Sol Cottage Villa</p>\n<p>Sol La Vie</p>\n<p>Sunset Paradise</p>\n<p>Villa FantaSea</p>\n<p>Villa Madeline</p>\n<p>Waterklip</p>\n<p>Bay Rum Breeze</p>\n<p>Beija Flor</p>\n<p>Blue Agave</p>\n<p>Cinnamon Stones</p>\n<p>Coral Sky Villa</p>\n<p>Drake’s View</p>\n<p>Great Escape</p>\n<p>Halcyon Days</p>\n<p>Hart Bay Great House</p>\n<p>Mad-de-Lis</p>\n<p>Oceanport Villa</p>\n<p>Palm Ridge</p>\n<p>Reef Bay Holiday Villa</p>\n<p>Sapphire Sunrise</p>\n<p>Serenity Vista Villa</p>\n<p>Sol Inclination</p>\n<p>South Shore Villa</p>\n<p>Villa Kia Orana</p>\n<p>Villa South Palm</p>\n<p>Villa de Paz</p>\n<p>Argonauta</p>\n<p>Seacove Villa</p>\n<p>Villa Carlota</p>\n<p>Villa Ixora</p>\n<h2>Please send an email inquiry</h2>\n<p>from the page of each vacation home of interest for information. Our homes are owned or run by a number of individuals and management companies, and they all do their own booking. The email link on each home’s page will get you directly to the person who can help! We at stjohnlinks.com do not handle bookings.</p>\n<h2>Available Properties</h2>\n<h4>A Tropical Paradise</h4>\n<h4>Alta Vista</h4>\n<h4>Arco Iris</h4>\n<h4>Argonauta</h4>\n<h4>Astral Villa</h4>\n<h4>Banana Sweet</h4>\n<h4>Bay Rum Breeze</h4>\n<h4>Beija Flor</h4>\n<h4>Beyond the Sea</h4>\n<h4>Blue Agave</h4>\n<h4>Brezza di Mare</h4>\n<h4>Cara Mia</h4>\n<h4>Casa Del Palmas</h4>\n<h4>Chateau Margot</h4>\n<h4>Christmas Cottage</h4>\n<h4>Cinnamon Stones</h4>\n<h4>Coral Sky Villa</h4>\n<h4>Cruz Bay Vista</h4>\n<h4>Desert Rose Villa</h4>\n<h4>Drake’s View</h4>\n<h4>East End Seascape</h4>\n<h4>Fish Tales</h4>\n<h4>Great Escape</h4>\n<h4>Halcyon Days</h4>\n<h4>Harbor Lights</h4>\n<h4>Hart Bay Beach House</h4>\n<h4>Hart Bay Great House</h4>\n<h4>Idyllic Villa</h4>\n<h4>In Harmony Retreat</h4>\n<h4>Island Gardens</h4>\n<h4>Island Vibes</h4>\n<h4>Lavender Hill Unit 10-E</h4>\n<h4>Lots of Knots</h4>\n<h4>Mad-de-Lis</h4>\n<h4>MandeVilla at Ixora</h4>\n<h4>Miles Away</h4>\n<h4>Monarch Cottage</h4>\n<h4>Mystical Mermaid Villa</h4>\n<h4>Notre Ciel</h4>\n<h4>Ocean Garden</h4>\n<h4>Oceana Villa</h4>\n<h4>Oceanport Villa</h4>\n<h4>Orchid Garden</h4>\n<h4>Palladio’s View</h4>\n<h4>Palm Ridge</h4>\n<h4>Paradise Carest</h4>\n<h4>Pebble Cove</h4>\n<h4>Reef Bay Holiday Villa</h4>\n<h4>Samba Azul</h4>\n<h4>San Costanzo</h4>\n<h4>Sapphire Peak</h4>\n<h4>Sapphire Sunrise</h4>\n<h4>Sea Palace Retreat</h4>\n<h4>Sea Palms</h4>\n<h4>Seacove Villa</h4>\n<h4>Seagrape Estate</h4>\n<h4>Serenity Vista Villa</h4>\n<h4>Skyflower</h4>\n<h4>Sol Cottage Villa</h4>\n<h4>Sol Inclination</h4>\n<h4>Sol La Vie</h4>\n<h4>South Shore Villa</h4>\n<h4>Southern Exposure</h4>\n<h4>Sun, Moon and Stars</h4>\n<h4>Sunset Paradise</h4>\n<h4>The Little Easy</h4>\n<h4>Treetops</h4>\n<h4>Tropical Orchid</h4>\n<h4>Villa Bijou</h4>\n<h4>Villa Carlota</h4>\n<h4>Villa FantaSea</h4>\n<h4>Villa Ixora</h4>\n<h4>Villa Kia Orana</h4>\n<h4>Villa Madeira</h4>\n<h4>Villa Madeline</h4>\n<h4>Villa South Palm</h4>\n<h4>Villa de Paz</h4>\n<h4>Waterklip</h4>\n<h4>White Seagull</h4>\n<h4>Windwardside Guest Cottage</h4>\n<h4>Windwardside Main House</h4>",
+      "imageGallery": [
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Falta-vista%2Falta-vista-hero.avif?alt=media&token=dc4d7045-b6bc-4db5-8b43-c23acbc0be9a",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Farco-iris%2Farco-iris-hero.avif?alt=media&token=3b6c4ced-9562-4a87-ae20-62032d2e1301",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fargonauta%2Fargonauta-hero.avif?alt=media&token=3786de40-5426-4e43-9bb2-2a3f699ce4fe",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fastral-villa%2Fastral-villa-hero.png?alt=media&token=70384dc8-9eb8-492f-b9ec-428e44a09fb9",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeija-flor%2Fbeija-flor-hero.avif?alt=media&token=f805efb6-7cd6-41ec-8067-adac6d8fe5ee",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeyond-the-sea%2Fbeyond-the-sea-hero.avif?alt=media&token=1cfb3e62-3767-4e53-96fd-3600daab9534",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fblue-agave%2Fblue-agave-hero.avif?alt=media&token=9731d950-9b81-42ca-8b79-4b3e94848539(2).avif",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbrezza-di-mare%2Fbrezza-di-mare-hero.avif?alt=media&token=4b395010-4efe-44b6-be1c-d680f0f80dfd",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcara-mia%2Fcara-mia-hero.avif?alt=media&token=9106977a-3510-48a3-83be-85ce1d95ea85",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcasa-del-palmas%2Fcasa-del-palmas-hero.png?alt=media&token=dee01999-acfc-4cf8-9316-329b5738c0b6",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fchateau-margot%2Fchateau-margot-hero.avif?alt=media&token=d5616c0a-a629-4faf-b9cf-e193008dc8a0",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fchristmas-cottage%2Fchristmas-cottage-hero.jpg?alt=media&token=2ed3e186-27b7-448a-8abf-43da9c652a76",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcinnamon-stones%2Fcinnamon-stones-hero.avif?alt=media&token=936590eb-9a63-41eb-b355-23a0d54cfeae",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcoral-sky-villa%2Fcoral-sky-villa-hero.jpg?alt=media&token=5e3e46f9-fbf7-4177-aa9f-5802132a28f5",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fdesert-rose-villa%2Fdesert-rose-villa-hero.png?alt=media&token=9c2c2c4e-de5d-4d1a-8cb3-738ca6956925",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fdrake-e2-80-99s-view%2Fdrake-e2-80-99s-view-hero.png?alt=media&token=22af88c7-e147-4f77-89d2-48d6f31e9411",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Feast-end-seascape%2Feast-end-seascape-hero.jpg?alt=media&token=3cd527a3-4740-4b29-8170-468af80cb644",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ffish-tales%2Ffish-tales-hero.jpg?alt=media&token=acbd980c-3482-47a7-b68f-a06159adbdd1",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fgreat-escape%2Fgreat-escape-hero.avif?alt=media&token=88ea471f-570f-41a7-a584-e44a8624fd08",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhalcyon-days%2Fhalcyon-days-hero.png?alt=media&token=e4a356b6-929b-4048-81c6-76e9384aac62",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fharbor-lights%2Fharbor-lights-hero.avif?alt=media&token=d9efd922-77b0-43c6-bb8b-57a2a7c4e23d",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhart-bay-beach-house%2Fhart-bay-beach-house-hero.avif?alt=media&token=c083c2d8-e77b-4f33-92da-f3ba1406fdb6",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhart-bay-great-house%2Fhart-bay-great-house-hero.avif?alt=media&token=a7f9ba05-2bf4-4c80-aa90-b854ee94d192",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fidyllic-villa%2Fidyllic-villa-hero.png?alt=media&token=4d127718-d76e-4eab-8a11-8f9096248382",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fin-harmony-retreat%2Fin-harmony-retreat-hero.jpg?alt=media&token=892cf0a9-903e-4a26-80a4-63cb2e186024",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-vibes%2Fisland-vibes-hero.jpg?alt=media&token=4d09eca5-0808-4537-a823-49879589a27c",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Flavender-hill-unit-10-e%2Flavender-hill-unit-10-e-hero.avif?alt=media&token=b123bb82-28aa-40d1-9ccd-4f52e69891b0",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Flots-of-knots%2Flots-of-knots-hero.png?alt=media&token=ba777e30-290b-486f-b631-6682096bdeae",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmad-de-lis%2Fmad-de-lis-hero.avif?alt=media&token=9b1ae23d-dfaf-4924-9fdd-e73f34439ae8",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmandevilla-at-ixora%2Fmandevilla-at-ixora-hero.avif?alt=media&token=c72c9f1c-2ecb-4ecb-96fb-0e45ee8847cf",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmiles-away%2Fmiles-away-hero.jpg?alt=media&token=2c8095eb-360b-47e1-a03d-662b35a49968",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmonarch-cottage%2Fmonarch-cottage-hero.jpg?alt=media&token=e2d2bb88-880e-4e7a-844a-ea46ce8672f1",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmystical-mermaid-villa%2Fmystical-mermaid-villa-hero.png?alt=media&token=96f11e06-538d-4f5d-b2a2-92ffd7da1380",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fnotre-ciel%2Fnotre-ciel-hero.png?alt=media&token=984d24d0-0ee4-4bcf-83c6-00618a85a82d",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Foceana%2Foceana-hero.png?alt=media&token=7b41080d-feb7-48ea-b252-af9ef047bff8",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Foceanport-villa%2Foceanport-villa-hero.jpg?alt=media&token=a575da93-3217-455a-ab2c-196d4adef2f3",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Forchid-garden%2Forchid-garden-hero.jpg?alt=media&token=067494d3-5767-4975-b3ca-d72b1751c67e",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpalladio-e2-80-99s-view%2Fpalladio-e2-80-99s-view-hero.png?alt=media&token=9d9d7d5c-be88-4e2b-936b-0ca48e585f83(1).png",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpalm-ridge%2Fpalm-ridge-hero.jpg?alt=media&token=3bce4b01-855e-451f-b7fe-55b6b8d25ae7",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fparadise-carest%2Fparadise-carest-hero.avif?alt=media&token=ee4dc36f-bafc-45c6-8dcc-1520e2dd4660",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpebble-cove%2Fpebble-cove-hero.png?alt=media&token=683fad27-13b4-4414-81b8-6dcf0f2eeb9f",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Freef-bay-holiday-villa%2Freef-bay-holiday-villa-hero.jpg?alt=media&token=d98b2848-c52d-4f55-a4e2-b3f6b06bba0d",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsamba-azul%2Fsamba-azul-hero.avif?alt=media&token=d2f3edc6-6534-4e87-a5a5-a8731397f44f",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsan-costanzo%2Fsan-costanzo-hero.avif?alt=media&token=f2715fed-edc0-4df4-ae25-06bb7f1bbf28",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsapphire-peak%2Fsapphire-peak-hero.avif?alt=media&token=0d40ec1c-72f4-4743-a002-2a9efafcf6e7",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsapphire-sunrise%2Fsapphire-sunrise-hero.jpg?alt=media&token=ec467f52-a7f5-4e8a-b464-92d1b8f05b43(2)_edited.jpg",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsea-palace-retreat%2Fsea-palace-retreat-hero.jpg?alt=media&token=694ab99b-d61c-4f55-b1b7-5d082d00ce36",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsea-palms%2Fsea-palms-hero.avif?alt=media&token=044e6b4b-e479-46da-8d97-4785b2d5793d",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fseacove-villa%2Fseacove-villa-hero.png?alt=media&token=de4c45c9-d53a-480e-acf1-b2dabdcc6655",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fseagrape-estate%2Fseagrape-estate-hero.jpg?alt=media&token=9ee0b4fb-c652-4184-986d-ccaf8b577ed4",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fserenity-vista-villa%2Fserenity-vista-villa-hero.png?alt=media&token=a20adf89-430e-4135-9656-03cc1567bb84",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-cottage-villa%2Fsol-cottage-villa-hero.avif?alt=media&token=c402af49-691f-49a6-9e51-ce7e5e59c470",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-la-vie%2Fsol-la-vie-hero.jpg?alt=media&token=bb6e0a9f-1923-4384-92ba-f59ee9dd8fcb",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouthern-exposure%2Fsouthern-exposure-hero.png?alt=media&token=59f290a4-6c2f-4eaa-89b7-83bee5316097",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsun-2c-moon-and-stars%2Fsun-2c-moon-and-stars-hero.png?alt=media&token=ad65d36d-143a-4c29-addc-a50243e9a532",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsunset-paradise%2Fsunset-paradise-hero.png?alt=media&token=0f7d4a0d-9de6-44f3-8565-3837df824ca1",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fthe-little-easy%2Fthe-little-easy-hero.png?alt=media&token=580f7825-795c-4bdc-94bf-e93f4aa8c581",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-bijou%2Fvilla-bijou-hero.png?alt=media&token=8582e656-2cd5-4492-9a78-11897755b51e",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-ixora%2Fvilla-ixora-hero.jpg?alt=media&token=96eec026-af37-4625-80d8-38f23af8520d",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-kia-orana%2Fvilla-kia-orana-hero.jpg?alt=media&token=79100dea-23fe-4849-82c2-88b295c368ea",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-madeira%2Fvilla-madeira-hero.avif?alt=media&token=ee27ce00-1d7d-42e8-a4e5-4734493df89c",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-madeline%2Fvilla-madeline-hero.png?alt=media&token=12c7d972-8ebc-4ee6-a984-9f51880ee50a",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-south-palm%2Fvilla-south-palm-hero.avif?alt=media&token=759158e2-9a5d-4cb4-8cb0-fbfb3fba4623",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-de-paz%2Fvilla-de-paz-hero.avif?alt=media&token=5b7fcb8f-3041-4bce-9383-044c50150a35",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwaterklip%2Fwaterklip-hero.avif?alt=media&token=382b0c70-964b-4864-a34d-8a9a7e444496",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwindwardside-guest-cottage%2Fwindwardside-guest-cottage-hero.png?alt=media&token=89c3041d-fc34-4aa1-a1db-2fb48798a986",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        },
+        {
+          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwindwardside-main-house%2Fwindwardside-main-house-hero.png?alt=media&token=4ea83294-a51e-4d84-94e3-6d4208e58be1",
+          "alt": "Beautiful House Rentals",
+          "title": ""
+        }
+      ],
+      "rentalListings": [
+        {
+          "name": "A Tropical Paradise",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Pool Internet Frank Bay, walk to Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/a-tropical-paradise",
+          "path": "/rental-properties/a-tropical-paradise",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fa-tropical-paradise%2Fa-tropical-paradise-hero.jpg?alt=media&token=54cf1f36-befa-486f-8d44-1ce019f2a452",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Alta Vista",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Hot Tub Internet Bordeaux Mountain",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/alta-vista",
+          "path": "/rental-properties/alta-vista",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Falta-vista%2Falta-vista-hero.avif?alt=media&token=dc4d7045-b6bc-4db5-8b43-c23acbc0be9a",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Arco Iris",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Point Rendezvous",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/arco-iris",
+          "path": "/rental-properties/arco-iris",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Farco-iris%2Farco-iris-hero.avif?alt=media&token=3b6c4ced-9562-4a87-ae20-62032d2e1301",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Argonauta",
+          "rate": "",
+          "summary": "Max 10 Guests 5 Bedrooms 5 Baths Pool Hot Tub Internet Contant",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/argonauta",
+          "path": "/rental-properties/argonauta",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fargonauta%2Fargonauta-hero.avif?alt=media&token=3786de40-5426-4e43-9bb2-2a3f699ce4fe",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Astral Villa",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 4 Baths Pool 2 Hot Tubs Solar Battery Internet Battery Backup Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/astral-villa",
+          "path": "/rental-properties/astral-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fastral-villa%2Fastral-villa-hero.png?alt=media&token=70384dc8-9eb8-492f-b9ec-428e44a09fb9",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Banana Sweet",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Beds 1 Bath Backup Power Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/banana-sweet",
+          "path": "/rental-properties/banana-sweet",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbanana-sweet%2Fbanana-sweet-hero.avif?alt=media&token=0693ac72-0ff5-4d94-9b00-f210dcbb3561",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Bay Rum Breeze",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Estate Carolina",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/bay-rum-breeze",
+          "path": "/rental-properties/bay-rum-breeze",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbay-rum-breeze%2Fbay-rum-breeze-hero.png?alt=media&token=0e694202-340f-49be-a7be-4f22ec21018a",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Beija Flor",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4.5 Baths Pool Internet Rendezvous Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/beija-flor",
+          "path": "/rental-properties/beija-flor",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeija-flor%2Fbeija-flor-hero.avif?alt=media&token=f805efb6-7cd6-41ec-8067-adac6d8fe5ee",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Beyond the Sea",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Maria Bluff",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/beyond-the-sea",
+          "path": "/rental-properties/beyond-the-sea",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbeyond-the-sea%2Fbeyond-the-sea-hero.avif?alt=media&token=1cfb3e62-3767-4e53-96fd-3600daab9534",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Blue Agave",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4 Baths Kitchen Living room Deck with pool",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/blue-agave",
+          "path": "/rental-properties/blue-agave",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fblue-agave%2Fblue-agave-hero.avif?alt=media&token=9731d950-9b81-42ca-8b79-4b3e94848539(2).avif",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Brezza di Mare",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2.5 Baths Pool Hot Tub Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/brezza-di-mare",
+          "path": "/rental-properties/brezza-di-mare",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fbrezza-di-mare%2Fbrezza-di-mare-hero.avif?alt=media&token=4b395010-4efe-44b6-be1c-d680f0f80dfd",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Cara Mia",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Point Rendezvous",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/cara-mia",
+          "path": "/rental-properties/cara-mia",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcara-mia%2Fcara-mia-hero.avif?alt=media&token=9106977a-3510-48a3-83be-85ce1d95ea85",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Casa Del Palmas",
+          "rate": "",
+          "summary": "Max 12 Guests 6 Bedrooms 5 Baths Pool Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/casa-del-palmas",
+          "path": "/rental-properties/casa-del-palmas",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcasa-del-palmas%2Fcasa-del-palmas-hero.png?alt=media&token=dee01999-acfc-4cf8-9316-329b5738c0b6",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Chateau Margot",
+          "rate": "",
+          "summary": "Max 12 Guests 6 Bedrooms 5.5 Baths Pool Internet Bordeaux Mountain",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/chateau-margot",
+          "path": "/rental-properties/chateau-margot",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fchateau-margot%2Fchateau-margot-hero.avif?alt=media&token=d5616c0a-a629-4faf-b9cf-e193008dc8a0",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Christmas Cottage",
+          "rate": "",
+          "summary": "Max 2 Guests Studio 1 Bath Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/christmas-cottage",
+          "path": "/rental-properties/christmas-cottage",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fchristmas-cottage%2Fchristmas-cottage-hero.jpg?alt=media&token=2ed3e186-27b7-448a-8abf-43da9c652a76",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Cinnamon Stones",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4.5 Baths Heated Lap Pool Internet Estate Catherineberg (3.8 mi to Cruz Bay)",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/cinnamon-stones",
+          "path": "/rental-properties/cinnamon-stones",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcinnamon-stones%2Fcinnamon-stones-hero.avif?alt=media&token=936590eb-9a63-41eb-b355-23a0d54cfeae",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Coral Sky Villa",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Upper Carolina",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/coral-sky-villa",
+          "path": "/rental-properties/coral-sky-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcoral-sky-villa%2Fcoral-sky-villa-hero.jpg?alt=media&token=5e3e46f9-fbf7-4177-aa9f-5802132a28f5",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Cruz Bay Vista",
+          "rate": "",
+          "summary": "Max 2 Guests Studio 1 Bath Pool Internet Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/cruz-bay-vista",
+          "path": "/rental-properties/cruz-bay-vista",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fcruz-bay-vista%2Fcruz-bay-vista-hero.png?alt=media&token=c54fcebc-7db5-4a6e-8830-750924df6b4f",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Desert Rose Villa",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2.5 Baths Pool Internet Full A/C Solar & battery backup Kid friendly Ocean view Washer & dryer Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/desert-rose-villa",
+          "path": "/rental-properties/desert-rose-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fdesert-rose-villa%2Fdesert-rose-villa-hero.png?alt=media&token=9c2c2c4e-de5d-4d1a-8cb3-738ca6956925",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Drake’s View",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4.5 Baths Pool Hot Tub Internet Bordeaux Mountain, top of St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/drake%E2%80%99s-view",
+          "path": "/rental-properties/drake%E2%80%99s-view",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fdrake-e2-80-99s-view%2Fdrake-e2-80-99s-view-hero.png?alt=media&token=22af88c7-e147-4f77-89d2-48d6f31e9411",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "East End Seascape",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Pool Internet Air-conditioned Bedrooms East End, St John, VI",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/east-end-seascape",
+          "path": "/rental-properties/east-end-seascape",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Feast-end-seascape%2Feast-end-seascape-hero.jpg?alt=media&token=3cd527a3-4740-4b29-8170-468af80cb644",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Fish Tales",
+          "rate": "",
+          "summary": "Max 6 Guests 2 Bedrooms 2.5 Baths Pool Internet Full AC Solar & battery backup Kid friendly Ocean view Washer & dryer Fish Bay, St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/fish-tales",
+          "path": "/rental-properties/fish-tales",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ffish-tales%2Ffish-tales-hero.jpg?alt=media&token=acbd980c-3482-47a7-b68f-a06159adbdd1",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Great Escape",
+          "rate": "",
+          "summary": "Max 6 Guests 4 Bedrooms 4.5 Baths Pool Hot Tub Internet Catherineberg",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/great-escape",
+          "path": "/rental-properties/great-escape",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fgreat-escape%2Fgreat-escape-hero.avif?alt=media&token=88ea471f-570f-41a7-a584-e44a8624fd08",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Halcyon Days",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/halcyon-days",
+          "path": "/rental-properties/halcyon-days",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhalcyon-days%2Fhalcyon-days-hero.png?alt=media&token=e4a356b6-929b-4048-81c6-76e9384aac62",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Harbor Lights",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/harbor-lights",
+          "path": "/rental-properties/harbor-lights",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fharbor-lights%2Fharbor-lights-hero.avif?alt=media&token=d9efd922-77b0-43c6-bb8b-57a2a7c4e23d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Hart Bay Beach House",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Internet Hart Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/hart-bay-beach-house",
+          "path": "/rental-properties/hart-bay-beach-house",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhart-bay-beach-house%2Fhart-bay-beach-house-hero.avif?alt=media&token=c083c2d8-e77b-4f33-92da-f3ba1406fdb6",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Hart Bay Great House",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Pool Internet Hart Bay, St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/hart-bay-great-house",
+          "path": "/rental-properties/hart-bay-great-house",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fhart-bay-great-house%2Fhart-bay-great-house-hero.avif?alt=media&token=a7f9ba05-2bf4-4c80-aa90-b854ee94d192",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Idyllic Villa",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Pool Internet Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/idyllic-villa",
+          "path": "/rental-properties/idyllic-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fidyllic-villa%2Fidyllic-villa-hero.png?alt=media&token=4d127718-d76e-4eab-8a11-8f9096248382",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "In Harmony Retreat",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Hot Tub Internet Coral Bay, St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/in-harmony-retreat",
+          "path": "/rental-properties/in-harmony-retreat",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fin-harmony-retreat%2Fin-harmony-retreat-hero.jpg?alt=media&token=892cf0a9-903e-4a26-80a4-63cb2e186024",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Island Gardens",
+          "rate": "",
+          "summary": "Max 2 Guests Studio 1 Bath Internet Coral Bay, St John VI",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/island-gardens",
+          "path": "/rental-properties/island-gardens",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-gardens%2Fisland-gardens-hero.jpg?alt=media&token=62ee9cad-cfe6-4a97-99a0-aa4833f7296f",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Island Vibes",
+          "rate": "",
+          "summary": "Max 4 Guests Studio & Sleeping Porch 1 Bath Internet Coral Bay, St John, VI",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/island-vibes",
+          "path": "/rental-properties/island-vibes",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fisland-vibes%2Fisland-vibes-hero.jpg?alt=media&token=4d09eca5-0808-4537-a823-49879589a27c",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Lavender Hill Unit 10-E",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Internet Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/lavender-hill-unit-10-e-",
+          "path": "/rental-properties/lavender-hill-unit-10-e-",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Flavender-hill-unit-10-e%2Flavender-hill-unit-10-e-hero.avif?alt=media&token=b123bb82-28aa-40d1-9ccd-4f52e69891b0",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Lots of Knots",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Hot Tub Internet Upper Carolina",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/lots-of-knots-",
+          "path": "/rental-properties/lots-of-knots-",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Flots-of-knots%2Flots-of-knots-hero.png?alt=media&token=ba777e30-290b-486f-b631-6682096bdeae",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Mad-de-Lis",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4.5 Baths Pool Internet Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/mad-de-lis",
+          "path": "/rental-properties/mad-de-lis",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmad-de-lis%2Fmad-de-lis-hero.avif?alt=media&token=9b1ae23d-dfaf-4924-9fdd-e73f34439ae8",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "MandeVilla at Ixora",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Internet Ajax Peak",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/mandevilla-at-ixora",
+          "path": "/rental-properties/mandevilla-at-ixora",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmandevilla-at-ixora%2Fmandevilla-at-ixora-hero.avif?alt=media&token=c72c9f1c-2ecb-4ecb-96fb-0e45ee8847cf",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Miles Away",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2.5 Baths Pool Internet Rendezvous Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/miles-away",
+          "path": "/rental-properties/miles-away",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmiles-away%2Fmiles-away-hero.jpg?alt=media&token=2c8095eb-360b-47e1-a03d-662b35a49968",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Monarch Cottage",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Bathrooms Waterfront at Estate Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/monarch-cottage",
+          "path": "/rental-properties/monarch-cottage",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmonarch-cottage%2Fmonarch-cottage-hero.jpg?alt=media&token=e2d2bb88-880e-4e7a-844a-ea46ce8672f1",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Mystical Mermaid Villa",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Hot Tub Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/mystical-mermaid-villa",
+          "path": "/rental-properties/mystical-mermaid-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fmystical-mermaid-villa%2Fmystical-mermaid-villa-hero.png?alt=media&token=96f11e06-538d-4f5d-b2a2-92ffd7da1380",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Notre Ciel",
+          "rate": "",
+          "summary": "Max 7 Guests 2 Bedrooms + Loft 2 Baths Pool Hot Tub Internet Mamey Peak",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/notre-ciel",
+          "path": "/rental-properties/notre-ciel",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fnotre-ciel%2Fnotre-ciel-hero.png?alt=media&token=984d24d0-0ee4-4bcf-83c6-00618a85a82d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Ocean Garden",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Internet Hot Tub Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/ocean-garden",
+          "path": "/rental-properties/ocean-garden",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Focean-garden%2Focean-garden-hero.png?alt=media&token=3a3efea9-830c-4a93-b581-e453b08a5d2c",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Oceana Villa",
+          "rate": "",
+          "summary": "Max 12 Guests 6 Bedrooms 6.5 Baths Pool Hot Tub Internet Chocolate Hole",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/oceana",
+          "path": "/rental-properties/oceana",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Foceana%2Foceana-hero.png?alt=media&token=7b41080d-feb7-48ea-b252-af9ef047bff8",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Oceanport Villa",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4 Baths Pool Hot Tub Internet Hart Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/oceanport-villa",
+          "path": "/rental-properties/oceanport-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Foceanport-villa%2Foceanport-villa-hero.jpg?alt=media&token=a575da93-3217-455a-ab2c-196d4adef2f3",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Orchid Garden",
+          "rate": "",
+          "summary": "Max 2 Guests 2 Bedrooms 2 Baths Internet Johns Folly",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/orchid-garden",
+          "path": "/rental-properties/orchid-garden",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Forchid-garden%2Forchid-garden-hero.jpg?alt=media&token=067494d3-5767-4975-b3ca-d72b1751c67e",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Palladio’s View",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 2.5 Baths A/C Pool Hot Tub Wifi",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/palladio%E2%80%99s-view",
+          "path": "/rental-properties/palladio%E2%80%99s-view",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpalladio-e2-80-99s-view%2Fpalladio-e2-80-99s-view-hero.png?alt=media&token=9d9d7d5c-be88-4e2b-936b-0ca48e585f83(1).png",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Palm Ridge",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 3.5 Baths Infinity Pool Internet Majestic Mile",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/palm-ridge",
+          "path": "/rental-properties/palm-ridge",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpalm-ridge%2Fpalm-ridge-hero.jpg?alt=media&token=3bce4b01-855e-451f-b7fe-55b6b8d25ae7",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Paradise Carest",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Internet Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/paradise-carest",
+          "path": "/rental-properties/paradise-carest",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fparadise-carest%2Fparadise-carest-hero.avif?alt=media&token=ee4dc36f-bafc-45c6-8dcc-1520e2dd4660",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Pebble Cove",
+          "rate": "",
+          "summary": "Max 8 Guests 3 Bedrooms 3.5 Baths Internet East End Water Front",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/pebble-cove",
+          "path": "/rental-properties/pebble-cove",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fpebble-cove%2Fpebble-cove-hero.png?alt=media&token=683fad27-13b4-4414-81b8-6dcf0f2eeb9f",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Reef Bay Holiday Villa",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4 Baths Pool Hot Tub Internet Reef Bay Water Front St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/reef-bay-holiday-villa",
+          "path": "/rental-properties/reef-bay-holiday-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Freef-bay-holiday-villa%2Freef-bay-holiday-villa-hero.jpg?alt=media&token=d98b2848-c52d-4f55-a4e2-b3f6b06bba0d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Samba Azul",
+          "rate": "",
+          "summary": "Max 6 Guests 2 Bedrooms 2 Baths Pool Internet Chocolate Hole",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/samba-azul",
+          "path": "/rental-properties/samba-azul",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsamba-azul%2Fsamba-azul-hero.avif?alt=media&token=d2f3edc6-6534-4e87-a5a5-a8731397f44f",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "San Costanzo",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2.5 Baths Hot Tub Internet Fish Bay, St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/san-costanzo",
+          "path": "/rental-properties/san-costanzo",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsan-costanzo%2Fsan-costanzo-hero.avif?alt=media&token=f2715fed-edc0-4df4-ae25-06bb7f1bbf28",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sapphire Peak",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Mamey Peak",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sapphire-peak",
+          "path": "/rental-properties/sapphire-peak",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsapphire-peak%2Fsapphire-peak-hero.avif?alt=media&token=0d40ec1c-72f4-4743-a002-2a9efafcf6e7",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sapphire Sunrise",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4 Baths Pool Internet Bordeaux Mountain",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sapphire-sunrise",
+          "path": "/rental-properties/sapphire-sunrise",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsapphire-sunrise%2Fsapphire-sunrise-hero.jpg?alt=media&token=ec467f52-a7f5-4e8a-b464-92d1b8f05b43(2)_edited.jpg",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sea Palace Retreat",
+          "rate": "",
+          "summary": "Max 6 Guests 2 Bedrooms 2.5 Baths Pool Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sea-palace-retreat",
+          "path": "/rental-properties/sea-palace-retreat",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsea-palace-retreat%2Fsea-palace-retreat-hero.jpg?alt=media&token=694ab99b-d61c-4f55-b1b7-5d082d00ce36",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sea Palms",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sea-palms",
+          "path": "/rental-properties/sea-palms",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsea-palms%2Fsea-palms-hero.avif?alt=media&token=044e6b4b-e479-46da-8d97-4785b2d5793d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Seacove Villa",
+          "rate": "",
+          "summary": "Max 10 Guests 5 Bedrooms 5.5 Baths Pool Internet Peter Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/seacove-villa",
+          "path": "/rental-properties/seacove-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fseacove-villa%2Fseacove-villa-hero.png?alt=media&token=de4c45c9-d53a-480e-acf1-b2dabdcc6655",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Seagrape Estate",
+          "rate": "",
+          "summary": "Max 7 Guests 3 Bedrooms 3 Baths Pool Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/seagrape-estate",
+          "path": "/rental-properties/seagrape-estate",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fseagrape-estate%2Fseagrape-estate-hero.jpg?alt=media&token=9ee0b4fb-c652-4184-986d-ccaf8b577ed4",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Serenity Vista Villa",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4 Baths Pool Internet Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/serenity-vista-villa",
+          "path": "/rental-properties/serenity-vista-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fserenity-vista-villa%2Fserenity-vista-villa-hero.png?alt=media&token=a20adf89-430e-4135-9656-03cc1567bb84",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Skyflower",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 3 Baths Hot Tub Internet Bordeaux",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/skyflower",
+          "path": "/rental-properties/skyflower",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fskyflower%2Fskyflower-hero.png?alt=media&token=d56fdeb1-131a-48e6-ab4a-e0f3bf9b49bd",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sol Cottage Villa",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 1 Bath Pool Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sol-cottage-villa",
+          "path": "/rental-properties/sol-cottage-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-cottage-villa%2Fsol-cottage-villa-hero.avif?alt=media&token=c402af49-691f-49a6-9e51-ce7e5e59c470",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sol Inclination",
+          "rate": "",
+          "summary": "Max 9 Guests 4 Bedrooms 4.5 Baths Pool Hot Tub Internet Skytop",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sol-inclination",
+          "path": "/rental-properties/sol-inclination",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-inclination%2Fsol-inclination-hero.png?alt=media&token=7ca1f822-deb5-43a1-8a4b-a3498680de5c",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sol La Vie",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sol-la-vie",
+          "path": "/rental-properties/sol-la-vie",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsol-la-vie%2Fsol-la-vie-hero.jpg?alt=media&token=bb6e0a9f-1923-4384-92ba-f59ee9dd8fcb",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "South Shore Villa",
+          "rate": "",
+          "summary": "Max 8 4 4.5 baths Pool Internet South Shore",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/south-shore-villa",
+          "path": "/rental-properties/south-shore-villa",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouth-shore-villa%2Fsouth-shore-villa-hero.png?alt=media&token=2cbe9ae1-189b-418a-8a15-7398f56d06d4",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Southern Exposure",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Pool Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/southern-exposure",
+          "path": "/rental-properties/southern-exposure",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsouthern-exposure%2Fsouthern-exposure-hero.png?alt=media&token=59f290a4-6c2f-4eaa-89b7-83bee5316097",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sun, Moon and Stars",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Hot Tub Internet Coral Bay, St John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sun%2C-moon-and-stars",
+          "path": "/rental-properties/sun%2C-moon-and-stars",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsun-2c-moon-and-stars%2Fsun-2c-moon-and-stars-hero.png?alt=media&token=ad65d36d-143a-4c29-addc-a50243e9a532",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Sunset Paradise",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/sunset-paradise",
+          "path": "/rental-properties/sunset-paradise",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fsunset-paradise%2Fsunset-paradise-hero.png?alt=media&token=0f7d4a0d-9de6-44f3-8565-3837df824ca1",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "The Little Easy",
+          "rate": "",
+          "summary": "Max 4 Guests 1 Bedroom + Loft 2 Baths Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/the-little-easy",
+          "path": "/rental-properties/the-little-easy",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fthe-little-easy%2Fthe-little-easy-hero.png?alt=media&token=580f7825-795c-4bdc-94bf-e93f4aa8c581",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Treetops",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3 Baths Pool Hot Tub Internet Bordeaux Mountain",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/treetops",
+          "path": "/rental-properties/treetops",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftreetops%2Ftreetops-hero.png?alt=media&token=249d3080-c6ad-42a9-b692-e65530f7c96d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Tropical Orchid",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Hot Tub Internet Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/tropical-orchid",
+          "path": "/rental-properties/tropical-orchid",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Ftropical-orchid%2Ftropical-orchid-hero.png?alt=media&token=a9d19bc5-ceff-486b-a8a5-3cd3421025fd",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Bijou",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Internet Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-bijou",
+          "path": "/rental-properties/villa-bijou",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-bijou%2Fvilla-bijou-hero.png?alt=media&token=8582e656-2cd5-4492-9a78-11897755b51e",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Carlota",
+          "rate": "",
+          "summary": "Max 12 5 6.5 baths Pool Hot Tub Internet Upper Peter Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-carlota",
+          "path": "/rental-properties/villa-carlota",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-carlota%2Fvilla-carlota-hero.png?alt=media&token=c5d09758-1fe8-47b6-a94a-02d5125cffb7",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa FantaSea",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-fantasea",
+          "path": "/rental-properties/villa-fantasea",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-fantasea%2Fvilla-fantasea-hero.png?alt=media&token=c99891ad-4810-414f-87e3-22a6cac54320",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Ixora",
+          "rate": "",
+          "summary": "Max 10 Guests 5 Bedrooms 4 Baths Pool Hot Tub Internet Ajax Peak, St. John",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-ixora",
+          "path": "/rental-properties/villa-ixora",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-ixora%2Fvilla-ixora-hero.jpg?alt=media&token=96eec026-af37-4625-80d8-38f23af8520d",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Kia Orana",
+          "rate": "",
+          "summary": "Max 12 Guests 4 Bedrooms 6 Baths Swimming pool Air-conditioning Ceiling fans Wireless Broadband Internet Game room Outdoor kitchen Security system",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-kia-orana",
+          "path": "/rental-properties/villa-kia-orana",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-kia-orana%2Fvilla-kia-orana-hero.jpg?alt=media&token=79100dea-23fe-4849-82c2-88b295c368ea",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Madeira",
+          "rate": "",
+          "summary": "Max 6 Guests 3 Bedrooms 3.5 Baths Pool Hot Tub Internet Chocolate Hole",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-madeira",
+          "path": "/rental-properties/villa-madeira",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-madeira%2Fvilla-madeira-hero.avif?alt=media&token=ee27ce00-1d7d-42e8-a4e5-4734493df89c",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa Madeline",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Coral Bay - Edens",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-madeline",
+          "path": "/rental-properties/villa-madeline",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-madeline%2Fvilla-madeline-hero.png?alt=media&token=12c7d972-8ebc-4ee6-a984-9f51880ee50a",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa South Palm",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 4.5 Baths Pool Internet Bethany",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-south-palm",
+          "path": "/rental-properties/villa-south-palm",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-south-palm%2Fvilla-south-palm-hero.avif?alt=media&token=759158e2-9a5d-4cb4-8cb0-fbfb3fba4623",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Villa de Paz",
+          "rate": "",
+          "summary": "Max 8 Guests 4 Bedrooms 2.5 Baths Pool Internet Fish Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/villa-de-paz",
+          "path": "/rental-properties/villa-de-paz",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fvilla-de-paz%2Fvilla-de-paz-hero.avif?alt=media&token=5b7fcb8f-3041-4bce-9383-044c50150a35",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Waterklip",
+          "rate": "",
+          "summary": "Max 4 Guests 2 Bedrooms 2 Baths Pool Internet Cruz Bay - Contant",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/waterklip",
+          "path": "/rental-properties/waterklip",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwaterklip%2Fwaterklip-hero.avif?alt=media&token=382b0c70-964b-4864-a34d-8a9a7e444496",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "White Seagull",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Pool Internet Great Cruz Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/white-seagull",
+          "path": "/rental-properties/white-seagull",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwhite-seagull%2Fwhite-seagull-hero.jpg?alt=media&token=ae2872c4-83ef-4f28-b513-3502104b7dd6",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Windwardside Guest Cottage",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 1 Bath Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/windwardside-guest-cottage",
+          "path": "/rental-properties/windwardside-guest-cottage",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwindwardside-guest-cottage%2Fwindwardside-guest-cottage-hero.png?alt=media&token=89c3041d-fc34-4aa1-a1db-2fb48798a986",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        },
+        {
+          "name": "Windwardside Main House",
+          "rate": "",
+          "summary": "Max 2 Guests 1 Bedroom 2 Baths Hot Tub Internet Coral Bay",
+          "href": "https://www.stjohnhouserentals.com/rental-properties/windwardside-main-house",
+          "path": "/rental-properties/windwardside-main-house",
+          "image": {
+            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fproperties%2Fwindwardside-main-house%2Fwindwardside-main-house-hero.png?alt=media&token=4ea83294-a51e-4d84-94e3-6d4208e58be1",
+            "alt": "Beautiful House Rentals",
+            "title": ""
+          }
+        }
+      ]
     },
     "rentalAccommodations": {
       "key": "rentalAccommodations",
@@ -634,6 +1990,7 @@
         "To book direct, please contact James M. Miller",
         "1-800-626-4516 or 340-776-5774",
         "Available Cars For Rental",
+        "A Tropical Paradise",
         "Alta Vista",
         "$566.00/Night",
         "Arco Iris",
@@ -641,6 +1998,9 @@
         "Argonauta",
         "$782.00/Night",
         "Astral Villa",
+        "Banana Sweet",
+        "Bay Rum Breeze",
+        "$597.00/Night",
         "Beija Flor",
         "$510.00/Night",
         "Beyond the Sea",
@@ -648,11 +2008,7 @@
         "Brezza di Mare",
         "Cara Mia",
         "$590.00/Night",
-        "Casa Del Palmas",
-        "Chateau Margot",
-        "Christmas Cottage",
-        "$100.00/Night",
-        "Cinnamon Stones"
+        "Casa Del Palmas"
       ],
       "routeLinks": [
         {
@@ -677,7 +2033,7 @@
         }
       ],
       "htmlFile": "html/cars.html",
-      "contentHtml": "<h1>St John Car Rentals</h1>\n<p>Rent a car to explore all that St. John has to offer</p>\n<h2>Below are names and numbers of car rentals</h2>\n<p>on St. John. Some rental homes on our hilly island require 4-wheel drive vehicles to navigate the terrain. The most important thing to remember is that we drive on the left here.&nbsp;</p>\n<p><a href=\"http://www.cccarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">C &amp; C</a></p>\n<p><a href=\"tel:340-693-8164\">340-693-8164</a></p>\n<p><a href=\"https://www.courtesycarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Courtesy</a></p>\n<p><a href=\"tel:340-776-6650\">340-776-6650</a></p>\n<p><a href=\"http://www.oconnorcarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">O’Connor</a></p>\n<p><a href=\"tel:340-776-6343\">340-776-6343</a></p>\n<p><a href=\"http://www.bookajeep.com/\" target=\"_blank\" rel=\"noreferrer noopener\">L&amp;L Jeep Rental</a></p>\n<p><a href=\"tel:340-776-1120\">340-776-1120</a></p>\n<p><a href=\"https://mrpipersjeeps.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Mr. Pipers Jeeps</a></p>\n<p><a href=\"tel:340-693-7580\">340-693-7580</a></p>\n<p><a href=\"https://www.stjohncarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">St John Car Rental</a></p>\n<p><a href=\"tel:340-776-6103\">340-776-6103</a></p>\n<p><a href=\"http://www.aquablucarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Aqua Blue Car Rental</a></p>\n<p><a href=\"tel:340-776-2782\">340-776-2782</a></p>\n<p><a href=\"http://www.sunshinesjeeprental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Sunshine Jeep Rental</a></p>\n<p><a href=\"tel:340-690-1786\">340-690-1786</a></p>\n<p>Penn’s Jeep Rental, Inc.</p>\n<p><a href=\"tel:340-776-6530\">340-776-6530</a></p>\n<p><a href=\"http://www.coolbreezecarrental.com/stjohn_vehicles_rates.htm\" target=\"_blank\" rel=\"noreferrer noopener\">Cool Breeze Jeep &amp; Car Rental</a></p>\n<p><a href=\"tel:340-776-6588\">340-776-6588</a></p>\n<p><a href=\"http://delberthillcarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Delbert Hill Car and Jeep Rental</a></p>\n<p><a href=\"tel:340-776-6637\">340-776-6637</a></p>\n<p><a href=\"https://cruzbaycarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Cruz Bay Car Rentals</a></p>\n<p><a href=\"tel:340-227-0138\">340-227-0138</a>/<a href=\"tel:340-626-4552\">340-626-4552</a></p>\n<p><a href=\"http://www.stjohntraveler.com/usvi/transportation/spencers-jeeps/\" target=\"_blank\" rel=\"noreferrer noopener\">Spencer’s Jeep Rental</a></p>\n<p><a href=\"tel:340-693-8784\">340-693-8784</a>&nbsp;or&nbsp;<a href=\"tel:888-776-6628\">888-776-6628</a></p>\n<p>If you feel comfortable with driving on the left and backing up onto the barge, you can also pick up a rental car at the airport on St. Thomas and drive to the car ferry (“the barge”) in Red Hook. Please note, not all rental companies allow their cars to be taken to St. John, but Budget Car Rental does, and it is located right at the airport.</p>\n\n\n\n<p>Budget Car Rental&nbsp;on St Thomas:&nbsp;<span>1-800-626-4516</span>&nbsp;or&nbsp;<span>340-776-5774</span></p>\n\n\n\n<p>Dependable Car Rental&nbsp;will allow their cars to go to St John also, but do not provide service of vehicles on St John if it were to break down. They are 3 minutes from the airport and offer a shuttle to and from. &nbsp;<span>1-800-522-3076</span></p>\n<h6><span>PASSENGER FERRY SCHEDULE</span></h6>\n<p>St. Thomas – St. John<br>RED HOOK FERRY<br>RED HOOK, ST. THOMAS – CRUZ BAY, ST. JOHN<br>Operated by: Transportation Services and Varlack Ventures<br>Telephone: (340) 776-6282 and (340) 776-6412<br>Travel Time: 15 minutes</p>\n<p><span>RED HOOK → CRUZ BAY</span></p>\n\n<p>5:30 am (M-F) – 6:30 AM – 7:30 AM –&nbsp; 8:30 AM – 9:00 AM – 10:00 AM – 11:00 AM<br>\nNoon – 1:00 PM – 2:00 PM – 3:00 PM – 4:00 PM – 5:00 PM – 6:00 PM – 7:00 PM -8:00 PM<br>\n9:00 PM – 10:00 PM –&nbsp; 11:00 PM –&nbsp; 11:30 PM</p>\n\n\n\n<p><span>CRUZ BAY → RED HOOK</span></p>\n\n<p>6:30 AM – 7:30 AM –&nbsp; 8:30 AM – 9:00 AM – 10:00 AM – 11:00 AM – Noon<br>\n1:00 PM – 2:00 PM – 3:00 PM – 4:00 PM – 5:00 PM – 6:00 PM – 7:00 PM -8:00 PM – 9:00 PM – 10:00 PM –&nbsp; 11:00 PM</p>\n\n\n\n<p><span>RED HOOK – CRUZ BAY FERRY RATES</span></p>\n\n<p>Adult (Non-Resident) One-way – $8.15<br>\nAdult (Resident*) One-way – $6.00<br>\nSenior (Resident*) One-way – $1.50<br>\nChild (2-11) One-way $1.00<br>\nInfants (under 2 years) – FREE<br>\nLuggage/Box – $4.00 each</p>\n\n<p>*&nbsp;Valid USVI ID required for resident rates.<br>\nLast Updated: 11/22/2023</p>\n<p><span>CROWN BAY FERRY</span><br>\n(ROUTE: CROWN BAY, ST. THOMAS to CRUZ BAY, ST. JOHN)<br>\nOperated by: Inter Island Boat Services<br>\nTelephone: (340) 776-6597<br>\nSt. Thomas Ferry Landing: Crown Bay Marina<br>\nSt. John Ferry Landing: Victor William Sewer Marine Facility (AKA: The Creek)<br>\nTravel Time: 35 minutes<br>\nNote: Check-in is 30 minutes prior to departure time.</p>\n\n\n\n<p>CROWN BAY → CRUZ BAY<br>\n9:45 AM (Fri, Sat &amp; Sun)<br>\n2:15 PM (Fri, Sat &amp; Sun)<br>\n3:30 PM<br>\n5:30 PM</p>\n\n\n\n<p>CRUZ BAY → CROWN BAY<br>\n8:30 AM (Fri, Sat &amp; Sun)<br>\n11:00 AM<br>\n1:15 PM (Fri, Sat &amp; Sun)<br>\n4:15 PM</p>\n<p>Three companies currently offer daily service between Enighed Pond, St. John and Red Hook, St. Thomas for vehicles. A car ferry, or car barge, takes cars between St. Thomas and St. John! The driver and passengers ride along with the vehicle too.</p>\n<h2>Car Barge Information</h2>\n<p>First thing to know about is the Port Authority Fee<br>\nPay at the booth before you enter the parking lot at Red Hook<br>\n$3 per Car, small SUV, Motorcycle; $4 per truck, van, large SUV.</p>\n\n<p>Get your ticket and drive in, there will be someone to show you which lane to get in. Note that you will back your vehicle on to the ferry.</p>\n\n\n\n<p>The fare for the car barge is paid once on the actual barge. Tickets can be purchased for a one-way trip, or a round-trip fare. Tickets are not interchangeable between the three car barge companies. If you purchase a round-trip ticket, it is only good for the barge that issued it.</p>\n\n\n\n<p>The Red Hook ferry location services both passenger ferries and car ferries, but there are two separate docking areas for each type of ferry, with separate well-marked entrances. Arrive as early as possible before the car barge departure time you hope to catch. It fills up fast.</p>\n\n\n\n<p>VI Now has more information Link for information is <span><a href=\"https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/\" target=\"_blank\" rel=\"noreferrer noopener\">https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/</a></span></p>\n<h2>To book direct, please contact James M. Miller</h2>\n<h2><span><a href=\"tel:+18006264516\">1-800-626-4516 or 340-776-5774</a></span></h2>\n<h2>Available Cars For Rental</h2>\n<h4>Alta Vista</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Bordeaux Mountain</p>\n<h2>$566.00/Night</h2>\n<h4>Arco Iris</h4>\n<p>9.8</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Point Rendezvous</p>\n<h2>$390.00/Night</h2>\n<h4>Argonauta</h4>\n<p>10</p>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Contant</p>\n<h2>$782.00/Night</h2>\n<h4>Astral Villa</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>4 Baths<br>Pool<br>2 Hot Tubs<br>Solar Battery<br>Internet<br>Battery Backup <br>Coral Bay</p>\n<h4>Beija Flor</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Rendezvous Bay</p>\n<h2>$510.00/Night</h2>\n<h4>Beyond the Sea</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Maria Bluff</p>\n<h4>Blue Agave</h4>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Kitchen<br>Living room<br>Deck with pool</p>\n<h4>Brezza di Mare</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Fish Bay</p>\n<h4>Cara Mia</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Point Rendezvous</p>\n<h2>$590.00/Night</h2>\n<h4>Casa Del Palmas</h4>\n<p>0</p>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>5 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Chateau Margot</h4>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>5.5 Baths<br>Pool<br>Internet<br>Bordeaux Mountain</p>\n<h4>Christmas Cottage</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>Studio<br>1 Bath<br>Internet<br>Coral Bay</p>\n<h2>$100.00/Night</h2>\n<h4>Cinnamon Stones</h4>\n<p>0</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Heated Lap Pool<br>Internet<br>Estate Catherineberg (3.8 mi to Cruz Bay)</p>\n<h4>Coral Sky Villa</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Upper Carolina</p>\n<h2>$699.00/Night</h2>\n<h4>Desert Rose Villa</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Full A/C<br>Solar &amp; battery backup<br>Kid friendly<br>Ocean view<br>Washer &amp; dryer<br>Coral Bay</p>\n<h4>Drake’s View</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Bordeaux Mountain, top of St John</p>\n<h4>East End Seascape</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Air-conditioned Bedrooms<br>East End, St John, VI</p>\n<h4>Fish Tales</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Full AC<br>Solar &amp; battery backup<br>Kid friendly<br>Ocean view<br>Washer &amp; dryer<br>Fish Bay, St John</p>\n<h4>Great Escape</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Catherineberg</p>\n<h4>Halcyon Days</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Internet<br>Coral Bay</p>\n<h4>Harbor Lights</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Coral Bay</p>\n<h4>Hart Bay Beach House</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Internet<br>Hart Bay</p>\n<h4>Hart Bay Great House</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Hart Bay, St John</p>\n<h4>Idyllic Villa</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>In Harmony Retreat</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay, St John</p>\n<h2>$236/Night or $1650/Week</h2>\n<h4>Island Gardens</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>Studio<br>1 Bath<br>Internet<br>Coral Bay, St John VI</p>\n<h2>$150.00/Night</h2>\n<h4>Island Vibes</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>Studio &amp; Sleeping Porch<br>1 Bath<br>Internet<br>Coral Bay, St John, VI</p>\n<h2>$150.00/Night</h2>\n<h4>Lavender Hill Unit 10-E</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$411.00/Night</h2>\n<h4>Lots of Knots</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Hot Tub<br>Internet<br>Upper Carolina</p>\n<h2>$245/Night</h2>\n<h4>Mad-de-Lis</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$695.00/Night</h2>\n<h4>MandeVilla at Ixora</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Ajax Peak</p>\n<h2>$385.00/Night</h2>\n<h4>Miles Away</h4>\n<p>10</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Rendezvous Bay</p>\n<h2>$440.00/Night</h2>\n<h4>Monarch Cottage</h4>\n<p>0</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Bathrooms<br>Waterfront at Estate Fish Bay</p>\n<h4>Mystical Mermaid Villa</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Hot Tub<br>Internet<br>Fish Bay</p>\n<h4>Notre Ciel</h4>\n<p><span>6</span></p>\n<p>Max 7 Guests<br>2 Bedrooms + Loft<br>2 Baths<br>Pool<br>Hot Tub<br>Internet<br>Mamey Peak</p>\n<h4>Oceana Villa</h4>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>6.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Chocolate Hole</p>\n<h4>Oceanport Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Hart Bay</p>\n<h4>Orchid Garden</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>2 Bedrooms<br>2 Baths<br>Internet<br>Johns Folly</p>\n<h4>Palladio’s View</h4>\n<p>0</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>2.5 Baths <br>A/C <br>Pool<br>Hot Tub<br>Wifi<br><br></p>\n<h4>Palm Ridge</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Infinity Pool<br>Internet<br>Majestic Mile</p>\n<h4>Paradise Carest</h4>\n<p>9.8</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$400/Night</h2>\n<h4>Pebble Cove</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>3 Bedrooms<br>3.5 Baths<br>Internet<br>East End Water Front</p>\n<h4>Reef Bay Holiday Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Reef Bay Water Front St John</p>\n<h4>Samba Azul</h4>\n<p>9.8</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Chocolate Hole</p>\n<h4>San Costanzo</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Hot Tub<br>Internet<br>Fish Bay, St John</p>\n<h4>Sapphire Peak</h4>\n<p>9.4</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Mamey Peak</p>\n<h2>$416.00/Night</h2>\n<h4>Sapphire Sunrise</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Internet<br>Bordeaux Mountain</p>\n<h2>$581.00/Night</h2>\n<h4>Sea Palace Retreat</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Sea Palms</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$590.00/Night</h2>\n<h4>Seacove Villa</h4>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>5.5 Baths<br>Pool<br>Internet<br>Peter Bay</p>\n<h4>Seagrape Estate</h4>\n<p><span>7</span></p>\n<p>Max 7 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Serenity Vista Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>Sol Cottage Villa</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>1 Bath<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Sol La Vie</h4>\n<p>9.8</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay</p>\n<h2>$384.00/Night</h2>\n<h4>Southern Exposure</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Sun, Moon and Stars</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay, St John</p>\n<h2>not specified</h2>\n<h4>Sunset Paradise</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay</p>\n<h4>The Little Easy</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>1 Bedroom + Loft<br>2 Baths<br>Internet<br>Coral Bay</p>\n<h2>$299.00/Night</h2>\n<h4>Villa Bijou</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>Villa Ixora</h4>\n<p>10</p>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Ajax Peak, St. John</p>\n<h2>$599.00/Night</h2>\n<h4>Villa Kia Orana</h4>\n<p>0</p>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>4 Bedrooms<br>6 Baths<br>Swimming pool<br>Air-conditioning<br>Ceiling fans<br>Wireless Broadband Internet<br>Game room<br>Outdoor kitchen<br>Security system</p>\n<h4>Villa Madeira</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Chocolate Hole</p>\n<h4>Villa Madeline</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay - Edens</p>\n<h4>Villa South Palm</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Bethany</p>\n<h2>$649.00/Night</h2>\n<h4>Villa de Paz</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h2>$309.00/Night</h2>\n<h4>Waterklip</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Cruz Bay - Contant</p>\n<h4>Windwardside Guest Cottage</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Windwardside Main House</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>2 Baths<br>Hot Tub<br>Internet<br>Coral Bay</p>",
+      "contentHtml": "<h1>St John Car Rentals</h1>\n<p>Rent a car to explore all that St. John has to offer</p>\n<h2>Below are names and numbers of car rentals</h2>\n<p>on St. John. Some rental homes on our hilly island require 4-wheel drive vehicles to navigate the terrain. The most important thing to remember is that we drive on the left here.&nbsp;</p>\n<p><a href=\"http://www.cccarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">C &amp; C</a></p>\n<p><a href=\"tel:340-693-8164\">340-693-8164</a></p>\n<p><a href=\"https://www.courtesycarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Courtesy</a></p>\n<p><a href=\"tel:340-776-6650\">340-776-6650</a></p>\n<p><a href=\"http://www.oconnorcarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">O’Connor</a></p>\n<p><a href=\"tel:340-776-6343\">340-776-6343</a></p>\n<p><a href=\"http://www.bookajeep.com/\" target=\"_blank\" rel=\"noreferrer noopener\">L&amp;L Jeep Rental</a></p>\n<p><a href=\"tel:340-776-1120\">340-776-1120</a></p>\n<p><a href=\"https://mrpipersjeeps.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Mr. Pipers Jeeps</a></p>\n<p><a href=\"tel:340-693-7580\">340-693-7580</a></p>\n<p><a href=\"https://www.stjohncarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">St John Car Rental</a></p>\n<p><a href=\"tel:340-776-6103\">340-776-6103</a></p>\n<p><a href=\"http://www.aquablucarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Aqua Blue Car Rental</a></p>\n<p><a href=\"tel:340-776-2782\">340-776-2782</a></p>\n<p><a href=\"http://www.sunshinesjeeprental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Sunshine Jeep Rental</a></p>\n<p><a href=\"tel:340-690-1786\">340-690-1786</a></p>\n<p>Penn’s Jeep Rental, Inc.</p>\n<p><a href=\"tel:340-776-6530\">340-776-6530</a></p>\n<p><a href=\"http://www.coolbreezecarrental.com/stjohn_vehicles_rates.htm\" target=\"_blank\" rel=\"noreferrer noopener\">Cool Breeze Jeep &amp; Car Rental</a></p>\n<p><a href=\"tel:340-776-6588\">340-776-6588</a></p>\n<p><a href=\"http://delberthillcarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Delbert Hill Car and Jeep Rental</a></p>\n<p><a href=\"tel:340-776-6637\">340-776-6637</a></p>\n<p><a href=\"https://cruzbaycarrental.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Cruz Bay Car Rentals</a></p>\n<p><a href=\"tel:340-227-0138\">340-227-0138</a>/<a href=\"tel:340-626-4552\">340-626-4552</a></p>\n<p><a href=\"http://www.stjohntraveler.com/usvi/transportation/spencers-jeeps/\" target=\"_blank\" rel=\"noreferrer noopener\">Spencer’s Jeep Rental</a></p>\n<p><a href=\"tel:340-693-8784\">340-693-8784</a>&nbsp;or&nbsp;<a href=\"tel:888-776-6628\">888-776-6628</a></p>\n<p>If you feel comfortable with driving on the left and backing up onto the barge, you can also pick up a rental car at the airport on St. Thomas and drive to the car ferry (“the barge”) in Red Hook. Please note, not all rental companies allow their cars to be taken to St. John, but Budget Car Rental does, and it is located right at the airport.</p>\n\n\n\n<p>Budget Car Rental&nbsp;on St Thomas:&nbsp;<span>1-800-626-4516</span>&nbsp;or&nbsp;<span>340-776-5774</span></p>\n\n\n\n<p>Dependable Car Rental&nbsp;will allow their cars to go to St John also, but do not provide service of vehicles on St John if it were to break down. They are 3 minutes from the airport and offer a shuttle to and from. &nbsp;<span>1-800-522-3076</span></p>\n<h6><span>PASSENGER FERRY SCHEDULE</span></h6>\n<p>St. Thomas – St. John<br>RED HOOK FERRY<br>RED HOOK, ST. THOMAS – CRUZ BAY, ST. JOHN<br>Operated by: Transportation Services and Varlack Ventures<br>Telephone: (340) 776-6282 and (340) 776-6412<br>Travel Time: 15 minutes</p>\n<p><span>RED HOOK → CRUZ BAY</span></p>\n\n<p>5:30 am (M-F) – 6:30 AM – 7:30 AM –&nbsp; 8:30 AM – 9:00 AM – 10:00 AM – 11:00 AM<br>\nNoon – 1:00 PM – 2:00 PM – 3:00 PM – 4:00 PM – 5:00 PM – 6:00 PM – 7:00 PM -8:00 PM<br>\n9:00 PM – 10:00 PM –&nbsp; 11:00 PM –&nbsp; 11:30 PM</p>\n\n\n\n<p><span>CRUZ BAY → RED HOOK</span></p>\n\n<p>6:30 AM – 7:30 AM –&nbsp; 8:30 AM – 9:00 AM – 10:00 AM – 11:00 AM – Noon<br>\n1:00 PM – 2:00 PM – 3:00 PM – 4:00 PM – 5:00 PM – 6:00 PM – 7:00 PM -8:00 PM – 9:00 PM – 10:00 PM –&nbsp; 11:00 PM</p>\n\n\n\n<p><span>RED HOOK – CRUZ BAY FERRY RATES</span></p>\n\n<p>Adult (Non-Resident) One-way – $8.15<br>\nAdult (Resident*) One-way – $6.00<br>\nSenior (Resident*) One-way – $1.50<br>\nChild (2-11) One-way $1.00<br>\nInfants (under 2 years) – FREE<br>\nLuggage/Box – $4.00 each</p>\n\n<p>*&nbsp;Valid USVI ID required for resident rates.<br>\nLast Updated: 11/22/2023</p>\n<p><span>CROWN BAY FERRY</span><br>\n(ROUTE: CROWN BAY, ST. THOMAS to CRUZ BAY, ST. JOHN)<br>\nOperated by: Inter Island Boat Services<br>\nTelephone: (340) 776-6597<br>\nSt. Thomas Ferry Landing: Crown Bay Marina<br>\nSt. John Ferry Landing: Victor William Sewer Marine Facility (AKA: The Creek)<br>\nTravel Time: 35 minutes<br>\nNote: Check-in is 30 minutes prior to departure time.</p>\n\n\n\n<p>CROWN BAY → CRUZ BAY<br>\n9:45 AM (Fri, Sat &amp; Sun)<br>\n2:15 PM (Fri, Sat &amp; Sun)<br>\n3:30 PM<br>\n5:30 PM</p>\n\n\n\n<p>CRUZ BAY → CROWN BAY<br>\n8:30 AM (Fri, Sat &amp; Sun)<br>\n11:00 AM<br>\n1:15 PM (Fri, Sat &amp; Sun)<br>\n4:15 PM</p>\n<p>Three companies currently offer daily service between Enighed Pond, St. John and Red Hook, St. Thomas for vehicles. A car ferry, or car barge, takes cars between St. Thomas and St. John! The driver and passengers ride along with the vehicle too.</p>\n<h2>Car Barge Information</h2>\n<p>First thing to know about is the Port Authority Fee<br>\nPay at the booth before you enter the parking lot at Red Hook<br>\n$3 per Car, small SUV, Motorcycle; $4 per truck, van, large SUV.</p>\n\n<p>Get your ticket and drive in, there will be someone to show you which lane to get in. Note that you will back your vehicle on to the ferry.</p>\n\n\n\n<p>The fare for the car barge is paid once on the actual barge. Tickets can be purchased for a one-way trip, or a round-trip fare. Tickets are not interchangeable between the three car barge companies. If you purchase a round-trip ticket, it is only good for the barge that issued it.</p>\n\n\n\n<p>The Red Hook ferry location services both passenger ferries and car ferries, but there are two separate docking areas for each type of ferry, with separate well-marked entrances. Arrive as early as possible before the car barge departure time you hope to catch. It fills up fast.</p>\n\n\n\n<p>VI Now has more information Link for information is <span><a href=\"https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/\" target=\"_blank\" rel=\"noreferrer noopener\">https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/</a></span></p>\n<h2>To book direct, please contact James M. Miller</h2>\n<h2><span><a href=\"tel:+18006264516\">1-800-626-4516 or 340-776-5774</a></span></h2>\n<h2>Available Cars For Rental</h2>\n<h4>A Tropical Paradise</h4>\n<p>0</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Frank Bay, walk to Cruz Bay</p>\n<h4>Alta Vista</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Bordeaux Mountain</p>\n<h2>$566.00/Night</h2>\n<h4>Arco Iris</h4>\n<p>9.8</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Point Rendezvous</p>\n<h2>$390.00/Night</h2>\n<h4>Argonauta</h4>\n<p>10</p>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Contant</p>\n<h2>$782.00/Night</h2>\n<h4>Astral Villa</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>4 Baths<br>Pool<br>2 Hot Tubs<br>Solar Battery<br>Internet<br>Battery Backup <br>Coral Bay</p>\n<h4>Banana Sweet</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Beds<br>1 Bath<br>Backup Power<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Bay Rum Breeze</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Estate Carolina</p>\n<h2>$597.00/Night</h2>\n<h4>Beija Flor</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Rendezvous Bay</p>\n<h2>$510.00/Night</h2>\n<h4>Beyond the Sea</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Maria Bluff</p>\n<h4>Blue Agave</h4>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Kitchen<br>Living room<br>Deck with pool</p>\n<h4>Brezza di Mare</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Fish Bay</p>\n<h4>Cara Mia</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Point Rendezvous</p>\n<h2>$590.00/Night</h2>\n<h4>Casa Del Palmas</h4>\n<p>0</p>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>5 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Chateau Margot</h4>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>5.5 Baths<br>Pool<br>Internet<br>Bordeaux Mountain</p>\n<h4>Christmas Cottage</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>Studio<br>1 Bath<br>Internet<br>Coral Bay</p>\n<h2>$100.00/Night</h2>\n<h4>Cinnamon Stones</h4>\n<p>0</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Heated Lap Pool<br>Internet<br>Estate Catherineberg (3.8 mi to Cruz Bay)</p>\n<h4>Coral Sky Villa</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Upper Carolina</p>\n<h2>$699.00/Night</h2>\n<h4>Cruz Bay Vista</h4>\n<p>9.8</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>Studio<br>1 Bath<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$414.00/Night</h2>\n<h4>Desert Rose Villa</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Full A/C<br>Solar &amp; battery backup<br>Kid friendly<br>Ocean view<br>Washer &amp; dryer<br>Coral Bay</p>\n<h4>Drake’s View</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Bordeaux Mountain, top of St John</p>\n<h4>East End Seascape</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Air-conditioned Bedrooms<br>East End, St John, VI</p>\n<h4>Fish Tales</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Full AC<br>Solar &amp; battery backup<br>Kid friendly<br>Ocean view<br>Washer &amp; dryer<br>Fish Bay, St John</p>\n<h4>Great Escape</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Catherineberg</p>\n<h4>Halcyon Days</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Internet<br>Coral Bay</p>\n<h4>Harbor Lights</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Coral Bay</p>\n<h4>Hart Bay Beach House</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Internet<br>Hart Bay</p>\n<h4>Hart Bay Great House</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Hart Bay, St John</p>\n<h4>Idyllic Villa</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>In Harmony Retreat</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay, St John</p>\n<h2>$236/Night or $1650/Week</h2>\n<h4>Island Gardens</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>Studio<br>1 Bath<br>Internet<br>Coral Bay, St John VI</p>\n<h2>$150.00/Night</h2>\n<h4>Island Vibes</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>Studio &amp; Sleeping Porch<br>1 Bath<br>Internet<br>Coral Bay, St John, VI</p>\n<h2>$150.00/Night</h2>\n<h4>Lavender Hill Unit 10-E</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$411.00/Night</h2>\n<h4>Lots of Knots</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Hot Tub<br>Internet<br>Upper Carolina</p>\n<h2>$245/Night</h2>\n<h4>Mad-de-Lis</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$695.00/Night</h2>\n<h4>MandeVilla at Ixora</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Ajax Peak</p>\n<h2>$385.00/Night</h2>\n<h4>Miles Away</h4>\n<p>10</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Rendezvous Bay</p>\n<h2>$440.00/Night</h2>\n<h4>Monarch Cottage</h4>\n<p>0</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Bathrooms<br>Waterfront at Estate Fish Bay</p>\n<h4>Mystical Mermaid Villa</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Hot Tub<br>Internet<br>Fish Bay</p>\n<h4>Notre Ciel</h4>\n<p><span>6</span></p>\n<p>Max 7 Guests<br>2 Bedrooms + Loft<br>2 Baths<br>Pool<br>Hot Tub<br>Internet<br>Mamey Peak</p>\n<h4>Ocean Garden</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Internet<br>Hot Tub<br>Great Cruz Bay</p>\n<h2>$379/Night</h2>\n<h4>Oceana Villa</h4>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>6 Bedrooms<br>6.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Chocolate Hole</p>\n<h4>Oceanport Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Hart Bay</p>\n<h4>Orchid Garden</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>2 Bedrooms<br>2 Baths<br>Internet<br>Johns Folly</p>\n<h4>Palladio’s View</h4>\n<p>0</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>2.5 Baths <br>A/C <br>Pool<br>Hot Tub<br>Wifi<br><br></p>\n<h4>Palm Ridge</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>3.5 Baths<br>Infinity Pool<br>Internet<br>Majestic Mile</p>\n<h4>Paradise Carest</h4>\n<p>9.8</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$400/Night</h2>\n<h4>Pebble Cove</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>3 Bedrooms<br>3.5 Baths<br>Internet<br>East End Water Front</p>\n<h4>Reef Bay Holiday Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Reef Bay Water Front St John</p>\n<h4>Samba Azul</h4>\n<p>9.8</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Chocolate Hole</p>\n<h4>San Costanzo</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2.5 Baths<br>Hot Tub<br>Internet<br>Fish Bay, St John</p>\n<h4>Sapphire Peak</h4>\n<p>9.4</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Mamey Peak</p>\n<h2>$416.00/Night</h2>\n<h4>Sapphire Sunrise</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Internet<br>Bordeaux Mountain</p>\n<h2>$581.00/Night</h2>\n<h4>Sea Palace Retreat</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>2 Bedrooms<br>2.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Sea Palms</h4>\n<p>10</p>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Cruz Bay</p>\n<h2>$590.00/Night</h2>\n<h4>Seacove Villa</h4>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>5.5 Baths<br>Pool<br>Internet<br>Peter Bay</p>\n<h4>Seagrape Estate</h4>\n<p><span>7</span></p>\n<p>Max 7 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Serenity Vista Villa</h4>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>Skyflower</h4>\n<p>10</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>3 Baths<br>Hot Tub<br>Internet<br>Bordeaux</p>\n<h2>$303.00/Night</h2>\n<h4>Sol Cottage Villa</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>1 Bath<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Sol Inclination</h4>\n<p><span>9</span></p>\n<p>Max 9 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Skytop</p>\n<h4>Sol La Vie</h4>\n<p>9.8</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay</p>\n<h2>$384.00/Night</h2>\n<h4>South Shore Villa</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8<br>4<br>4.5 baths<br>Pool<br>Internet<br>South Shore</p>\n<h2>$700.00/Night</h2>\n<h4>Southern Exposure</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h4>Sun, Moon and Stars</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay, St John</p>\n<h2>not specified</h2>\n<h4>Sunset Paradise</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay</p>\n<h4>The Little Easy</h4>\n<p>0</p>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>1 Bedroom + Loft<br>2 Baths<br>Internet<br>Coral Bay</p>\n<h2>$299.00/Night</h2>\n<h4>Treetops</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3 Baths<br>Pool<br>Hot Tub<br>Internet<br>Bordeaux Mountain</p>\n<h4>Tropical Orchid</h4>\n<p>0</p>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Hot Tub<br>Internet<br>Great Cruz Bay</p>\n<h2>$389.00/Night</h2>\n<h4>Villa Bijou</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h4>Villa Carlota</h4>\n<p><span>12</span></p>\n<p>Max 12<br>5<br>6.5 baths<br>Pool<br>Hot Tub<br>Internet<br>Upper Peter Bay</p>\n<h4>Villa FantaSea</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Villa Ixora</h4>\n<p>10</p>\n<p><span>10</span></p>\n<p>Max 10 Guests<br>5 Bedrooms<br>4 Baths<br>Pool<br>Hot Tub<br>Internet<br>Ajax Peak, St. John</p>\n<h2>$599.00/Night</h2>\n<h4>Villa Kia Orana</h4>\n<p>0</p>\n<p><span>12</span></p>\n<p>Max 12 Guests<br>4 Bedrooms<br>6 Baths<br>Swimming pool<br>Air-conditioning<br>Ceiling fans<br>Wireless Broadband Internet<br>Game room<br>Outdoor kitchen<br>Security system</p>\n<h4>Villa Madeira</h4>\n<p><span>6</span></p>\n<p>Max 6 Guests<br>3 Bedrooms<br>3.5 Baths<br>Pool<br>Hot Tub<br>Internet<br>Chocolate Hole</p>\n<h4>Villa Madeline</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Coral Bay - Edens</p>\n<h4>Villa South Palm</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>4.5 Baths<br>Pool<br>Internet<br>Bethany</p>\n<h2>$649.00/Night</h2>\n<h4>Villa de Paz</h4>\n<p>10</p>\n<p><span>8</span></p>\n<p>Max 8 Guests<br>4 Bedrooms<br>2.5 Baths<br>Pool<br>Internet<br>Fish Bay</p>\n<h2>$309.00/Night</h2>\n<h4>Waterklip</h4>\n<p><span>4</span></p>\n<p>Max 4 Guests<br>2 Bedrooms<br>2 Baths<br>Pool<br>Internet<br>Cruz Bay - Contant</p>\n<h4>White Seagull</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Pool<br>Internet<br>Great Cruz Bay</p>\n<h2>$552.00/Night</h2>\n<h4>Windwardside Guest Cottage</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>1 Bath<br>Hot Tub<br>Internet<br>Coral Bay</p>\n<h4>Windwardside Main House</h4>\n<p><span>2</span></p>\n<p>Max 2 Guests<br>1 Bedroom<br>2 Baths<br>Hot Tub<br>Internet<br>Coral Bay</p>",
       "imageGallery": [
         {
           "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-hero.avif?alt=media&token=76382cc1-fb7f-41fa-8ba9-81c655a695eb",
@@ -1037,139 +2393,17 @@
       "url": "https://www.stjohnhouserentals.com/boats",
       "navLabel": "Charter Boats",
       "group": "travel",
-      "title": "Charter Boats | St John House Rental",
+      "title": "",
       "h1": "Charter Boats",
-      "metaDescription": "Rent sailboat & powerboat charters in St. John’s crystal waters. Snorkel tours & day sails await!",
+      "metaDescription": "",
       "canonical": "https://www.stjohnhouserentals.com/boats",
-      "leadParagraphs": [
-        "Rent a charter boat for an unforgettable St. John adventure.",
-        "Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.",
-        "The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands. Visit them at https://vitema.vi.gov/",
-        "The USCG has provided the following link for those who are interested in learning more. https://www.rentalboatsafety.com/"
-      ],
-      "sectionHeadings": [
-        "Looking for a day sail in the Caribbean?",
-        "Salty Viking",
-        "Boat BVI",
-        "FlyAway Charters VI",
-        "Island Roots",
-        "Tacoboatstjohn",
-        "Charter Boats on St John",
-        "Hurricane Guide & Maritime Safety - What you NEED to know."
-      ],
-      "routeLinks": [
-        {
-          "path": "/",
-          "href": "https://www.stjohnhouserentals.com/",
-          "label": "View"
-        }
-      ],
+      "leadParagraphs": [],
+      "sectionHeadings": [],
+      "routeLinks": [],
       "htmlFile": "html/boats.html",
-      "contentHtml": "<h1>Charter Boats</h1>\n<p>Rent a charter boat for an unforgettable St. John adventure.</p>\n<h2>Looking for a day sail in the Caribbean?</h2>\n<p>Would you like a guided snorkel tour? St. John in the US Virgin Islands boasts some of the most beautiful waters and beaches in the world. Connections East offers a range of charter options, including sailboat and powerboat rentals, to help make your St. John experience truly unforgettable. Whether you want a relaxing sail along the coast or an adventurous snorkeling excursion, our charters provide the perfect way to explore the stunning beauty of the Virgin Islands.</p>\n<h4>Salty Viking</h4>\n<h4>Boat BVI</h4>\n<h4>FlyAway Charters VI</h4>\n<h4>Island Roots</h4>\n<h4>Tacoboatstjohn</h4>\n<h2>Charter Boats on St John</h2>\n<h3>Hurricane Guide &amp; Maritime Safety - What you NEED to know.</h3>\n<p>Hurricane Guide</p>\n\n<p>The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is&nbsp;June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands.&nbsp;&nbsp; Visit them at&nbsp;<span><a href=\"https://vitema.vi.gov/\" target=\"_blank\" rel=\"noreferrer noopener\">https://vitema.vi.gov/</a></span></p>\n\n\n\n<p>Maritime Safety</p>\n\n<p>The USCG has provided the following link for those who are interested in learning more.&nbsp;<span><a href=\"https://www.rentalboatsafety.com/\" target=\"_blank\" rel=\"noreferrer noopener\">https://www.rentalboatsafety.com/</a></span></p>",
-      "imageGallery": [
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-hero.jpg?alt=media&token=c1f9f54c-98ed-4043-8460-4f4b8fca861b",
-          "alt": "whistling-cay.jpg",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fpages%2Fcharterboats%2Fcharterboats-intro.png?alt=media&token=272743e6-b148-4a2a-afe2-5d5919802a87",
-          "alt": "Sailboat charter cruising St. John waters",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fprivate-luxury-power-catamaran-adventures%2Fprivate-luxury-power-catamaran-adventures-hero.webp?alt=media&token=d269d142-0cac-4ea4-9ae0-1f2166fa10db",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fboat-bvi%2Fboat-bvi-hero.jpg?alt=media&token=6a80d58a-c965-4776-ab84-41b53a53969a",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fflyaway-charters-vi%2Fflyaway-charters-vi-hero.jpg?alt=media&token=69af6352-a492-4ff5-ab58-6496b167735e",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fisland-roots%2Fisland-roots-hero.jpg?alt=media&token=0c59ddb8-1773-41a9-959a-edef9e84dbf5",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        },
-        {
-          "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Ftacoboatstjohn%2Ftacoboatstjohn-hero.png?alt=media&token=efa28005-8a75-48fd-857a-ef875523ae92",
-          "alt": "Charter Boats on St John",
-          "title": ""
-        }
-      ],
-      "charterListings": [
-        {
-          "name": "FlyAway Charters VI",
-          "summary": "Every charter at FlyAway Charters is private and customized. We pride ourselves on providing a unique experience bolstered by our extensive local knowledge to provide the perfect experience for you.",
-          "path": "/charter-boat-rentals/flyaway-charters-vi",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/flyaway-charters-vi",
-          "image": {
-            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fflyaway-charters-vi%2Fflyaway-charters-vi-hero.jpg?alt=media&token=69af6352-a492-4ff5-ab58-6496b167735e",
-            "alt": "",
-            "title": "FlyAway Charters VI.jpg",
-            "width": 1454,
-            "height": 1000
-          }
-        },
-        {
-          "name": "Island Roots",
-          "summary": "Let us know of any questions or requests. We are always happy to learn how we can make it your best day on the water.",
-          "path": "/charter-boat-rentals/island-roots",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/island-roots",
-          "image": {
-            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fisland-roots%2Fisland-roots-hero.jpg?alt=media&token=0c59ddb8-1773-41a9-959a-edef9e84dbf5",
-            "alt": "",
-            "title": "Island Roots.jpg",
-            "width": 1600,
-            "height": 1067
-          }
-        },
-        {
-          "name": "Tacoboatstjohn",
-          "summary": "If you book the 11:00 time slot, please plan to arrive at 10:15 so chances are better for a spot. * Please note that the Lime Out does not accept reservations. Refer to their website. No matter the time slot you choose....",
-          "path": "/charter-boat-rentals/tacoboatstjohn",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/tacoboatstjohn",
-          "image": {
-            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Ftacoboatstjohn%2Ftacoboatstjohn-hero.png?alt=media&token=efa28005-8a75-48fd-857a-ef875523ae92",
-            "alt": "",
-            "title": "Captain-Johnny-Cakes.png",
-            "width": 800,
-            "height": 394
-          }
-        },
-        {
-          "name": "Boat BVI",
-          "summary": "The British Virgin Islands has always been and continues to be recognized as a world leader of great places to go sailing. Since it became a major charter sailing destination in the early 70’s, you’d think that other coo...",
-          "path": "/charter-boat-rentals/boat-bvi",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/boat-bvi",
-          "image": {
-            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fboat-bvi%2Fboat-bvi-hero.jpg?alt=media&token=6a80d58a-c965-4776-ab84-41b53a53969a",
-            "alt": "",
-            "title": "Boat BVI.jpg",
-            "width": 2000,
-            "height": 1333
-          }
-        },
-        {
-          "name": "Salty Viking",
-          "summary": "Discover the US & British Virgin Islands on Salty Viking- Premier choice for luxury boat charters",
-          "path": "/charter-boat-rentals/private-luxury-power-catamaran-adventures",
-          "href": "https://www.stjohnhouserentals.com/charter-boat-rentals/private-luxury-power-catamaran-adventures",
-          "image": {
-            "url": "https://firebasestorage.googleapis.com/v0/b/sjhr-f502d.firebasestorage.app/o/media%2Fcharters%2Fprivate-luxury-power-catamaran-adventures%2Fprivate-luxury-power-catamaran-adventures-hero.webp?alt=media&token=d269d142-0cac-4ea4-9ae0-1f2166fa10db",
-            "alt": "",
-            "title": "rs=w_1280,h_800.webp",
-            "width": 1280,
-            "height": 800
-          }
-        }
-      ]
+      "contentHtml": "",
+      "imageGallery": [],
+      "charterListings": []
     },
     "localAttractions": {
       "key": "localAttractions",

@@ -479,7 +479,8 @@ export function AdminPropertyPreview({
 
           <div className="admin-property-preview-title">
             <h3>{property?.name || 'Untitled Property'}</h3>
-            <p>{detailLine}</p>
+            {detailLine ? <p>{detailLine}</p> : null}
+            <p>{property?.active !== false ? 'Visible on the public property pages' : 'Hidden from the public property pages'}</p>
           </div>
 
           {editable && formState ? (

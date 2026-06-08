@@ -132,15 +132,17 @@ function buildFolderBreadcrumbs(folderIndex, folderPath, browserRootPath) {
 
 export function AdminMediaManager({
   currentUrl = '',
+  defaultOpen = false,
   disabled = false,
   onClear,
   onSelect,
   preferredOwnerKey = '',
   preferredOwnerName = '',
   preferredOwnerType = '',
+  showToggle = true,
   title = 'Media Library',
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(defaultOpen || !showToggle)
   const [query, setQuery] = useState('')
   const [folderPathFilter, setFolderPathFilter] = useState('auto')
   const [ownerTypeFilter, setOwnerTypeFilter] = useState(preferredOwnerType || 'all')
@@ -156,6 +158,7 @@ export function AdminMediaManager({
     status: 'idle',
   })
   const deferredQuery = useDeferredValue(query)
+  const isOpen = showToggle ? open : true
   const normalizedQuery = normalizeAdminMediaSearchValue(deferredQuery)
   const normalizedCurrentUrl = String(currentUrl ?? '').trim()
   const normalizedPreferredOwnerKey = normalizeAdminMediaSearchValue(preferredOwnerKey)
@@ -249,7 +252,7 @@ export function AdminMediaManager({
   ])
 
   useEffect(() => {
-    if (!open || libraryState.status !== 'loading') {
+    if (!isOpen || libraryState.status !== 'loading') {
       return undefined
     }
 
@@ -285,7 +288,7 @@ export function AdminMediaManager({
     return () => {
       cancelled = true
     }
-  }, [libraryState.status, open])
+  }, [isOpen, libraryState.status])
 
   const filteredMedia = useMemo(() => {
     if (libraryState.status !== 'ready') {
@@ -360,9 +363,15 @@ export function AdminMediaManager({
   }
 
   function handleSelect(entry) {
+    if (!onSelect) {
+      return
+    }
+
     onSelect(entry.managedUrl, entry)
     setCopyStatus('')
-    setOpen(false)
+    if (showToggle) {
+      setOpen(false)
+    }
   }
 
   function handleOpenFolder(folderPath) {
@@ -378,6 +387,10 @@ export function AdminMediaManager({
   }
 
   function handleToggleOpen() {
+    if (!showToggle) {
+      return
+    }
+
     const nextOpen = !open
 
     if (nextOpen && libraryState.status === 'idle') {
@@ -389,36 +402,40 @@ export function AdminMediaManager({
 
   return (
     <div className="admin-media-manager">
-      <div className="admin-inline-actions">
-        <button
-          aria-expanded={open}
-          className="button-link button-link--ghost admin-action"
-          disabled={disabled}
-          type="button"
-          onClick={handleToggleOpen}
-        >
-          {open ? 'Hide media library' : 'Browse media library'}
-        </button>
-        {normalizedCurrentUrl ? (
-          <>
-            <a className="button-link button-link--ghost admin-action" href={normalizedCurrentUrl} rel="noreferrer" target="_blank">
-              Open image
-            </a>
-            <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(normalizedCurrentUrl)}>
-              Copy URL
+      {showToggle || normalizedCurrentUrl ? (
+        <div className="admin-inline-actions">
+          {showToggle ? (
+            <button
+              aria-expanded={open}
+              className="button-link button-link--ghost admin-action"
+              disabled={disabled}
+              type="button"
+              onClick={handleToggleOpen}
+            >
+              {open ? 'Hide media library' : 'Browse media library'}
             </button>
-            {onClear ? (
-              <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={onClear}>
-                Clear image
+          ) : null}
+          {normalizedCurrentUrl ? (
+            <>
+              <a className="button-link button-link--ghost admin-action" href={normalizedCurrentUrl} rel="noreferrer" target="_blank">
+                Open image
+              </a>
+              <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(normalizedCurrentUrl)}>
+                Copy URL
               </button>
-            ) : null}
-          </>
-        ) : null}
-      </div>
+              {onClear ? (
+                <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={onClear}>
+                  Clear image
+                </button>
+              ) : null}
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       {copyStatus ? <p className="admin-note">{copyStatus}</p> : null}
 
-      {open ? (
+      {isOpen ? (
         <section className="admin-media-manager-panel">
           <div className="admin-media-manager-header">
             <div>
@@ -571,9 +588,11 @@ export function AdminMediaManager({
                           <code className="admin-media-card-path">{entry.storagePath}</code>
 
                           <div className="admin-inline-actions">
-                            <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleSelect(entry)}>
-                              {isSelected ? 'Use again' : 'Use image'}
-                            </button>
+                            {onSelect ? (
+                              <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleSelect(entry)}>
+                                {isSelected ? 'Use again' : 'Use image'}
+                              </button>
+                            ) : null}
                             <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(entry.managedUrl)}>
                               Copy URL
                             </button>

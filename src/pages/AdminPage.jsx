@@ -4,6 +4,7 @@ import { getAdminAutoLoginCredentials, getAdminIdToken, observeAdminUser, signIn
 import { AdminPageEditorCanvas, AdminSiteShellPreview } from '../components/AdminPagePreview'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
+import { AdminMediaManager } from '../components/AdminMediaManager'
 import { AdminSiteShellEditor } from '../components/AdminSiteShellEditor'
 import {
   isCharterEditingEnabled,
@@ -16,7 +17,7 @@ import { isFirebaseConfigured } from '../lib/firebase'
 import {
   isFirebasePropertyData,
   isPropertyEditingEnabled,
-  listProperties,
+  listAllProperties,
   resetAdminProperties,
   saveAdminProperty,
 } from '../lib/propertyRepository'
@@ -259,6 +260,7 @@ function createEmptyFormState() {
     originalSlug: '',
     name: '',
     slug: '',
+    active: true,
     templateVariant: DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     bedrooms: '1',
     bathrooms: '1',
@@ -321,6 +323,7 @@ function createFormState(property) {
     originalSlug: property.adminOriginalSlug ?? property.slug,
     name: repairSnapshotText(property.name ?? ''),
     slug: property.slug ?? '',
+    active: property.active !== false,
     templateVariant: property.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     bedrooms: String(property.bedrooms ?? 0),
     bathrooms: String(property.bathrooms ?? 0),
@@ -368,6 +371,7 @@ function buildPropertyDraft(formState) {
   return {
     name: repairSnapshotText(formState.name).trim(),
     slug: repairSnapshotText(formState.slug).trim(),
+    active: formState.active,
     templateVariant: formState.templateVariant,
     bedrooms: Number(formState.bedrooms) || 0,
     bathrooms: Number(formState.bathrooms) || 0,
@@ -454,6 +458,7 @@ function buildPropertyPreviewModel(formState) {
   return {
     slug: repairSnapshotText(formState.slug).trim(),
     name: repairSnapshotText(formState.name).trim() || 'Untitled Property',
+    active: formState.active,
     templateVariant: formState.templateVariant,
     bedrooms,
     bedroomLabel: bedrooms > 0 ? `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}` : '',
@@ -568,11 +573,12 @@ function formatPageSelectorLabel(page) {
 
 function formatPropertySelectorLabel(property) {
   const name = repairSnapshotText(property?.name || 'Untitled property')
+  const visibility = property?.active !== false ? 'Active' : 'Hidden'
   const details = [property?.bedroomLabel, property?.maxGuests ? `${property.maxGuests} guests` : '', repairSnapshotText(property?.location || '')]
     .filter(Boolean)
     .join(' | ')
 
-  return details ? `${name} | ${details}` : name
+  return [name, visibility, details].filter(Boolean).join(' | ')
 }
 
 function formatCharterSelectorLabel(charter) {
@@ -664,11 +670,25 @@ export function AdminPage() {
   const pageDirty = jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft)
 
   useEffect(() => {
+    if (requiresAdminSignIn && authState.status === 'loading') {
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadWorkspace() {
       try {
-        const properties = await listProperties()
+        let requestOptions = {}
+
+        if (propertyUsesFirebase && authState.user) {
+          const authToken = await getAdminIdToken()
+
+          if (authToken) {
+            requestOptions = { authToken }
+          }
+        }
+
+        const properties = await listAllProperties(requestOptions)
 
         if (cancelled) {
           return
@@ -702,7 +722,7 @@ export function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [authState.status, authState.user, propertyUsesFirebase, requiresAdminSignIn])
 
   useEffect(() => {
     let cancelled = false
@@ -1177,33 +1197,62 @@ export function AdminPage() {
     })
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault()
-
+  async function persistPropertyForm(nextFormState, successMessage = '') {
     try {
       setSaveStatus('saving')
+      const editorMode = editorState.mode
       const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
       const savedProperty = await saveAdminProperty(
-        buildPropertyDraft(formState),
-        editorState.mode === 'edit' ? formState.originalSlug : '',
+        buildPropertyDraft(nextFormState),
+        editorMode === 'edit' ? nextFormState.originalSlug : '',
         requestOptions,
       )
-      const properties = await listProperties()
+      const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
       setEditorState({ mode: 'edit', activeSlug: savedProperty.slug })
       setFormState(createFormState(savedProperty))
       setFeedback(
-        editorState.mode === 'create'
-          ? propertyUsesFirebase
-            ? `Added ${savedProperty.name} to Firebase-backed property content.`
-            : `Added ${savedProperty.name} to the browser-local property catalog.`
-          : `Saved changes to ${savedProperty.name}.`,
+        successMessage ||
+          (editorMode === 'create'
+            ? propertyUsesFirebase
+              ? `Added ${savedProperty.name} to Firebase-backed property content.`
+              : `Added ${savedProperty.name} to the browser-local property catalog.`
+            : `Saved changes to ${savedProperty.name}.`),
       )
       setSaveStatus('idle')
+      return savedProperty
     } catch (error) {
       setSaveStatus('error')
       setFeedback(error instanceof Error ? error.message : 'Unable to save property changes.')
+      return null
     }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    await persistPropertyForm(formState)
+  }
+
+  async function handlePropertyVisibilityToggle() {
+    const nextActive = formState.active !== false ? false : true
+
+    if (editorState.mode !== 'edit') {
+      setFormState((currentState) => ({
+        ...currentState,
+        active: nextActive,
+      }))
+      setSaveStatus('idle')
+      setFeedback(`This draft will be created as ${nextActive ? 'published' : 'unpublished'}.`)
+      return
+    }
+
+    await persistPropertyForm(
+      {
+        ...formState,
+        active: nextActive,
+      },
+      `${formState.name || 'This property'} is now ${nextActive ? 'published' : 'unpublished'} on the site.`,
+    )
   }
 
   async function handleResetLocalEdits() {
@@ -1225,7 +1274,7 @@ export function AdminPage() {
           : 'Restored the generated property catalog for this browser.',
       )
 
-      const properties = await listProperties()
+      const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
 
       if (properties.length > 0) {
@@ -1571,6 +1620,11 @@ export function AdminPage() {
             label="Charters"
             onClick={() => setActiveTab('charters')}
           />
+          <AdminTabButton
+            active={activeTab === 'media'}
+            label="Media Library"
+            onClick={() => setActiveTab('media')}
+          />
         </div>
 
         {requiresAdminSignIn && authPanelOpen && !authState.user ? (
@@ -1878,15 +1932,33 @@ export function AdminPage() {
                 {feedback ? <p className={`admin-feedback admin-feedback--${saveStatus}`}>{feedback}</p> : null}
 
                 <form className="admin-form admin-form--flush" onSubmit={handleSubmit}>
-                  {editorState.mode === 'edit' && editorState.activeSlug ? (
-                    <div className="admin-toolbar-row">
-                      <div className="admin-inline-actions">
+                  <div className="admin-toolbar-row admin-toolbar-row--split">
+                    <div className="admin-chip-row admin-chip-row--compact">
+                      <span className="admin-chip">{formState.active !== false ? 'Published' : 'Unpublished'}</span>
+                    </div>
+
+                    <div className="admin-inline-actions">
+                      {editorState.mode === 'edit' && editorState.activeSlug && formState.active !== false ? (
                         <Link className="button-link button-link--ghost admin-action" to={`/rental-properties/${editorState.activeSlug}`}>
                           View on site
                         </Link>
-                      </div>
+                      ) : null}
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        disabled={!propertySaveEnabled || saveStatus === 'saving'}
+                        type="button"
+                        onClick={handlePropertyVisibilityToggle}
+                      >
+                        {editorState.mode === 'edit'
+                          ? formState.active !== false
+                            ? 'Unpublish property'
+                            : 'Publish property'
+                          : formState.active !== false
+                            ? 'Create as unpublished'
+                            : 'Create as published'}
+                      </button>
                     </div>
-                  ) : null}
+                  </div>
 
                   <AdminPropertyPreview
                     key={[
@@ -2021,6 +2093,29 @@ export function AdminPage() {
                       </button>
                     </div>
                 </form>
+              </div>
+            </section>
+          ) : null}
+
+          {activeTab === 'media' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Media</div>
+                  <h2>Media Library</h2>
+                </div>
+              </div>
+
+              <p className="admin-note">
+                Browse managed Firebase Storage folders, open images, and copy URLs for reuse across pages, properties, and charters.
+              </p>
+
+              <div className="admin-editor">
+                <AdminMediaManager
+                  defaultOpen
+                  showToggle={false}
+                  title="Media Library"
+                />
               </div>
             </section>
           ) : null}

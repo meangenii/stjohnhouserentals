@@ -150,7 +150,9 @@ function createDeepClone(value) {
 
 function collectLegacyMediaMatches(value) {
   return Array.from(
-    String(value ?? '').matchAll(/https:\/\/static\.[a-z]{3}static\.com\/media\/[^\s"'()<>]+|[a-z]{3}:image:\/\/v1\/[^\s"'()<>]+/gi),
+    String(value ?? '').matchAll(
+      /https:\/\/static\.(?:[a-z]{3}static\.com|legacy-cdn\.invalid)\/media\/[^\s"'()<>]+|[a-z]{3}:image:\/\/v1\/[^\s"'()<>]+/gi,
+    ),
   ).map((match) => match[0])
 }
 
