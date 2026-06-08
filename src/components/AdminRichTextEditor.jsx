@@ -2,13 +2,27 @@ import { useEffect, useRef, useState } from 'react'
 
 function ToolbarButton({ children, disabled, onClick }) {
   return (
-    <button className="button-link button-link--ghost admin-rich-text-button" disabled={disabled} type="button" onClick={onClick}>
+    <button
+      className="button-link button-link--ghost admin-rich-text-button"
+      disabled={disabled}
+      type="button"
+      onClick={onClick}
+      onMouseDown={(event) => event.preventDefault()}
+    >
       {children}
     </button>
   )
 }
 
-export function AdminRichTextEditor({ disabled = false, label, onChange, value }) {
+export function AdminRichTextEditor({
+  disabled = false,
+  helperText = '',
+  label,
+  onChange,
+  placeholder = 'Start typing the page content here.',
+  snippets = [],
+  value,
+}) {
   const editorRef = useRef(null)
   const [mode, setMode] = useState('visual')
 
@@ -54,6 +68,21 @@ export function AdminRichTextEditor({ disabled = false, label, onChange, value }
     applyCommand('createLink', href)
   }
 
+  function insertSnippet(html) {
+    if (disabled || !html) {
+      return
+    }
+
+    if (mode === 'html') {
+      const normalizedValue = String(value ?? '').trim()
+      const separator = normalizedValue ? '\n' : ''
+      onChange(`${normalizedValue}${separator}${html}`.trim())
+      return
+    }
+
+    applyCommand('insertHTML', html)
+  }
+
   return (
     <div className="admin-rich-text-editor">
       <div className="admin-rich-text-header">
@@ -86,6 +115,9 @@ export function AdminRichTextEditor({ disabled = false, label, onChange, value }
             <ToolbarButton disabled={disabled} onClick={() => applyCommand('italic')}>
               Italic
             </ToolbarButton>
+            <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertHTML', '<br />')}>
+              Line Break
+            </ToolbarButton>
             <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertUnorderedList')}>
               Bullets
             </ToolbarButton>
@@ -100,22 +132,54 @@ export function AdminRichTextEditor({ disabled = false, label, onChange, value }
             </ToolbarButton>
           </div>
 
+          {snippets.length > 0 ? (
+            <div className="admin-rich-text-snippets">
+              <span>Quick Insert</span>
+              <div className="admin-inline-actions">
+                {snippets.map((snippet) => (
+                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet.html)}>
+                    {snippet.label}
+                  </ToolbarButton>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {helperText ? <p className="admin-note admin-rich-text-help">{helperText}</p> : null}
+
           <div
             ref={editorRef}
             aria-label={label}
             className={`admin-rich-text-canvas ${disabled ? 'admin-rich-text-canvas--disabled' : ''}`.trim()}
             contentEditable={!disabled}
-            data-placeholder="Start typing the page content here."
+            data-placeholder={placeholder}
             suppressContentEditableWarning
             onBlur={syncValue}
             onInput={syncValue}
           />
         </>
       ) : (
-        <label className="admin-field admin-field--wide">
-          <span>HTML Source</span>
-          <textarea disabled={disabled} rows="14" value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
-        </label>
+        <>
+          {snippets.length > 0 ? (
+            <div className="admin-rich-text-snippets">
+              <span>Quick Insert</span>
+              <div className="admin-inline-actions">
+                {snippets.map((snippet) => (
+                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet.html)}>
+                    {snippet.label}
+                  </ToolbarButton>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {helperText ? <p className="admin-note admin-rich-text-help">{helperText}</p> : null}
+
+          <label className="admin-field admin-field--wide">
+            <span>HTML Source</span>
+            <textarea disabled={disabled} rows="14" value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
+          </label>
+        </>
       )}
     </div>
   )

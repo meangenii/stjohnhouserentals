@@ -1,0 +1,20 @@
+{
+  "defaultVariant": "fully-sectioned",
+  "variants": [
+    {
+      "id": "source-stack",
+      "label": "Source Stack",
+      "description": "Render the scraped property fields without section headers. Keep this only for intentionally unlabeled variants."
+    },
+    {
+      "id": "supplemental-sections",
+      "label": "Supplemental Sections",
+      "description": "Keep the fact stack and main description unlabeled, but label supplemental fields like amenities and reviews."
+    },
+    {
+      "id": "fully-sectioned",
+      "label": "Fully Sectioned",
+      "description": "Render all property sections with explicit headers, matching the live-site property template structure."
+    }
+  ]
+}

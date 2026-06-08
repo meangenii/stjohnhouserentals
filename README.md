@@ -6,6 +6,7 @@ Phase one is a React rebuild of the current public site using Firebase Hosting f
 
 - The shared site shell and major custom public routes now read structured seed content from `shared/siteContent.js`.
 - All current public routes now render through the structured content layer instead of `SnapshotPage`.
+- Rental property detail pages now select an explicit template variant from property data at render time, with the live snapshot defaulting to the live-parity `fully-sectioned` variant.
 - Rental properties now read directly from the live Firestore catalog in `firebase` mode when the frontend targets the deployed API, while site shell, structured pages, and charters continue through `siteApi`.
 - Live site and property imagery can now be migrated out of the legacy host into Firebase Storage, with media records tracked in Firestore under `cmsMediaLibrary`.
 - Active site shell, structured page, property, and charter images are now expected to use Firebase Storage URLs only; admin saves reject bundled or third-party image URLs.
@@ -33,4 +34,6 @@ npm run deploy:storage
 npm run media:migrate
 npm run seed:firebase-data
 npm run snapshot:site
+npm run analyze:listings
+npm run audit:property-template
 ```

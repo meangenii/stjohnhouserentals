@@ -1,0 +1,3972 @@
+{
+  "generatedAt": "2026-06-07T14:31:28.295Z",
+  "snapshotDate": "2026-06-07",
+  "sourceCatalog": "reference/live-site/2026-06-07/property-catalog.json",
+  "sourceHtmlRoot": "reference/live-site/2026-06-07/html/rental-properties/",
+  "templateBehavior": {
+    "syntheticBookingSectionRemoved": true,
+    "usesRawDescriptionHtml": true,
+    "usesRawAmenitiesHtml": true,
+    "usesRawReviewsHtml": true,
+    "regroupingTransformsEnabled": [],
+    "notes": [
+      "The audit reads the saved live property HTML and parses each page's legacy-warmup-data payload.",
+      "Parity is measured against the live page template's dedicated section slots, not just the normalized property catalog fields.",
+      "Live properties are expected to keep visible Short Description, Description, Amenities, and Reviews section headers."
+    ]
+  },
+  "summary": {
+    "propertyCount": 68,
+    "liveShortDescriptionSlotCount": 68,
+    "liveDescriptionSlotCount": 68,
+    "liveAmenitiesSlotCount": 68,
+    "liveReviewsSlotCount": 68,
+    "livePopulatedReviewsCount": 59,
+    "currentHeaderParityCount": 68,
+    "currentShellParityCount": 68,
+    "propertiesWithHeaderParityGaps": 0,
+    "propertiesWithShellParityGaps": 0,
+    "propertiesWithBookingData": 0,
+    "propertiesWithRegroupedFields": 0,
+    "variantCounts": {
+      "fully-sectioned": 68
+    }
+  },
+  "properties": [
+    {
+      "slug": "christmas-cottage",
+      "name": "Christmas Cottage",
+      "path": "/rental-properties/christmas-cottage",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/christmas-cottage.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "island-gardens",
+      "name": "Island Gardens",
+      "path": "/rental-properties/island-gardens",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/island-gardens.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "harbor-lights",
+      "name": "Harbor Lights",
+      "path": "/rental-properties/harbor-lights",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/harbor-lights.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "in-harmony-retreat",
+      "name": "In Harmony Retreat",
+      "path": "/rental-properties/in-harmony-retreat",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/in-harmony-retreat.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "island-vibes",
+      "name": "Island Vibes",
+      "path": "/rental-properties/island-vibes",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/island-vibes.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "lavender-hill-unit-10-e-",
+      "name": "Lavender Hill Unit 10-E",
+      "path": "/rental-properties/lavender-hill-unit-10-e-",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/lavender-hill-unit-10-e-.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "lots-of-knots-",
+      "name": "Lots of Knots",
+      "path": "/rental-properties/lots-of-knots-",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/lots-of-knots-.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "mandevilla-at-ixora",
+      "name": "MandeVilla at Ixora",
+      "path": "/rental-properties/mandevilla-at-ixora",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/mandevilla-at-ixora.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "paradise-carest",
+      "name": "Paradise Carest",
+      "path": "/rental-properties/paradise-carest",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/paradise-carest.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sun%2C-moon-and-stars",
+      "name": "Sun, Moon and Stars",
+      "path": "/rental-properties/sun%2C-moon-and-stars",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sun%2C-moon-and-stars.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "the-little-easy",
+      "name": "The Little Easy",
+      "path": "/rental-properties/the-little-easy",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/the-little-easy.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "windwardside-guest-cottage",
+      "name": "Windwardside Guest Cottage",
+      "path": "/rental-properties/windwardside-guest-cottage",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/windwardside-guest-cottage.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "windwardside-main-house",
+      "name": "Windwardside Main House",
+      "path": "/rental-properties/windwardside-main-house",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/windwardside-main-house.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "brezza-di-mare",
+      "name": "Brezza di Mare",
+      "path": "/rental-properties/brezza-di-mare",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/brezza-di-mare.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "desert-rose-villa",
+      "name": "Desert Rose Villa",
+      "path": "/rental-properties/desert-rose-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/desert-rose-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 11,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "fish-tales",
+      "name": "Fish Tales",
+      "path": "/rental-properties/fish-tales",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/fish-tales.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 11,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "miles-away",
+      "name": "Miles Away",
+      "path": "/rental-properties/miles-away",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/miles-away.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "mystical-mermaid-villa",
+      "name": "Mystical Mermaid Villa",
+      "path": "/rental-properties/mystical-mermaid-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/mystical-mermaid-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "notre-ciel",
+      "name": "Notre Ciel",
+      "path": "/rental-properties/notre-ciel",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/notre-ciel.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "orchid-garden",
+      "name": "Orchid Garden",
+      "path": "/rental-properties/orchid-garden",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/orchid-garden.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "samba-azul",
+      "name": "Samba Azul",
+      "path": "/rental-properties/samba-azul",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/samba-azul.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "san-costanzo",
+      "name": "San Costanzo",
+      "path": "/rental-properties/san-costanzo",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/san-costanzo.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sapphire-peak",
+      "name": "Sapphire Peak",
+      "path": "/rental-properties/sapphire-peak",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sapphire-peak.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sea-palace-retreat",
+      "name": "Sea Palace Retreat",
+      "path": "/rental-properties/sea-palace-retreat",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sea-palace-retreat.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sol-cottage-villa",
+      "name": "Sol Cottage Villa",
+      "path": "/rental-properties/sol-cottage-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sol-cottage-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sol-la-vie",
+      "name": "Sol La Vie",
+      "path": "/rental-properties/sol-la-vie",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sol-la-vie.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sunset-paradise",
+      "name": "Sunset Paradise",
+      "path": "/rental-properties/sunset-paradise",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sunset-paradise.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "villa-madeline",
+      "name": "Villa Madeline",
+      "path": "/rental-properties/villa-madeline",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-madeline.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "waterklip",
+      "name": "Waterklip",
+      "path": "/rental-properties/waterklip",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/waterklip.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "alta-vista",
+      "name": "Alta Vista",
+      "path": "/rental-properties/alta-vista",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/alta-vista.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "arco-iris",
+      "name": "Arco Iris",
+      "path": "/rental-properties/arco-iris",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/arco-iris.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "astral-villa",
+      "name": "Astral Villa",
+      "path": "/rental-properties/astral-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/astral-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 9,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "beyond-the-sea",
+      "name": "Beyond the Sea",
+      "path": "/rental-properties/beyond-the-sea",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/beyond-the-sea.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "cara-mia",
+      "name": "Cara Mia",
+      "path": "/rental-properties/cara-mia",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/cara-mia.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "east-end-seascape",
+      "name": "East End Seascape",
+      "path": "/rental-properties/east-end-seascape",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/east-end-seascape.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "hart-bay-beach-house",
+      "name": "Hart Bay Beach House",
+      "path": "/rental-properties/hart-bay-beach-house",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/hart-bay-beach-house.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "idyllic-villa",
+      "name": "Idyllic Villa",
+      "path": "/rental-properties/idyllic-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/idyllic-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "monarch-cottage",
+      "name": "Monarch Cottage",
+      "path": "/rental-properties/monarch-cottage",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/monarch-cottage.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 4,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "palladio%E2%80%99s-view",
+      "name": "Palladio’s View",
+      "path": "/rental-properties/palladio%E2%80%99s-view",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/palladio%E2%80%99s-view.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "pebble-cove",
+      "name": "Pebble Cove",
+      "path": "/rental-properties/pebble-cove",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/pebble-cove.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "sea-palms",
+      "name": "Sea Palms",
+      "path": "/rental-properties/sea-palms",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sea-palms.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "seagrape-estate",
+      "name": "Seagrape Estate",
+      "path": "/rental-properties/seagrape-estate",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/seagrape-estate.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "southern-exposure",
+      "name": "Southern Exposure",
+      "path": "/rental-properties/southern-exposure",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/southern-exposure.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "villa-bijou",
+      "name": "Villa Bijou",
+      "path": "/rental-properties/villa-bijou",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-bijou.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "villa-madeira",
+      "name": "Villa Madeira",
+      "path": "/rental-properties/villa-madeira",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-madeira.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": false,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": false
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "beija-flor",
+      "name": "Beija Flor",
+      "path": "/rental-properties/beija-flor",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/beija-flor.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "blue-agave",
+      "name": "Blue Agave",
+      "path": "/rental-properties/blue-agave",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/blue-agave.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "cinnamon-stones",
+      "name": "Cinnamon Stones",
+      "path": "/rental-properties/cinnamon-stones",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/cinnamon-stones.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "coral-sky-villa",
+      "name": "Coral Sky Villa",
+      "path": "/rental-properties/coral-sky-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/coral-sky-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "drake%E2%80%99s-view",
+      "name": "Drake’s View",
+      "path": "/rental-properties/drake%E2%80%99s-view",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/drake%E2%80%99s-view.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "great-escape",
+      "name": "Great Escape",
+      "path": "/rental-properties/great-escape",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/great-escape.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "halcyon-days",
+      "name": "Halcyon Days",
+      "path": "/rental-properties/halcyon-days",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/halcyon-days.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 5,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "hart-bay-great-house",
+      "name": "Hart Bay Great House",
+      "path": "/rental-properties/hart-bay-great-house",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/hart-bay-great-house.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "mad-de-lis",
+      "name": "Mad-de-Lis",
+      "path": "/rental-properties/mad-de-lis",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/mad-de-lis.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "oceanport-villa",
+      "name": "Oceanport Villa",
+      "path": "/rental-properties/oceanport-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/oceanport-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "palm-ridge",
+      "name": "Palm Ridge",
+      "path": "/rental-properties/palm-ridge",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/palm-ridge.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "reef-bay-holiday-villa",
+      "name": "Reef Bay Holiday Villa",
+      "path": "/rental-properties/reef-bay-holiday-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/reef-bay-holiday-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "sapphire-sunrise",
+      "name": "Sapphire Sunrise",
+      "path": "/rental-properties/sapphire-sunrise",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/sapphire-sunrise.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "serenity-vista-villa",
+      "name": "Serenity Vista Villa",
+      "path": "/rental-properties/serenity-vista-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/serenity-vista-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "villa-de-paz",
+      "name": "Villa de Paz",
+      "path": "/rental-properties/villa-de-paz",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-de-paz.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "villa-kia-orana",
+      "name": "Villa Kia Orana",
+      "path": "/rental-properties/villa-kia-orana",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-kia-orana.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 10,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "villa-south-palm",
+      "name": "Villa South Palm",
+      "path": "/rental-properties/villa-south-palm",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-south-palm.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "argonauta",
+      "name": "Argonauta",
+      "path": "/rental-properties/argonauta",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/argonauta.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "seacove-villa",
+      "name": "Seacove Villa",
+      "path": "/rental-properties/seacove-villa",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/seacove-villa.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": false
+      }
+    },
+    {
+      "slug": "villa-ixora",
+      "name": "Villa Ixora",
+      "path": "/rental-properties/villa-ixora",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/villa-ixora.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": false,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "casa-del-palmas",
+      "name": "Casa Del Palmas",
+      "path": "/rental-properties/casa-del-palmas",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/casa-del-palmas.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "chateau-margot",
+      "name": "Chateau Margot",
+      "path": "/rental-properties/chateau-margot",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/chateau-margot.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 6,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    },
+    {
+      "slug": "oceana",
+      "name": "Oceana Villa",
+      "path": "/rental-properties/oceana",
+      "htmlFile": "reference/live-site/2026-06-07/html/rental-properties/oceana.html",
+      "htmlFileExists": true,
+      "templateVariant": "fully-sectioned",
+      "liveSlots": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "livePopulatedSections": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentShells": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "currentHeaders": [
+        "Short Description",
+        "Description",
+        "Amenities",
+        "Reviews"
+      ],
+      "missingHeaders": [],
+      "missingShells": [],
+      "regroupedFields": [],
+      "syntheticBookingSectionRemoved": true,
+      "sourceFieldPresence": {
+        "shortDescriptionLines": 7,
+        "descriptionHtml": true,
+        "amenitiesHtml": true,
+        "reviewsHtml": true,
+        "bookingData": false
+      },
+      "liveTemplatePresence": {
+        "shortDescriptionSlot": true,
+        "descriptionSlot": true,
+        "amenitiesSlot": true,
+        "reviewsSlot": true,
+        "shortDescriptionContent": true,
+        "descriptionContent": true,
+        "amenitiesContent": true,
+        "reviewsContent": true
+      },
+      "linkKinds": {
+        "hasMailto": true,
+        "hasPhone": true,
+        "hasExternalSite": true
+      }
+    }
+  ]
+}

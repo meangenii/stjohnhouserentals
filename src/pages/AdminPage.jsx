@@ -20,6 +20,7 @@ import {
   resetAdminProperties,
   saveAdminProperty,
 } from '../lib/propertyRepository'
+import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
@@ -68,10 +69,6 @@ function linesToText(values = []) {
   return values.map((value) => repairSnapshotText(String(value))).join('\n')
 }
 
-function paragraphsToText(values = []) {
-  return values.map((value) => repairSnapshotText(String(value))).join('\n\n')
-}
-
 function parseLineList(value = '') {
   return value
     .split(/\r?\n+/)
@@ -92,6 +89,142 @@ function createAmenityEditor(group = {}) {
     title: repairSnapshotText(group.title ?? ''),
     itemsText: linesToText(group.items ?? []),
   }
+}
+
+function readAmenityNodeText(node) {
+  if (!node) {
+    return ''
+  }
+
+  if (node.nodeType === 3) {
+    return node.textContent ?? ''
+  }
+
+  if (node.nodeType !== 1) {
+    return ''
+  }
+
+  if (node.tagName === 'BR') {
+    return '\n'
+  }
+
+  return Array.from(node.childNodes)
+    .map((childNode) => readAmenityNodeText(childNode))
+    .join('')
+}
+
+function parseAmenityTextLines(value = '') {
+  return String(value ?? '')
+    .split(/\r?\n+/)
+    .map((entry) => repairSnapshotText(entry).replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+}
+
+function normalizeAmenityGroup(group = {}) {
+  return {
+    title: repairSnapshotText(group.title ?? '').trim(),
+    items: Array.isArray(group.items)
+      ? group.items.map((item) => repairSnapshotText(item).trim()).filter(Boolean)
+      : [],
+  }
+}
+
+function parseAmenityGroupsFromHtml(html = '') {
+  const markup = String(html ?? '').trim()
+
+  if (!markup || typeof DOMParser !== 'function') {
+    return []
+  }
+
+  const documentNode = new DOMParser().parseFromString(`<div>${markup}</div>`, 'text/html')
+  const root = documentNode.body.firstElementChild
+
+  if (!root) {
+    return []
+  }
+
+  const groups = []
+  let currentGroup = null
+
+  const startGroup = (title = '') => {
+    const group = normalizeAmenityGroup({ title, items: [] })
+    groups.push(group)
+    currentGroup = group
+    return group
+  }
+
+  const ensureGroup = () => currentGroup ?? startGroup(groups.length === 0 ? 'Amenities' : '')
+
+  Array.from(root.children).forEach((element) => {
+    if (!element?.tagName) {
+      return
+    }
+
+    if (/^H[1-6]$/i.test(element.tagName)) {
+      const title = repairSnapshotText(element.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+      if (title) {
+        startGroup(title)
+      }
+
+      return
+    }
+
+    if (/^(UL|OL)$/i.test(element.tagName)) {
+      const items = Array.from(element.children)
+        .filter((child) => child.tagName === 'LI')
+        .map((child) => repairSnapshotText(child.textContent ?? '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+
+      if (items.length > 0) {
+        ensureGroup().items.push(...items)
+      }
+
+      return
+    }
+
+    if (element.tagName !== 'P') {
+      return
+    }
+
+    const lines = parseAmenityTextLines(readAmenityNodeText(element))
+
+    if (lines.length === 0) {
+      return
+    }
+
+    const firstElementChild = element.firstElementChild
+    const strongLead =
+      firstElementChild && /^(STRONG|B)$/i.test(firstElementChild.tagName)
+        ? repairSnapshotText(firstElementChild.textContent ?? '').replace(/\s+/g, ' ').trim()
+        : ''
+
+    if (strongLead) {
+      if (lines.length === 1 && lines[0] === strongLead) {
+        startGroup(strongLead)
+        return
+      }
+
+      if (lines[0] === strongLead || lines[0].startsWith(`${strongLead}:`) || lines[0].startsWith(`${strongLead} -`)) {
+        const group = startGroup(strongLead)
+        const remainder = lines[0]
+          .slice(strongLead.length)
+          .replace(/^[:\-\u2013\u2014]\s*/, '')
+          .trim()
+        const items = [remainder, ...lines.slice(1)].filter(Boolean)
+
+        if (items.length > 0) {
+          group.items.push(...items)
+        }
+
+        return
+      }
+    }
+
+    ensureGroup().items.push(...lines)
+  })
+
+  return groups.filter((group) => group.title || group.items.length)
 }
 
 function createReviewEditor(entry = {}) {
@@ -126,15 +259,14 @@ function createEmptyFormState() {
     originalSlug: '',
     name: '',
     slug: '',
+    templateVariant: DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     bedrooms: '1',
     bathrooms: '1',
     maxGuests: '2',
     location: 'St. John, USVI',
     price: '',
     shortDescription: '',
-    highlightsText: '',
-    descriptionText: '',
-    existingDescriptionHtml: '',
+    descriptionHtml: '',
     existingAmenitiesHtml: '',
     existingReviewsHtml: '',
     heroImageUrl: '',
@@ -151,6 +283,12 @@ function createEmptyFormState() {
 function createInitialAmenityGroups(property = {}) {
   if (property.amenityGroups?.length > 0) {
     return property.amenityGroups.map((group) => createAmenityEditor(group))
+  }
+
+  const parsedAmenityGroups = parseAmenityGroupsFromHtml(property.amenitiesHtml ?? '')
+
+  if (parsedAmenityGroups.length > 0) {
+    return parsedAmenityGroups.map((group) => createAmenityEditor(group))
   }
 
   const amenityLines = parseLineList(htmlToText(property.amenitiesHtml ?? ''))
@@ -183,15 +321,14 @@ function createFormState(property) {
     originalSlug: property.adminOriginalSlug ?? property.slug,
     name: repairSnapshotText(property.name ?? ''),
     slug: property.slug ?? '',
+    templateVariant: property.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     bedrooms: String(property.bedrooms ?? 0),
     bathrooms: String(property.bathrooms ?? 0),
     maxGuests: String(property.maxGuests ?? 0),
     location: repairSnapshotText(property.location ?? 'St. John, USVI'),
     price: repairSnapshotText(property.price ?? ''),
     shortDescription: repairSnapshotText(property.shortDescription ?? ''),
-    highlightsText: linesToText(property.highlights ?? property.facts ?? []),
-    descriptionText: htmlToText(property.descriptionHtml ?? '') || paragraphsToText(property.description ?? []),
-    existingDescriptionHtml: String(property.descriptionHtml ?? ''),
+    descriptionHtml: String(property.descriptionHtml ?? '').trim() || paragraphListToHtml(property.description ?? []),
     existingAmenitiesHtml: String(property.amenitiesHtml ?? ''),
     existingReviewsHtml: String(property.reviewsHtml ?? ''),
     heroImageUrl: property.heroImage?.url ?? '',
@@ -231,15 +368,14 @@ function buildPropertyDraft(formState) {
   return {
     name: repairSnapshotText(formState.name).trim(),
     slug: repairSnapshotText(formState.slug).trim(),
+    templateVariant: formState.templateVariant,
     bedrooms: Number(formState.bedrooms) || 0,
     bathrooms: Number(formState.bathrooms) || 0,
     maxGuests: Number(formState.maxGuests) || 0,
     location: repairSnapshotText(formState.location).trim(),
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(formState.shortDescription).trim(),
-    highlights: parseLineList(formState.highlightsText),
-    description: parseParagraphList(formState.descriptionText),
-    existingDescriptionHtml: formState.existingDescriptionHtml,
+    descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
     existingAmenitiesHtml: formState.existingAmenitiesHtml,
     existingReviewsHtml: formState.existingReviewsHtml,
     amenityGroups,
@@ -273,9 +409,9 @@ function amenityGroupsToHtml(groups = []) {
         lines.push(`<h4>${escapeHtml(title)}</h4>`)
       }
 
-      items.forEach((item) => {
-        lines.push(`<p>${escapeHtml(item)}</p>`)
-      })
+      if (items.length > 0) {
+        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+      }
 
       return lines
     })
@@ -303,8 +439,6 @@ function reviewEntriesToHtml(entries = []) {
 }
 
 function buildPropertyPreviewModel(formState) {
-  const facts = parseLineList(formState.highlightsText)
-  const descriptionParagraphs = parseParagraphList(formState.descriptionText)
   const gallery = createGalleryAssets(formState.galleryImages)
   const heroImage = formState.heroImageUrl.trim()
     ? {
@@ -320,6 +454,7 @@ function buildPropertyPreviewModel(formState) {
   return {
     slug: repairSnapshotText(formState.slug).trim(),
     name: repairSnapshotText(formState.name).trim() || 'Untitled Property',
+    templateVariant: formState.templateVariant,
     bedrooms,
     bedroomLabel: bedrooms > 0 ? `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}` : '',
     bathrooms: Number(formState.bathrooms) || 0,
@@ -327,11 +462,7 @@ function buildPropertyPreviewModel(formState) {
     location: repairSnapshotText(formState.location).trim(),
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(formState.shortDescription).trim(),
-    facts,
-    descriptionHtml:
-      descriptionParagraphs.length > 0
-        ? paragraphListToHtml(descriptionParagraphs)
-        : String(formState.existingDescriptionHtml ?? '').trim(),
+    descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
     amenitiesHtml: amenityHtml || String(formState.existingAmenitiesHtml ?? '').trim(),
     reviewsHtml: reviewsHtml || String(formState.existingReviewsHtml ?? '').trim(),
     heroImage,
@@ -481,6 +612,7 @@ export function AdminPage() {
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
   const [formState, setFormState] = useState(createEmptyFormState())
   const [editorState, setEditorState] = useState({ mode: 'create', activeSlug: '' })
+  const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
   const propertyEditingEnabled = isPropertyEditingEnabled()
@@ -547,11 +679,13 @@ export function AdminPage() {
         if (properties.length > 0) {
           setEditorState({ mode: 'edit', activeSlug: properties[0].slug })
           setFormState(createFormState(properties[0]))
+          setGalleryEditorExpanded(false)
           return
         }
 
         setEditorState({ mode: 'create', activeSlug: '' })
         setFormState(createEmptyFormState())
+        setGalleryEditorExpanded(false)
       } catch (error) {
         if (!cancelled) {
           setWorkspaceState({
@@ -928,12 +1062,14 @@ export function AdminPage() {
   function openCreateForm() {
     setEditorState({ mode: 'create', activeSlug: '' })
     setFormState(createEmptyFormState())
+    setGalleryEditorExpanded(false)
     setFeedback('')
   }
 
   function openEditForm(property) {
     setEditorState({ mode: 'edit', activeSlug: property.slug })
     setFormState(createFormState(property))
+    setGalleryEditorExpanded(false)
     setFeedback('')
   }
 
@@ -1763,6 +1899,7 @@ export function AdminPage() {
                     disabled={!propertySaveEnabled}
                     editable
                     formState={formState}
+                    galleryEditorExpanded={galleryEditorExpanded}
                     onAddAmenityGroup={addAmenityGroup}
                     onAddGalleryImage={addGalleryImage}
                     onAddReviewEntry={addReviewEntry}
@@ -1770,6 +1907,7 @@ export function AdminPage() {
                     onFieldChange={updateFormState}
                     onGalleryImageChange={updateGalleryImage}
                     onMoveGalleryImage={moveGalleryImage}
+                    onToggleGalleryEditor={() => setGalleryEditorExpanded((currentState) => !currentState)}
                     onRemoveAmenityGroup={removeAmenityGroup}
                     onRemoveGalleryImage={removeGalleryImage}
                     onRemoveReviewEntry={removeReviewEntry}

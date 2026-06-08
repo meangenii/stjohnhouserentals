@@ -6,13 +6,21 @@ import { listPropertySummaries } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
+function formatShortDescriptionSummary(value) {
+  return String(value ?? '')
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' | ')
+}
+
 function buildListingItem(property) {
   return {
     item: {
       name: property.name,
       path: property.path,
       rate: property.price,
-      summary: property.shortDescription || property.facts.join(' | '),
+      summary: formatShortDescriptionSummary(property.shortDescription),
       image: property.heroImage
         ? {
             url: getContentImageSrc(property.heroImage, { width: 720, height: 480, mode: 'fit' }),

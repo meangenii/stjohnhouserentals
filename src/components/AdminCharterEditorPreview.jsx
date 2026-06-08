@@ -1,5 +1,6 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { AdminMediaManager } from './AdminMediaManager'
 
 function PreviewField({ children, wide = false }) {
   return <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>{children}</label>
@@ -120,9 +121,21 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
 
           <PreviewSection
             controls={
-              <div className="admin-preview-field-grid">
-                <PreviewInput disabled={disabled} label="Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />
-                <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
+              <div className="admin-property-preview-controls">
+                <div className="admin-preview-field-grid">
+                  <PreviewInput disabled={disabled} label="Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />
+                  <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
+                </div>
+                <AdminMediaManager
+                  currentUrl={formState.heroImageUrl}
+                  disabled={disabled}
+                  onClear={() => onFieldChange('heroImageUrl', '')}
+                  onSelect={(nextUrl) => onFieldChange('heroImageUrl', nextUrl)}
+                  preferredOwnerKey={formState.slug}
+                  preferredOwnerName={formState.name}
+                  preferredOwnerType="charter"
+                  title="Charter Hero Media"
+                />
               </div>
             }
             title="Hero Image"

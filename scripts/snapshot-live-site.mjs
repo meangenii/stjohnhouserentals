@@ -6,6 +6,7 @@ import { mediaCatalog } from '../shared/mediaCatalog.js'
 import { isLegacyMediaUrl, rewriteValueWithMediaManifest } from '../shared/mediaLibrary.js'
 
 const BASE_URL = 'https://www.stjohnhouserentals.com'
+const DEFAULT_PROPERTY_TEMPLATE_VARIANT = 'fully-sectioned'
 const SNAPSHOT_CONCURRENCY = 3
 const FETCH_RETRY_LIMIT = 4
 const AUXILIARY_PUBLIC_ASSETS = [{ routePath: '/blog-feed.xml', publicFileName: 'blog-feed.xml', referenceFile: 'xml/blog-feed.xml' }]
@@ -774,6 +775,7 @@ function normalizePropertyRecord(record) {
     path: `/rental-properties/${slug}`,
     sortValue: getRecordSortValue(record),
     name: cleanText(repairMojibake(record?.title ?? '')),
+    templateVariant: DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     price: cleanText(repairMojibake(record?.price ?? '')),
     bedrooms: Number(record?.numberOfBedrooms) || 0,
     bathrooms: Number(record?.numberOfBathrooms) || 0,

@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const server =
     apiBaseUrl === '/api' && projectId
       ? {
+          host: true,
           proxy: {
             '/api': {
               target: `http://127.0.0.1:5001/${projectId}/us-central1/siteApi`,
@@ -16,7 +17,7 @@ export default defineConfig(({ mode }) => {
             },
           },
         }
-      : undefined
+      : { host: true }
 
   return {
     plugins: [react()],

@@ -1,4 +1,5 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { AdminMediaManager } from './AdminMediaManager'
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
@@ -83,6 +84,16 @@ function ImageField({ disabled, image, onAltChange, onUrlChange, title }) {
         <TextField disabled={disabled} label="Image URL" onChange={onUrlChange} value={image?.url ?? ''} wide />
         <TextField disabled={disabled} label="Alt Text" onChange={onAltChange} value={image?.alt ?? ''} wide />
       </div>
+
+      <AdminMediaManager
+        currentUrl={image?.url ?? ''}
+        disabled={disabled}
+        onClear={() => onUrlChange('')}
+        onSelect={(nextUrl) => onUrlChange(nextUrl)}
+        preferredOwnerName={title}
+        preferredOwnerType="site-shell"
+        title={`${title} Media`}
+      />
 
       {previewSrc ? (
         <div className="admin-content-image-preview">

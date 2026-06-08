@@ -78,12 +78,40 @@ This pulls the live site and writes:
 
 - `reference/live-site/<date>/html/`: sanitized route HTML for parity checks
 - `reference/live-site/<date>/snapshot.json`: extracted page metadata
-- `reference/live-site/<date>/property-catalog.json`: normalized rental property records
+- `reference/live-site/<date>/property-catalog.json`: normalized rental property records, including `templateVariant`
 - `reference/live-site/<date>/charter-catalog.json`: normalized charter records when available
 - `src/content/liveSiteSnapshot.json`: app-facing snapshot data
 - `public/livePropertyCatalog.json`: local property catalog used by the frontend mock path
 - `public/livePropertySummaryCatalog.json`: local rental summary catalog used by filtered listing views
 - `public/liveCharterCatalog.json`: local charter catalog used by detail routes
+
+## Analyze Rental Listing Patterns
+
+```bash
+npm run analyze:listings
+```
+
+This reads the latest `reference/live-site/<date>/property-catalog.json` scrape and writes:
+
+- `reference/live-site/<date>/listing-pattern-report.json`: machine-readable pattern summary and per-listing assignments
+- `reference/live-site/<date>/listing-pattern-report.md`: readable report with booking-flow counts, content signals, archetypes, and top partner domains
+
+Use `npm run analyze:listings -- --date=YYYY-MM-DD` if you want to analyze an older snapshot instead of the latest one.
+
+## Audit Property Template Parity
+
+```bash
+npm run audit:property-template
+```
+
+This audits the current property detail template against the scraped rental property catalog and writes:
+
+- `reference/live-site/<date>/property-template-parity-audit.json`: machine-readable per-property parity status
+- `reference/live-site/<date>/property-template-parity-audit.md`: readable audit summary
+
+Property template variants are defined in `shared/propertyTemplateVariants.json`. The current live snapshot assigns `fully-sectioned` to scraped properties so the public renderer and admin preview preserve the live-site section headers, including empty shells like `Reviews` when the live template still defines that slot.
+
+Use `npm run audit:property-template -- --date=YYYY-MM-DD` to audit an older snapshot.
 
 ## Build
 

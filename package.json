@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "assert:no-legacy-vendor": "node ./scripts/assert-no-legacy-vendor.cjs",
+    "audit:property-template": "node ./scripts/audit-property-template-parity.mjs",
     "content:generate": "node ./scripts/generate-content-artifacts.mjs",
     "dev": "npm run content:generate && vite",
     "build": "npm run content:generate && vite build",
@@ -18,6 +19,7 @@
     "lint": "eslint .",
     "lint:functions": "npm run content:generate && npm --prefix functions run lint",
     "media:migrate": "node ./scripts/migrate-legacy-media.mjs",
+    "analyze:listings": "node ./scripts/analyze-rental-listing-patterns.mjs",
     "preview": "vite preview",
     "seed:firebase-data": "npm run content:generate && npm --prefix functions run seed:firestore",
     "snapshot:site": "node ./scripts/snapshot-live-site.mjs"

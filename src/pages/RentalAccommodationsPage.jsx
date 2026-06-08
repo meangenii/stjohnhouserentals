@@ -5,6 +5,13 @@ import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
+function getShortDescriptionLines(value) {
+  return String(value ?? '')
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 function buildCardFromProperty(property) {
   return {
     name: property.name,
@@ -12,13 +19,13 @@ function buildCardFromProperty(property) {
     bedrooms: property.bedrooms,
     imageUrl: getContentImageSrc(property.heroImage, { width: 640, height: 435 }),
     imageAlt: property.heroImage?.alt || property.name,
-    facts: Array.isArray(property.facts) ? property.facts.filter(Boolean) : [],
+    summaryLines: getShortDescriptionLines(property.shortDescription),
   }
 }
 
 function RentalAccommodationCard({ card }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const visibleFacts = isExpanded ? card.facts : card.facts.slice(0, 3)
+  const visibleSummaryLines = isExpanded ? card.summaryLines : card.summaryLines.slice(0, 3)
 
   return (
     <article className="rental-accommodations-card">
@@ -39,14 +46,14 @@ function RentalAccommodationCard({ card }) {
         <div aria-hidden="true" className="rental-accommodations-card-divider" />
 
         <div className="rental-accommodations-card-facts">
-          {visibleFacts.map((fact, index) => {
-            const isCollapsedTail = !isExpanded && card.facts.length > 3 && index === visibleFacts.length - 1
+          {visibleSummaryLines.map((line, index) => {
+            const isCollapsedTail = !isExpanded && card.summaryLines.length > 3 && index === visibleSummaryLines.length - 1
 
-            return <p key={`${card.name}-${fact}`}>{isCollapsedTail ? `${fact}...` : fact}</p>
+            return <p key={`${card.name}-${line}`}>{isCollapsedTail ? `${line}...` : line}</p>
           })}
         </div>
 
-        {card.facts.length > 3 ? (
+        {card.summaryLines.length > 3 ? (
           <button
             aria-expanded={isExpanded}
             className="rental-accommodations-card-toggle"

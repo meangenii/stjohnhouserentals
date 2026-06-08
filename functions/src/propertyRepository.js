@@ -3,6 +3,8 @@ const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = re
 const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const PROPERTY_COLLECTION = 'cmsProperties'
+const DEFAULT_PROPERTY_TEMPLATE_VARIANT = 'fully-sectioned'
+const PROPERTY_TEMPLATE_VARIANTS = new Set(['source-stack', 'supplemental-sections', 'fully-sectioned'])
 
 function cloneData(value) {
   return JSON.parse(JSON.stringify(value))
@@ -115,19 +117,62 @@ function normalizeExternalLinks(links) {
     : []
 }
 
+function normalizePropertyTemplateVariant(value) {
+  const normalizedValue = String(value ?? '').trim()
+  return PROPERTY_TEMPLATE_VARIANTS.has(normalizedValue) ? normalizedValue : DEFAULT_PROPERTY_TEMPLATE_VARIANT
+}
+
+function normalizeAmenityGroups(groups) {
+  return Array.isArray(groups)
+    ? groups
+        .map((group) => ({
+          title: String(group?.title ?? '').trim(),
+          items: Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : [],
+        }))
+        .filter((group) => group.title || group.items.length)
+    : []
+}
+
+function normalizeLegacyPropertyLines(values) {
+  return Array.isArray(values) ? values.map((value) => String(value).trim()).filter(Boolean) : []
+}
+
+function getLegacyPropertyLines(record) {
+  const factLines = normalizeLegacyPropertyLines(record?.facts)
+
+  if (factLines.length > 0) {
+    return factLines
+  }
+
+  return normalizeLegacyPropertyLines(record?.highlights)
+}
+
+function normalizePropertyShortDescription(shortDescription, fallbackLines = []) {
+  const normalizedShortDescription = String(shortDescription ?? '').trim()
+
+  if (normalizedShortDescription) {
+    return normalizedShortDescription
+  }
+
+  return fallbackLines.join('\n')
+}
+
 function normalizePropertyRecord(record) {
   if (!record?.slug || !record?.name) {
     return null
   }
 
+  const recordWithoutLegacyLines = { ...(record ?? {}) }
+  delete recordWithoutLegacyLines.facts
+  delete recordWithoutLegacyLines.highlights
   const gallery = Array.isArray(record.gallery)
     ? record.gallery.map((asset) => normalizeImageAsset(asset)).filter(Boolean)
     : []
   const heroImage = normalizeImageAsset(record.heroImage) ?? gallery[0] ?? null
-  const facts = Array.isArray(record.facts) ? record.facts.map((fact) => String(fact).trim()).filter(Boolean) : []
+  const legacyLines = getLegacyPropertyLines(record)
 
   return {
-    ...record,
+    ...recordWithoutLegacyLines,
     id: record.id ?? record.slug,
     slug: String(record.slug).trim(),
     adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
@@ -137,15 +182,13 @@ function normalizePropertyRecord(record) {
     bedrooms: Number(record.bedrooms) || 0,
     bathrooms: Number(record.bathrooms) || 0,
     maxGuests: Number(record.maxGuests) || 0,
-    shortDescription: String(record.shortDescription ?? '').trim(),
-    facts,
-    highlights: Array.isArray(record.highlights)
-      ? record.highlights.map((fact) => String(fact).trim()).filter(Boolean)
-      : facts,
+    shortDescription: normalizePropertyShortDescription(record.shortDescription, legacyLines),
+    templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
     bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
     location: String(record.location ?? '').trim(),
     descriptionHtml: String(record.descriptionHtml ?? '').trim(),
     amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
+    amenityGroups: normalizeAmenityGroups(record.amenityGroups),
     reviewsHtml: String(record.reviewsHtml ?? '').trim(),
     reviewEntries: Array.isArray(record.reviewEntries) ? record.reviewEntries : [],
     booking:
@@ -214,7 +257,7 @@ function summarizeProperty(property) {
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     maxGuests: property.maxGuests,
-    facts: property.facts,
+    templateVariant: property.templateVariant,
     heroImage: property.heroImage,
   }
 }
@@ -238,9 +281,9 @@ function amenityGroupsToHtml(groups) {
         lines.push(`<h4>${escapeHtml(title)}</h4>`)
       }
 
-      items.forEach((item) => {
-        lines.push(`<p>${escapeHtml(item)}</p>`)
-      })
+      if (items.length > 0) {
+        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+      }
 
       return lines
     })
@@ -277,8 +320,8 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
 
   assertStorageImagesInValue(draft, `Property ${name || slug} image`)
 
-  const factsSource = Array.isArray(draft?.highlights) ? draft.highlights : draft?.facts
-  const facts = Array.isArray(factsSource) ? factsSource.map((fact) => String(fact).trim()).filter(Boolean) : []
+  const shortDescription = normalizePropertyShortDescription(draft?.shortDescription, getLegacyPropertyLines(draft))
+  const descriptionHtml = String(draft?.descriptionHtml ?? '').trim()
   const description = Array.isArray(draft?.description)
     ? draft.description.map((paragraph) => String(paragraph).trim()).filter(Boolean)
     : []
@@ -325,16 +368,16 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     adminOriginalSlug: originalSlug || slug,
     path: `/rental-properties/${slug}`,
     name,
+    templateVariant: normalizePropertyTemplateVariant(draft?.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT),
     price: String(draft?.price ?? '').trim(),
     bedrooms: Number(draft?.bedrooms) || 0,
     bathrooms: Number(draft?.bathrooms) || 0,
     maxGuests: Number(draft?.maxGuests) || 0,
-    shortDescription: String(draft?.shortDescription ?? '').trim(),
-    facts,
-    highlights: facts,
+    shortDescription,
     location: String(draft?.location ?? '').trim(),
     descriptionHtml:
-      description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim(),
+      descriptionHtml || (description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim()),
+    amenityGroups,
     amenitiesHtml:
       amenityGroups.some((group) => group.title || group.items.length)
         ? amenityGroupsToHtml(amenityGroups)

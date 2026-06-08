@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
+import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
 function PropertyContentSection({
@@ -12,21 +13,26 @@ function PropertyContentSection({
   compactTail = false,
   listSections = false,
   reviewEntries = false,
+  renderWhenEmpty = false,
+  showHeader = true,
 }) {
   const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
+  const shouldRender = renderWhenEmpty || hasHtml || hasChildren
 
-  if (!hasHtml && !hasChildren) {
+  if (!shouldRender) {
     return null
   }
 
   return (
     <section className={`property-template-section ${className}`.trim()}>
-      <header className="property-template-section-header">
-        <h2>{title}</h2>
-        <div aria-hidden="true" className="property-template-rule" />
-      </header>
+      {showHeader ? (
+        <header className="property-template-section-header">
+          <h2>{title}</h2>
+          <div aria-hidden="true" className="property-template-rule" />
+        </header>
+      ) : null}
 
       {hasHtml ? <div className="property-rich-copy" dangerouslySetInnerHTML={{ __html: normalizedHtml }} /> : children}
     </section>
@@ -34,10 +40,6 @@ function PropertyContentSection({
 }
 
 function getShortDescriptionLines(property) {
-  if (Array.isArray(property.facts) && property.facts.length > 0) {
-    return property.facts.map((fact) => String(fact).trim()).filter(Boolean)
-  }
-
   return String(property.shortDescription ?? '')
     .split(/\r?\n+/)
     .map((line) => line.trim())
@@ -163,6 +165,7 @@ export function PropertyDetailPage() {
   const { property } = state
   const propertyGallery = Array.isArray(property.gallery) ? property.gallery.filter(Boolean) : []
   const shortDescriptionLines = getShortDescriptionLines(property)
+  const templateVariant = getPropertyTemplateVariantConfig(property.templateVariant)
   const galleryImages = propertyGallery.length > 0 ? propertyGallery : property.heroImage ? [property.heroImage] : []
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
@@ -180,6 +183,58 @@ export function PropertyDetailPage() {
     : activeImage?.url
       ? buildRemoteImageUrl(activeImage, { width: 1600, height: 540 })
       : ''
+  const sectionConfigs = templateVariant.sections
+  const propertySections = {
+    shortDescription:
+      shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
+        <PropertyContentSection
+          key="shortDescription"
+          renderWhenEmpty={sectionConfigs.shortDescription.renderWhenEmpty}
+          showHeader={sectionConfigs.shortDescription.showHeader}
+          title={sectionConfigs.shortDescription.title}
+        >
+          <div className="property-fact-stack">
+            {shortDescriptionLines.map((line) => (
+              <div className="property-fact-line" key={line}>
+                {line}
+              </div>
+            ))}
+          </div>
+        </PropertyContentSection>
+      ) : null,
+    description: (
+      <PropertyContentSection
+        key="description"
+        compactTail
+        html={property.descriptionHtml}
+        renderWhenEmpty={sectionConfigs.description.renderWhenEmpty}
+        showHeader={sectionConfigs.description.showHeader}
+        title={sectionConfigs.description.title}
+      />
+    ),
+    amenities: (
+      <PropertyContentSection
+        key="amenities"
+        className="property-template-section--amenities"
+        html={property.amenitiesHtml}
+        listSections
+        renderWhenEmpty={sectionConfigs.amenities.renderWhenEmpty}
+        showHeader={sectionConfigs.amenities.showHeader}
+        title={sectionConfigs.amenities.title}
+      />
+    ),
+    reviews: (
+      <PropertyContentSection
+        key="reviews"
+        className="property-template-section--reviews"
+        html={property.reviewsHtml}
+        reviewEntries
+        renderWhenEmpty={sectionConfigs.reviews.renderWhenEmpty}
+        showHeader={sectionConfigs.reviews.showHeader}
+        title={sectionConfigs.reviews.title}
+      />
+    ),
+  }
 
   return (
     <article className="property-page property-page--template">
@@ -249,21 +304,7 @@ export function PropertyDetailPage() {
             </section>
           ) : null}
 
-          {shortDescriptionLines.length > 0 ? (
-            <PropertyContentSection title="Short Description">
-              <div className="property-fact-stack">
-                {shortDescriptionLines.map((line) => (
-                  <div className="property-fact-line" key={line}>
-                    {line}
-                  </div>
-                ))}
-              </div>
-            </PropertyContentSection>
-          ) : null}
-
-          <PropertyContentSection compactTail html={property.descriptionHtml} title="Description" />
-          <PropertyContentSection html={property.amenitiesHtml} listSections title="Amenities" />
-          <PropertyContentSection className="property-template-section--reviews" html={property.reviewsHtml} reviewEntries title="Reviews" />
+          {templateVariant.sectionOrder.map((sectionKey) => propertySections[sectionKey]).filter(Boolean)}
 
           {property.previousProperty || property.nextProperty ? (
             <nav aria-label="Adjacent properties" className="property-adjacent-nav">
