@@ -583,7 +583,7 @@ function formatPropertySelectorLabel(property) {
 
 function formatCharterSelectorLabel(charter) {
   const name = repairSnapshotText(charter?.name || 'Untitled charter')
-  return `${name} | ${charter?.active ? 'Active' : 'Hidden'}`
+  return `${name} | ${charter?.active !== false ? 'Active' : 'Hidden'}`
 }
 
 function AdminTabButton({ active, label, onClick }) {
@@ -725,11 +725,25 @@ export function AdminPage() {
   }, [authState.status, authState.user, propertyUsesFirebase, requiresAdminSignIn])
 
   useEffect(() => {
+    if (requiresAdminSignIn && authState.status === 'loading') {
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadCharterWorkspace() {
       try {
-        const charters = await listAllCharters()
+        let requestOptions = {}
+
+        if (charterUsesFirebase && authState.user) {
+          const authToken = await getAdminIdToken()
+
+          if (authToken) {
+            requestOptions = { authToken }
+          }
+        }
+
+        const charters = await listAllCharters(requestOptions)
 
         if (cancelled) {
           return
@@ -761,7 +775,7 @@ export function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [authState.status, authState.user, charterUsesFirebase, requiresAdminSignIn])
 
   useEffect(() => {
     let cancelled = false
@@ -1322,7 +1336,7 @@ export function AdminPage() {
         charterEditorState.mode === 'edit' ? charterFormState.originalSlug : '',
         requestOptions,
       )
-      const charters = await listAllCharters()
+      const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
       setCharterEditorState({ mode: 'edit', activeSlug: saved.slug })
       setCharterFormState(createCharterFormState(saved))
@@ -1359,7 +1373,7 @@ export function AdminPage() {
           : 'Restored the generated charter catalog for this browser.',
       )
 
-      const charters = await listAllCharters()
+      const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
 
       if (charters.length > 0) {
@@ -1538,6 +1552,7 @@ export function AdminPage() {
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
+  const siteContentDraftEditingEnabled = siteContentEditingEnabled
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
   const authBadgeTone =
     authState.user
@@ -1732,6 +1747,10 @@ export function AdminPage() {
                   <p className={`admin-feedback admin-feedback--${siteShellSaveStatus}`}>{siteShellFeedback}</p>
                 ) : null}
 
+                {!siteContentSaveEnabled ? (
+                  <p className="admin-note">You can edit the header and footer draft here, but you must sign in before saving those changes live.</p>
+                ) : null}
+
                 {siteShellWorkspaceState.status === 'loading' ? (
                   <p className="admin-empty">Loading header and footer content...</p>
                 ) : (
@@ -1741,7 +1760,7 @@ export function AdminPage() {
                         <AdminSiteShellEditor
                           value={siteShellDraft}
                           onChange={setSiteShellDraft}
-                          disabled={!siteContentSaveEnabled}
+                          disabled={!siteContentDraftEditingEnabled}
                         />
 
                         <div className="admin-form-actions">
@@ -1836,6 +1855,10 @@ export function AdminPage() {
 
                 {pageEditorState.status === 'loading' ? <p className="admin-empty">Loading structured page content...</p> : null}
 
+                {!siteContentSaveEnabled ? (
+                  <p className="admin-note">You can edit this page draft now, but you must sign in before saving the changes live.</p>
+                ) : null}
+
                 {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
                   <form className="admin-form admin-form--flush" onSubmit={handleStructuredPageSubmit}>
                     <div className="admin-toolbar-row">
@@ -1852,7 +1875,7 @@ export function AdminPage() {
 
                     <AdminPageEditorCanvas
                       device={pagePreviewDevice}
-                      disabled={!siteContentSaveEnabled}
+                      disabled={!siteContentDraftEditingEnabled}
                       onChange={(updater) =>
                         setPageEditorState((current) => ({
                           ...current,
@@ -2099,22 +2122,11 @@ export function AdminPage() {
 
           {activeTab === 'media' ? (
             <section className="admin-panel">
-              <div className="admin-panel-header">
-                <div>
-                  <div className="eyebrow">Media</div>
-                  <h2>Media Library</h2>
-                </div>
-              </div>
-
-              <p className="admin-note">
-                Browse managed Firebase Storage folders, open images, and copy URLs for reuse across pages, properties, and charters.
-              </p>
-
               <div className="admin-editor">
                 <AdminMediaManager
                   defaultOpen
                   showToggle={false}
-                  title="Media Library"
+                  title=""
                 />
               </div>
             </section>

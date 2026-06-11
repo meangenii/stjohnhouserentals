@@ -1,6 +1,7 @@
 const { onRequest } = require('firebase-functions/v2/https')
 const {
   getCharterBySlug,
+  listAllCharters,
   listCharters,
   resetCharterRecordsToSeed,
   saveCharterRecord,
@@ -17,6 +18,7 @@ const {
   savePropertyRecord,
   seedPropertyRecords,
 } = require('./propertyRepository')
+const { createMediaFolder, listMediaLibrary, uploadMediaAsset } = require('./mediaRepository')
 const {
   getSiteShellContent,
   getStructuredPageContent,
@@ -57,6 +59,16 @@ const publicSiteConfig = {
   ],
 }
 
+function normalizeRequestPath(pathname) {
+  const normalizedPath = String(pathname ?? '').replace(/^\/+/, '')
+
+  if (normalizedPath === 'api') {
+    return ''
+  }
+
+  return normalizedPath.replace(/^api\/+/, '')
+}
+
 function sendError(response, error, path) {
   if (error instanceof HttpError) {
     response.status(error.status).json({
@@ -75,7 +87,7 @@ function sendError(response, error, path) {
 }
 
 exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (request, response) => {
-  const path = request.path.replace(/^\/+/, '')
+  const path = normalizeRequestPath(request.path)
 
   try {
     if (request.method === 'GET' && (path === '' || path === 'health')) {
@@ -255,6 +267,16 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       return
     }
 
+    if (request.method === 'GET' && path === 'admin/charters/catalog') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        charters: await listAllCharters(),
+      })
+      return
+    }
+
     if (request.method === 'DELETE' && path === 'admin/charters/overrides') {
       await requireAdminUser(request)
       const result = await resetCharterRecordsToSeed()
@@ -262,6 +284,40 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         reset: result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/media/folders') {
+      const adminUser = await requireAdminUser(request)
+      const folder = await createMediaFolder(request.body?.parentPath ?? 'media', request.body?.folderName ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        folder,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/media/library') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...(await listMediaLibrary()),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/media/upload') {
+      const adminUser = await requireAdminUser(request)
+      const media = await uploadMediaAsset(request.body ?? {}, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        media,
       })
       return
     }

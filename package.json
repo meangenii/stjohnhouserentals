@@ -21,7 +21,7 @@
     "media:migrate": "node ./scripts/migrate-legacy-media.mjs",
     "analyze:listings": "node ./scripts/analyze-rental-listing-patterns.mjs",
     "preview": "vite preview",
-    "seed:firebase-data": "npm run content:generate && npm --prefix functions run seed:firestore",
+    "seed:firebase-data": "node ./scripts/seed-firebase-data.mjs",
     "snapshot:site": "node ./scripts/snapshot-live-site.mjs"
   },
   "dependencies": {

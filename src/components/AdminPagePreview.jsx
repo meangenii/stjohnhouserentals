@@ -105,13 +105,32 @@ export function AdminPageEditorCanvas({
   const previewBody = renderPreviewBody(page, pageKey)
 
   function handleCanvasClickCapture(event) {
-    const interactiveTarget = event.target.closest('a, button, form, input, textarea, select, label')
+    const target = event.target
+
+    if (!(target instanceof Element)) {
+      return
+    }
+
+    if (target.closest('.admin-inline-popover')) {
+      return
+    }
+
+    const interactiveTarget = target.closest('a, button, form, input, textarea, select, label')
 
     if (!interactiveTarget) {
       return
     }
 
-    if (event.target.closest('[data-admin-inline-editable="true"]')) {
+    if (target.closest('[data-admin-inline-editable="true"]')) {
+      return
+    }
+
+    const nestedEditableTarget = interactiveTarget.querySelector('[data-admin-inline-editable="true"]')
+
+    if (nestedEditableTarget instanceof HTMLElement) {
+      event.preventDefault()
+      event.stopPropagation()
+      nestedEditableTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
       return
     }
 

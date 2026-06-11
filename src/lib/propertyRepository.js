@@ -1,17 +1,13 @@
-import { collection, getDocs, orderBy, query } from 'firebase/firestore'
-import { deleteJson, getApiBaseUrl, getJson, postJson } from './api'
-import { getFirestoreDb } from './firebase'
+import { deleteJson, getJson, postJson } from './api'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT, normalizePropertyTemplateVariant } from './propertyTemplateVariants'
 import { getRouteSlugVariants } from './routeSlug'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
 
-const FIRESTORE_PROPERTY_COLLECTION = 'cmsProperties'
 const liveCatalogUrl = '/livePropertyCatalog.json'
 const liveSummaryCatalogUrl = '/livePropertySummaryCatalog.json'
 const MOCK_STORAGE_KEY = 'propertyCatalog'
 const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'local'
 
-let firebasePropertyCatalogPromise = null
 let localPropertyCatalogPromise = null
 let remotePropertyCatalogPromise = null
 let localPropertySummaryCatalogPromise = null
@@ -96,13 +92,6 @@ function normalizePropertyShortDescription(shortDescription, fallbackLines = [])
   }
 
   return fallbackLines.join('\n')
-}
-
-function stripFirestoreMetadata(record) {
-  const content = { ...(record ?? {}) }
-  delete content.updatedAt
-  delete content.updatedBy
-  return content
 }
 
 function normalizePropertyRecord(record) {
@@ -291,7 +280,6 @@ function fetchSummaryCatalog(url) {
 }
 
 function invalidatePropertyCaches() {
-  firebasePropertyCatalogPromise = null
   remotePropertyCatalogPromise = null
   remotePropertySummaryCatalogPromise = null
 }
@@ -342,30 +330,6 @@ function reviewEntriesToHtml(entries) {
       return lines
     })
     .join('\n')
-}
-
-async function fetchFirebaseCatalog() {
-  const db = getFirestoreDb()
-
-  if (!db) {
-    throw new Error('Firebase client configuration is missing. Fill in the VITE_FIREBASE_* values first.')
-  }
-
-  const snapshot = await getDocs(query(collection(db, FIRESTORE_PROPERTY_COLLECTION), orderBy('name')))
-  const properties = snapshot.docs
-    .map((documentSnapshot) =>
-      normalizePropertyRecord({
-        id: documentSnapshot.id,
-        ...stripFirestoreMetadata(documentSnapshot.data()),
-      }),
-    )
-    .filter(Boolean)
-
-  if (properties.length === 0) {
-    throw new Error('The Firestore property catalog is empty.')
-  }
-
-  return buildCatalogFromPayload({ properties })
 }
 
 function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
@@ -459,17 +423,6 @@ async function loadLocalCatalog() {
   return localPropertyCatalogPromise
 }
 
-async function loadFirebaseCatalog() {
-  if (!firebasePropertyCatalogPromise) {
-    firebasePropertyCatalogPromise = fetchFirebaseCatalog().catch((error) => {
-      firebasePropertyCatalogPromise = null
-      throw error
-    })
-  }
-
-  return firebasePropertyCatalogPromise
-}
-
 async function loadRemoteCatalog() {
   if (!remotePropertyCatalogPromise) {
     remotePropertyCatalogPromise = getJson('/properties/catalog')
@@ -514,16 +467,6 @@ async function loadRemoteSummaryCatalog() {
   return remotePropertySummaryCatalogPromise
 }
 
-async function loadFirebaseSummaryCatalog() {
-  const catalog = await loadFirebaseCatalog()
-  const properties = catalog.properties.map((property) => summarizeProperty(property))
-
-  return {
-    properties,
-    groups: groupProperties(properties),
-  }
-}
-
 async function loadMockCatalog() {
   if (!mockCatalog) {
     const stored = localStorage.getItem(MOCK_STORAGE_KEY)
@@ -549,10 +492,6 @@ async function loadCatalog() {
     return loadMockCatalog()
   }
 
-  if (usesDirectFirestorePropertyReads()) {
-    return loadFirebaseCatalog()
-  }
-
   if (isFirebasePropertyData() || isApiPropertyData()) {
     return loadRemoteCatalog()
   }
@@ -568,10 +507,6 @@ async function loadSummaryCatalog() {
       properties: catalog.properties.map((property) => summarizeProperty(property)),
       groups: groupProperties(catalog.properties.map((property) => summarizeProperty(property))),
     }
-  }
-
-  if (usesDirectFirestorePropertyReads()) {
-    return loadFirebaseSummaryCatalog()
   }
 
   if (isFirebasePropertyData() || isApiPropertyData()) {
@@ -619,10 +554,6 @@ export function isApiPropertyData() {
   return propertyDataSource === 'api'
 }
 
-function usesDirectFirestorePropertyReads() {
-  return isFirebasePropertyData() && getApiBaseUrl() !== '/api'
-}
-
 export function isPropertyEditingEnabled() {
   return isMockPropertyData() || isFirebasePropertyData()
 }
@@ -638,7 +569,7 @@ export async function listProperties() {
 }
 
 export async function listAllProperties(options = {}) {
-  if (isMockPropertyData() || usesDirectFirestorePropertyReads()) {
+  if (isMockPropertyData()) {
     const catalog = await loadCatalog()
     return cloneData(catalog.properties)
   }

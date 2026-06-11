@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { execFile } = require('child_process')
 const { promisify } = require('util')
+const { primeApplicationDefaultCredentialsFromFirebaseCli } = require('../functions/src/firebaseCliCredentialBootstrap')
 
 const execFileAsync = promisify(execFile)
 
@@ -218,6 +219,7 @@ async function checkAdminSdkCredentials() {
     }
   }
 
+  primeApplicationDefaultCredentialsFromFirebaseCli()
   const serviceAccountPath = String(process.env.GOOGLE_APPLICATION_CREDENTIALS ?? '').trim()
 
   if (serviceAccountPath) {

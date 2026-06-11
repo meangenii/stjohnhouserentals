@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
+import { EditableBackgroundSection, EditableButton, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -189,15 +189,14 @@ export function RentalAccommodationsPage() {
                 onChange={(event) => setBedroomInput(event.target.value)}
               />
 
-              <button
+              <EditableButton
                 className="rental-accommodations-filter-button"
                 disabled={summaryState.status === 'loading'}
+                label={page.directory.filterActionLabel}
+                labelLabel="Filter Button Text"
+                labelPath={['directory', 'filterActionLabel']}
                 type="submit"
-              >
-                <EditableText as="span" label="Filter Button Text" path={['directory', 'filterActionLabel']} value={page.directory.filterActionLabel}>
-                  {page.directory.filterActionLabel}
-                </EditableText>
-              </button>
+              />
             </form>
           </header>
 

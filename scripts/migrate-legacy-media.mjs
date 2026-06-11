@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { readFile, writeFile } from 'node:fs/promises'
+import { get as httpsGet } from 'node:https'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -151,7 +152,7 @@ function createDeepClone(value) {
 function collectLegacyMediaMatches(value) {
   return Array.from(
     String(value ?? '').matchAll(
-      /https:\/\/static\.(?:[a-z]{3}static\.com|legacy-cdn\.invalid)\/media\/[^\s"'()<>]+|[a-z]{3}:image:\/\/v1\/[^\s"'()<>]+/gi,
+      /https:\/\/static\.(?:[a-z]{3}static\.com|legacy-cdn\.invalid)\/media\/[^\s"'()<>]+|[a-z]{3}:image:\/\/v1\/[^\s"'()<>]+|https:\/\/firebasestorage\.googleapis\.com\/v0\/b\/sjhr-f502d\.firebasestorage\.app\/o\/[^\s"'()<>]+/gi,
     ),
   ).map((match) => match[0])
 }
@@ -391,6 +392,55 @@ function buildDownloadUrl(bucketName, storagePath, token) {
   return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucketName)}/o/${encodeURIComponent(storagePath)}?alt=media&token=${encodeURIComponent(token)}`
 }
 
+function fetchBinaryWithHttps(url, redirectCount = 0) {
+  return new Promise((resolve, reject) => {
+    const request = httpsGet(url, (response) => {
+      const statusCode = Number(response.statusCode ?? 0)
+      const locationHeader = String(response.headers.location ?? '').trim()
+
+      if (statusCode >= 300 && statusCode < 400 && locationHeader) {
+        response.resume()
+
+        if (redirectCount >= 5) {
+          reject(new Error(`Image request exceeded redirect limit for ${url}`))
+          return
+        }
+
+        const nextUrl = new URL(locationHeader, url).toString()
+        fetchBinaryWithHttps(nextUrl, redirectCount + 1).then(resolve).catch(reject)
+        return
+      }
+
+      if (statusCode < 200 || statusCode >= 300) {
+        response.resume()
+        reject(new Error(`Image request failed with status ${statusCode} for ${url}`))
+        return
+      }
+
+      const chunks = []
+
+      response.on('data', (chunk) => {
+        chunks.push(chunk)
+      })
+
+      response.on('end', () => {
+        resolve({
+          buffer: Buffer.concat(chunks),
+          contentType: String(response.headers['content-type'] ?? '').trim(),
+        })
+      })
+
+      response.on('error', (error) => {
+        reject(error)
+      })
+    })
+
+    request.on('error', (error) => {
+      reject(error)
+    })
+  })
+}
+
 async function fetchBinary(url) {
   let lastError = null
 
@@ -419,7 +469,15 @@ async function fetchBinary(url) {
     }
   }
 
-  throw lastError
+  try {
+    return await fetchBinaryWithHttps(url)
+  } catch (fallbackError) {
+    const primaryMessage = lastError instanceof Error ? lastError.message : String(lastError ?? 'Unknown fetch failure')
+    const fallbackMessage =
+      fallbackError instanceof Error ? fallbackError.message : String(fallbackError ?? 'Unknown HTTPS fallback failure')
+
+    throw new Error(`Image request failed for ${url}. Primary error: ${primaryMessage}. HTTPS fallback error: ${fallbackMessage}`)
+  }
 }
 
 async function saveBufferToStorage(file, buffer, contentType, metadata) {
@@ -464,6 +522,26 @@ function buildUsageList(candidates) {
   })
 
   return Array.from(uniqueUsages.values())
+}
+
+function resolveDownloadSourceUrl(candidate) {
+  const originalUrl = String(candidate?.originalUrl ?? '').trim()
+
+  if (/^https:\/\/firebasestorage\.googleapis\.com\/v0\/b\//i.test(originalUrl)) {
+    return originalUrl
+  }
+
+  return String(candidate?.canonicalSourceUrl ?? '').trim() || originalUrl
+}
+
+function resolveSourceHostLabel(candidate) {
+  const originalUrl = String(candidate?.originalUrl ?? '').trim().toLowerCase()
+
+  if (originalUrl.includes('firebasestorage.googleapis.com')) {
+    return 'legacy-firebase-storage'
+  }
+
+  return 'legacy-static-host'
 }
 
 function scanValueForLegacyMedia(value, context, candidates, pathSegments = []) {
@@ -631,7 +709,7 @@ async function migrateAssets(db, bucket, candidates, projectId) {
     const needsUpload = !managedUrl || !storagePath
 
     if (needsUpload) {
-      const fetched = await fetchBinary(canonicalSourceUrl)
+      const fetched = await fetchBinary(resolveDownloadSourceUrl(primaryCandidate))
       const extension = resolveFileExtension(primaryCandidate, fetched.contentType)
 
       storagePath = buildStoragePath(primaryCandidate, extension)
@@ -674,7 +752,7 @@ async function migrateAssets(db, bucket, candidates, projectId) {
           bytes,
           alt: primaryCandidate.alt,
           title: primaryCandidate.title,
-          sourceHost: 'legacy-static-host',
+          sourceHost: resolveSourceHostLabel(primaryCandidate),
           usages,
           usageCount: usages.length,
           updatedAt: FieldValue.serverTimestamp(),

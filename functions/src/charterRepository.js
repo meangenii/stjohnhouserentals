@@ -303,7 +303,11 @@ exports.getCharterBySlug = async function getCharterBySlug(slug) {
     .map((variant) => catalog.index.get(variant))
     .find(Boolean)
 
-  return cloneData(charter || null)
+  if (!charter || charter.active === false) {
+    return null
+  }
+
+  return cloneData(charter)
 }
 
 exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug, adminUser) {

@@ -7,8 +7,14 @@ const legacyVendorToken = ['w', 'i', 'x'].join('')
 const LEGACY_STATIC_MEDIA_HOST_PATTERN = '(?:[a-z]{3}static\\.com|legacy-cdn\\.invalid)'
 const LEGACY_STATIC_MEDIA_PATTERN = new RegExp(`^https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/`, 'i')
 const LEGACY_PROTOCOL_MEDIA_PATTERN = /^[a-z]{3}:image:\/\/v1\//i
+const LEGACY_FIREBASE_BUCKET_HOST_PATTERN = '(?:sjhr-f502d\\.firebasestorage\\.app)'
+const LEGACY_FIREBASE_MEDIA_PATTERN = new RegExp(
+  `^https://firebasestorage\\.googleapis\\.com/v0/b/${LEGACY_FIREBASE_BUCKET_HOST_PATTERN}/o/`,
+  'i',
+)
+const LEGACY_FIREBASE_GS_URL_PATTERN = new RegExp(`^gs://${LEGACY_FIREBASE_BUCKET_HOST_PATTERN}/`, 'i')
 const LEGACY_MEDIA_MATCHER = new RegExp(
-  `https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/[^\\s"'()<>]+|[a-z]{3}:image://v1/[^\\s"'()<>]+`,
+  `https://static\\.${LEGACY_STATIC_MEDIA_HOST_PATTERN}/media/[^\\s"'()<>]+|[a-z]{3}:image://v1/[^\\s"'()<>]+|https://firebasestorage\\.googleapis\\.com/v0/b/${LEGACY_FIREBASE_BUCKET_HOST_PATTERN}/o/[^\\s"'()<>]+`,
   'gi',
 )
 
@@ -24,7 +30,9 @@ export function isLegacyMediaUrl(value) {
 
   return (
     LEGACY_PROTOCOL_MEDIA_PATTERN.test(candidate) ||
-    LEGACY_STATIC_MEDIA_PATTERN.test(candidate)
+    LEGACY_STATIC_MEDIA_PATTERN.test(candidate) ||
+    LEGACY_FIREBASE_MEDIA_PATTERN.test(candidate) ||
+    LEGACY_FIREBASE_GS_URL_PATTERN.test(candidate)
   )
 }
 
@@ -45,6 +53,31 @@ export function getCanonicalLegacyMediaUrl(value) {
 
   if (staticMatch) {
     return `https://static.${legacyVendorToken}static.com/media/${staticMatch[1]}`
+  }
+
+  const firebaseMatch = candidate.match(
+    new RegExp(
+      `^https://firebasestorage\\.googleapis\\.com/v0/b/(${LEGACY_FIREBASE_BUCKET_HOST_PATTERN})/o/([^?#]+)`,
+      'i',
+    ),
+  )
+
+  if (firebaseMatch) {
+    let objectPath = firebaseMatch[2]
+
+    try {
+      objectPath = decodeURIComponent(objectPath)
+    } catch {
+      objectPath = firebaseMatch[2]
+    }
+
+    return `gs://${firebaseMatch[1].toLowerCase()}/${objectPath}`
+  }
+
+  const firebaseGsMatch = candidate.match(new RegExp(`^(gs://${LEGACY_FIREBASE_BUCKET_HOST_PATTERN}/.+)$`, 'i'))
+
+  if (firebaseGsMatch) {
+    return firebaseGsMatch[1].toLowerCase()
   }
 
   return ''
@@ -95,7 +128,12 @@ export function getManagedMediaEntry(url, manifest = EMPTY_MEDIA_MANIFEST) {
 export function rewriteStringWithMediaManifest(value, manifest = EMPTY_MEDIA_MANIFEST) {
   const candidate = String(value ?? '')
 
-  if (!isLegacyMediaUrl(candidate) && !candidate.includes('static.') && !candidate.includes(':image://v1/')) {
+  if (
+    !isLegacyMediaUrl(candidate) &&
+    !candidate.includes('static.') &&
+    !candidate.includes(':image://v1/') &&
+    !candidate.includes('firebasestorage.googleapis.com')
+  ) {
     return candidate
   }
 

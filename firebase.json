@@ -10,7 +10,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "site": "sjhr-f502d",
+    "site": "st-john-house-rentals",
     "public": "dist",
     "ignore": [
       "firebase.json",

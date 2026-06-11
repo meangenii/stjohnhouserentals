@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { EditableText } from '../components/AdminInlinePageEdit'
+import { EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { ListingCard } from '../components/ListingCard'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
@@ -95,25 +95,29 @@ export function HouseRentalsPage() {
 
         {state.status === 'loading' ? <p className="admin-empty">Loading house rentals...</p> : null}
 
-        {state.status === 'ready' ? (
+        {state.status === 'ready' && visibleProperties.length > 0 ? (
           <section className="snapshot-listings" aria-label={page.directory.title}>
-              <div className="snapshot-listing-grid">
-                {visibleProperties.map((property) => {
-                  const listing = buildListingItem(property)
-                  return (
-                    <ListingCard
-                      actionLabel={
-                        <EditableText as="span" label="Listing Action Label" path={['directory', 'actionLabel']} value={page.directory.actionLabel}>
-                          {page.directory.actionLabel}
-                        </EditableText>
-                      }
-                      item={listing.item}
-                      key={property.slug}
-                    />
-                  )
-                })}
-              </div>
-            </section>
+            <div className="snapshot-listing-grid">
+              {visibleProperties.map((property) => {
+                const listing = buildListingItem(property)
+                return (
+                  <ListingCard
+                    actionContent={
+                      <EditableLink
+                        className="button-link button-link--ghost listing-card-action"
+                        destination={listing.item.path}
+                        label={page.directory.actionLabel}
+                        labelLabel="Listing Action Label"
+                        labelPath={['directory', 'actionLabel']}
+                      />
+                    }
+                    item={listing.item}
+                    key={property.slug}
+                  />
+                )
+              })}
+            </div>
+          </section>
         ) : state.status === 'ready' ? (
           <p className="admin-empty">Property listings are unavailable right now.</p>
         ) : null}

@@ -1,5 +1,6 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { AdminMediaManager } from './AdminMediaManager'
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
@@ -189,12 +190,15 @@ function ScalarField({ fieldKey, label, onChange, path, value, disabled }) {
   }
 
   const useTextarea = typeof value === 'string' && shouldUseTextarea(fieldKey, value)
+  const showMediaLibrary = typeof value === 'string' && (isLikelyImageUrl(fieldKey, path, value) || /(image|photo|gallery|hero|logo|thumbnail|icon|picture|url|src)/i.test(`${path.join('.')} ${fieldKey}`.trim()))
 
   return (
-    <label className="admin-field">
-      <span>{label}</span>
+    <div className="admin-field">
+      <label htmlFor={inputId}>
+        <span>{label}</span>
+      </label>
       {useTextarea ? (
-        <textarea rows="4" value={value ?? ''} onChange={(event) => onChange(path, event.target.value)} disabled={disabled} />
+        <textarea id={inputId} rows="4" value={value ?? ''} onChange={(event) => onChange(path, event.target.value)} disabled={disabled} />
       ) : (
         <input
           id={inputId}
@@ -207,7 +211,17 @@ function ScalarField({ fieldKey, label, onChange, path, value, disabled }) {
         />
       )}
       {typeof value === 'string' ? <DocumentPreview fieldKey={fieldKey} path={path} value={value} /> : null}
-    </label>
+      {showMediaLibrary ? (
+        <AdminMediaManager
+          currentUrl={value ?? ''}
+          disabled={disabled}
+          onClear={() => onChange(path, '')}
+          onSelect={(nextUrl) => onChange(path, nextUrl)}
+          preferredOwnerType="page"
+          title={`${label} Media`}
+        />
+      ) : null}
+    </div>
   )
 }
 

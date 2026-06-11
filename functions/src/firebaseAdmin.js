@@ -1,6 +1,8 @@
 const { getApps, initializeApp } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
 const { FieldValue, getFirestore } = require('firebase-admin/firestore')
+const { getStorage } = require('firebase-admin/storage')
+const { primeApplicationDefaultCredentialsFromFirebaseCli } = require('./firebaseCliCredentialBootstrap')
 
 class HttpError extends Error {
   constructor(status, message, details = {}) {
@@ -10,12 +12,29 @@ class HttpError extends Error {
   }
 }
 
+let adminCredentialsPrimed = false
+
+function ensureLocalAdminCredentials() {
+  if (adminCredentialsPrimed) {
+    return
+  }
+
+  adminCredentialsPrimed = true
+  primeApplicationDefaultCredentialsFromFirebaseCli()
+}
+
 function getAdminApp() {
+  ensureLocalAdminCredentials()
   return getApps()[0] ?? initializeApp()
 }
 
 function getDb() {
   return getFirestore(getAdminApp())
+}
+
+function getStorageBucket(bucketName) {
+  const storage = getStorage(getAdminApp())
+  return bucketName ? storage.bucket(bucketName) : storage.bucket()
 }
 
 function getAdminAuthClient() {
@@ -99,6 +118,7 @@ function isFirestoreUnavailableError(error) {
 
 exports.HttpError = HttpError
 exports.getDb = getDb
+exports.getStorageBucket = getStorageBucket
 exports.getServerTimestamp = getServerTimestamp
 exports.isFirestoreUnavailableError = isFirestoreUnavailableError
 exports.requireAdminUser = requireAdminUser

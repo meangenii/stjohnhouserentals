@@ -1,4 +1,28 @@
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
+const ALLOWED_TAGS = new Set([
+  'A',
+  'B',
+  'BLOCKQUOTE',
+  'BR',
+  'DIV',
+  'EM',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'HR',
+  'I',
+  'LI',
+  'OL',
+  'P',
+  'SPAN',
+  'STRONG',
+  'U',
+  'UL',
+])
+const DROP_TAGS = new Set(['BASE', 'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'INPUT', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA'])
 
 function repairSnapshotText(text = '') {
   return text
@@ -38,6 +62,10 @@ function normalizeHrefValue(href) {
     return trimmedHref
   }
 
+  if (trimmedHref.startsWith('#') || trimmedHref.startsWith('?')) {
+    return trimmedHref
+  }
+
   if (trimmedHref.startsWith('/')) {
     const [pathnameAndSearch, hash = ''] = trimmedHref.split('#')
     const [pathname, search = ''] = pathnameAndSearch.split('?')
@@ -45,8 +73,12 @@ function normalizeHrefValue(href) {
     return `${normalizedPath}${search ? `?${search}` : ''}${hash ? `#${hash}` : ''}`
   }
 
-  if (!/^https?:\/\//i.test(trimmedHref)) {
+  if (/^(mailto:|tel:)/i.test(trimmedHref)) {
     return trimmedHref
+  }
+
+  if (!/^https?:\/\//i.test(trimmedHref)) {
+    return ''
   }
 
   let parsedUrl
@@ -65,6 +97,75 @@ function normalizeHrefValue(href) {
   return `${normalizedPath}${parsedUrl.search}${parsedUrl.hash}`
 }
 
+function unwrapElement(element) {
+  const parent = element.parentNode
+
+  if (!parent) {
+    return
+  }
+
+  while (element.firstChild) {
+    parent.insertBefore(element.firstChild, element)
+  }
+
+  parent.removeChild(element)
+}
+
+function sanitizeHtmlTree(root) {
+  Array.from(root.children).forEach((element) => {
+    sanitizeHtmlTree(element)
+
+    const tagName = element.tagName.toUpperCase()
+
+    if (DROP_TAGS.has(tagName)) {
+      element.remove()
+      return
+    }
+
+    if (!ALLOWED_TAGS.has(tagName)) {
+      unwrapElement(element)
+      return
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      const attributeName = attribute.name.toLowerCase()
+
+      if (attributeName.startsWith('on') || attributeName === 'style') {
+        element.removeAttribute(attribute.name)
+        return
+      }
+
+      if (tagName === 'A') {
+        if (!['href', 'rel', 'target', 'title'].includes(attributeName)) {
+          element.removeAttribute(attribute.name)
+        }
+
+        return
+      }
+
+      element.removeAttribute(attribute.name)
+    })
+
+    if (tagName === 'A') {
+      const safeHref = normalizeHrefValue(element.getAttribute('href'))
+
+      if (!safeHref) {
+        unwrapElement(element)
+        return
+      }
+
+      element.setAttribute('href', safeHref)
+
+      if (element.getAttribute('target') === '_blank') {
+        element.setAttribute('rel', 'noreferrer noopener')
+      } else {
+        element.removeAttribute('target')
+        element.removeAttribute('rel')
+      }
+    }
+  })
+}
+
 export function normalizeSiteHtml(html) {
   const sourceHtml = repairSnapshotText(typeof html === 'string' ? html : '')
 
@@ -72,5 +173,20 @@ export function normalizeSiteHtml(html) {
     return ''
   }
 
-  return sourceHtml.replace(/href="([^"]+)"/gi, (_, href) => `href="${normalizeHrefValue(href)}"`)
+  if (typeof DOMParser === 'undefined') {
+    return sourceHtml.replace(/href="([^"]+)"/gi, (_, href) => {
+      const safeHref = normalizeHrefValue(href)
+      return safeHref ? `href="${safeHref}"` : ''
+    })
+  }
+
+  const documentNode = new DOMParser().parseFromString(`<div>${sourceHtml}</div>`, 'text/html')
+  const root = documentNode.body.firstElementChild
+
+  if (!root) {
+    return ''
+  }
+
+  sanitizeHtmlTree(root)
+  return root.innerHTML.trim()
 }

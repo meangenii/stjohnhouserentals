@@ -1,4 +1,4 @@
-import { EditableBackgroundSection, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { EditableBackgroundSection, EditableButton, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useSiteShellContent, useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -140,11 +140,13 @@ export function AdvertisePage() {
               </label>
             </div>
 
-            <button className="advertise-page-submit" type="submit">
-              <EditableText as="span" label="Submit Button Text" path={['form', 'submitLabel']} value={page.form.submitLabel}>
-                {page.form.submitLabel}
-              </EditableText>
-            </button>
+            <EditableButton
+              className="advertise-page-submit"
+              label={page.form.submitLabel}
+              labelLabel="Submit Button Text"
+              labelPath={['form', 'submitLabel']}
+              type="submit"
+            />
           </form>
         </div>
       </section>

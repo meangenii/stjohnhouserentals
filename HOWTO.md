@@ -32,9 +32,9 @@ In `npm run dev`, `/api` is proxied to the local Functions emulator. If you want
 Optional:
 
 - `VITE_SITE_CONTENT_SOURCE=local` to read structured page content directly from `shared/siteContent.js`
-- `VITE_SITE_CONTENT_SOURCE=api` to read structured page content plus rental/charter catalogs from `siteApi`
+- `VITE_SITE_CONTENT_SOURCE=api` to read structured page content from `siteApi`
 - `VITE_SITE_CONTENT_SOURCE=firebase` or `firebase-preferred` for Firebase-delivered site shell and structured page content, with live admin editing routed through `siteApi`
-- `VITE_PROPERTY_DATA_SOURCE=firebase` to read rental properties from the live Firestore `cmsProperties` collection when `VITE_API_BASE_URL` points at a deployed API, and edit through Firebase-backed admin endpoints
+- `VITE_PROPERTY_DATA_SOURCE=firebase` to read rental properties through Firebase-backed API endpoints and edit them through the live admin
 - `VITE_CHARTER_DATA_SOURCE=firebase` to read and edit charter listings through Firebase-backed API endpoints
 - `VITE_PROPERTY_DATA_SOURCE=mock` or `VITE_CHARTER_DATA_SOURCE=mock` for browser-local admin drafts
 - `VITE_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` when using the Auth emulator locally
@@ -113,6 +113,24 @@ Property template variants are defined in `shared/propertyTemplateVariants.json`
 
 Use `npm run audit:property-template -- --date=YYYY-MM-DD` to audit an older snapshot.
 
+## Build And Deploy In VS Code
+
+Use the built-in VS Code tasks when you want the simplest publish path.
+
+- Open this project in VS Code.
+- Choose `Terminal > Run Task...`.
+- Choose `Build` if you only want to confirm the site compiles successfully.
+- Choose `Build and Deploy` when you are ready to publish the current site.
+- Wait for the task to finish before closing VS Code.
+- A successful deploy ends with Firebase confirming that hosting and functions were deployed.
+
+Important:
+
+- The computer must already be signed into the correct Firebase account for this project.
+- `Build and Deploy` publishes the frontend and Cloud Functions.
+- It does not publish Firestore rules, Firestore indexes, or Storage rules.
+- If the task fails, send the final error message to the person maintaining the project rather than retrying blindly.
+
 ## Build
 
 ```bash
@@ -122,6 +140,12 @@ npm run check
 `npm run check` now also runs `npm run assert:no-legacy-vendor` and fails if any forbidden legacy vendor string reappears in the repo.
 
 `npm run build`, `npm run emulators`, and `npm run deploy` all run `npm run content:generate` first so Cloud Functions only reads content artifacts inside `functions/src/generated/`.
+
+For the standard VS Code build button path, use the `Build` task. The terminal equivalent is:
+
+```bash
+npm run build
+```
 
 ## Migrate Legacy Media
 
@@ -164,7 +188,7 @@ For end-to-end live editing in local development:
 3. Copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
 4. Start the emulators with `npm run emulators`.
 5. Create an email/password user in the Auth emulator UI.
-6. Open `/admin`, sign in, and use the tabs for Site Shell, Pages, Properties, and Charters. Public property routes will read `cmsProperties` directly from Firestore in the live-hosted API flow, while site shell, structured pages, and `/api` emulator setups continue through `siteApi`.
+6. Open `/admin`, sign in, and use the tabs for Site Shell, Pages, Properties, and Charters. Public page, property, charter, and media-library reads now flow through `siteApi` or the local generated catalogs rather than direct browser reads from Firestore.
 
 To seed Firestore with the current generated catalogs:
 
@@ -184,6 +208,8 @@ npm run deploy
 
 This deploys the built frontend plus Cloud Functions, including the current public `siteApi` endpoints.
 
+For the standard VS Code publish path, use the `Build and Deploy` task instead of running terminal commands manually.
+
 It does not deploy Firestore rules or indexes by default. That keeps first deploys working on Firebase projects that do not have a default Firestore database yet.
 
 After the default Firestore database exists, deploy Firestore config with:
@@ -199,7 +225,7 @@ npm run deploy:firestore
 - Keep React-only asset resolution in `src/lib/contentAssets.js`
 - Keep the frontend content access boundary in `src/lib/siteContentRepository.js`
 - Use `siteApi` content and catalog endpoints when you want Firebase-style delivery without changing page components
-- Use direct Firestore reads in `firebase` mode for the public `cmsProperties` catalog when `VITE_API_BASE_URL` targets the deployed API instead of `/api`
+- Use Firebase-backed API responses in `firebase` mode for the public property and charter catalogs
 - Use Firestore-backed canonical site shell, structured page, property, and charter documents for live admin editing
 - Keep all active site images on Firebase Storage URLs; admin saves now reject bundled or third-party image URLs
 - Keep the generated rental and charter catalogs in `public/`

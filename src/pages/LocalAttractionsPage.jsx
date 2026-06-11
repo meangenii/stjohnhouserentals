@@ -1,4 +1,4 @@
-import { EditableBackgroundSection, EditableImage, EditableText } from '../components/AdminInlinePageEdit'
+import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -64,6 +64,7 @@ export function LocalAttractionsPage() {
   const page = useStructuredPageContent('localAttractions')
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const mapImageUrl = getContentImageSrc(page.map.image)
+  const mapActionUrl = String(page.map?.action?.href ?? '').trim() || mapImageUrl || '#'
 
   return (
     <article className="local-attractions-page">
@@ -112,16 +113,16 @@ export function LocalAttractionsPage() {
             ))}
           </div>
 
-          <a
+          <EditableLink
             className="button-link button-link--ghost local-attractions-map-button"
-            href={mapImageUrl || '#'}
-            rel="noreferrer"
-            target="_blank"
-          >
-            <EditableText as="span" label="Map Button Text" path={['map', 'action', 'label']} value={page.map.action.label}>
-              {page.map.action.label}
-            </EditableText>
-          </a>
+            destination={mapActionUrl}
+            destinationLabel="Map Button Link"
+            destinationPath={['map', 'action', 'href']}
+            external
+            label={page.map.action.label}
+            labelLabel="Map Button Text"
+            labelPath={['map', 'action', 'label']}
+          />
         </div>
       </section>
 

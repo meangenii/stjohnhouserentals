@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { seedCharterRecords } = require('../src/charterRepository')
+const { primeApplicationDefaultCredentialsFromFirebaseCli } = require('../src/firebaseCliCredentialBootstrap')
 const { seedPropertyRecords } = require('../src/propertyRepository')
 const { seedSiteContentRecords } = require('../src/siteContentRepository')
 const {
@@ -31,6 +32,7 @@ function resolveProjectId() {
 async function main() {
   const replace = process.argv.includes('--replace')
   const projectId = resolveProjectId()
+  primeApplicationDefaultCredentialsFromFirebaseCli()
   const doctorReport = await runFirebaseDoctor({ rootDir: path.resolve(__dirname, '..', '..') })
 
   if (hasBlockingFirebaseIssues(doctorReport)) {

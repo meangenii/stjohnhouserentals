@@ -627,7 +627,17 @@ function renderLocalAttractionsEditor(page, helpers) {
         <Field wide>
           <ImageField disabled={disabled} image={page.map?.image} label="Map Image" onChange={(field, value) => setPath(['map', 'image', field], value)} />
         </Field>
-        <TextField disabled={disabled} label="Map Button Text" onChange={(value) => setPath(['map', 'action', 'label'], value)} value={page.map?.action?.label ?? ''} />
+        <Field wide>
+          <LinkFields
+            disabled={disabled}
+            label="Map Button"
+            link={page.map?.action}
+            onHrefChange={(value) => setPath(['map', 'action', 'href'], value)}
+            onLabelChange={(value) => setPath(['map', 'action', 'label'], value)}
+            hrefLabel="Button Link"
+            textLabel="Button Text"
+          />
+        </Field>
         <TextAreaField disabled={disabled} label="Intro Heading" onChange={(value) => setPath(['intro', 'title'], value)} rows={3} value={page.intro?.title ?? ''} />
         <ParagraphsField disabled={disabled} label="Intro Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
       </SectionCard>

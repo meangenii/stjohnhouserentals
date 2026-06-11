@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-export function ListingCard({ actionLabel = 'Learn More', item }) {
+export function ListingCard({ actionContent = null, actionLabel = 'Learn More', item }) {
   const image = item.image?.url ? item.image : null
   const content = (
     <>
@@ -31,9 +31,11 @@ export function ListingCard({ actionLabel = 'Learn More', item }) {
     return (
       <article className="listing-card">
         {content}
-        <Link className="button-link button-link--ghost listing-card-action" to={item.path}>
-          {actionLabel}
-        </Link>
+        {actionContent ?? (
+          <Link className="button-link button-link--ghost listing-card-action" to={item.path}>
+            {actionLabel}
+          </Link>
+        )}
       </article>
     )
   }
@@ -41,9 +43,11 @@ export function ListingCard({ actionLabel = 'Learn More', item }) {
   return (
     <article className="listing-card">
       {content}
-      <a className="button-link button-link--ghost listing-card-action" href={item.href} rel="noreferrer" target="_blank">
-        {actionLabel}
-      </a>
+      {actionContent ?? (
+        <a className="button-link button-link--ghost listing-card-action" href={item.href} rel="noreferrer" target="_blank">
+          {actionLabel}
+        </a>
+      )}
     </article>
   )
 }

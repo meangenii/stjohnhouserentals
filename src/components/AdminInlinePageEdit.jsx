@@ -297,6 +297,54 @@ export function EditableLink({
   )
 }
 
+export function EditableButton({
+  className = '',
+  disabled = false,
+  label = '',
+  labelLabel = 'Button Text',
+  labelPath,
+  type = 'button',
+  ...rest
+}) {
+  const anchorRef = useRef(null)
+  const field = useEditableField(labelPath)
+  const isActive = field.isActive
+  const inputRef = useAutofocus(isActive)
+
+  function handleActivate(event) {
+    if (!field.isEnabled || field.disabled) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    field.activate()
+  }
+
+  return (
+    <>
+      <button
+        ref={anchorRef}
+        {...rest}
+        className={buildEditableClassName(className, field.isEnabled, isActive)}
+        data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
+        disabled={disabled}
+        type={type}
+        onClick={handleActivate}
+      >
+        {label}
+      </button>
+
+      <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={labelLabel}>
+        <label className="admin-field">
+          <span>{labelLabel}</span>
+          <input ref={inputRef} type="text" value={label ?? ''} onChange={(event) => field.updatePath(labelPath, event.target.value)} />
+        </label>
+      </InlinePopover>
+    </>
+  )
+}
+
 function ImagePopoverFields({ field, image = {}, path, title = 'Image' }) {
   return (
     <>
@@ -331,10 +379,6 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
   const field = useEditableField(path)
   const isActive = field.isActive
 
-  if (!src) {
-    return null
-  }
-
   function handleActivate(event) {
     if (!field.isEnabled || field.disabled) {
       return
@@ -347,15 +391,27 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
 
   return (
     <>
-      <img
-        ref={anchorRef}
-        {...rest}
-        alt={alt}
-        className={buildEditableClassName(className, field.isEnabled, isActive)}
-        data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
-        onClick={handleActivate}
-        src={src}
-      />
+      {src ? (
+        <img
+          ref={anchorRef}
+          {...rest}
+          alt={alt}
+          className={buildEditableClassName(className, field.isEnabled, isActive)}
+          data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
+          onClick={handleActivate}
+          src={src}
+        />
+      ) : (
+        <button
+          ref={anchorRef}
+          className={buildEditableClassName(`${className} admin-inline-image-placeholder`.trim(), field.isEnabled, isActive)}
+          data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
+          type="button"
+          onClick={handleActivate}
+        >
+          Add image
+        </button>
+      )}
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Image">
         <ImagePopoverFields field={field} image={image} path={path} title="Image" />
@@ -379,10 +435,6 @@ export function EditableBackgroundSection({
 
   function handleActivate(event) {
     if (!field.isEnabled || field.disabled) {
-      return
-    }
-
-    if (event.target !== anchorRef.current) {
       return
     }
 

@@ -78,7 +78,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
         <div className="admin-property-preview-body">
           <div className="admin-property-preview-title">
             <h3>{charter?.name || 'Untitled Charter'}</h3>
-            <p>{charter?.active ? 'Visible on the public charter page' : 'Hidden from the public charter page'}</p>
+            <p>{charter?.active !== false ? 'Visible on the public charter page' : 'Hidden from the public charter page'}</p>
           </div>
 
           <PreviewSection

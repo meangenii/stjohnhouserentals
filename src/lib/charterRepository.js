@@ -242,6 +242,10 @@ async function loadCatalog() {
   return isApiBackedSiteContentSource() ? loadRemoteCatalog() : loadLocalCatalog()
 }
 
+async function loadAdminRemoteCatalog(options = {}) {
+  return getJson('/admin/charters/catalog', options).then((payload) => buildCatalogFromPayload(payload))
+}
+
 export function getCharterDataSourceMode() {
   return charterDataSource
 }
@@ -267,7 +271,12 @@ export async function listCharters() {
   return cloneData(catalog.charters.filter((charter) => charter.active !== false))
 }
 
-export async function listAllCharters() {
+export async function listAllCharters(options = {}) {
+  if ((isFirebaseCharterData() || isApiCharterData()) && options.authToken) {
+    const catalog = await loadAdminRemoteCatalog(options)
+    return cloneData(catalog.charters)
+  }
+
   const catalog = await loadCatalog()
   return cloneData(catalog.charters)
 }
@@ -278,7 +287,11 @@ export async function getCharterBySlug(slug) {
     .map((variant) => catalog.index.get(variant))
     .find(Boolean)
 
-  return cloneData(charter || null)
+  if (!charter || charter.active === false) {
+    return null
+  }
+
+  return cloneData(charter)
 }
 
 export async function saveAdminCharter(draft, originalSlug, options = {}) {

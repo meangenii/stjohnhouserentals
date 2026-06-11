@@ -73,7 +73,7 @@ export function CharterBoatsPage() {
   const page = useStructuredPageContent('charterBoats')
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 920 })
   const introImageUrl = getContentImageSrc(page.intro.image, { width: 960, height: 820 })
-  const [state, setState] = useState({ status: 'loading', charters: [] })
+  const [state, setState] = useState({ status: 'loading', charters: [], message: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -84,9 +84,13 @@ export function CharterBoatsPage() {
           setState({ status: 'ready', charters })
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (!cancelled) {
-          setState({ status: 'ready', charters: [] })
+          setState({
+            status: 'error',
+            charters: [],
+            message: error instanceof Error ? error.message : 'Unable to load charter boats.',
+          })
         }
       })
 
@@ -154,11 +158,19 @@ export function CharterBoatsPage() {
             {page.directory.title}
           </EditableText>
 
-          <div className="charter-boats-grid">
-            {state.charters.map((charter) => (
-              <CharterBoatCard key={charter.slug} charter={charter} />
-            ))}
-          </div>
+          {state.status === 'loading' ? <p className="admin-empty">Loading charter boats...</p> : null}
+
+          {state.status === 'error' ? <p className="admin-empty">{state.message}</p> : null}
+
+          {state.status === 'ready' && state.charters.length > 0 ? (
+            <div className="charter-boats-grid">
+              {state.charters.map((charter) => (
+                <CharterBoatCard key={charter.slug} charter={charter} />
+              ))}
+            </div>
+          ) : state.status === 'ready' ? (
+            <p className="admin-empty">No charter boats are available right now.</p>
+          ) : null}
         </div>
       </section>
 
