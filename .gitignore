@@ -29,3 +29,4 @@ functions/src/generated/siteContent.json
 *.njsproj
 *.sln
 *.sw?
+tmp-live-properties.json
