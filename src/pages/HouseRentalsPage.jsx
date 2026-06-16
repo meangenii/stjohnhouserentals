@@ -4,12 +4,12 @@ import { ListingCard } from '../components/ListingCard'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
+import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function formatShortDescriptionSummary(value) {
-  return String(value ?? '')
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
+  return richTextValueToLines(value)
+    .map((line) => richTextValueToPlainText(line))
     .filter(Boolean)
     .join(' | ')
 }

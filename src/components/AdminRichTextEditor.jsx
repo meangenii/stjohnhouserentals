@@ -15,16 +15,19 @@ function ToolbarButton({ children, disabled, onClick }) {
 }
 
 export function AdminRichTextEditor({
+  compact = false,
   disabled = false,
   helperText = '',
   label,
   onChange,
   placeholder = 'Start typing the page content here.',
   snippets = [],
+  sourceRows = undefined,
   value,
 }) {
   const editorRef = useRef(null)
   const [mode, setMode] = useState('visual')
+  const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
 
   useEffect(() => {
     if (mode !== 'visual' || !editorRef.current) {
@@ -84,7 +87,7 @@ export function AdminRichTextEditor({
   }
 
   return (
-    <div className="admin-rich-text-editor">
+    <div className={`admin-rich-text-editor${compact ? ' admin-rich-text-editor--compact' : ''}`.trim()}>
       <div className="admin-rich-text-header">
         <span>{label}</span>
         <div className="admin-inline-actions">
@@ -150,7 +153,9 @@ export function AdminRichTextEditor({
           <div
             ref={editorRef}
             aria-label={label}
-            className={`admin-rich-text-canvas ${disabled ? 'admin-rich-text-canvas--disabled' : ''}`.trim()}
+            className={`admin-rich-text-canvas ${compact ? 'admin-rich-text-canvas--compact' : ''} ${
+              disabled ? 'admin-rich-text-canvas--disabled' : ''
+            }`.trim()}
             contentEditable={!disabled}
             data-placeholder={placeholder}
             suppressContentEditableWarning
@@ -177,7 +182,7 @@ export function AdminRichTextEditor({
 
           <label className="admin-field admin-field--wide">
             <span>HTML Source</span>
-            <textarea disabled={disabled} rows="14" value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
+            <textarea disabled={disabled} rows={htmlSourceRows} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
           </label>
         </>
       )}

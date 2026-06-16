@@ -1,5 +1,6 @@
 import { deleteJson, getJson, postJson } from './api'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT, normalizePropertyTemplateVariant } from './propertyTemplateVariants'
+import { richTextValueToHtml } from './richTextValue'
 import { getRouteSlugVariants } from './routeSlug'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
 
@@ -300,11 +301,11 @@ function amenityGroupsToHtml(groups) {
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${escapeHtml(title)}</h4>`)
+        lines.push(`<h4>${richTextValueToHtml(title)}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${richTextValueToHtml(item)}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -324,7 +325,7 @@ function reviewEntriesToHtml(entries) {
       }
 
       if (quote) {
-        lines.push(`<p>${escapeHtml(quote)}</p>`)
+        lines.push(`<p>${richTextValueToHtml(quote)}</p>`)
       }
 
       return lines

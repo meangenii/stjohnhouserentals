@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useSiteShellContent } from '../lib/useSiteContent'
+import { RichTextValue } from './RichTextValue'
 
 function isActiveNavItem(pathname, matchPaths) {
   return matchPaths.some((matchPath) => pathname === matchPath || pathname.startsWith(`${matchPath}/`))
@@ -8,6 +9,10 @@ function isActiveNavItem(pathname, matchPaths) {
 
 function isActiveChildItem(pathname, child) {
   return isActiveNavItem(pathname, child.matchPaths ?? [child.path])
+}
+
+function buildNavItemId(baseId, itemIndex, suffix) {
+  return `${baseId}-${itemIndex}-${suffix}`
 }
 
 function NavText({ children, className, interactive, to, ...rest }) {
@@ -42,6 +47,7 @@ function SiteMenu({
   const navRef = useRef(null)
   const isCollapsible = responsive && interactive
   const openMenuLabel = openMenuState.scope === menuStateScope ? openMenuState.label : ''
+  const navBaseId = navId || `${String(ariaLabel ?? 'site-navigation').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'site-navigation'}-group`
 
   function setCurrentOpenMenuLabel(nextValue) {
     setOpenMenuState((currentState) => ({
@@ -92,19 +98,21 @@ function SiteMenu({
       id={navId}
       ref={navRef}
     >
-      {items.map((item) => {
+      {items.map((item, itemIndex) => {
         const isActive = isActiveNavItem(pathname, item.matchPaths)
 
         if (item.children?.length) {
           if (!interactive) {
             return (
               <span className={`site-nav-link site-link--static ${isActive ? 'active' : ''}`.trim()} key={item.label}>
-                {item.label}
+                <RichTextValue value={item.label} />
               </span>
             )
           }
 
           const isOpen = openMenuLabel === item.label
+          const toggleId = buildNavItemId(navBaseId, itemIndex, 'toggle')
+          const submenuId = buildNavItemId(navBaseId, itemIndex, 'submenu')
 
           return (
             <div
@@ -132,32 +140,38 @@ function SiteMenu({
               }}
             >
               <button
+                aria-controls={submenuId}
                 aria-expanded={isOpen}
-                aria-haspopup="true"
                 className="site-nav-link site-nav-toggle"
+                id={toggleId}
                 type="button"
                 onClick={() => setCurrentOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : item.label))}
               >
-                <span>{item.label}</span>
+                <RichTextValue as="span" value={item.label} />
                 <span aria-hidden="true" className="site-nav-caret">
                   {isOpen ? '-' : '+'}
                 </span>
               </button>
 
-              <div aria-label={`${item.label} submenu`} className="site-subnav" role="menu">
+              <div
+                aria-labelledby={toggleId}
+                className="site-subnav"
+                hidden={!isOpen}
+                id={submenuId}
+              >
                 {item.children.map((child) => (
                   <NavText
+                    aria-current={isActiveChildItem(pathname, child) ? 'page' : undefined}
                     className={`site-subnav-link ${isActiveChildItem(pathname, child) ? 'active' : ''}`.trim()}
                     interactive={interactive}
                     key={child.path}
-                    role="menuitem"
                     to={child.path}
                     onClick={() => {
                       setCurrentOpenMenuLabel('')
                       onNavigate?.()
                     }}
                   >
-                    {child.label}
+                    <RichTextValue value={child.label} />
                   </NavText>
                 ))}
               </div>
@@ -167,6 +181,7 @@ function SiteMenu({
 
         return (
           <NavText
+            aria-current={isActive ? 'page' : undefined}
             className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
             interactive={interactive}
             key={item.path}
@@ -176,7 +191,7 @@ function SiteMenu({
               onNavigate?.()
             }}
           >
-            {item.label}
+            <RichTextValue value={item.label} />
           </NavText>
         )
       })}
@@ -252,23 +267,23 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
                   <span aria-hidden="true" className="utility-facebook">
                     f
                   </span>
-                  <span>{utility.socialLink.label}</span>
+                  <RichTextValue as="span" value={utility.socialLink.label} />
                 </a>
               ) : (
                 <span className="utility-social-link site-link--static">
                   <span aria-hidden="true" className="utility-facebook">
                     f
                   </span>
-                  <span>{utility.socialLink.label}</span>
+                  <RichTextValue as="span" value={utility.socialLink.label} />
                 </span>
               )}
             </div>
 
-            <p className="utility-message">{utility.message}</p>
+            <RichTextValue as="p" className="utility-message" value={utility.message} />
 
             <div className="utility-booking">
               {utility.bookingCallouts.map((line) => (
-                <span key={line}>{line}</span>
+                <RichTextValue as="span" key={line} value={line} />
               ))}
             </div>
           </div>
@@ -319,7 +334,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
         </div>
       </header>
 
-      <main className="site-main" id="main-content">
+      <main className="site-main" id="main-content" tabIndex={-1}>
         {children}
       </main>
 
@@ -344,12 +359,13 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
               <nav aria-label="Footer legal" className="footer-meta-nav">
                 {footerMetaItems.map((item) => (
                   <NavText
+                    aria-current={isActiveNavItem(pathname, item.matchPaths) ? 'page' : undefined}
                     className={isActiveNavItem(pathname, item.matchPaths) ? 'active' : ''}
                     interactive={interactive}
                     key={`footer-meta-${item.path}`}
                     to={item.path}
                   >
-                    {item.label}
+                    <RichTextValue value={item.label} />
                   </NavText>
                 ))}
               </nav>
@@ -359,8 +375,8 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
 
         <div className="footer-bottom">
           <div className="footer-bottom-inner">
-            <p className="footer-copyright">{siteShell.footer.copyright}</p>
-            <p className="footer-design">{siteShell.footer.designCredit}</p>
+            <RichTextValue as="p" className="footer-copyright" value={siteShell.footer.copyright} />
+            <RichTextValue as="p" className="footer-design" value={siteShell.footer.designCredit} />
           </div>
         </div>
       </footer>

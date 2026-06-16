@@ -1,6 +1,8 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
+import { RichTextValue } from './RichTextValue'
 
 function PreviewField({ children, wide = false }) {
   return <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>{children}</label>
@@ -15,18 +17,11 @@ function PreviewInput({ disabled, label, onChange, type = 'text', value, wide = 
   )
 }
 
-function PreviewTextArea({ disabled, label, onChange, placeholder = '', rows = 5, value, wide = true }) {
+function PreviewRichText({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
   return (
-    <PreviewField wide={wide}>
-      <span>{label}</span>
-      <textarea
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        value={value ?? ''}
-      />
-    </PreviewField>
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor compact disabled={disabled} helperText={helperText} label={label} onChange={onChange} placeholder={placeholder} value={value ?? ''} />
+    </div>
   )
 }
 
@@ -93,12 +88,12 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
                     <strong>Visible on the live charter directory</strong>
                   </div>
                 </label>
-                <PreviewTextArea disabled={disabled} label="Short Description" onChange={(value) => onFieldChange('shortDescription', value)} rows={4} value={formState.shortDescription} wide />
+                <PreviewRichText disabled={disabled} label="Short Description" onChange={(value) => onFieldChange('shortDescription', value)} value={formState.shortDescription} wide />
               </div>
             }
             title="Listing Details"
           >
-            {charter?.shortDescription ? <p>{charter.shortDescription}</p> : <p className="admin-empty">Add a short description for this charter listing.</p>}
+            {charter?.shortDescription ? <RichTextValue as="p" value={charter.shortDescription} /> : <p className="admin-empty">Add a short description for this charter listing.</p>}
           </PreviewSection>
 
           <PreviewSection
@@ -145,13 +140,13 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
 
           <PreviewSection
             controls={
-              <PreviewTextArea
+              <PreviewRichText
                 disabled={disabled}
+                helperText="Use paragraphs, bold text, lists, and links to format the charter detail page."
                 label="Description"
-                onChange={(value) => onFieldChange('descriptionText', value)}
-                placeholder="Separate paragraphs with a blank line."
-                rows={10}
-                value={formState.descriptionText}
+                onChange={(value) => onFieldChange('descriptionHtml', value)}
+                placeholder="Write the charter detail page copy here."
+                value={formState.descriptionHtml}
                 wide
               />
             }

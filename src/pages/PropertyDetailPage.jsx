@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { RichTextValue } from '../components/RichTextValue'
+import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { richTextValueToLines } from '../lib/richTextValue'
 
 function PropertyContentSection({
   title,
@@ -40,10 +43,7 @@ function PropertyContentSection({
 }
 
 function getShortDescriptionLines(property) {
-  return String(property.shortDescription ?? '')
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  return richTextValueToLines(property.shortDescription ?? '')
 }
 
 export function PropertyDetailPage() {
@@ -56,6 +56,18 @@ export function PropertyDetailPage() {
     atEnd: true,
   })
   const thumbnailsRef = useRef(null)
+  const property = state.status === 'ready' ? state.property : null
+  const shortDescriptionLines = property ? getShortDescriptionLines(property) : []
+  const documentTitle =
+    state.status === 'not-found'
+      ? 'Property Not Found'
+      : state.status === 'error'
+        ? 'Property Unavailable'
+        : property?.pageTitle || property?.name || 'Rental Property'
+  const documentDescription =
+    shortDescriptionLines.join(' ') || DEFAULT_SITE_DESCRIPTION
+
+  useDocumentMeta({ title: documentTitle, description: documentDescription, priority: 1 })
 
   useEffect(() => {
     let cancelled = false
@@ -162,9 +174,7 @@ export function PropertyDetailPage() {
     )
   }
 
-  const { property } = state
   const propertyGallery = Array.isArray(property.gallery) ? property.gallery.filter(Boolean) : []
-  const shortDescriptionLines = getShortDescriptionLines(property)
   const templateVariant = getPropertyTemplateVariantConfig(property.templateVariant)
   const galleryImages = propertyGallery.length > 0 ? propertyGallery : property.heroImage ? [property.heroImage] : []
   const safeImageIndex =
@@ -195,9 +205,7 @@ export function PropertyDetailPage() {
         >
           <div className="property-fact-stack">
             {shortDescriptionLines.map((line) => (
-              <div className="property-fact-line" key={line}>
-                {line}
-              </div>
+              <RichTextValue as="div" className="property-fact-line" key={line} value={line} />
             ))}
           </div>
         </PropertyContentSection>

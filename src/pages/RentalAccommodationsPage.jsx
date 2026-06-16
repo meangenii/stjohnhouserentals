@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom'
 import { EditableBackgroundSection, EditableButton, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
+import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function getShortDescriptionLines(value) {
-  return String(value ?? '')
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
+  return richTextValueToLines(value)
+    .map((line) => richTextValueToPlainText(line))
     .filter(Boolean)
 }
 
@@ -80,6 +80,7 @@ export function RentalAccommodationsPage() {
   const [bedroomInput, setBedroomInput] = useState('')
   const [submittedBedrooms, setSubmittedBedrooms] = useState(null)
   const [resultsMode, setResultsMode] = useState('all')
+  const bedroomFilterInputId = 'rental-bedroom-filter'
   const visibleProperties = Array.isArray(summaryState.properties)
     ? summaryState.properties.filter(
         (property) =>
@@ -178,7 +179,11 @@ export function RentalAccommodationsPage() {
             </EditableText>
 
             <form className="rental-accommodations-filter-row" onSubmit={handleSubmit}>
+              <label className="visually-hidden" htmlFor={bedroomFilterInputId}>
+                Filter rentals by bedroom count
+              </label>
               <input
+                id={bedroomFilterInputId}
                 className="rental-accommodations-filter-input"
                 inputMode="numeric"
                 min="1"

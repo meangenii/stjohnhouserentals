@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getAdminAutoLoginCredentials, getAdminIdToken, observeAdminUser, signInAdmin, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
+import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
+import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { AdminPageEditorCanvas, AdminSiteShellPreview } from '../components/AdminPagePreview'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
@@ -22,6 +23,7 @@ import {
   saveAdminProperty,
 } from '../lib/propertyRepository'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
+import { richTextValueToHtml } from '../lib/richTextValue'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
@@ -73,13 +75,6 @@ function linesToText(values = []) {
 function parseLineList(value = '') {
   return value
     .split(/\r?\n+/)
-    .map((entry) => repairSnapshotText(entry).trim())
-    .filter(Boolean)
-}
-
-function parseParagraphList(value = '') {
-  return value
-    .split(/\r?\n\s*\r?\n+/)
     .map((entry) => repairSnapshotText(entry).trim())
     .filter(Boolean)
 }
@@ -410,11 +405,11 @@ function amenityGroupsToHtml(groups = []) {
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${escapeHtml(title)}</h4>`)
+        lines.push(`<h4>${richTextValueToHtml(title)}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${richTextValueToHtml(item)}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -434,7 +429,7 @@ function reviewEntriesToHtml(entries = []) {
       }
 
       if (quote) {
-        lines.push(`<p>${escapeHtml(quote)}</p>`)
+        lines.push(`<p>${richTextValueToHtml(quote)}</p>`)
       }
 
       return lines
@@ -481,8 +476,6 @@ function buildPropertyPreviewModel(formState) {
 }
 
 function buildCharterPreviewModel(formState) {
-  const descriptionParagraphs = parseParagraphList(formState.descriptionText)
-
   return {
     slug: repairSnapshotText(formState.slug).trim(),
     name: repairSnapshotText(formState.name).trim() || 'Untitled Charter',
@@ -498,7 +491,7 @@ function buildCharterPreviewModel(formState) {
           title: repairSnapshotText(formState.name).trim(),
         }
       : null,
-    contentHtml: paragraphListToHtml(descriptionParagraphs),
+    contentHtml: String(formState.descriptionHtml ?? '').trim(),
   }
 }
 
@@ -523,7 +516,7 @@ function createEmptyCharterFormState() {
     website: '',
     heroImageUrl: '',
     heroImageAlt: '',
-    descriptionText: '',
+    descriptionHtml: '',
   }
 }
 
@@ -539,7 +532,7 @@ function createCharterFormState(charter) {
     website: repairSnapshotText(charter.website ?? ''),
     heroImageUrl: charter.heroImage?.url ?? '',
     heroImageAlt: repairSnapshotText(charter.heroImage?.alt ?? ''),
-    descriptionText: htmlToText(charter.contentHtml ?? ''),
+    descriptionHtml: String(charter.contentHtml ?? '').trim(),
   }
 }
 
@@ -552,7 +545,7 @@ function buildCharterDraft(formState) {
     phoneNumber: repairSnapshotText(formState.phoneNumber).trim(),
     email: repairSnapshotText(formState.email).trim(),
     website: repairSnapshotText(formState.website).trim(),
-    contentParagraphs: parseParagraphList(formState.descriptionText),
+    contentHtml: String(formState.descriptionHtml ?? '').trim(),
     heroImage: formState.heroImageUrl.trim()
       ? {
           url: formState.heroImageUrl.trim(),
@@ -611,9 +604,6 @@ function AdminPreviewDeviceButton({ active, label, onClick }) {
 }
 
 export function AdminPage() {
-  const adminAutoLoginCredentials = getAdminAutoLoginCredentials()
-  const adminAutoLoginEnabled = Boolean(adminAutoLoginCredentials)
-  const adminAutoLoginAttemptedRef = useRef(false)
   const [activeTab, setActiveTab] = useState('pages')
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
   const [formState, setFormState] = useState(createEmptyFormState())
@@ -658,14 +648,8 @@ export function AdminPage() {
     status: requiresAdminSignIn ? (isFirebaseConfigured() ? 'loading' : 'unconfigured') : 'disabled',
     user: null,
   }))
-  const [authFormState, setAuthFormState] = useState(() => ({
-    email: adminAutoLoginCredentials?.email ?? '',
-    password: '',
-  }))
   const [authFeedback, setAuthFeedback] = useState('')
   const [authFeedbackStatus, setAuthFeedbackStatus] = useState('idle')
-  const [autoLoginStatus, setAutoLoginStatus] = useState(adminAutoLoginEnabled ? 'pending' : 'disabled')
-  const [authPanelOpen, setAuthPanelOpen] = useState(false)
   const siteShellDirty = jsonSnapshot(siteShellDraft) !== jsonSnapshot(siteShellWorkspaceState.shell)
   const pageDirty = jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft)
 
@@ -881,66 +865,8 @@ export function AdminPage() {
         user,
       })
 
-      if (user) {
-        setAuthPanelOpen(false)
-      }
     })
   }, [requiresAdminSignIn])
-
-  useEffect(() => {
-    if (!requiresAdminSignIn || !adminAutoLoginCredentials || authState.user || authState.status !== 'signed-out') {
-      return undefined
-    }
-
-    if (adminAutoLoginAttemptedRef.current) {
-      return undefined
-    }
-
-    let cancelled = false
-    adminAutoLoginAttemptedRef.current = true
-
-    async function signInAutomatically() {
-      try {
-        setAutoLoginStatus('saving')
-        setAuthFeedback('Signing in automatically for local development…')
-        setAuthFeedbackStatus('saving')
-        await signInAdmin(adminAutoLoginCredentials.email, adminAutoLoginCredentials.password)
-
-        if (cancelled) {
-          return
-        }
-
-        setAuthFormState((currentState) => ({
-          ...currentState,
-          email: adminAutoLoginCredentials.email,
-          password: '',
-        }))
-        setAuthFeedback('Signed in automatically.')
-        setAuthFeedbackStatus('idle')
-        setAutoLoginStatus('success')
-      } catch (error) {
-        if (cancelled) {
-          return
-        }
-
-        setAuthFormState((currentState) => ({
-          ...currentState,
-          email: adminAutoLoginCredentials.email,
-          password: '',
-        }))
-        setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign in automatically.')
-        setAuthFeedbackStatus('error')
-        setAutoLoginStatus('error')
-        setAuthPanelOpen(true)
-      }
-    }
-
-    signInAutomatically()
-
-    return () => {
-      cancelled = true
-    }
-  }, [adminAutoLoginCredentials, authState.status, authState.user, requiresAdminSignIn])
 
   useEffect(() => {
     if (!pageDirty && !siteShellDirty) {
@@ -977,46 +903,25 @@ export function AdminPage() {
     return { authToken }
   }
 
-  async function handleAdminSignIn(event) {
-    event.preventDefault()
-
-    try {
-      setAuthFeedbackStatus('saving')
-      setAutoLoginStatus(adminAutoLoginEnabled ? 'manual' : 'disabled')
-      await signInAdmin(authFormState.email.trim(), authFormState.password)
-      setAuthFormState((currentState) => ({ ...currentState, password: '' }))
-      setAuthFeedback('Signed in successfully.')
-      setAuthFeedbackStatus('idle')
-      setAuthPanelOpen(false)
-    } catch (error) {
-      setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign in.')
-      setAuthFeedbackStatus('error')
-      setAuthPanelOpen(true)
-    }
-  }
-
   async function handleGoogleSignIn() {
     try {
       setAuthFeedbackStatus('saving')
-      setAuthFeedback('Opening Google sign-in…')
+      setAuthFeedback('Opening Google sign-in...')
       await signInAdminWithGoogle()
       setAuthFeedback('Signed in successfully.')
       setAuthFeedbackStatus('idle')
     } catch (error) {
       setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign in with Google.')
       setAuthFeedbackStatus('error')
-      setAuthPanelOpen(true)
     }
   }
 
   async function handleAdminSignOut() {
     try {
       setAuthFeedbackStatus('saving')
-      setAutoLoginStatus(adminAutoLoginEnabled ? 'manual' : 'disabled')
       await signOutAdmin()
       setAuthFeedback('Signed out.')
       setAuthFeedbackStatus('idle')
-      setAuthPanelOpen(false)
     } catch (error) {
       setAuthFeedback(error instanceof Error ? error.message : 'Unable to sign out.')
       setAuthFeedbackStatus('error')
@@ -1554,28 +1459,51 @@ export function AdminPage() {
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
   const siteContentDraftEditingEnabled = siteContentEditingEnabled
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
-  const authBadgeTone =
-    authState.user
-      ? 'success'
-      : authState.status === 'loading' || autoLoginStatus === 'pending' || autoLoginStatus === 'saving'
-        ? 'loading'
-        : authState.status === 'unconfigured'
-          ? 'muted'
-          : authFeedbackStatus === 'error' || autoLoginStatus === 'error'
-            ? 'warning'
-            : 'default'
-  const authBadgeLabel =
-    authState.user
-      ? 'Signed in'
-      : authState.status === 'loading' || autoLoginStatus === 'pending' || autoLoginStatus === 'saving'
-        ? 'Checking sign-in'
-        : authState.status === 'unconfigured'
-          ? 'Editing locked'
-          : authFeedbackStatus === 'error' || autoLoginStatus === 'error'
-            ? 'Sign-in issue'
-            : 'Sign in'
   const authBadgeDetail = authState.user?.email ?? ''
-  const authToggleLabel = authPanelOpen ? 'Hide sign-in' : authBadgeLabel
+  const showGoogleSignInButton = authState.status === 'signed-out'
+  const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
+  const requiresAuthenticationScreen = requiresAdminSignIn && !authState.user
+
+  if (requiresAuthenticationScreen) {
+    return (
+      <article className="admin-page">
+        <section className="page-section admin-header admin-header--auth-only">
+          <div className="admin-auth-shell">
+            <div className="admin-auth-shell-header">
+              <div className="eyebrow">Admin</div>
+              <h1>Content workspace</h1>
+              <p>Sign in with Google to open the editor.</p>
+            </div>
+
+            <div className="admin-panel admin-auth-panel admin-auth-panel--standalone">
+              {authFeedback ? <p className={`admin-feedback admin-feedback--${authFeedbackStatus}`}>{authFeedback}</p> : null}
+
+              {authState.status === 'unconfigured' ? (
+                <p className="admin-note">
+                  Live editing is not configured for this environment. Contact your developer to enable it.
+                </p>
+              ) : null}
+
+              {authState.status === 'loading' ? <p className="admin-note">Checking sign-in status...</p> : null}
+
+              {showGoogleSignInButton ? (
+                <div className="admin-form-actions">
+                  <button
+                    className="button-link button-link--primary admin-submit"
+                    disabled={isGoogleSignInBusy}
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                  >
+                    {authFeedbackStatus === 'saving' ? 'Opening Google sign-in...' : 'Sign in with Google'}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      </article>
+    )
+  }
 
   return (
     <article className="admin-page">
@@ -1588,28 +1516,13 @@ export function AdminPage() {
 
           {requiresAdminSignIn ? (
             <div className="admin-auth-summary">
-              {authState.user ? (
-                <div className={`admin-auth-badge admin-auth-badge--${authBadgeTone}`.trim()}>
-                  <span>{authBadgeLabel}</span>
-                  {authBadgeDetail ? <strong>{authBadgeDetail}</strong> : null}
-                </div>
-              ) : (
-                <button
-                  aria-expanded={authPanelOpen}
-                  className={`admin-auth-badge admin-auth-badge--${authBadgeTone}`.trim()}
-                  type="button"
-                  onClick={() => setAuthPanelOpen((currentState) => !currentState)}
-                >
-                  <span>{authToggleLabel}</span>
-                  {authBadgeDetail ? <strong>{authBadgeDetail}</strong> : null}
-                </button>
-              )}
-
-              {authState.user ? (
-                <button className="button-link button-link--ghost admin-action" type="button" onClick={handleAdminSignOut}>
-                  Sign out
-                </button>
-              ) : null}
+              <div className="admin-auth-badge admin-auth-badge--success">
+                <span>Signed in</span>
+                {authBadgeDetail ? <strong>{authBadgeDetail}</strong> : null}
+              </div>
+              <button className="button-link button-link--ghost admin-action" type="button" onClick={handleAdminSignOut}>
+                Sign out
+              </button>
             </div>
           ) : null}
         </div>
@@ -1640,72 +1553,12 @@ export function AdminPage() {
             label="Media Library"
             onClick={() => setActiveTab('media')}
           />
+          <AdminTabButton
+            active={activeTab === 'submissions'}
+            label="Form Submissions"
+            onClick={() => setActiveTab('submissions')}
+          />
         </div>
-
-        {requiresAdminSignIn && authPanelOpen && !authState.user ? (
-          <div className="admin-auth-panel admin-editor">
-            {authFeedback ? <p className={`admin-feedback admin-feedback--${authFeedbackStatus}`}>{authFeedback}</p> : null}
-
-            {authState.status === 'unconfigured' ? (
-              <p className="admin-note">
-                Live editing is not configured for this environment. Contact your developer to enable it.
-              </p>
-            ) : null}
-
-            {authState.status === 'loading' ? <p className="admin-note">Checking sign-in status...</p> : null}
-
-            {authState.status === 'signed-out' && adminAutoLoginEnabled && (autoLoginStatus === 'pending' || autoLoginStatus === 'saving') ? (
-              <p className="admin-note">Automatic localhost sign-in is enabled for this admin workspace.</p>
-            ) : null}
-
-            {authState.status === 'signed-out' &&
-            (!adminAutoLoginEnabled || autoLoginStatus === 'error' || autoLoginStatus === 'success' || autoLoginStatus === 'manual') ? (
-              <div className="admin-sign-in-options">
-                <div className="admin-form-actions">
-                  <button className="button-link button-link--primary admin-submit" type="button" onClick={handleGoogleSignIn}>
-                    Sign in with Google
-                  </button>
-                </div>
-
-                <div className="admin-sign-in-divider"><span>or use email and password</span></div>
-
-                <form className="admin-form" onSubmit={handleAdminSignIn}>
-                  <div className="admin-form-grid">
-                    <label className="admin-field">
-                      <span>Email</span>
-                      <input
-                        autoComplete="email"
-                        type="email"
-                        value={authFormState.email}
-                        onChange={(event) =>
-                          setAuthFormState((currentState) => ({ ...currentState, email: event.target.value }))
-                        }
-                      />
-                    </label>
-
-                    <label className="admin-field">
-                      <span>Password</span>
-                      <input
-                        autoComplete="current-password"
-                        type="password"
-                        value={authFormState.password}
-                        onChange={(event) =>
-                          setAuthFormState((currentState) => ({ ...currentState, password: event.target.value }))
-                        }
-                      />
-                    </label>
-                  </div>
-
-                  <div className="admin-form-actions">
-                    <button className="button-link button-link--ghost admin-submit" type="submit">
-                      Sign in with email
-                    </button>
-                  </div>
-                </form>
-              </div>
-            ) : null}
-          </div>
-        ) : null}
       </section>
 
       <section className="page-section admin-shell">
@@ -2131,8 +1984,12 @@ export function AdminPage() {
               </div>
             </section>
           ) : null}
+
+          {activeTab === 'submissions' ? <AdminAdvertiseInquiriesPanel authUser={authState.user} /> : null}
         </div>
       </section>
     </article>
   )
 }
+
+

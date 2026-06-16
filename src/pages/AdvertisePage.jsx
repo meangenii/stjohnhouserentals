@@ -1,33 +1,73 @@
+import { useState } from 'react'
 import { EditableBackgroundSection, EditableButton, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { submitAdvertiseInquiry } from '../lib/advertiseInquiryApi'
 import { useSiteShellContent, useStructuredPageContent } from '../lib/useSiteContent'
+
+function buildMailtoHref(contactEmail, { firstName, lastName, email, subject, message }) {
+  const composedSubject = subject || `Advertising inquiry from ${firstName} ${lastName}`.trim()
+  const composedBody = [`First name: ${firstName}`, `Last name: ${lastName}`, `Email: ${email}`, '', message].join('\n')
+
+  return `mailto:${contactEmail}?subject=${encodeURIComponent(composedSubject)}&body=${encodeURIComponent(composedBody)}`
+}
 
 export function AdvertisePage() {
   const siteShell = useSiteShellContent()
   const page = useStructuredPageContent('advertise')
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const contactEmail = siteShell.contact.primaryEmail
+  const [submitStatus, setSubmitStatus] = useState('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+  const [manualSubmitHref, setManualSubmitHref] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
 
-    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+    const formData = new FormData(form)
     const firstName = String(formData.get('firstName') ?? '').trim()
     const lastName = String(formData.get('lastName') ?? '').trim()
     const email = String(formData.get('email') ?? '').trim()
     const subject = String(formData.get('subject') ?? '').trim()
     const message = String(formData.get('message') ?? '').trim()
+    const website = String(formData.get('website') ?? '').trim()
+    const fallbackHref = contactEmail
+      ? buildMailtoHref(contactEmail, {
+          firstName,
+          lastName,
+          email,
+          subject,
+          message,
+        })
+      : ''
 
-    const composedSubject = subject || `Advertising inquiry from ${firstName} ${lastName}`.trim()
-    const composedBody = [
-      `First name: ${firstName}`,
-      `Last name: ${lastName}`,
-      `Email: ${email}`,
-      '',
-      message,
-    ].join('\n')
+    setSubmitStatus('submitting')
+    setSubmitMessage('')
+    setManualSubmitHref('')
 
-    window.location.href = `mailto:${contactEmail}?subject=${encodeURIComponent(composedSubject)}&body=${encodeURIComponent(composedBody)}`
+    try {
+      const result = await submitAdvertiseInquiry({
+        firstName,
+        lastName,
+        email,
+        subject,
+        message,
+        website,
+      })
+
+      form.reset()
+      if (result?.inquiry?.accepted) {
+        setSubmitStatus('success')
+        setSubmitMessage('Thanks. Your advertising inquiry has been received.')
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage('We could not send your inquiry right now.')
+      }
+    } catch (error) {
+      setSubmitStatus('error')
+      setSubmitMessage(error instanceof Error ? error.message : 'We could not send your inquiry right now.')
+      setManualSubmitHref(fallbackHref)
+    }
   }
 
   return (
@@ -110,6 +150,11 @@ export function AdvertisePage() {
           </div>
 
           <form className="advertise-page-form" onSubmit={handleSubmit}>
+            <label aria-hidden="true" className="advertise-page-honeypot" htmlFor="website">
+              <span>Website</span>
+              <input autoComplete="off" id="website" name="website" tabIndex={-1} type="text" />
+            </label>
+
             <div className="advertise-page-form-grid">
               {page.form.fields.map((field, index) => (
                 <label className="advertise-page-field" htmlFor={field.id} key={field.id}>
@@ -119,7 +164,14 @@ export function AdvertisePage() {
                     </EditableText>{' '}
                     <span aria-hidden="true">*</span>
                   </span>
-                  <input id={field.id} name={field.name} placeholder={field.placeholder} required type={field.type} />
+                  <input
+                    disabled={submitStatus === 'submitting'}
+                    id={field.id}
+                    name={field.name}
+                    placeholder={field.placeholder}
+                    required
+                    type={field.type}
+                  />
                 </label>
               ))}
 
@@ -132,6 +184,7 @@ export function AdvertisePage() {
                 </span>
                 <textarea
                   id={page.form.messageField.id}
+                  disabled={submitStatus === 'submitting'}
                   name={page.form.messageField.name}
                   placeholder={page.form.messageField.placeholder}
                   required
@@ -145,8 +198,31 @@ export function AdvertisePage() {
               label={page.form.submitLabel}
               labelLabel="Submit Button Text"
               labelPath={['form', 'submitLabel']}
+              disabled={submitStatus === 'submitting'}
               type="submit"
             />
+
+            <p className="advertise-page-form-note">
+              Your message is sent through this website. If you prefer, email{' '}
+              <a href={`mailto:${contactEmail}`}>{contactEmail}</a>{' '}
+              directly.
+            </p>
+
+            {submitMessage ? (
+              <p
+                aria-live="polite"
+                className={`advertise-page-form-feedback advertise-page-form-feedback--${submitStatus === 'error' ? 'error' : 'success'}`}
+              >
+                {submitMessage}
+              </p>
+            ) : null}
+
+            {manualSubmitHref ? (
+              <p aria-live="polite" className="advertise-page-form-note advertise-page-form-note--fallback">
+                If the website submission is unavailable, use the pre-filled fallback link:{' '}
+                <a href={manualSubmitHref}>Send your advertising inquiry</a>.
+              </p>
+            ) : null}
           </form>
         </div>
       </section>

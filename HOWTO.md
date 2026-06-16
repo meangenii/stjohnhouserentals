@@ -21,7 +21,8 @@ cd ..
 1. Fill in `.env` using `.env.example`.
 2. Set the Firebase project id in `.firebaserc`.
 3. If you want shared live editing, copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
-4. For a live Firebase project, enable Cloud Firestore, create the default Firestore database, and enable Firebase Authentication with the Email/Password provider.
+4. If you want the Advertise form to send real email from the deployed site, also set the `SMTP_*` values in `functions/.env`. By default the form emails the public contact address from the live site shell content. `ADVERTISE_INQUIRY_TO_EMAIL` is only a backup recipient if that public address is unavailable.
+5. For a live Firebase project, enable Cloud Firestore, create the default Firestore database, and enable Firebase Authentication with the Email/Password provider.
 
 Required for the default local frontend flow:
 
@@ -186,9 +187,10 @@ For end-to-end live editing in local development:
 1. Set `VITE_PROPERTY_DATA_SOURCE=firebase` and/or `VITE_CHARTER_DATA_SOURCE=firebase`.
 2. Fill in the Firebase client config values in `.env`.
 3. Copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
-4. Start the emulators with `npm run emulators`.
-5. Create an email/password user in the Auth emulator UI.
-6. Open `/admin`, sign in, and use the tabs for Site Shell, Pages, Properties, and Charters. Public page, property, charter, and media-library reads now flow through `siteApi` or the local generated catalogs rather than direct browser reads from Firestore.
+4. If you want local or deployed Advertise-form submissions to send real email, also set the `SMTP_*` values in `functions/.env`. The recipient defaults to the public site contact email; `ADVERTISE_INQUIRY_TO_EMAIL` is only a fallback.
+5. Start the emulators with `npm run emulators`.
+6. Create an email/password user in the Auth emulator UI.
+7. Open `/admin`, sign in, and use the tabs for Site Shell, Pages, Properties, and Charters. Public page, property, charter, and media-library reads now flow through `siteApi` or the local generated catalogs rather than direct browser reads from Firestore.
 
 To seed Firestore with the current generated catalogs:
 

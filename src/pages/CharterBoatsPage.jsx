@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { listCharters } from '../lib/charterRepository'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { richTextValueToPlainText } from '../lib/richTextValue'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function cleanText(value) {
-  return String(value ?? '')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return richTextValueToPlainText(value)
 }
 
 function truncateSummary(summary, limit = 138) {

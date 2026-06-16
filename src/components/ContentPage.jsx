@@ -1,4 +1,5 @@
 import { EditableImage, EditableRichHtml, EditableText } from './AdminInlinePageEdit'
+import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 
 function getImageSrc(image) {
@@ -9,6 +10,10 @@ export function ContentPage({ page }) {
   const contentHtml = normalizeSiteHtml(page.bodyHtml).trim()
   const hasHtmlHeading = /<h1[\s>]/i.test(contentHtml)
   const imageGallery = Array.isArray(page.imageGallery) ? page.imageGallery.filter((image) => getImageSrc(image)) : []
+  const pageTitle = page.title || page.navLabel
+  const pageDescription = page.metaDescription || DEFAULT_SITE_DESCRIPTION
+
+  useDocumentMeta({ title: pageTitle, description: pageDescription, priority: 1 })
 
   return (
     <article className="snapshot-page">

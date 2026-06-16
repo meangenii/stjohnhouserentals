@@ -1,9 +1,20 @@
-import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
-import { AdminMediaManager } from './AdminMediaManager'
-import { AdminRichTextEditor } from './AdminRichTextEditor'
+import { RichTextValue } from './RichTextValue'
+
+const AdminMediaManager = lazy(() =>
+  import('./AdminMediaManager').then((module) => ({
+    default: module.AdminMediaManager,
+  })),
+)
+
+const AdminRichTextEditor = lazy(() =>
+  import('./AdminRichTextEditor').then((module) => ({
+    default: module.AdminRichTextEditor,
+  })),
+)
 
 function pathToKey(path = []) {
   return path.map((segment) => String(segment)).join('.')
@@ -159,18 +170,8 @@ function buildEditableClassName(className = '', isEnabled = false, isActive = fa
     .join(' ')
 }
 
-function useAutofocus(active) {
-  const controlRef = useRef(null)
-
-  useLayoutEffect(() => {
-    if (!active) {
-      return
-    }
-
-    controlRef.current?.focus?.()
-  }, [active])
-
-  return controlRef
+function InlinePopoverContent({ children }) {
+  return <Suspense fallback={<p className="admin-note">Loading editor...</p>}>{children}</Suspense>
 }
 
 export function EditableText({
@@ -187,8 +188,8 @@ export function EditableText({
   const anchorRef = useRef(null)
   const field = useEditableField(path)
   const isActive = field.isActive
-  const inputRef = useAutofocus(isActive)
-  const displayValue = children ?? value
+  const displayValue = value ?? (typeof children === 'string' ? children : '')
+  const isCompactEditor = !multiline
 
   function handleActivate(event) {
     if (!field.isEnabled || field.disabled) {
@@ -209,23 +210,19 @@ export function EditableText({
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         onClick={handleActivate}
       >
-        {displayValue}
+        <RichTextValue value={displayValue} />
       </Component>
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={label}>
-        <label className="admin-field">
-          <span>{label}</span>
-          {multiline ? (
-            <textarea
-              ref={inputRef}
-              rows={rows}
-              value={value ?? ''}
-              onChange={(event) => field.updatePath(path, event.target.value)}
-            />
-          ) : (
-            <input ref={inputRef} type="text" value={value ?? ''} onChange={(event) => field.updatePath(path, event.target.value)} />
-          )}
-        </label>
+        <InlinePopoverContent>
+          <AdminRichTextEditor
+            compact={isCompactEditor}
+            label={label}
+            onChange={(nextValue) => field.updatePath(path, nextValue)}
+            sourceRows={rows}
+            value={value ?? ''}
+          />
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )
@@ -246,7 +243,6 @@ export function EditableLink({
   const anchorRef = useRef(null)
   const field = useEditableField(labelPath ?? destinationPath, `${pathToKey(labelPath ?? [])}:${pathToKey(destinationPath ?? [])}`)
   const isActive = field.isActive
-  const labelRef = useAutofocus(isActive)
   const Component = external ? 'a' : Link
   const linkProps = external
     ? {
@@ -278,20 +274,19 @@ export function EditableLink({
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         onClick={handleActivate}
       >
-        {label}
+        <RichTextValue value={label} />
       </Component>
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={labelLabel}>
-        <label className="admin-field">
-          <span>{labelLabel}</span>
-          <input ref={labelRef} type="text" value={label ?? ''} onChange={(event) => field.updatePath(labelPath, event.target.value)} />
-        </label>
-        {destinationPath ? (
-          <label className="admin-field">
-            <span>{destinationLabel}</span>
-            <input type="text" value={destination ?? ''} onChange={(event) => field.updatePath(destinationPath, event.target.value)} />
-          </label>
-        ) : null}
+        <InlinePopoverContent>
+          <AdminRichTextEditor compact label={labelLabel} onChange={(nextValue) => field.updatePath(labelPath, nextValue)} value={label ?? ''} />
+          {destinationPath ? (
+            <label className="admin-field">
+              <span>{destinationLabel}</span>
+              <input type="text" value={destination ?? ''} onChange={(event) => field.updatePath(destinationPath, event.target.value)} />
+            </label>
+          ) : null}
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )
@@ -309,7 +304,6 @@ export function EditableButton({
   const anchorRef = useRef(null)
   const field = useEditableField(labelPath)
   const isActive = field.isActive
-  const inputRef = useAutofocus(isActive)
 
   function handleActivate(event) {
     if (!field.isEnabled || field.disabled) {
@@ -332,14 +326,13 @@ export function EditableButton({
         type={type}
         onClick={handleActivate}
       >
-        {label}
+        <RichTextValue value={label} />
       </button>
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={labelLabel}>
-        <label className="admin-field">
-          <span>{labelLabel}</span>
-          <input ref={inputRef} type="text" value={label ?? ''} onChange={(event) => field.updatePath(labelPath, event.target.value)} />
-        </label>
+        <InlinePopoverContent>
+          <AdminRichTextEditor compact label={labelLabel} onChange={(nextValue) => field.updatePath(labelPath, nextValue)} value={label ?? ''} />
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )
@@ -414,7 +407,9 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
       )}
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Image">
-        <ImagePopoverFields field={field} image={image} path={path} title="Image" />
+        <InlinePopoverContent>
+          <ImagePopoverFields field={field} image={image} path={path} title="Image" />
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )
@@ -457,7 +452,9 @@ export function EditableBackgroundSection({
       </Component>
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Background Image">
-        <ImagePopoverFields field={field} image={image} path={path} title="Background Image" />
+        <InlinePopoverContent>
+          <ImagePopoverFields field={field} image={image} path={path} title="Background Image" />
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )
@@ -489,7 +486,9 @@ export function EditableRichHtml({ className = '', html = '', path, title = 'Bod
       />
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={title}>
-        <AdminRichTextEditor label={title} onChange={(nextValue) => field.updatePath(path, nextValue)} value={html} />
+        <InlinePopoverContent>
+          <AdminRichTextEditor label={title} onChange={(nextValue) => field.updatePath(path, nextValue)} value={html} />
+        </InlinePopoverContent>
       </InlinePopover>
     </>
   )

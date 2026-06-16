@@ -1,4 +1,5 @@
 const { onRequest } = require('firebase-functions/v2/https')
+const { listAdvertiseInquiries, saveAdvertiseInquiry } = require('./advertiseInquiryRepository')
 const {
   getCharterBySlug,
   listAllCharters,
@@ -211,6 +212,27 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       }
 
       response.json(charter)
+      return
+    }
+
+    if (request.method === 'POST' && path === 'contact/advertise') {
+      const inquiry = await saveAdvertiseInquiry(request.body ?? {}, request)
+
+      response.status(201).json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        inquiry,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/contact/advertise') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        inquiries: await listAdvertiseInquiries(),
+      })
       return
     }
 

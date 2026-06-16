@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { RichTextValue } from '../components/RichTextValue'
+import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getCharterBySlug } from '../lib/charterRepository'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
@@ -7,6 +9,16 @@ import { buildRemoteImageUrl } from '../lib/remoteImage'
 export function CharterBoatDetailPage() {
   const { slug = '' } = useParams()
   const [state, setState] = useState({ status: 'loading' })
+  const charter = state.status === 'ready' ? state.charter : null
+  const documentTitle =
+    state.status === 'not-found'
+      ? 'Charter Not Found'
+      : state.status === 'error'
+        ? 'Charter Unavailable'
+        : charter?.pageTitle || charter?.name || 'Charter Boat'
+  const documentDescription = charter?.shortDescription || DEFAULT_SITE_DESCRIPTION
+
+  useDocumentMeta({ title: documentTitle, description: documentDescription, priority: 1 })
 
   useEffect(() => {
     let cancelled = false
@@ -63,8 +75,6 @@ export function CharterBoatDetailPage() {
     )
   }
 
-  const { charter } = state
-
   return (
     <article className="snapshot-page">
       <div className="snapshot-page-inner">
@@ -85,7 +95,7 @@ export function CharterBoatDetailPage() {
         ) : (
           <div className="snapshot-flow">
             <h1>{charter.name}</h1>
-            {charter.shortDescription ? <p>{charter.shortDescription}</p> : null}
+            {charter.shortDescription ? <RichTextValue as="p" value={charter.shortDescription} /> : null}
           </div>
         )}
       </div>

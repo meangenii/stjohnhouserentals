@@ -1,4 +1,6 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { richTextLinesToHtml, richTextValueToLines } from '../lib/richTextValue'
+import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
 
 function cloneValue(value) {
@@ -15,17 +17,6 @@ function updateValueAtPath(root, path, nextValue) {
 
   target[path[path.length - 1]] = nextValue
   return nextRoot
-}
-
-function parseLines(value) {
-  return String(value ?? '')
-    .split(/\r?\n/)
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-}
-
-function linesToText(value) {
-  return Array.isArray(value) ? value.map((entry) => String(entry ?? '')).join('\n') : ''
 }
 
 function updatePrimaryNav(root, parentIndex, field, nextValue) {
@@ -52,7 +43,7 @@ function updatePrimaryNavChild(root, parentIndex, childIndex, field, nextValue) 
   return nextRoot
 }
 
-function TextField({ disabled, label, onChange, type = 'text', value, wide = false }) {
+function PlainTextField({ disabled, label, onChange, type = 'text', value, wide = false }) {
   return (
     <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
       <span>{label}</span>
@@ -61,12 +52,26 @@ function TextField({ disabled, label, onChange, type = 'text', value, wide = fal
   )
 }
 
-function TextAreaField({ disabled, label, onChange, rows = 4, value, wide = true }) {
+function RichTextField({ disabled, label, onChange, value, wide = true }) {
   return (
-    <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <span>{label}</span>
-      <textarea disabled={disabled} rows={rows} value={value ?? ''} onChange={(event) => onChange(event.target.value)} />
-    </label>
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor compact disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
+    </div>
+  )
+}
+
+function RichLineListField({ disabled, label, onChange, value, wide = true }) {
+  return (
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        compact
+        disabled={disabled}
+        helperText="Press Enter to start a new line."
+        label={label}
+        onChange={(nextValue) => onChange(richTextValueToLines(nextValue))}
+        value={richTextLinesToHtml(value)}
+      />
+    </div>
   )
 }
 
@@ -81,8 +86,8 @@ function ImageField({ disabled, image, onAltChange, onUrlChange, title }) {
       </div>
 
       <div className="admin-content-grid">
-        <TextField disabled={disabled} label="Image URL" onChange={onUrlChange} value={image?.url ?? ''} wide />
-        <TextField disabled={disabled} label="Alt Text" onChange={onAltChange} value={image?.alt ?? ''} wide />
+        <PlainTextField disabled={disabled} label="Image URL" onChange={onUrlChange} value={image?.url ?? ''} wide />
+        <PlainTextField disabled={disabled} label="Alt Text" onChange={onAltChange} value={image?.alt ?? ''} wide />
       </div>
 
       <AdminMediaManager
@@ -122,7 +127,7 @@ function NavEditor({ disabled, items, onChildLabelChange, onLabelChange, title }
             </div>
 
             <div className="admin-content-grid">
-              <TextField disabled={disabled} label="Menu Label" onChange={(value) => onLabelChange(itemIndex, value)} value={item.label ?? ''} />
+              <RichTextField disabled={disabled} label="Menu Label" onChange={(value) => onLabelChange(itemIndex, value)} value={item.label ?? ''} />
               {item.children?.length ? (
                 <div className="admin-field admin-field--wide">
                   <span>Submenu Items</span>
@@ -132,7 +137,7 @@ function NavEditor({ disabled, items, onChildLabelChange, onLabelChange, title }
                         <div className="admin-route-preview-top">
                           <strong>{child.path}</strong>
                         </div>
-                        <TextField
+                        <RichTextField
                           disabled={disabled}
                           label="Submenu Label"
                           onChange={(value) => onChildLabelChange(itemIndex, childIndex, value)}
@@ -180,15 +185,14 @@ export function AdminSiteShellEditor({ disabled = false, onChange, value }) {
         </div>
 
         <div className="admin-content-grid">
-          <TextField disabled={disabled} label="Top Message" onChange={(value) => setPath(['header', 'utility', 'message'], value)} value={value.header?.utility?.message ?? ''} wide />
-          <TextField disabled={disabled} label="Facebook Label" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'label'], nextValue)} value={value.header?.utility?.socialLink?.label ?? ''} />
-          <TextField disabled={disabled} label="Facebook URL" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'href'], nextValue)} type="url" value={value.header?.utility?.socialLink?.href ?? ''} />
-          <TextAreaField
+          <RichTextField disabled={disabled} label="Top Message" onChange={(value) => setPath(['header', 'utility', 'message'], value)} value={value.header?.utility?.message ?? ''} wide />
+          <RichTextField disabled={disabled} label="Facebook Label" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'label'], nextValue)} value={value.header?.utility?.socialLink?.label ?? ''} />
+          <PlainTextField disabled={disabled} label="Facebook URL" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'href'], nextValue)} type="url" value={value.header?.utility?.socialLink?.href ?? ''} />
+          <RichLineListField
             disabled={disabled}
             label="Booking Callouts"
-            onChange={(nextValue) => setPath(['header', 'utility', 'bookingCallouts'], parseLines(nextValue))}
-            rows={4}
-            value={linesToText(value.header?.utility?.bookingCallouts ?? [])}
+            onChange={(nextValue) => setPath(['header', 'utility', 'bookingCallouts'], nextValue)}
+            value={value.header?.utility?.bookingCallouts ?? []}
             wide
           />
         </div>
@@ -212,7 +216,7 @@ export function AdminSiteShellEditor({ disabled = false, onChange, value }) {
               title="Site Logo"
             />
           </div>
-          <TextField disabled={disabled} label="Contact Email" onChange={(nextValue) => setPath(['contact', 'primaryEmail'], nextValue)} type="email" value={value.contact?.primaryEmail ?? ''} wide />
+          <PlainTextField disabled={disabled} label="Contact Email" onChange={(nextValue) => setPath(['contact', 'primaryEmail'], nextValue)} type="email" value={value.contact?.primaryEmail ?? ''} wide />
         </div>
       </section>
 
@@ -233,8 +237,8 @@ export function AdminSiteShellEditor({ disabled = false, onChange, value }) {
         </div>
 
         <div className="admin-content-grid">
-          <TextField disabled={disabled} label="Copyright Line" onChange={(nextValue) => setPath(['footer', 'copyright'], nextValue)} value={value.footer?.copyright ?? ''} wide />
-          <TextField disabled={disabled} label="Design Credit" onChange={(nextValue) => setPath(['footer', 'designCredit'], nextValue)} value={value.footer?.designCredit ?? ''} wide />
+          <RichTextField disabled={disabled} label="Copyright Line" onChange={(nextValue) => setPath(['footer', 'copyright'], nextValue)} value={value.footer?.copyright ?? ''} wide />
+          <RichTextField disabled={disabled} label="Design Credit" onChange={(nextValue) => setPath(['footer', 'designCredit'], nextValue)} value={value.footer?.designCredit ?? ''} wide />
         </div>
 
         <div className="admin-content-list">
@@ -244,7 +248,7 @@ export function AdminSiteShellEditor({ disabled = false, onChange, value }) {
                 <h5>{item.path}</h5>
               </div>
               <div className="admin-content-grid">
-                <TextField disabled={disabled} label="Legal Link Label" onChange={(nextValue) => setPath(['footer', 'legalNav', index, 'label'], nextValue)} value={item.label ?? ''} wide />
+                <RichTextField disabled={disabled} label="Legal Link Label" onChange={(nextValue) => setPath(['footer', 'legalNav', index, 'label'], nextValue)} value={item.label ?? ''} wide />
               </div>
             </article>
           ))}

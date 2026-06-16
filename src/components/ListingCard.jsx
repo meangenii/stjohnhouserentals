@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { RichTextValue } from './RichTextValue'
 
 export function ListingCard({ actionContent = null, actionLabel = 'Learn More', item }) {
   const image = item.image?.url ? item.image : null
@@ -18,11 +19,11 @@ export function ListingCard({ actionContent = null, actionLabel = 'Learn More', 
 
       <div className="listing-card-copy">
         <div className="listing-card-topline">
-          <h3>{item.name}</h3>
-          {item.rate ? <span className="listing-card-rate">{item.rate}</span> : null}
+          <RichTextValue as="h3" value={item.name} />
+          {item.rate ? <RichTextValue as="span" className="listing-card-rate" value={item.rate} /> : null}
         </div>
 
-        {item.summary ? <p>{item.summary}</p> : null}
+        {item.summary ? <RichTextValue as="p" value={item.summary} /> : null}
       </div>
     </>
   )
@@ -33,7 +34,7 @@ export function ListingCard({ actionContent = null, actionLabel = 'Learn More', 
         {content}
         {actionContent ?? (
           <Link className="button-link button-link--ghost listing-card-action" to={item.path}>
-            {actionLabel}
+            <RichTextValue value={actionLabel} />
           </Link>
         )}
       </article>
@@ -45,7 +46,7 @@ export function ListingCard({ actionContent = null, actionLabel = 'Learn More', 
       {content}
       {actionContent ?? (
         <a className="button-link button-link--ghost listing-card-action" href={item.href} rel="noreferrer" target="_blank">
-          {actionLabel}
+          <RichTextValue value={actionLabel} />
         </a>
       )}
     </article>

@@ -2,8 +2,10 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { richTextLinesToHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
+import { RichTextValue } from './RichTextValue'
 
 const PROPERTY_DESCRIPTION_SNIPPETS = [
   {
@@ -71,18 +73,27 @@ function PreviewInput({ disabled, inlineLabel = false, label, onChange, type = '
   )
 }
 
-function PreviewTextArea({ disabled, inlineLabel = false, label, onChange, placeholder = '', rows = 5, value, wide = true }) {
+function PreviewRichText({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
   return (
-    <PreviewField alignTop={inlineLabel} inlineLabel={inlineLabel} wide={wide}>
-      <span>{label}</span>
-      <textarea
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor compact disabled={disabled} helperText={helperText} label={label} onChange={onChange} placeholder={placeholder} value={value ?? ''} />
+    </div>
+  )
+}
+
+function PreviewRichTextLineList({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
+  return (
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        compact
         disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
+        helperText={helperText}
+        label={label}
+        onChange={(nextValue) => onChange(richTextValueToLines(nextValue).join('\n'))}
         placeholder={placeholder}
-        rows={rows}
-        value={value ?? ''}
+        value={richTextLinesToHtml(getAmenityGroupItems(value))}
       />
-    </PreviewField>
+    </div>
   )
 }
 
@@ -138,10 +149,7 @@ function PreviewSection({
 }
 
 function getShortDescriptionLines(property) {
-  return String(property.shortDescription ?? '')
-    .split(/\r?\n+/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+  return richTextValueToLines(property.shortDescription ?? '')
 }
 
 function getAmenityGroupItems(itemsText = '') {
@@ -224,12 +232,11 @@ export function AdminPropertyPreview({
         controls={
           editable && formState ? (
             <div className="admin-preview-field-grid">
-              <PreviewTextArea
+              <PreviewRichText
                 disabled={disabled}
                 label="Short Description"
                 onChange={(value) => onFieldChange('shortDescription', value)}
                 placeholder="Ocean views&#10;Private pool&#10;5-minute walk to beach"
-                rows={5}
                 value={formState.shortDescription}
                 wide
               />
@@ -243,9 +250,7 @@ export function AdminPropertyPreview({
         <div className="admin-property-preview-facts">
           {shortDescriptionLines.length > 0 ? (
             shortDescriptionLines.map((line) => (
-              <div className="property-fact-line" key={line}>
-                {line}
-              </div>
+              <RichTextValue as="div" className="property-fact-line" key={line} value={line} />
             ))
           ) : (
             <p className="admin-empty">Add short description copy to preview this section.</p>
@@ -336,7 +341,7 @@ export function AdminPropertyPreview({
               {formState.amenityGroups.map((group, groupIndex) => {
                 const itemCount = getAmenityGroupItems(group.itemsText).length
                 const isExpanded = expandedAmenityGroupId === group.id
-                const categoryLabel = group.title.trim() || `Category ${groupIndex + 1}`
+                const categoryLabel = richTextValueToPlainText(group.title) || `Category ${groupIndex + 1}`
                 const itemCountLabel = `${itemCount} item${itemCount === 1 ? '' : 's'}`
 
                 return (
@@ -370,20 +375,18 @@ export function AdminPropertyPreview({
 
                     {isExpanded ? (
                       <div className="admin-compact-field-grid">
-                        <PreviewInput
+                        <PreviewRichText
                           disabled={disabled}
-                          inlineLabel
                           label="Category"
                           onChange={(value) => onAmenityGroupChange(group.id, 'title', value)}
                           value={group.title}
                         />
-                        <PreviewTextArea
+                        <PreviewRichTextLineList
                           disabled={disabled}
-                          inlineLabel
+                          helperText="Press Enter to create the next amenity line."
                           label="Items"
                           onChange={(value) => onAmenityGroupChange(group.id, 'itemsText', value)}
                           placeholder="One bullet per line&#10;Air conditioning&#10;Full kitchen&#10;Private pool"
-                          rows={5}
                           value={group.itemsText}
                         />
                       </div>
@@ -419,7 +422,7 @@ export function AdminPropertyPreview({
             <div className="admin-collection-list">
               {formState.reviewEntries.map((entry) => (
                 <div className="admin-collection-card" key={entry.id}>
-                  <PreviewTextArea disabled={disabled} label="Review Text" onChange={(value) => onReviewEntryChange(entry.id, 'quote', value)} rows={4} value={entry.quote} />
+                  <PreviewRichText disabled={disabled} label="Review Text" onChange={(value) => onReviewEntryChange(entry.id, 'quote', value)} value={entry.quote} />
                   <PreviewInput disabled={disabled} label="Author" onChange={(value) => onReviewEntryChange(entry.id, 'author', value)} value={entry.author} />
                   <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={() => onRemoveReviewEntry(entry.id)} type="button">
                     Remove Review

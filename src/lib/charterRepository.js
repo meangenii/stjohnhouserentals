@@ -1,5 +1,6 @@
 import { deleteJson, getJson, postJson } from './api'
 import { getRouteSlugVariants } from './routeSlug'
+import { normalizeSiteHtml } from './normalizeSiteHtml'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
 
 const liveCatalogUrl = '/liveCharterCatalog.json'
@@ -126,6 +127,7 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
     throw new Error('Invalid charter data: name and slug are required.')
   }
 
+  const contentHtml = String(draft?.contentHtml ?? '').trim()
   const contentParagraphs = Array.isArray(draft?.contentParagraphs)
     ? draft.contentParagraphs.map((paragraph) => String(paragraph).trim()).filter(Boolean)
     : []
@@ -177,7 +179,7 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
     website,
     heroImage: normalizeImageAsset(draft?.heroImage),
     pageTitle: name,
-    contentHtml: paragraphListToHtml(contentParagraphs),
+    contentHtml: contentHtml || normalizeSiteHtml(paragraphListToHtml(contentParagraphs)),
     externalLinks,
   })
 }
