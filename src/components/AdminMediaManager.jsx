@@ -221,6 +221,25 @@ function buildFolderTree(childFoldersByParent, parentPath, expandedFolderPaths, 
   })
 }
 
+function buildUploadFeedback(files, uploads) {
+  const uploadCount = files.length
+  const avifConversionCount = uploads.filter((upload) => upload?.wasConvertedToAvif).length
+
+  if (uploadCount === 1) {
+    if (avifConversionCount === 1) {
+      return `Uploaded ${files[0].name} and converted it to AVIF.`
+    }
+
+    return `Uploaded ${files[0].name}.`
+  }
+
+  if (avifConversionCount > 0) {
+    return `Uploaded ${uploadCount} images to the current folder and converted ${avifConversionCount} to AVIF.`
+  }
+
+  return `Uploaded ${uploadCount} images to the current folder.`
+}
+
 export function AdminMediaManager({
   currentUrl = '',
   defaultOpen = false,
@@ -237,7 +256,7 @@ export function AdminMediaManager({
   const [open, setOpen] = useState(defaultOpen || !showToggle)
   const [query, setQuery] = useState('')
   const [folderPathFilter, setFolderPathFilter] = useState('auto')
-  const [ownerTypeFilter, setOwnerTypeFilter] = useState(preferredOwnerType || 'all')
+  const [ownerTypeFilter, setOwnerTypeFilter] = useState('all')
   const [copyStatus, setCopyStatus] = useState('')
   const [actionFeedback, setActionFeedback] = useState('')
   const [actionStatus, setActionStatus] = useState('idle')
@@ -525,7 +544,7 @@ export function AdminMediaManager({
 
     const nextOpen = !open
 
-    if (nextOpen && libraryState.status === 'idle') {
+    if (nextOpen) {
       setLibraryState((currentState) => ({ ...currentState, error: '', status: 'loading' }))
     }
 
@@ -613,9 +632,7 @@ export function AdminMediaManager({
 
       const firstUploadedMediaId = String(uploads[0]?.id ?? '').trim()
 
-      setActionFeedback(
-        files.length === 1 ? `Uploaded ${files[0].name}.` : `Uploaded ${files.length} images to the current folder.`,
-      )
+      setActionFeedback(buildUploadFeedback(files, uploads))
       setActionStatus('success')
       refreshLibrary({
         nextFolderPath: effectiveFolderPathFilter || libraryState.browserRootPath || 'media',
@@ -749,7 +766,14 @@ export function AdminMediaManager({
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
-            <input ref={fileInputRef} accept="image/*" hidden multiple type="file" onChange={handleUploadSelection} />
+            <input
+              ref={fileInputRef}
+              accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/avif"
+              hidden
+              multiple
+              type="file"
+              onChange={handleUploadSelection}
+            />
           </div>
 
           {showCreateFolderForm ? (

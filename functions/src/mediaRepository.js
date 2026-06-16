@@ -1,10 +1,14 @@
 const { createHash, randomUUID } = require('node:crypto')
 const path = require('node:path')
+const sharp = require('sharp')
 const { HttpError, getDb, getServerTimestamp, getStorageBucket } = require('./firebaseAdmin')
 
 const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
 const MEDIA_FOLDER_COLLECTION = 'cmsMediaFolders'
 const MAX_MEDIA_UPLOAD_BYTES = 7864320
+const AVIF_CONVERSION_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const AVIF_QUALITY = 60
+const AVIF_EFFORT = 4
 
 function normalizeString(value) {
   return String(value ?? '').trim()
@@ -132,6 +136,56 @@ function sanitizeFileName(fileName, contentType) {
   return `${fileStem}.${extension}`
 }
 
+async function normalizeUploadAsset(fileName, contentType, buffer) {
+  const normalizedFileName = sanitizeFileName(fileName, contentType)
+
+  if (!AVIF_CONVERSION_CONTENT_TYPES.has(contentType)) {
+    return {
+      buffer,
+      contentType,
+      fileName: normalizedFileName,
+      originalContentType: '',
+      originalFileName: '',
+      wasConvertedToAvif: false,
+    }
+  }
+
+  try {
+    const sourceImage = sharp(buffer, { animated: true })
+    const metadata = await sourceImage.metadata()
+
+    if ((metadata.pages ?? 1) > 1) {
+      return {
+        buffer,
+        contentType,
+        fileName: normalizedFileName,
+        originalContentType: '',
+        originalFileName: '',
+        wasConvertedToAvif: false,
+      }
+    }
+
+    const convertedBuffer = await sourceImage
+      .rotate()
+      .avif({
+        effort: AVIF_EFFORT,
+        quality: AVIF_QUALITY,
+      })
+      .toBuffer()
+
+    return {
+      buffer: convertedBuffer,
+      contentType: 'image/avif',
+      fileName: sanitizeFileName(normalizedFileName, 'image/avif'),
+      originalContentType: contentType,
+      originalFileName: normalizedFileName,
+      wasConvertedToAvif: true,
+    }
+  } catch {
+    throw new HttpError(400, 'Unable to convert the uploaded image to AVIF. Try a JPEG, PNG, or static WebP image.')
+  }
+}
+
 async function resolveUniqueStoragePath(bucket, folderPath, sanitizedFileName) {
   const extension = path.extname(sanitizedFileName)
   const stem = sanitizedFileName.slice(0, sanitizedFileName.length - extension.length)
@@ -203,8 +257,7 @@ async function createMediaFolder(parentPath, folderName, actor) {
 
 async function uploadMediaAsset(draft, actor) {
   const folderPath = sanitizeFolderPath(draft?.folderPath || 'media')
-  const contentType = inferContentType(draft?.fileName, draft?.contentType)
-  const sanitizedFileName = sanitizeFileName(draft?.fileName, contentType)
+  const originalContentType = inferContentType(draft?.fileName, draft?.contentType)
   const base64Payload = normalizeString(draft?.dataBase64)
 
   if (!base64Payload) {
@@ -221,6 +274,11 @@ async function uploadMediaAsset(draft, actor) {
     throw new HttpError(400, 'Images larger than 7.5 MB are not supported in this uploader yet.')
   }
 
+  const normalizedUpload = await normalizeUploadAsset(draft?.fileName, originalContentType, buffer)
+  const contentType = normalizedUpload.contentType
+  const sanitizedFileName = normalizedUpload.fileName
+  const storageBuffer = normalizedUpload.buffer
+
   const bucket = getStorageBucket()
   const { fileName, storagePath } = await resolveUniqueStoragePath(bucket, folderPath, sanitizedFileName)
   const downloadToken = randomUUID()
@@ -230,7 +288,7 @@ async function uploadMediaAsset(draft, actor) {
 
   await ensureFolderRecords(folderPath, actor)
 
-  await bucket.file(storagePath).save(buffer, {
+  await bucket.file(storagePath).save(storageBuffer, {
     resumable: false,
     contentType,
     metadata: {
@@ -246,7 +304,7 @@ async function uploadMediaAsset(draft, actor) {
   const mediaRecord = {
     alt: normalizeString(draft?.alt),
     bucket: bucket.name,
-    bytes: buffer.length,
+    bytes: storageBuffer.length,
     contentType,
     downloadToken,
     fieldPath: '',
@@ -254,6 +312,9 @@ async function uploadMediaAsset(draft, actor) {
     managedUrl,
     migratedAt: getServerTimestamp(),
     originalSourceUrl: '',
+    originalBytes: normalizedUpload.wasConvertedToAvif ? buffer.length : 0,
+    originalContentType: normalizedUpload.originalContentType,
+    originalFileName: normalizedUpload.originalFileName,
     ownerKey: normalizeString(draft?.ownerKey),
     ownerName: normalizeString(draft?.ownerName),
     ownerType: normalizeString(draft?.ownerType),
@@ -264,6 +325,7 @@ async function uploadMediaAsset(draft, actor) {
     updatedBy: actor.email || actor.uid || 'admin',
     usageCount: 0,
     usages: [],
+    wasConvertedToAvif: normalizedUpload.wasConvertedToAvif,
   }
 
   await db.collection(MEDIA_LIBRARY_COLLECTION).doc(mediaId).set(mediaRecord, { merge: true })
