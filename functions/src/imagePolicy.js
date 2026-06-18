@@ -95,14 +95,16 @@ function looksLikeManagedImageObject(value) {
     return false
   }
 
-  const imageOnlyKeys = new Set(['kind', 'url', 'alt', 'title', 'width', 'height'])
+  const imageOnlyKeys = new Set(['kind', 'url', 'alt', 'title', 'width', 'height', 'originalWidth', 'originalHeight'])
   const keys = Object.keys(value)
 
   if (keys.every((key) => imageOnlyKeys.has(key))) {
     return true
   }
 
-  return ['alt', 'title', 'width', 'height'].some((key) => Object.prototype.hasOwnProperty.call(value, key))
+  return ['alt', 'title', 'width', 'height', 'originalWidth', 'originalHeight'].some((key) =>
+    Object.prototype.hasOwnProperty.call(value, key),
+  )
 }
 
 function assertStorageManagedImage(asset, label) {

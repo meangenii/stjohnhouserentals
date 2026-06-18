@@ -682,6 +682,11 @@ const structuredSitePages = {
       dependableParagraph:
         'Dependable Car Rental will allow their cars to go to St John also, but do not provide service of vehicles on St John if it were to break down. They are 3 minutes from the airport and offer a shuttle to and from.',
       dependablePhone: '1-800-522-3076',
+      directoryImage: {
+        kind: 'image',
+        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-detail.jpg?alt=media&token=57aa50d1-a786-43b0-882c-b251e7853ba8',
+        alt: 'Rental jeep on St. John',
+      },
       detailImage: {
         kind: 'image',
         url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fstjohncarrentals%2Fstjohncarrentals-detail.jpg?alt=media&token=57aa50d1-a786-43b0-882c-b251e7853ba8',

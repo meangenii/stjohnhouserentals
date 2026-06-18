@@ -80,11 +80,14 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
       const ownerType = String(entry.ownerType ?? '').trim()
       const bytes = Number(entry.bytes ?? 0) || 0
       const contentType = String(entry.contentType ?? '').trim()
+      const width = Number.parseInt(String(entry.width ?? ''), 10) || 0
+      const height = Number.parseInt(String(entry.height ?? ''), 10) || 0
 
       return {
         alt: decodeValue(entry.alt),
         bytes,
         contentType,
+        height,
         id: String(entry.mediaId ?? storagePath ?? managedUrl).trim(),
         fileName,
         folderName: humanizeFolderSegment(folderPath.split('/').at(-1) ?? ''),
@@ -96,8 +99,11 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
         storagePath,
         title: decodeValue(entry.title),
         updatedAt: normalizeTimestampValue(entry.updatedAt ?? entry.migratedAt),
+        width,
         searchText: normalizeAdminMediaSearchValue(
-          [fileName, ownerKey, ownerName, ownerType, folderPath, storagePath, managedUrl, contentType].filter(Boolean).join(' '),
+          [fileName, ownerKey, ownerName, ownerType, folderPath, storagePath, managedUrl, contentType, width && height ? `${width}x${height}` : '']
+            .filter(Boolean)
+            .join(' '),
         ),
       }
     })

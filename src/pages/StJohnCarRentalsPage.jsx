@@ -1,5 +1,6 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { getImageDimensions } from '../lib/imageSizePresets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
@@ -20,10 +21,33 @@ function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
   ))
 }
 
+function mergeImageFallback(fallbackImage, image) {
+  if (!image) {
+    return fallbackImage
+  }
+
+  return {
+    ...fallbackImage,
+    ...image,
+  }
+}
+
+function getCarRentalImageSrc(image, fallbackOptions) {
+  const { width, height } = getImageDimensions(image)
+
+  if (width && height) {
+    return getContentImageSrc(image, { height, mode: 'fit', width })
+  }
+
+  return getContentImageSrc(image, fallbackOptions)
+}
+
 export function StJohnCarRentalsPage() {
   const page = useStructuredPageContent('stJohnCarRentals')
+  const directoryImage = mergeImageFallback(page.directory.detailImage, page.directory.directoryImage)
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 1080 })
-  const detailImageUrl = getContentImageSrc(page.directory.detailImage, { width: 900, height: 1365 })
+  const directoryImageUrl = getCarRentalImageSrc(directoryImage, { width: 900, height: 900 })
+  const detailImageUrl = getCarRentalImageSrc(page.directory.detailImage, { width: 900, height: 1365 })
 
   return (
     <article className="st-john-car-rentals-page">
@@ -84,39 +108,31 @@ export function StJohnCarRentalsPage() {
                   </p>
                 ))}
               </div>
-
-              <div className="st-john-car-rentals-notes">
-                <EditableText as="p" label="Airport Paragraph" multiline path={['directory', 'airportParagraph']} rows={6} value={page.directory.airportParagraph}>
-                  {page.directory.airportParagraph}
-                </EditableText>
-
-                <p>
-                  Budget Car Rental on St Thomas:{' '}
-                  <PhoneLinks pathPrefix={['directory', 'budgetPhones']} phones={page.directory.budgetPhones} separator=" or " />
-                </p>
-
-                <p>
-                  <EditableText as="span" label="Dependable Paragraph" multiline path={['directory', 'dependableParagraph']} rows={5} value={page.directory.dependableParagraph}>
-                    {page.directory.dependableParagraph}
-                  </EditableText>{' '}
-                  <EditableText
-                    as="a"
-                    className="st-john-car-rentals-phone"
-                    href={`tel:${page.directory.dependablePhone.replace(/[^0-9+]/g, '')}`}
-                    label="Dependable Phone"
-                    path={['directory', 'dependablePhone']}
-                    value={page.directory.dependablePhone}
-                  >
-                    {page.directory.dependablePhone}
-                  </EditableText>
-                </p>
-              </div>
             </div>
 
-            <div className="st-john-car-rentals-media">
+            <div className="st-john-car-rentals-directory-media">
+              {directoryImageUrl ? (
+                <EditableImage
+                  alt={directoryImage.alt || 'Rental jeep on St. John'}
+                  decoding="async"
+                  image={directoryImage}
+                  path={['directory', 'directoryImage']}
+                  loading="lazy"
+                  src={directoryImageUrl}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="st-john-car-rentals-airport-notes">
+        <div className="st-john-car-rentals-airport-notes-inner">
+          <div className="st-john-car-rentals-airport-notes-grid">
+            <div className="st-john-car-rentals-airport-notes-media">
               {detailImageUrl ? (
                 <EditableImage
-                  alt={page.directory.detailImage.alt || 'Red jeep on St. John road'}
+                  alt={page.directory.detailImage.alt || 'Red jeep on a St. John road'}
                   decoding="async"
                   image={page.directory.detailImage}
                   path={['directory', 'detailImage']}
@@ -124,6 +140,33 @@ export function StJohnCarRentalsPage() {
                   src={detailImageUrl}
                 />
               ) : null}
+            </div>
+
+            <div className="st-john-car-rentals-notes st-john-car-rentals-airport-notes-copy">
+              <EditableText as="p" label="Airport Paragraph" multiline path={['directory', 'airportParagraph']} rows={6} value={page.directory.airportParagraph}>
+                {page.directory.airportParagraph}
+              </EditableText>
+
+              <p>
+                Budget Car Rental on St Thomas:{' '}
+                <PhoneLinks pathPrefix={['directory', 'budgetPhones']} phones={page.directory.budgetPhones} separator=" or " />
+              </p>
+
+              <p>
+                <EditableText as="span" label="Dependable Paragraph" multiline path={['directory', 'dependableParagraph']} rows={5} value={page.directory.dependableParagraph}>
+                  {page.directory.dependableParagraph}
+                </EditableText>{' '}
+                <EditableText
+                  as="a"
+                  className="st-john-car-rentals-phone"
+                  href={`tel:${page.directory.dependablePhone.replace(/[^0-9+]/g, '')}`}
+                  label="Dependable Phone"
+                  path={['directory', 'dependablePhone']}
+                  value={page.directory.dependablePhone}
+                >
+                  {page.directory.dependablePhone}
+                </EditableText>
+              </p>
             </div>
           </div>
         </div>

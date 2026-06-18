@@ -32,6 +32,19 @@ function formatBytes(value) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function normalizeDimension(value) {
+  const dimension = Number.parseInt(String(value ?? '').trim(), 10)
+
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : 0
+}
+
+function formatDimensions(value) {
+  const width = normalizeDimension(value?.width)
+  const height = normalizeDimension(value?.height)
+
+  return width && height ? `${width} x ${height}` : ''
+}
+
 function formatModifiedDate(value) {
   const candidate = String(value ?? '').trim()
 
@@ -264,6 +277,7 @@ export function AdminMediaManager({
   const [newFolderName, setNewFolderName] = useState('')
   const [selectedEntryId, setSelectedEntryId] = useState('')
   const [expandedFolderPaths, setExpandedFolderPaths] = useState(() => new Set())
+  const [measuredDimensionsById, setMeasuredDimensionsById] = useState({})
   const [libraryState, setLibraryState] = useState({
     bucket: '',
     browserRootPath: '',
@@ -652,12 +666,61 @@ export function AdminMediaManager({
     setSelectedEntryId(entry.id)
   }
 
+  function getEntryDimensions(entry) {
+    const measuredDimensions = measuredDimensionsById[entry?.id] ?? {}
+
+    return {
+      height: normalizeDimension(entry?.height) || normalizeDimension(measuredDimensions.height),
+      width: normalizeDimension(entry?.width) || normalizeDimension(measuredDimensions.width),
+    }
+  }
+
+  function getEntryWithDimensions(entry) {
+    const dimensions = getEntryDimensions(entry)
+
+    if (!dimensions.width || !dimensions.height) {
+      return entry
+    }
+
+    return {
+      ...entry,
+      height: dimensions.height,
+      width: dimensions.width,
+    }
+  }
+
+  function handlePreviewImageLoad(entry, event) {
+    if (!entry?.id || (normalizeDimension(entry.width) && normalizeDimension(entry.height))) {
+      return
+    }
+
+    const width = normalizeDimension(event.currentTarget.naturalWidth)
+    const height = normalizeDimension(event.currentTarget.naturalHeight)
+
+    if (!width || !height) {
+      return
+    }
+
+    setMeasuredDimensionsById((currentDimensions) => {
+      const currentEntryDimensions = currentDimensions[entry.id]
+
+      if (currentEntryDimensions?.width === width && currentEntryDimensions?.height === height) {
+        return currentDimensions
+      }
+
+      return {
+        ...currentDimensions,
+        [entry.id]: { height, width },
+      }
+    })
+  }
+
   function handleUseEntry(entry) {
     if (!onSelect) {
       return
     }
 
-    onSelect(entry.managedUrl, entry)
+    onSelect(entry.managedUrl, getEntryWithDimensions(entry))
     setCopyStatus('')
 
     if (showToggle) {
@@ -880,6 +943,7 @@ export function AdminMediaManager({
                           <th>Name</th>
                           <th>Date Modified</th>
                           <th>Type</th>
+                          <th>Dimensions</th>
                           <th>Size</th>
                         </tr>
                       </thead>
@@ -894,12 +958,14 @@ export function AdminMediaManager({
                             </td>
                             <td></td>
                             <td>File folder</td>
+                            <td></td>
                             <td>{formatItemCountLabel(folder.itemCount, 'item')}</td>
                           </tr>
                         ))}
 
                         {filteredEntries.map((entry) => {
                           const isSelected = entry.id === effectiveSelectedEntryId || entry.managedUrl === normalizedCurrentUrl
+                          const dimensionsLabel = formatDimensions(getEntryDimensions(entry))
 
                           return (
                             <tr
@@ -914,6 +980,7 @@ export function AdminMediaManager({
                                     alt={entry.fileName || entry.ownerName || 'Managed media item'}
                                     className="admin-media-list-thumb"
                                     loading="lazy"
+                                    onLoad={(event) => handlePreviewImageLoad(entry, event)}
                                     src={buildRemoteImageUrl(entry.managedUrl, { width: 120, height: 90, mode: 'fit' }) || entry.managedUrl}
                                   />
                                   <span>{entry.fileName || 'Untitled image'}</span>
@@ -921,6 +988,7 @@ export function AdminMediaManager({
                               </td>
                               <td>{formatModifiedDate(entry.updatedAt)}</td>
                               <td>{entry.contentType ? entry.contentType.replace('image/', '').toUpperCase() : 'Image'}</td>
+                              <td>{dimensionsLabel || '--'}</td>
                               <td>{formatBytes(entry.bytes) || '--'}</td>
                             </tr>
                           )
@@ -939,6 +1007,7 @@ export function AdminMediaManager({
                         <img
                           alt={selectedEntry.fileName || selectedEntry.ownerName || 'Selected media item'}
                           loading="lazy"
+                          onLoad={(event) => handlePreviewImageLoad(selectedEntry, event)}
                           src={buildRemoteImageUrl(selectedEntry.managedUrl, { width: 220, height: 160, mode: 'fit' }) || selectedEntry.managedUrl}
                         />
                       </div>
@@ -949,6 +1018,7 @@ export function AdminMediaManager({
                         </div>
                         <p className="admin-media-details-meta">
                           {selectedEntry.contentType ? selectedEntry.contentType.replace('image/', '').toUpperCase() : 'Image'}
+                          {formatDimensions(getEntryDimensions(selectedEntry)) ? ` | ${formatDimensions(getEntryDimensions(selectedEntry))}` : ''}
                           {selectedEntry.bytes ? ` | ${formatBytes(selectedEntry.bytes)}` : ''}
                           {selectedEntry.updatedAt ? ` | ${formatModifiedDate(selectedEntry.updatedAt)}` : ''}
                         </p>

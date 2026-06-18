@@ -1,7 +1,9 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { richTextLinesToHtml, richTextValueToLines } from '../lib/richTextValue'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
+import { AdminImageSizeControls } from './AdminImageSizeControls'
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
@@ -75,8 +77,25 @@ function RichLineListField({ disabled, label, onChange, value, wide = true }) {
   )
 }
 
-function ImageField({ disabled, image, onAltChange, onUrlChange, title }) {
+function ImageField({ disabled, image, onAltChange, onOriginalSizeChange, onSizeChange, onUrlChange, title }) {
   const previewSrc = String(image?.url ?? '').trim()
+  const previewDimensions = getImageDimensions(image, { width: 800, height: 260 })
+
+  function handleSelectImage(nextUrl, entry) {
+    const originalWidth = normalizeImageDimension(entry?.width)
+    const originalHeight = normalizeImageDimension(entry?.height)
+
+    onUrlChange(nextUrl)
+    onOriginalSizeChange(originalWidth || null, originalHeight || null)
+
+    if (!image?.alt && entry?.alt) {
+      onAltChange(entry.alt)
+    }
+  }
+
+  function handleSizeChange(nextSize) {
+    onSizeChange(nextSize)
+  }
 
   return (
     <section className="admin-content-media-field">
@@ -90,11 +109,13 @@ function ImageField({ disabled, image, onAltChange, onUrlChange, title }) {
         <PlainTextField disabled={disabled} label="Alt Text" onChange={onAltChange} value={image?.alt ?? ''} wide />
       </div>
 
+      <AdminImageSizeControls disabled={disabled} image={image} onChange={handleSizeChange} />
+
       <AdminMediaManager
         currentUrl={image?.url ?? ''}
         disabled={disabled}
         onClear={() => onUrlChange('')}
-        onSelect={(nextUrl) => onUrlChange(nextUrl)}
+        onSelect={handleSelectImage}
         preferredOwnerName={title}
         preferredOwnerType="site-shell"
         title={`${title} Media`}
@@ -102,7 +123,7 @@ function ImageField({ disabled, image, onAltChange, onUrlChange, title }) {
 
       {previewSrc ? (
         <div className="admin-content-image-preview">
-          <img alt={image?.alt || ''} loading="lazy" src={buildRemoteImageUrl(previewSrc, { width: 800, height: 260 }) || previewSrc} />
+          <img alt={image?.alt || ''} loading="lazy" src={buildRemoteImageUrl(previewSrc, previewDimensions) || previewSrc} />
         </div>
       ) : null}
     </section>
@@ -212,6 +233,22 @@ export function AdminSiteShellEditor({ disabled = false, onChange, value }) {
               disabled={disabled}
               image={value.header?.logo}
               onAltChange={(nextValue) => setPath(['header', 'logo', 'alt'], nextValue)}
+              onSizeChange={(nextSize) => {
+                setPath(['header', 'logo', 'width'], nextSize.width)
+                setPath(['header', 'logo', 'height'], nextSize.height)
+
+                if (Object.prototype.hasOwnProperty.call(nextSize, 'originalWidth')) {
+                  setPath(['header', 'logo', 'originalWidth'], nextSize.originalWidth)
+                }
+
+                if (Object.prototype.hasOwnProperty.call(nextSize, 'originalHeight')) {
+                  setPath(['header', 'logo', 'originalHeight'], nextSize.originalHeight)
+                }
+              }}
+              onOriginalSizeChange={(nextWidth, nextHeight) => {
+                setPath(['header', 'logo', 'originalWidth'], nextWidth)
+                setPath(['header', 'logo', 'originalHeight'], nextHeight)
+              }}
               onUrlChange={(nextValue) => setPath(['header', 'logo', 'url'], nextValue)}
               title="Site Logo"
             />

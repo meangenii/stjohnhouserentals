@@ -35,6 +35,8 @@ function normalizeImageAsset(asset) {
     title: String(asset.title ?? '').trim(),
     width: asset.width ?? null,
     height: asset.height ?? null,
+    originalWidth: asset.originalWidth ?? null,
+    originalHeight: asset.originalHeight ?? null,
   }
 }
 

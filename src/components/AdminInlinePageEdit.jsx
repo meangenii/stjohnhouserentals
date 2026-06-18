@@ -1,7 +1,9 @@
 import { lazy, Suspense, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
+import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
+import { AdminImageSizeControls } from './AdminImageSizeControls'
 import { RichTextValue } from './RichTextValue'
 
 const AdminMediaManager = lazy(() =>
@@ -57,71 +59,17 @@ function useEditableField(path, fieldKey = '') {
   }
 }
 
-function usePopoverPosition(active, anchorRef, popoverRef) {
-  const [position, setPosition] = useState({ top: 0, left: 0 })
-
-  useLayoutEffect(() => {
-    if (!active) {
-      return undefined
-    }
-
-    function syncPosition() {
-      const anchor = anchorRef.current
-      const popover = popoverRef.current
-
-      if (!anchor || !popover) {
-        return
-      }
-
-      const anchorRect = anchor.getBoundingClientRect()
-      const popoverRect = popover.getBoundingClientRect()
-      const viewportPadding = 12
-      const preferredTop = anchorRect.bottom + 10
-      const maxTop = window.innerHeight - popoverRect.height - viewportPadding
-      const aboveTop = anchorRect.top - popoverRect.height - 10
-      const top =
-        preferredTop <= maxTop
-          ? preferredTop
-          : aboveTop >= viewportPadding
-            ? aboveTop
-            : Math.max(viewportPadding, maxTop)
-      const maxLeft = window.innerWidth - popoverRect.width - viewportPadding
-      const left = Math.min(Math.max(viewportPadding, anchorRect.left), Math.max(viewportPadding, maxLeft))
-
-      setPosition({ top, left })
-    }
-
-    syncPosition()
-    window.addEventListener('resize', syncPosition)
-    window.addEventListener('scroll', syncPosition, true)
-
-    return () => {
-      window.removeEventListener('resize', syncPosition)
-      window.removeEventListener('scroll', syncPosition, true)
-    }
-  }, [active, anchorRef, popoverRef])
-
-  return position
-}
-
-function InlinePopover({ active, anchorRef, onClose, title, children }) {
+function InlinePopover({ active, onClose, title, children }) {
   const popoverRef = useRef(null)
-  const position = usePopoverPosition(active, anchorRef, popoverRef)
 
   useEffect(() => {
     if (!active) {
       return undefined
     }
 
-    function handlePointerDown(event) {
-      const target = event.target
+    const previousBodyOverflow = document.body.style.overflow
 
-      if (anchorRef.current?.contains(target) || popoverRef.current?.contains(target)) {
-        return
-      }
-
-      onClose()
-    }
+    document.body.style.overflow = 'hidden'
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
@@ -129,14 +77,13 @@ function InlinePopover({ active, anchorRef, onClose, title, children }) {
       }
     }
 
-    document.addEventListener('mousedown', handlePointerDown)
     document.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown)
+      document.body.style.overflow = previousBodyOverflow
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [active, anchorRef, onClose])
+  }, [active, onClose])
 
   if (!active) {
     return null
@@ -146,19 +93,27 @@ function InlinePopover({ active, anchorRef, onClose, title, children }) {
     return null
   }
 
+  function handleBackdropPointerDown(event) {
+    if (event.target === event.currentTarget) {
+      onClose()
+    }
+  }
+
   return createPortal(
     <div
-      ref={popoverRef}
-      className="admin-inline-popover"
-      style={{ top: `${position.top}px`, left: `${position.left}px` }}
+      className="admin-inline-popover-shell"
+      role="presentation"
+      onMouseDown={handleBackdropPointerDown}
     >
-      <div className="admin-inline-popover-header">
-        <strong>{title}</strong>
-        <button className="button-link button-link--ghost admin-inline-popover-close" type="button" onClick={onClose}>
-          Done
-        </button>
+      <div ref={popoverRef} aria-modal="true" className="admin-inline-popover" role="dialog" aria-label={title}>
+        <div className="admin-inline-popover-header">
+          <strong>{title}</strong>
+          <button className="button-link button-link--ghost admin-inline-popover-close" type="button" onClick={onClose}>
+            Done
+          </button>
+        </div>
+        <div className="admin-inline-popover-body">{children}</div>
       </div>
-      <div className="admin-inline-popover-body">{children}</div>
     </div>,
     document.body,
   )
@@ -338,7 +293,41 @@ export function EditableButton({
   )
 }
 
-function ImagePopoverFields({ field, image = {}, path, title = 'Image' }) {
+function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSizeControls = true, title = 'Image' }) {
+  function handleSizeChange(nextSize) {
+    const nextImage = {
+      kind: image?.kind ?? 'image',
+      ...image,
+      height: nextSize.height,
+      width: nextSize.width,
+    }
+
+    if (Object.prototype.hasOwnProperty.call(nextSize, 'originalHeight')) {
+      nextImage.originalHeight = nextSize.originalHeight
+    }
+
+    if (Object.prototype.hasOwnProperty.call(nextSize, 'originalWidth')) {
+      nextImage.originalWidth = nextSize.originalWidth
+    }
+
+    field.updatePath(path, nextImage)
+  }
+
+  function handleSelectImage(nextUrl, entry) {
+    const originalWidth = normalizeImageDimension(entry?.width)
+    const originalHeight = normalizeImageDimension(entry?.height)
+
+    field.updatePath(path, {
+      kind: image?.kind ?? 'image',
+      ...image,
+      url: nextUrl,
+      alt: image?.alt || entry?.alt || '',
+      title: 'title' in image || entry?.title ? image?.title || entry?.title || '' : undefined,
+      originalHeight: originalHeight || null,
+      originalWidth: originalWidth || null,
+    })
+  }
+
   return (
     <>
       <label className="admin-field">
@@ -355,11 +344,12 @@ function ImagePopoverFields({ field, image = {}, path, title = 'Image' }) {
           <input type="text" value={image?.title ?? ''} onChange={(event) => field.updatePath([...path, 'title'], event.target.value)} />
         </label>
       ) : null}
+      {showSizeControls ? <AdminImageSizeControls disabled={field.disabled} displaySize={displaySize} image={image} onChange={handleSizeChange} /> : null}
       <AdminMediaManager
         currentUrl={image?.url ?? ''}
         disabled={field.disabled}
         onClear={() => field.updatePath([...path, 'url'], '')}
-        onSelect={(nextUrl) => field.updatePath([...path, 'url'], nextUrl)}
+        onSelect={handleSelectImage}
         preferredOwnerType="page"
         title={`${title} Media`}
       />
@@ -367,10 +357,85 @@ function ImagePopoverFields({ field, image = {}, path, title = 'Image' }) {
   )
 }
 
+function getEditableImageStyle(image, style) {
+  const { width, height } = getImageDimensions(image)
+
+  if (!width && !height) {
+    return style
+  }
+
+  return {
+    ...style,
+    width: width ? `${width}px` : style?.width,
+    height: height ? `${height}px` : style?.height,
+    maxWidth: style?.maxWidth ?? '100%',
+    aspectRatio: width && height ? `${width} / ${height}` : style?.aspectRatio,
+    objectFit: width || height ? 'contain' : style?.objectFit,
+  }
+}
+
 export function EditableImage({ alt = '', className = '', image = null, path, src = '', ...rest }) {
   const anchorRef = useRef(null)
   const field = useEditableField(path)
   const isActive = field.isActive
+  const imageStyle = getEditableImageStyle(image, rest.style)
+  const [displaySize, setDisplaySize] = useState({ height: 0, width: 0 })
+
+  function measureDisplayedImage() {
+    const imageElement = anchorRef.current
+
+    if (!imageElement || typeof imageElement.getBoundingClientRect !== 'function') {
+      return
+    }
+
+    const rect = imageElement.getBoundingClientRect()
+    const width = normalizeImageDimension(Math.round(rect.width))
+    const height = normalizeImageDimension(Math.round(rect.height))
+
+    if (!width || !height) {
+      return
+    }
+
+    setDisplaySize((currentSize) => {
+      if (currentSize.width === width && currentSize.height === height) {
+        return currentSize
+      }
+
+      return { height, width }
+    })
+  }
+
+  useLayoutEffect(() => {
+    if (!isActive || !src) {
+      return undefined
+    }
+
+    measureDisplayedImage()
+
+    const imageElement = anchorRef.current
+    let animationFrameId = 0
+    const scheduleMeasure = () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      animationFrameId = window.requestAnimationFrame(measureDisplayedImage)
+    }
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' || !imageElement ? null : new ResizeObserver(scheduleMeasure)
+
+    resizeObserver?.observe(imageElement)
+    window.addEventListener('resize', scheduleMeasure)
+
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', scheduleMeasure)
+    }
+  }, [image?.height, image?.width, isActive, src])
 
   function handleActivate(event) {
     if (!field.isEnabled || field.disabled) {
@@ -380,6 +445,11 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
     event.preventDefault()
     event.stopPropagation()
     field.activate()
+  }
+
+  function handleImageLoad(event) {
+    rest.onLoad?.(event)
+    measureDisplayedImage()
   }
 
   return (
@@ -392,7 +462,9 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
           className={buildEditableClassName(className, field.isEnabled, isActive)}
           data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
           onClick={handleActivate}
+          onLoad={handleImageLoad}
           src={src}
+          style={imageStyle}
         />
       ) : (
         <button
@@ -408,7 +480,7 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Image">
         <InlinePopoverContent>
-          <ImagePopoverFields field={field} image={image} path={path} title="Image" />
+          <ImagePopoverFields displaySize={displaySize} field={field} image={image} path={path} title="Image" />
         </InlinePopoverContent>
       </InlinePopover>
     </>
@@ -453,7 +525,7 @@ export function EditableBackgroundSection({
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Background Image">
         <InlinePopoverContent>
-          <ImagePopoverFields field={field} image={image} path={path} title="Background Image" />
+          <ImagePopoverFields field={field} image={image} path={path} showSizeControls={false} title="Background Image" />
         </InlinePopoverContent>
       </InlinePopover>
     </>

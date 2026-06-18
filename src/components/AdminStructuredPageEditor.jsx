@@ -1,7 +1,9 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
+import { AdminImageSizeControls } from './AdminImageSizeControls'
 
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
@@ -103,7 +105,9 @@ function resolveEditableImageSrc(image) {
   const directUrl = String(image?.url ?? '').trim()
 
   if (directUrl) {
-    return buildRemoteImageUrl(directUrl, { width: 1200, height: 720 }) || directUrl
+    const { width, height } = getImageDimensions(image, { width: 1200, height: 720 })
+
+    return buildRemoteImageUrl(directUrl, { width, height }) || directUrl
   }
 
   return ''
@@ -203,8 +207,54 @@ function LinkFields({
   )
 }
 
+function mergeImageFallback(fallbackImage, image) {
+  if (!image) {
+    return fallbackImage
+  }
+
+  return {
+    ...fallbackImage,
+    ...image,
+  }
+}
+
 function ImageField({ label, image, disabled, onChange }) {
   const previewSrc = resolveEditableImageSrc(image)
+
+  function handleSizeChange(nextSize) {
+    onChange('kind', image?.kind ?? 'image')
+    onChange('url', image?.url ?? '')
+    onChange('alt', image?.alt ?? '')
+    onChange('title', image?.title ?? '')
+    onChange('width', nextSize.width)
+    onChange('height', nextSize.height)
+
+    if (Object.prototype.hasOwnProperty.call(nextSize, 'originalWidth')) {
+      onChange('originalWidth', nextSize.originalWidth)
+    }
+
+    if (Object.prototype.hasOwnProperty.call(nextSize, 'originalHeight')) {
+      onChange('originalHeight', nextSize.originalHeight)
+    }
+  }
+
+  function handleSelectImage(nextUrl, entry) {
+    const originalWidth = normalizeImageDimension(entry?.width)
+    const originalHeight = normalizeImageDimension(entry?.height)
+
+    onChange('kind', image?.kind ?? 'image')
+    onChange('url', nextUrl)
+    onChange('originalWidth', originalWidth || null)
+    onChange('originalHeight', originalHeight || null)
+
+    if (!image?.alt && entry?.alt) {
+      onChange('alt', entry.alt)
+    }
+
+    if (!image?.title && entry?.title) {
+      onChange('title', entry.title)
+    }
+  }
 
   return (
     <section className="admin-content-media-field">
@@ -218,11 +268,13 @@ function ImageField({ label, image, disabled, onChange }) {
         <TextField disabled={disabled} label="Image Title" onChange={(value) => onChange('title', value)} value={image?.title ?? ''} />
       </div>
 
+      <AdminImageSizeControls disabled={disabled} image={image} onChange={handleSizeChange} />
+
       <AdminMediaManager
         currentUrl={image?.url ?? ''}
         disabled={disabled}
         onClear={() => onChange('url', '')}
-        onSelect={(nextUrl) => onChange('url', nextUrl)}
+        onSelect={handleSelectImage}
         preferredOwnerType="page"
         title={`${label} Media`}
       />
@@ -1056,6 +1108,14 @@ function renderCarRentalsEditor(page, helpers) {
       <SectionCard description="These fields control the text and company directory below the hero." title="Car Rental Directory">
         <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} rows={3} value={page.directory?.title ?? ''} />
         <TextAreaField disabled={disabled} label="Intro Paragraph" onChange={(value) => setPath(['directory', 'introParagraph'], value)} rows={4} value={page.directory?.introParagraph ?? ''} />
+        <Field wide>
+          <ImageField
+            disabled={disabled}
+            image={mergeImageFallback(page.directory?.detailImage, page.directory?.directoryImage)}
+            label="Directory Image"
+            onChange={(field, value) => setPath(['directory', 'directoryImage', field], value)}
+          />
+        </Field>
 
         <Field wide>
           <RepeatingSection

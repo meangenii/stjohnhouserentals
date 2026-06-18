@@ -136,17 +136,43 @@ function sanitizeFileName(fileName, contentType) {
   return `${fileStem}.${extension}`
 }
 
+function normalizeDimension(value) {
+  const dimension = Number.parseInt(String(value ?? '').trim(), 10)
+
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : null
+}
+
+async function readImageDimensions(buffer) {
+  try {
+    const metadata = await sharp(buffer, { animated: true }).metadata()
+
+    return {
+      height: normalizeDimension(metadata.height),
+      width: normalizeDimension(metadata.width),
+    }
+  } catch {
+    return {
+      height: null,
+      width: null,
+    }
+  }
+}
+
 async function normalizeUploadAsset(fileName, contentType, buffer) {
   const normalizedFileName = sanitizeFileName(fileName, contentType)
 
   if (!AVIF_CONVERSION_CONTENT_TYPES.has(contentType)) {
+    const dimensions = await readImageDimensions(buffer)
+
     return {
       buffer,
       contentType,
       fileName: normalizedFileName,
+      height: dimensions.height,
       originalContentType: '',
       originalFileName: '',
       wasConvertedToAvif: false,
+      width: dimensions.width,
     }
   }
 
@@ -155,13 +181,17 @@ async function normalizeUploadAsset(fileName, contentType, buffer) {
     const metadata = await sourceImage.metadata()
 
     if ((metadata.pages ?? 1) > 1) {
+      const dimensions = await readImageDimensions(buffer)
+
       return {
         buffer,
         contentType,
         fileName: normalizedFileName,
+        height: dimensions.height,
         originalContentType: '',
         originalFileName: '',
         wasConvertedToAvif: false,
+        width: dimensions.width,
       }
     }
 
@@ -172,14 +202,17 @@ async function normalizeUploadAsset(fileName, contentType, buffer) {
         quality: AVIF_QUALITY,
       })
       .toBuffer()
+    const dimensions = await readImageDimensions(convertedBuffer)
 
     return {
       buffer: convertedBuffer,
       contentType: 'image/avif',
       fileName: sanitizeFileName(normalizedFileName, 'image/avif'),
+      height: dimensions.height,
       originalContentType: contentType,
       originalFileName: normalizedFileName,
       wasConvertedToAvif: true,
+      width: dimensions.width,
     }
   } catch {
     throw new HttpError(400, 'Unable to convert the uploaded image to AVIF. Try a JPEG, PNG, or static WebP image.')
@@ -326,6 +359,8 @@ async function uploadMediaAsset(draft, actor) {
     usageCount: 0,
     usages: [],
     wasConvertedToAvif: normalizedUpload.wasConvertedToAvif,
+    width: normalizedUpload.width,
+    height: normalizedUpload.height,
   }
 
   await db.collection(MEDIA_LIBRARY_COLLECTION).doc(mediaId).set(mediaRecord, { merge: true })

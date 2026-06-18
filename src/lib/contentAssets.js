@@ -1,5 +1,4 @@
 import { buildRemoteImageUrl } from './remoteImage'
-
 function resolveContentImage(image) {
   if (!image || image.kind !== 'image') {
     return image
