@@ -4,7 +4,35 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\j_luc\\\\OneDrive\\\\Desktop\\\\GenericCMS\" -Recurse -Directory)",
       "Bash(Select-Object -First 30)",
       "Bash(Format-Table FullName)",
-      "Bash(grep -E \"\\\\.jsx?$\")"
+      "Bash(grep -E \"\\\\.jsx?$\")",
+      "Bash(npm run *)",
+      "Bash(curl -s https://www.stjohnhouserentals.com/)",
+      "Bash(curl -s \"https://www.stjohnhouserentals.com/assets/index-j7QzC70r.js\")",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(mkdir -p /tmp/pwtest)",
+      "Read(//tmp/**)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Read(//tmp/pwtest/**)",
+      "Bash(npx playwright *)",
+      "Bash(node test.js)",
+      "Bash(node -e \"console.log\\(process.cwd\\(\\)\\)\")",
+      "Read(//c//**)",
+      "Read(//c/Users/j_luc/AppData/Local/Temp//**)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 24664 //F)",
+      "Bash(git stash *)",
+      "Bash(npx vite *)",
+      "Bash(taskkill //PID 6040 //F)",
+      "Bash(rm -rf /tmp/pwtest2)"
+    ],
+    "additionalDirectories": [
+      "\\tmp\\pwtest"
     ]
   }
 }
