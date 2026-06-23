@@ -206,20 +206,10 @@ const structuredSitePages = {
           body: 'From cozy vacation rentals to luxurious homes for sale, we offer properties that suit every need and budget.',
         },
         {
-          kind: 'deals',
-          title: 'Special Deals',
-          body: 'Take advantage of our exclusive offers and limited-time specials to get the best value for your stay or purchase.',
-        },
-        {
           kind: 'local',
           title: 'GO Local',
           body:
             "We understand St. John like no one else. Our knowledge of the island helps us provide valuable recommendations for your stay, whether it's for property, charter boats, or car rentals.",
-        },
-        {
-          kind: 'service',
-          title: 'Reliable Customer Service',
-          body: "While we don't handle bookings directly, we connect you with trusted rental and property partners.",
         },
       ],
     },

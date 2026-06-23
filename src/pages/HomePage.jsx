@@ -4,6 +4,8 @@ import { PropertyDirectorySection } from '../components/PropertyDirectorySection
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
+const hiddenDiscoverFeatureTitles = new Set(['Special Deals', 'Reliable Customer Service'])
+
 function HomeFeatureIcon({ kind }) {
   if (kind === 'selection') {
     return (
@@ -173,17 +175,19 @@ export function HomePage() {
 
             <div className="home-discover-features">
               {page.discover.features.map((item, index) => (
-                <article className="home-discover-feature" key={index}>
-                  <div className="home-discover-feature-icon">
-                    <HomeFeatureIcon kind={item.kind} />
-                  </div>
-                  <EditableText as="h3" label={`Feature ${index + 1} Title`} path={['discover', 'features', index, 'title']} value={item.title}>
-                    {item.title}
-                  </EditableText>
-                  <EditableText as="p" label={`Feature ${index + 1} Description`} multiline path={['discover', 'features', index, 'body']} rows={4} value={item.body}>
-                    {item.body}
-                  </EditableText>
-                </article>
+                hiddenDiscoverFeatureTitles.has(String(item?.title ?? '').trim()) ? null : (
+                  <article className="home-discover-feature" key={index}>
+                    <div className="home-discover-feature-icon">
+                      <HomeFeatureIcon kind={item.kind} />
+                    </div>
+                    <EditableText as="h3" label={`Feature ${index + 1} Title`} path={['discover', 'features', index, 'title']} value={item.title}>
+                      {item.title}
+                    </EditableText>
+                    <EditableText as="p" label={`Feature ${index + 1} Description`} multiline path={['discover', 'features', index, 'body']} rows={4} value={item.body}>
+                      {item.body}
+                    </EditableText>
+                  </article>
+                )
               ))}
             </div>
           </div>

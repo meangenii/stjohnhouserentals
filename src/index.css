@@ -5,9 +5,9 @@
   --brand-blue: #2269ff;
   --brand-navy: #0b2b5f;
   --brand-navy-deep: #07214a;
-  --brand-orange: #dd803b;
-  --brand-orange-hover: #dd803b;
-  --brand-orange-fill-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAANSURBVBhXY7jbYP0fAAZuApiqV+cwAAAAAElFTkSuQmCC");
+  --brand-orange: #18750c;
+  --brand-orange-hover: #18750c;
+  --brand-orange-fill-image: linear-gradient(#18750c, #18750c);
   --accent-header-size: 0.98rem;
   --accent-header-weight: 400;
   --accent-header-spacing: 0.01em;
@@ -4339,7 +4339,7 @@ img {
   }
 
   .home-discover-features {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 3rem 2.6rem;
   }
 
