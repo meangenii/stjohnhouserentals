@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { createAdminMediaFolder, uploadAdminMediaFile } from '../lib/adminMediaApi'
-import { loadAdminMediaLibrary, normalizeAdminMediaSearchValue, resetAdminMediaLibraryCache } from '../lib/adminMediaLibrary'
+import { loadAdminMediaLibrary, normalizeAdminMediaSearchValue } from '../lib/adminMediaLibrary'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
 function humanizeOwnerType(ownerType) {
@@ -266,6 +266,7 @@ export function AdminMediaManager({
   title = 'Media Library',
 }) {
   const fileInputRef = useRef(null)
+  const shouldForceRefreshOnLoadRef = useRef(defaultOpen || !showToggle)
   const [open, setOpen] = useState(defaultOpen || !showToggle)
   const [query, setQuery] = useState('')
   const [folderPathFilter, setFolderPathFilter] = useState('auto')
@@ -385,8 +386,10 @@ export function AdminMediaManager({
     }
 
     let cancelled = false
+    const forceRefresh = shouldForceRefreshOnLoadRef.current
+    shouldForceRefreshOnLoadRef.current = false
 
-    loadAdminMediaLibrary()
+    loadAdminMediaLibrary({ forceRefresh })
       .then((library) => {
         if (cancelled) {
           return
@@ -538,7 +541,7 @@ export function AdminMediaManager({
       setSelectedEntryId(nextSelectedId)
     }
 
-    resetAdminMediaLibraryCache()
+    shouldForceRefreshOnLoadRef.current = true
     setLibraryState((currentState) => ({
       ...currentState,
       error: '',
@@ -559,6 +562,7 @@ export function AdminMediaManager({
     const nextOpen = !open
 
     if (nextOpen) {
+      shouldForceRefreshOnLoadRef.current = true
       setLibraryState((currentState) => ({ ...currentState, error: '', status: 'loading' }))
     }
 
@@ -831,7 +835,7 @@ export function AdminMediaManager({
             </label>
             <input
               ref={fileInputRef}
-              accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/avif"
+              accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
               hidden
               multiple
               type="file"

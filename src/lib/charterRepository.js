@@ -5,7 +5,7 @@ import { isApiBackedSiteContentSource } from './siteContentRepository'
 
 const liveCatalogUrl = '/liveCharterCatalog.json'
 const MOCK_STORAGE_KEY = 'charterCatalog'
-const charterDataSource = import.meta.env.VITE_CHARTER_DATA_SOURCE ?? 'local'
+const charterDataSource = import.meta.env.VITE_CHARTER_DATA_SOURCE ?? 'firebase'
 
 let localCharterCatalogPromise = null
 let remoteCharterCatalogPromise = null
@@ -54,16 +54,29 @@ function normalizeExternalLinks(links) {
     : []
 }
 
+function normalizePublicationState(publication) {
+  if (!publication || typeof publication !== 'object' || Array.isArray(publication)) {
+    return null
+  }
+
+  return {
+    hasUnpublishedChanges: publication.hasUnpublishedChanges === true,
+    savedAt: publication.savedAt ?? null,
+    savedBy: String(publication.savedBy ?? '').trim(),
+    publishedAt: publication.publishedAt ?? null,
+    publishedBy: String(publication.publishedBy ?? '').trim(),
+  }
+}
+
 function normalizeCharterRecord(record) {
   if (!record?.slug || !record?.name) {
     return null
   }
 
-  return {
+  const charter = {
     ...record,
     id: record.id ?? record.slug,
     slug: String(record.slug).trim(),
-    adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/charter-boat-rentals/${record.slug}`).trim(),
     name: String(record.name).trim(),
     active: record.active !== false,
@@ -75,7 +88,14 @@ function normalizeCharterRecord(record) {
     pageTitle: String(record.pageTitle ?? '').trim(),
     contentHtml: String(record.contentHtml ?? '').trim(),
     externalLinks: normalizeExternalLinks(record.externalLinks),
+    publication: normalizePublicationState(record.publication),
   }
+
+  if (Object.prototype.hasOwnProperty.call(record, 'adminOriginalSlug')) {
+    charter.adminOriginalSlug = String(record.adminOriginalSlug ?? record.slug).trim()
+  }
+
+  return charter
 }
 
 function buildCatalogFromPayload(payload) {
@@ -85,16 +105,12 @@ function buildCatalogFromPayload(payload) {
   const index = new Map()
 
   charters.forEach((charter) => {
-    getRouteSlugVariants(charter.slug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, charter)
-      }
-    })
-
-    getRouteSlugVariants(charter.adminOriginalSlug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, charter)
-      }
+    ;[charter.slug, charter.adminOriginalSlug].filter(Boolean).forEach((candidate) => {
+      getRouteSlugVariants(candidate).forEach((variant) => {
+        if (!index.has(variant)) {
+          index.set(variant, charter)
+        }
+      })
     })
   })
 
@@ -203,11 +219,8 @@ async function loadRemoteCatalog() {
     remoteCharterCatalogPromise = getJson('/charters')
       .then((payload) => buildCatalogFromPayload(payload))
       .catch((error) => {
-        if (isFirebaseCharterData()) {
-          throw error
-        }
-
-        return loadLocalCatalog()
+        remoteCharterCatalogPromise = null
+        throw error
       })
   }
 
@@ -327,6 +340,17 @@ export async function saveAdminCharter(draft, originalSlug, options = {}) {
   }
 
   const payload = await postJson('/admin/charters', { draft, originalSlug }, options)
+  invalidateCharterCaches()
+
+  return cloneData(normalizeCharterRecord(payload?.charter))
+}
+
+export async function publishAdminCharter(originalSlug, options = {}) {
+  if (!isFirebaseCharterData()) {
+    throw new Error('Charter publishing is only available when VITE_CHARTER_DATA_SOURCE=firebase.')
+  }
+
+  const payload = await postJson('/admin/charters/publish', { originalSlug }, options)
   invalidateCharterCaches()
 
   return cloneData(normalizeCharterRecord(payload?.charter))

@@ -1,4 +1,5 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -25,13 +26,13 @@ function DiningSection({ restaurants, sectionIndex, title }) {
         {rows.map((row, rowIndex) => (
           <div
             className={`local-attractions-dining-row ${row.length === 1 ? 'local-attractions-dining-row--single' : ''}`.trim()}
-            key={`${title}-${rowIndex}`}
+            key={rowIndex}
           >
             {row.map((restaurant, restaurantOffset) => {
               const restaurantIndex = rowIndex * 2 + restaurantOffset
 
               return (
-              <article className="local-attractions-restaurant-entry" key={restaurant.name}>
+              <article className="local-attractions-restaurant-entry" key={restaurantIndex}>
                 <EditableText as="p" className="local-attractions-restaurant-name" label={`Restaurant ${restaurant.name} Name`} path={['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'name']} value={restaurant.name}>
                   {restaurant.name}
                 </EditableText>
@@ -62,6 +63,11 @@ function DiningSection({ restaurants, sectionIndex, title }) {
 
 export function LocalAttractionsPage() {
   const page = useStructuredPageContent('localAttractions')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const mapImageUrl = getContentImageSrc(page.map.image)
   const mapActionUrl = String(page.map?.action?.href ?? '').trim() || mapImageUrl || '#'
@@ -107,7 +113,7 @@ export function LocalAttractionsPage() {
               {page.intro.title}
             </EditableText>
             {page.intro.paragraphs.map((paragraph, index) => (
-              <EditableText as="p" key={`${index}-${paragraph}`} label={`Intro Paragraph ${index + 1}`} multiline path={['intro', 'paragraphs', index]} rows={5} value={paragraph}>
+              <EditableText as="p" key={index} label={`Intro Paragraph ${index + 1}`} multiline path={['intro', 'paragraphs', index]} rows={5} value={paragraph}>
                 {paragraph}
               </EditableText>
             ))}
@@ -134,7 +140,7 @@ export function LocalAttractionsPage() {
         </header>
 
         {page.dining.sections.map((section, sectionIndex) => (
-          <DiningSection key={section.title} restaurants={section.restaurants} sectionIndex={sectionIndex} title={section.title} />
+          <DiningSection key={sectionIndex} restaurants={section.restaurants} sectionIndex={sectionIndex} title={section.title} />
         ))}
       </section>
     </article>

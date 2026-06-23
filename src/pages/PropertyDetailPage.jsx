@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { RichTextValue } from '../components/RichTextValue'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
+import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { richTextValueToLines } from '../lib/richTextValue'
+import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
 
 function PropertyContentSection({
   title,
@@ -19,6 +21,7 @@ function PropertyContentSection({
   renderWhenEmpty = false,
   showHeader = true,
 }) {
+  const navigate = useNavigate()
   const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
@@ -37,7 +40,20 @@ function PropertyContentSection({
         </header>
       ) : null}
 
-      {hasHtml ? <div className="property-rich-copy" dangerouslySetInnerHTML={{ __html: normalizedHtml }} /> : children}
+      {hasHtml ? (
+        <div
+          className="property-rich-copy"
+          dangerouslySetInnerHTML={{ __html: normalizedHtml }}
+          onClick={(event) => {
+            const nextPath = findInternalNavigationTarget(event)
+
+            if (nextPath) {
+              event.preventDefault()
+              navigate(nextPath)
+            }
+          }}
+        />
+      ) : children}
     </section>
   )
 }
@@ -66,8 +82,25 @@ export function PropertyDetailPage() {
         : property?.pageTitle || property?.name || 'Rental Property'
   const documentDescription =
     shortDescriptionLines.join(' ') || DEFAULT_SITE_DESCRIPTION
+  const propertyCanonicalPath = property?.path || getCanonicalPath(`/rental-properties/${slug}`)
+  const propertyStructuredData = property
+    ? buildBreadcrumbJsonLd([
+        { name: 'Home', path: '/' },
+        { name: 'St. John Rentals', path: '/st-john-rentals' },
+        { name: property.name, path: property.path },
+      ])
+    : null
 
-  useDocumentMeta({ title: documentTitle, description: documentDescription, priority: 1 })
+  useDocumentMeta({
+    canonicalPath: propertyCanonicalPath,
+    description: documentDescription,
+    image: property?.heroImage,
+    imageAlt: property?.heroImage?.alt || property?.name || documentTitle,
+    priority: 1,
+    structuredData: propertyStructuredData,
+    title: documentTitle,
+    type: 'article',
+  })
 
   useEffect(() => {
     let cancelled = false

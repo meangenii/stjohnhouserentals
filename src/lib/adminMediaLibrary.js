@@ -297,8 +297,8 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
   }
 }
 
-async function loadAdminMediaLibraryFromApi() {
-  const authToken = await getAdminIdToken()
+async function loadAdminMediaLibraryFromApi({ forceRefresh = false } = {}) {
+  const authToken = await getAdminIdToken(forceRefresh)
 
   if (!authToken) {
     throw new Error('Sign in to Firebase before opening the live media library.')
@@ -319,14 +319,49 @@ async function loadAdminMediaLibraryFromManifest() {
   })
 }
 
+function shouldFallBackToManifest(error) {
+  const status = Number(error?.status ?? 0)
+  const message = String(error?.message ?? '').trim().toLowerCase()
+
+  if (status === 401 || status === 403) {
+    return false
+  }
+
+  if (
+    message.includes('sign in to firebase') ||
+    message.includes('firebase id token') ||
+    message.includes('not allowed to edit content')
+  ) {
+    return false
+  }
+
+  return true
+}
+
 export function resetAdminMediaLibraryCache() {
   mediaLibraryPromise = null
 }
 
-export async function loadAdminMediaLibrary() {
+export async function loadAdminMediaLibrary({ forceRefresh = false } = {}) {
+  if (forceRefresh) {
+    mediaLibraryPromise = null
+  }
+
   if (!mediaLibraryPromise) {
     mediaLibraryPromise = loadAdminMediaLibraryFromApi()
-      .catch(async () => {
+      .catch(async (error) => {
+        if (Number(error?.status ?? 0) === 401) {
+          try {
+            return await loadAdminMediaLibraryFromApi({ forceRefresh: true })
+          } catch (retryError) {
+            if (!shouldFallBackToManifest(retryError)) {
+              throw retryError
+            }
+          }
+        } else if (!shouldFallBackToManifest(error)) {
+          throw error
+        }
+
         return loadAdminMediaLibraryFromManifest()
       })
   }

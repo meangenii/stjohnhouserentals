@@ -1,6 +1,7 @@
 import { normalizeSiteHtml } from './normalizeSiteHtml'
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
+const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -36,6 +37,26 @@ export function richTextValueToHtml(value) {
   }
 
   return hasRichTextMarkup(sourceValue) ? normalizeSiteHtml(sourceValue) : normalizePlainTextForHtml(sourceValue)
+}
+
+export function richTextValueToInlineHtml(value) {
+  const sourceValue = String(value ?? '')
+
+  if (!sourceValue.trim()) {
+    return ''
+  }
+
+  if (!hasRichTextMarkup(sourceValue)) {
+    return normalizePlainTextForHtml(sourceValue)
+  }
+
+  const normalizedHtml = normalizeSiteHtml(sourceValue)
+
+  if (!BLOCK_HTML_PATTERN.test(normalizedHtml)) {
+    return normalizedHtml
+  }
+
+  return richTextValueToLines(normalizedHtml).join('<br />')
 }
 
 export function richTextValueToPlainText(value) {

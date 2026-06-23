@@ -1,4 +1,5 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { PropertyDirectorySection } from '../components/PropertyDirectorySection'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -60,6 +61,11 @@ function HomeFeatureIcon({ kind }) {
 
 export function HomePage() {
   const page = useStructuredPageContent('home')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const trustImageUrl = getContentImageSrc(page.trust.image)
   const discoverImageUrl = getContentImageSrc(page.discover.image)
@@ -81,7 +87,7 @@ export function HomePage() {
           <div className="home-hero-copy">
             <h1>
               {heroTitleLines.map((line, index) => (
-                <EditableText as="span" key={`${index}-${line}`} label={`Hero Title Line ${index + 1}`} path={['hero', 'titleLines', index]} value={line}>
+                <EditableText as="span" key={index} label={`Hero Title Line ${index + 1}`} path={['hero', 'titleLines', index]} value={line}>
                   {line}
                 </EditableText>
               ))}
@@ -114,6 +120,10 @@ export function HomePage() {
               {page.trust.lead}
             </EditableText>
             <EditableLink
+              allowExternalUrl
+              allowRouteSelection
+              buttonColor={page.trust.action.backgroundColor}
+              buttonColorPath={['trust', 'action', 'backgroundColor']}
               className="home-trust-button"
               destination={page.trust.action.path}
               destinationLabel="Button Link"
@@ -163,7 +173,7 @@ export function HomePage() {
 
             <div className="home-discover-features">
               {page.discover.features.map((item, index) => (
-                <article className="home-discover-feature" key={`${index}-${item.title}`}>
+                <article className="home-discover-feature" key={index}>
                   <div className="home-discover-feature-icon">
                     <HomeFeatureIcon kind={item.kind} />
                   </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { listCharters } from '../lib/charterRepository'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { richTextValueToPlainText } from '../lib/richTextValue'
@@ -70,8 +71,6 @@ function CharterBoatCard({ charter }) {
 
 export function CharterBoatsPage() {
   const page = useStructuredPageContent('charterBoats')
-  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 920 })
-  const introImageUrl = getContentImageSrc(page.intro.image, { width: 960, height: 820 })
   const [state, setState] = useState({ status: 'loading', charters: [], message: '' })
 
   useEffect(() => {
@@ -97,6 +96,13 @@ export function CharterBoatsPage() {
       cancelled = true
     }
   }, [])
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 920 })
+  const introImageUrl = getContentImageSrc(page.intro.image, { width: 960, height: 820 })
 
   return (
     <article className="charter-boats-page">
@@ -181,7 +187,7 @@ export function CharterBoatsPage() {
 
           <div className="charter-boats-safety-copy">
             {page.safety.sections.map((section, index) => (
-              <div key={section.label}>
+              <div key={index}>
                 <EditableText as="p" className="charter-boats-safety-label" label={`Safety Label ${index + 1}`} path={['safety', 'sections', index, 'label']} value={section.label}>
                   {section.label}
                 </EditableText>
@@ -195,7 +201,7 @@ export function CharterBoatsPage() {
                     destinationPath={['safety', 'sections', index, 'href']}
                     external
                     label={section.href}
-                    labelLabel="Link Text"
+                    labelLabel="Link URL"
                     labelPath={['safety', 'sections', index, 'href']}
                   />
                 </p>

@@ -388,6 +388,14 @@ export function SiteLayout() {
   const location = useLocation()
   const siteShell = useSiteShellContent()
 
+  if (!siteShell) {
+    return (
+      <section className="page-section property-page property-page--status">
+        <h1>Loading site...</h1>
+      </section>
+    )
+  }
+
   return (
     <SiteFrame pathname={location.pathname} siteShell={siteShell}>
       <Outlet />

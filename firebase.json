@@ -12,6 +12,7 @@
   "hosting": {
     "site": "st-john-house-rentals",
     "public": "dist",
+    "cleanUrls": true,
     "ignore": [
       "firebase.json",
       "**/.*",

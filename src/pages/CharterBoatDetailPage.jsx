@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { RichTextValue } from '../components/RichTextValue'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
+import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getCharterBySlug } from '../lib/charterRepository'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
 
 export function CharterBoatDetailPage() {
   const { slug = '' } = useParams()
+  const navigate = useNavigate()
   const [state, setState] = useState({ status: 'loading' })
   const charter = state.status === 'ready' ? state.charter : null
   const documentTitle =
@@ -17,8 +20,25 @@ export function CharterBoatDetailPage() {
         ? 'Charter Unavailable'
         : charter?.pageTitle || charter?.name || 'Charter Boat'
   const documentDescription = charter?.shortDescription || DEFAULT_SITE_DESCRIPTION
+  const charterCanonicalPath = charter?.path || getCanonicalPath(`/charter-boat-rentals/${slug}`)
+  const charterStructuredData = charter
+    ? buildBreadcrumbJsonLd([
+        { name: 'Home', path: '/' },
+        { name: 'Charter Boats', path: '/boats' },
+        { name: charter.name, path: charter.path },
+      ])
+    : null
 
-  useDocumentMeta({ title: documentTitle, description: documentDescription, priority: 1 })
+  useDocumentMeta({
+    canonicalPath: charterCanonicalPath,
+    description: documentDescription,
+    image: charter?.heroImage,
+    imageAlt: charter?.heroImage?.alt || charter?.name || documentTitle,
+    priority: 1,
+    structuredData: charterStructuredData,
+    title: documentTitle,
+    type: 'article',
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -91,7 +111,18 @@ export function CharterBoatDetailPage() {
         ) : null}
 
         {charter.contentHtml ? (
-          <div className="snapshot-flow" dangerouslySetInnerHTML={{ __html: normalizeSiteHtml(charter.contentHtml) }} />
+          <div
+            className="snapshot-flow"
+            dangerouslySetInnerHTML={{ __html: normalizeSiteHtml(charter.contentHtml) }}
+            onClick={(event) => {
+              const nextPath = findInternalNavigationTarget(event)
+
+              if (nextPath) {
+                event.preventDefault()
+                navigate(nextPath)
+              }
+            }}
+          />
         ) : (
           <div className="snapshot-flow">
             <h1>{charter.name}</h1>

@@ -79,6 +79,80 @@ function normalizeCharterRecord(record) {
   }
 }
 
+function normalizeStoredCharterEnvelope(record, documentId = '') {
+  const hasEnvelope =
+    Boolean(record) &&
+    typeof record === 'object' &&
+    !Array.isArray(record) &&
+    (Object.prototype.hasOwnProperty.call(record, 'draft') || Object.prototype.hasOwnProperty.call(record, 'published'))
+
+  const draftSource = hasEnvelope ? record.draft ?? null : record
+  const publishedSource = hasEnvelope ? record.published ?? draftSource ?? null : record
+
+  return {
+    draft: draftSource ? normalizeCharterRecord({ ...draftSource, id: draftSource.id ?? documentId }) : null,
+    published: publishedSource ? normalizeCharterRecord({ ...publishedSource, id: publishedSource.id ?? documentId }) : null,
+    updatedAt: record?.updatedAt ?? null,
+    updatedBy: String(record?.updatedBy ?? '').trim(),
+    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
+  }
+}
+
+function buildCharterPublicationState(envelope) {
+  return {
+    hasUnpublishedChanges: JSON.stringify(envelope?.draft ?? null) !== JSON.stringify(envelope?.published ?? null),
+    savedAt: envelope?.updatedAt ?? null,
+    savedBy: envelope?.updatedBy ?? '',
+    publishedAt: envelope?.published ? envelope?.publishedAt ?? envelope?.updatedAt ?? null : null,
+    publishedBy: envelope?.published ? envelope?.publishedBy || envelope?.updatedBy || '' : '',
+  }
+}
+
+function buildCharterViewFromStoredRecord(record, documentId = '', { mode = 'public' } = {}) {
+  const envelope = normalizeStoredCharterEnvelope(record, documentId)
+  const selectedRecord = mode === 'admin' ? envelope.draft : envelope.published
+
+  if (!selectedRecord) {
+    return null
+  }
+
+  const charter = {
+    ...selectedRecord,
+  }
+
+  if (mode === 'admin') {
+    charter.adminOriginalSlug = documentId || selectedRecord.adminOriginalSlug || selectedRecord.slug
+    charter.publication = buildCharterPublicationState(envelope)
+  } else {
+    delete charter.adminOriginalSlug
+    delete charter.publication
+  }
+
+  return charter
+}
+
+function buildCharterCatalogFromStoredDocuments(documents, { mode = 'public' } = {}) {
+  const charters = documents
+    .map((document) => buildCharterViewFromStoredRecord(document.data, document.id, { mode }))
+    .filter(Boolean)
+  const index = new Map()
+
+  charters.forEach((charter) => {
+    const slugCandidates = mode === 'admin' ? [charter.slug, charter.adminOriginalSlug] : [charter.slug]
+
+    slugCandidates.forEach((candidate) => {
+      getRouteSlugVariants(candidate).forEach((variant) => {
+        if (!index.has(variant)) {
+          index.set(variant, charter)
+        }
+      })
+    })
+  })
+
+  return { charters, index, source: 'firestore' }
+}
+
 function paragraphListToHtml(values) {
   return values
     .map((value) => String(value ?? '').trim())
@@ -164,7 +238,7 @@ function createFirestoreCatalogSetupError() {
   )
 }
 
-async function readCharterCollection() {
+async function readCharterCollectionRaw() {
   let snapshot
 
   try {
@@ -177,9 +251,10 @@ async function readCharterCollection() {
     throw error
   }
 
-  return snapshot.docs
-    .map((document) => normalizeCharterRecord({ ...document.data(), id: document.id }))
-    .filter(Boolean)
+  return snapshot.docs.map((document) => ({
+    id: document.id,
+    data: document.data(),
+  }))
 }
 
 async function syncSeedChartersToFirestore({ replace = false, actor = 'seed-sync' } = {}) {
@@ -200,10 +275,18 @@ async function syncSeedChartersToFirestore({ replace = false, actor = 'seed-sync
       }
 
       batch.set(collectionRef.doc(charter.slug), {
-        ...charter,
-        adminOriginalSlug: charter.slug,
+        draft: {
+          ...charter,
+          adminOriginalSlug: charter.slug,
+        },
+        published: {
+          ...charter,
+          adminOriginalSlug: charter.slug,
+        },
         updatedBy: actor,
         updatedAt: getServerTimestamp(),
+        publishedBy: actor,
+        publishedAt: getServerTimestamp(),
       })
 
       if (existingIds.has(charter.slug)) {
@@ -244,45 +327,36 @@ async function syncSeedChartersToFirestore({ replace = false, actor = 'seed-sync
 }
 
 async function getCanonicalCharterCatalog() {
-  const chartersFromFirestore = await readCharterCollection()
-  if (chartersFromFirestore.length === 0) {
+  return getCanonicalCharterCatalogForMode('public')
+}
+
+async function getCanonicalCharterCatalogForMode(mode = 'public') {
+  const charterDocuments = await readCharterCollectionRaw()
+  const catalog = buildCharterCatalogFromStoredDocuments(charterDocuments, { mode })
+
+  if (catalog.charters.length === 0) {
     throw new HttpError(
       503,
       'The Firestore charter catalog is empty. Seed the Firestore charter collection before serving live charter content.',
     )
   }
 
-  const index = new Map()
-
-  chartersFromFirestore.forEach((charter) => {
-    getRouteSlugVariants(charter.slug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, charter)
-      }
-    })
-
-    getRouteSlugVariants(charter.adminOriginalSlug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, charter)
-      }
-    })
-  })
-
-  return {
-    charters: chartersFromFirestore,
-    index,
-    source: 'firestore',
-  }
+  return catalog
 }
 
-function assertUniqueCharterSlug(charters, nextSlug, originalSlug) {
+function assertUniqueCharterSlug(charterDocuments, nextSlug, previousDocumentId = '') {
   if (!nextSlug) {
     return
   }
 
-  const hasConflict = charters.some(
-    (charter) => charter.slug === nextSlug && charter.adminOriginalSlug !== originalSlug && charter.slug !== originalSlug,
-  )
+  const hasConflict = charterDocuments.some((document) => {
+    if (document.id === previousDocumentId) {
+      return false
+    }
+
+    const envelope = normalizeStoredCharterEnvelope(document.data, document.id)
+    return envelope.draft?.slug === nextSlug || envelope.published?.slug === nextSlug
+  })
 
   if (hasConflict) {
     throw new Error(`A charter with slug "${nextSlug}" already exists.`)
@@ -295,7 +369,7 @@ exports.listCharters = async function listCharters() {
 }
 
 exports.listAllCharters = async function listAllCharters() {
-  const catalog = await getCanonicalCharterCatalog()
+  const catalog = await getCanonicalCharterCatalogForMode('admin')
   return cloneData(catalog.charters)
 }
 
@@ -315,11 +389,13 @@ exports.getCharterBySlug = async function getCharterBySlug(slug) {
 exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug, adminUser) {
   await syncSeedChartersToFirestore({ replace: false, actor: 'auto-seed' })
 
-  const catalog = await getCanonicalCharterCatalog()
+  const charterDocuments = await readCharterCollectionRaw()
   const normalizedOriginalSlug = String(originalSlug ?? '').trim()
   const charter = buildCharterRecordFromAdminDraft(draft, normalizedOriginalSlug || draft?.slug)
+  const currentDocument = charterDocuments.find((document) => document.id === normalizedOriginalSlug)
+  const currentEnvelope = currentDocument ? normalizeStoredCharterEnvelope(currentDocument.data, currentDocument.id) : null
 
-  assertUniqueCharterSlug(catalog.charters, charter.slug, normalizedOriginalSlug)
+  assertUniqueCharterSlug(charterDocuments, charter.slug, normalizedOriginalSlug)
 
   const collectionRef = getDb().collection(CHARTER_COLLECTION)
   const nextDocId = charter.slug
@@ -331,16 +407,71 @@ exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug
   }
 
   batch.set(collectionRef.doc(nextDocId), {
-    ...charter,
-    adminOriginalSlug: charter.slug,
+    draft: {
+      ...charter,
+      adminOriginalSlug: charter.slug,
+    },
+    published: currentEnvelope?.published
+      ? {
+          ...currentEnvelope.published,
+          adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
+        }
+      : null,
     updatedBy: adminUser.email || adminUser.uid,
     updatedAt: getServerTimestamp(),
+    publishedBy: currentEnvelope?.publishedBy || '',
+    publishedAt: currentEnvelope?.publishedAt || null,
   })
 
   await batch.commit()
 
   const savedSnapshot = await collectionRef.doc(nextDocId).get()
-  return cloneData(normalizeCharterRecord({ ...savedSnapshot.data(), id: nextDocId }))
+  return cloneData(buildCharterViewFromStoredRecord(savedSnapshot.data(), nextDocId, { mode: 'admin' }))
+}
+
+exports.publishCharterRecord = async function publishCharterRecord(originalSlug, adminUser) {
+  await syncSeedChartersToFirestore({ replace: false, actor: 'auto-seed' })
+
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Charter identifier is required to publish.')
+  }
+
+  const charterDocuments = await readCharterCollectionRaw()
+  const currentDocument = charterDocuments.find((document) => document.id === documentId)
+
+  if (!currentDocument) {
+    throw new HttpError(404, 'Charter draft not found.')
+  }
+
+  const currentEnvelope = normalizeStoredCharterEnvelope(currentDocument.data, currentDocument.id)
+
+  if (!currentEnvelope.draft) {
+    throw new HttpError(400, 'Charter draft is missing and cannot be published.')
+  }
+
+  assertUniqueCharterSlug(charterDocuments, currentEnvelope.draft.slug, documentId)
+
+  const collectionRef = getDb().collection(CHARTER_COLLECTION)
+
+  await collectionRef.doc(documentId).set({
+    draft: {
+      ...currentEnvelope.draft,
+      adminOriginalSlug: currentEnvelope.draft.slug,
+    },
+    published: {
+      ...currentEnvelope.draft,
+      adminOriginalSlug: currentEnvelope.draft.slug,
+    },
+    updatedBy: adminUser.email || adminUser.uid,
+    updatedAt: getServerTimestamp(),
+    publishedBy: adminUser.email || adminUser.uid,
+    publishedAt: getServerTimestamp(),
+  })
+
+  const savedSnapshot = await collectionRef.doc(documentId).get()
+  return cloneData(buildCharterViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
 }
 
 exports.resetCharterRecordsToSeed = async function resetCharterRecordsToSeed() {

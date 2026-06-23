@@ -4,8 +4,25 @@ export function getApiBaseUrl() {
   return apiBaseUrl
 }
 
+async function readResponsePayload(response) {
+  const bodyText = await response.text().catch(() => '')
+
+  if (!bodyText) {
+    return null
+  }
+
+  try {
+    return JSON.parse(bodyText)
+  } catch {
+    return {
+      message: bodyText.trim(),
+    }
+  }
+}
+
 async function requestJson(path, { method = 'GET', body, headers, authToken } = {}) {
   const requestHeaders = new Headers(headers ?? {})
+  const normalizedMethod = String(method ?? 'GET').trim().toUpperCase() || 'GET'
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json')
@@ -16,15 +33,18 @@ async function requestJson(path, { method = 'GET', body, headers, authToken } = 
   }
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
-    method,
+    method: normalizedMethod,
     headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    cache: normalizedMethod === 'GET' ? 'no-store' : undefined,
   })
 
-  const payload = response.status === 204 ? null : await response.json().catch(() => null)
+  const payload = response.status === 204 ? null : await readResponsePayload(response)
 
   if (!response.ok) {
-    const error = new Error(payload?.message || `Request failed with status ${response.status}`)
+    const fallbackMessage =
+      response.status === 413 ? 'The selected upload is too large for this uploader.' : `Request failed with status ${response.status}`
+    const error = new Error(payload?.message || fallbackMessage)
     error.status = response.status
     error.payload = payload
     throw error

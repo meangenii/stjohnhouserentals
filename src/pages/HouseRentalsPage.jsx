@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { ListingCard } from '../components/ListingCard'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
@@ -68,6 +69,10 @@ export function HouseRentalsPage() {
     }
   }, [])
 
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   return (
     <article className="snapshot-page">
       <div className="snapshot-page-inner">
@@ -85,7 +90,7 @@ export function HouseRentalsPage() {
             {page.intro.title}
           </EditableText>
           {page.intro.paragraphs.map((paragraph, index) => (
-            <EditableText as="p" key={`${index}-${paragraph}`} label={`Intro Paragraph ${index + 1}`} multiline path={['intro', 'paragraphs', index]} rows={5} value={paragraph}>
+            <EditableText as="p" key={index} label={`Intro Paragraph ${index + 1}`} multiline path={['intro', 'paragraphs', index]} rows={5} value={paragraph}>
               {paragraph}
             </EditableText>
           ))}

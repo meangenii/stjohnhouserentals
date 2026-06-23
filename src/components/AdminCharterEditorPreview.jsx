@@ -73,7 +73,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
         <div className="admin-property-preview-body">
           <div className="admin-property-preview-title">
             <h3>{charter?.name || 'Untitled Charter'}</h3>
-            <p>{charter?.active !== false ? 'Visible on the public charter page' : 'Hidden from the public charter page'}</p>
+            <p>{charter?.active !== false ? 'Will be visible when published' : 'Will stay hidden when published'}</p>
           </div>
 
           <PreviewSection
@@ -85,7 +85,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
                   <span>Visibility</span>
                   <div className="admin-preview-checkbox">
                     <input checked={formState.active} disabled={disabled} onChange={(event) => onFieldChange('active', event.target.checked)} type="checkbox" />
-                    <strong>Visible on the live charter directory</strong>
+                    <strong>Visible when published</strong>
                   </div>
                 </label>
                 <PreviewRichText disabled={disabled} label="Short Description" onChange={(value) => onFieldChange('shortDescription', value)} value={formState.shortDescription} wide />

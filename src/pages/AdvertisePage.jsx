@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { EditableBackgroundSection, EditableButton, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { submitAdvertiseInquiry } from '../lib/advertiseInquiryApi'
 import { useSiteShellContent, useStructuredPageContent } from '../lib/useSiteContent'
@@ -14,11 +15,16 @@ function buildMailtoHref(contactEmail, { firstName, lastName, email, subject, me
 export function AdvertisePage() {
   const siteShell = useSiteShellContent()
   const page = useStructuredPageContent('advertise')
-  const heroImageUrl = getContentImageSrc(page.hero.image)
-  const contactEmail = siteShell.contact.primaryEmail
   const [submitStatus, setSubmitStatus] = useState('idle')
   const [submitMessage, setSubmitMessage] = useState('')
   const [manualSubmitHref, setManualSubmitHref] = useState('')
+
+  if (!siteShell || !page) {
+    return <PageLoadingState />
+  }
+
+  const heroImageUrl = getContentImageSrc(page.hero.image)
+  const contactEmail = siteShell.contact.primaryEmail
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -97,7 +103,7 @@ export function AdvertisePage() {
             </EditableText>
 
             {page.contact.bodyParagraphs.map((paragraph, index) => (
-              <EditableText as="p" key={paragraph} label={`Body Paragraph ${index + 1}`} multiline path={['contact', 'bodyParagraphs', index]} rows={5} value={paragraph}>
+              <EditableText as="p" key={index} label={`Body Paragraph ${index + 1}`} multiline path={['contact', 'bodyParagraphs', index]} rows={5} value={paragraph}>
                 {paragraph}
               </EditableText>
             ))}
@@ -124,7 +130,7 @@ export function AdvertisePage() {
                 {page.contact.contactTitle}
               </EditableText>
               {page.contact.contactLines.map((line, index) => (
-                <p key={line.label}>
+                <p key={index}>
                   <EditableText as="span" label={`Contact Label ${index + 1}`} path={['contact', 'contactLines', index, 'label']} value={line.label}>
                     {line.label}
                   </EditableText>

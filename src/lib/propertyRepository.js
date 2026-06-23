@@ -5,9 +5,8 @@ import { getRouteSlugVariants } from './routeSlug'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
 
 const liveCatalogUrl = '/livePropertyCatalog.json'
-const liveSummaryCatalogUrl = '/livePropertySummaryCatalog.json'
 const MOCK_STORAGE_KEY = 'propertyCatalog'
-const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'local'
+const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'firebase'
 
 let localPropertyCatalogPromise = null
 let remotePropertyCatalogPromise = null
@@ -62,6 +61,20 @@ function normalizeExternalLinks(links) {
     : []
 }
 
+function normalizePublicationState(publication) {
+  if (!publication || typeof publication !== 'object' || Array.isArray(publication)) {
+    return null
+  }
+
+  return {
+    hasUnpublishedChanges: publication.hasUnpublishedChanges === true,
+    savedAt: publication.savedAt ?? null,
+    savedBy: String(publication.savedBy ?? '').trim(),
+    publishedAt: publication.publishedAt ?? null,
+    publishedBy: String(publication.publishedBy ?? '').trim(),
+  }
+}
+
 function normalizeAmenityGroups(groups) {
   return Array.isArray(groups)
     ? groups
@@ -111,11 +124,10 @@ function normalizePropertyRecord(record) {
   const heroImage = normalizeImageAsset(record.heroImage) ?? gallery[0] ?? null
   const legacyLines = getLegacyPropertyLines(record)
 
-  return {
+  const property = {
     ...recordWithoutLegacyLines,
     id: record.id ?? record.slug,
     slug: String(record.slug).trim(),
-    adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/rental-properties/${record.slug}`).trim(),
     name: String(record.name).trim(),
     active: record.active !== false,
@@ -144,7 +156,14 @@ function normalizePropertyRecord(record) {
     gallery,
     externalLinks: normalizeExternalLinks(record.externalLinks),
     pageTitle: String(record.pageTitle ?? '').trim(),
+    publication: normalizePublicationState(record.publication),
   }
+
+  if (Object.prototype.hasOwnProperty.call(record, 'adminOriginalSlug')) {
+    property.adminOriginalSlug = String(record.adminOriginalSlug ?? record.slug).trim()
+  }
+
+  return property
 }
 
 function normalizePropertySummaryRecord(record) {
@@ -155,10 +174,9 @@ function normalizePropertySummaryRecord(record) {
   const heroImage = normalizeImageAsset(record.heroImage)
   const legacyLines = getLegacyPropertyLines(record)
 
-  return {
+  const property = {
     id: record.id ?? record.slug,
     slug: String(record.slug).trim(),
-    adminOriginalSlug: String(record.adminOriginalSlug ?? record.slug).trim(),
     path: String(record.path ?? `/rental-properties/${record.slug}`).trim(),
     name: String(record.name).trim(),
     active: record.active !== false,
@@ -167,10 +185,17 @@ function normalizePropertySummaryRecord(record) {
     bedrooms: Number(record.bedrooms) || 0,
     bathrooms: Number(record.bathrooms) || 0,
     maxGuests: Number(record.maxGuests) || 0,
+    location: String(record.location ?? '').trim(),
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
     bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
     heroImage,
   }
+
+  if (Object.prototype.hasOwnProperty.call(record, 'adminOriginalSlug')) {
+    property.adminOriginalSlug = String(record.adminOriginalSlug ?? record.slug).trim()
+  }
+
+  return property
 }
 
 function groupProperties(properties) {
@@ -227,16 +252,12 @@ function buildCatalogFromPayload(payload) {
   const index = new Map()
 
   properties.forEach((property) => {
-    getRouteSlugVariants(property.slug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, property)
-      }
-    })
-
-    getRouteSlugVariants(property.adminOriginalSlug).forEach((variant) => {
-      if (!index.has(variant)) {
-        index.set(variant, property)
-      }
+    ;[property.slug, property.adminOriginalSlug].filter(Boolean).forEach((candidate) => {
+      getRouteSlugVariants(candidate).forEach((variant) => {
+        if (!index.has(variant)) {
+          index.set(variant, property)
+        }
+      })
     })
   })
 
@@ -268,18 +289,6 @@ function fetchCatalog(url) {
       return response.json()
     })
     .then((payload) => buildCatalogFromPayload(payload))
-}
-
-function fetchSummaryCatalog(url) {
-  return fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Property summary catalog request failed with status ${response.status}`)
-      }
-
-      return response.json()
-    })
-    .then((payload) => buildSummaryCatalogFromPayload(payload))
 }
 
 function invalidatePropertyCaches() {
@@ -432,12 +441,7 @@ async function loadRemoteCatalog() {
       .then((payload) => buildCatalogFromPayload(payload))
       .catch((error) => {
         remotePropertyCatalogPromise = null
-
-        if (isFirebasePropertyData()) {
-          throw error
-        }
-
-        return loadLocalCatalog()
+        throw error
       })
   }
 
@@ -446,7 +450,14 @@ async function loadRemoteCatalog() {
 
 async function loadLocalSummaryCatalog() {
   if (!localPropertySummaryCatalogPromise) {
-    localPropertySummaryCatalogPromise = fetchSummaryCatalog(liveSummaryCatalogUrl)
+    localPropertySummaryCatalogPromise = loadLocalCatalog().then((catalog) => {
+      const properties = catalog.properties.map((property) => summarizeProperty(property))
+
+      return {
+        properties,
+        groups: groupProperties(properties),
+      }
+    })
   }
 
   return localPropertySummaryCatalogPromise
@@ -458,12 +469,7 @@ async function loadRemoteSummaryCatalog() {
       .then((payload) => buildSummaryCatalogFromPayload(payload))
       .catch((error) => {
         remotePropertySummaryCatalogPromise = null
-
-        if (isFirebasePropertyData()) {
-          throw error
-        }
-
-        return loadLocalSummaryCatalog()
+        throw error
       })
   }
 
@@ -524,10 +530,9 @@ async function loadAdminRemoteCatalog(options = {}) {
 }
 
 function summarizeProperty(property) {
-  return {
+  const summary = {
     id: property.id,
     slug: property.slug,
-    adminOriginalSlug: property.adminOriginalSlug ?? property.slug,
     path: property.path,
     name: property.name,
     active: property.active !== false,
@@ -536,9 +541,16 @@ function summarizeProperty(property) {
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     maxGuests: property.maxGuests,
+    location: property.location,
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
   }
+
+  if (property.adminOriginalSlug) {
+    summary.adminOriginalSlug = property.adminOriginalSlug
+  }
+
+  return summary
 }
 
 export function getPropertyDataSourceMode() {
@@ -636,6 +648,17 @@ export async function saveAdminProperty(draft, originalSlug, options = {}) {
   }
 
   const payload = await postJson('/admin/properties', { draft, originalSlug }, options)
+  invalidatePropertyCaches()
+
+  return cloneData(normalizePropertyRecord(payload?.property))
+}
+
+export async function publishAdminProperty(originalSlug, options = {}) {
+  if (!isFirebasePropertyData()) {
+    throw new Error('Property publishing is only available when VITE_PROPERTY_DATA_SOURCE=firebase.')
+  }
+
+  const payload = await postJson('/admin/properties/publish', { originalSlug }, options)
   invalidatePropertyCaches()
 
   return cloneData(normalizePropertyRecord(payload?.property))

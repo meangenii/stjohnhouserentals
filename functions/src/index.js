@@ -4,6 +4,7 @@ const {
   getCharterBySlug,
   listAllCharters,
   listCharters,
+  publishCharterRecord,
   resetCharterRecordsToSeed,
   saveCharterRecord,
   seedCharterRecords,
@@ -15,16 +16,23 @@ const {
   listBedroomGroups,
   listProperties,
   listPropertySummaries,
+  publishPropertyRecord,
   resetPropertyRecordsToSeed,
   savePropertyRecord,
   seedPropertyRecords,
 } = require('./propertyRepository')
 const { createMediaFolder, listMediaLibrary, uploadMediaAsset } = require('./mediaRepository')
 const {
+  getAdminSiteShellContent,
+  getAdminStructuredPageContent,
   getSiteShellContent,
   getStructuredPageContent,
+  listAdminPageInventory,
+  listAdminStructuredPages,
   listPageInventory,
   listStructuredPages,
+  publishSiteShellContent,
+  publishStructuredPageContent,
   resetSiteShellContentToSeed,
   resetStructuredPageContentToSeed,
   saveSiteShellContent,
@@ -89,6 +97,7 @@ function sendError(response, error, path) {
 
 exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (request, response) => {
   const path = normalizeRequestPath(request.path)
+  response.set('Cache-Control', 'no-store')
 
   try {
     if (request.method === 'GET' && (path === '' || path === 'health')) {
@@ -252,6 +261,18 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       return
     }
 
+    if (request.method === 'POST' && path === 'admin/properties/publish') {
+      const adminUser = await requireAdminUser(request)
+      const publishedProperty = await publishPropertyRecord(request.body?.originalSlug ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property: publishedProperty,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/properties/catalog') {
       await requireAdminUser(request)
       response.json({
@@ -285,6 +306,18 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         charter: savedCharter,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/charters/publish') {
+      const adminUser = await requireAdminUser(request)
+      const publishedCharter = await publishCharterRecord(request.body?.originalSlug ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        charter: publishedCharter,
       })
       return
     }
@@ -344,6 +377,16 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       return
     }
 
+    if (request.method === 'GET' && path === 'admin/content/site-shell') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...(await getAdminSiteShellContent()),
+      })
+      return
+    }
+
     if (request.method === 'POST' && path === 'admin/content/site-shell') {
       const adminUser = await requireAdminUser(request)
       const siteShell = await saveSiteShellContent(request.body?.draft ?? {}, adminUser)
@@ -351,7 +394,19 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       response.json({
         source: 'firestore',
         checkedAt: new Date().toISOString(),
-        siteShell,
+        ...siteShell,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/content/site-shell/publish') {
+      const adminUser = await requireAdminUser(request)
+      const siteShell = await publishSiteShellContent(adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...siteShell,
       })
       return
     }
@@ -363,7 +418,53 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       response.json({
         source: 'firestore',
         checkedAt: new Date().toISOString(),
-        siteShell,
+        ...siteShell,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/content/pages') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        pages: await listAdminStructuredPages(),
+        inventory: await listAdminPageInventory(),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path.startsWith('admin/content/pages/')) {
+      await requireAdminUser(request)
+      const pageKey = path.replace(/^admin\/content\/pages\//, '')
+      const page = await getAdminStructuredPageContent(pageKey)
+
+      if (!page?.page) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Structured page draft not found in siteApi',
+          key: pageKey,
+        })
+        return
+      }
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...page,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path.startsWith('admin/content/pages/') && path.endsWith('/publish')) {
+      const adminUser = await requireAdminUser(request)
+      const pageKey = path.replace(/^admin\/content\/pages\//, '').replace(/\/publish$/, '')
+      const page = await publishStructuredPageContent(pageKey, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...page,
       })
       return
     }
@@ -376,7 +477,7 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       response.json({
         source: 'firestore',
         checkedAt: new Date().toISOString(),
-        page,
+        ...page,
       })
       return
     }
@@ -389,7 +490,7 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       response.json({
         source: 'firestore',
         checkedAt: new Date().toISOString(),
-        page,
+        ...(page ?? { page: null, publication: null }),
       })
       return
     }

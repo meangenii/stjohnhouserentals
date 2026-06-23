@@ -1,3 +1,5 @@
+import { ALLOWED_RICH_TEXT_FONT_SIZE_VALUES } from './richTextFormatting'
+
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
 const ALLOWED_TAGS = new Set([
   'A',
@@ -97,6 +99,10 @@ function normalizeHrefValue(href) {
   return `${normalizedPath}${parsedUrl.search}${parsedUrl.hash}`
 }
 
+function isInternalSiteHref(href) {
+  return href.startsWith('/') || href.startsWith('?') || href.startsWith('#')
+}
+
 function unwrapElement(element) {
   const parent = element.parentNode
 
@@ -109,6 +115,63 @@ function unwrapElement(element) {
   }
 
   parent.removeChild(element)
+}
+
+function sanitizeStyleAttribute(element) {
+  if (element.tagName.toUpperCase() !== 'SPAN') {
+    return ''
+  }
+
+  const rawStyle = String(element.getAttribute('style') ?? '')
+  const declarations = rawStyle
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+  const safeDeclarations = []
+
+  declarations.forEach((declaration) => {
+    const separatorIndex = declaration.indexOf(':')
+
+    if (separatorIndex <= 0) {
+      return
+    }
+
+    const propertyName = declaration.slice(0, separatorIndex).trim().toLowerCase()
+    const propertyValue = declaration.slice(separatorIndex + 1).trim().toLowerCase()
+
+    if (propertyName === 'font-size') {
+      if (ALLOWED_RICH_TEXT_FONT_SIZE_VALUES.has(propertyValue)) {
+        safeDeclarations.push(`font-size: ${propertyValue}`)
+      }
+
+      return
+    }
+
+    if (propertyName === 'font-style' && propertyValue === 'italic') {
+      safeDeclarations.push('font-style: italic')
+      return
+    }
+
+    if (propertyName === 'font-weight' && ['bold', 'bolder', '600', '700', '800', '900'].includes(propertyValue)) {
+      safeDeclarations.push('font-weight: bold')
+      return
+    }
+
+    if (propertyName === 'text-decoration' && propertyValue.includes('underline')) {
+      safeDeclarations.push('text-decoration: underline')
+      return
+    }
+
+    if (propertyName === 'text-decoration-line' && propertyValue === 'underline') {
+      safeDeclarations.push('text-decoration: underline')
+    }
+  })
+
+  if (safeDeclarations.length === 0) {
+    return ''
+  }
+
+  return `${Array.from(new Set(safeDeclarations)).join('; ')};`
 }
 
 function sanitizeHtmlTree(root) {
@@ -130,8 +193,20 @@ function sanitizeHtmlTree(root) {
     Array.from(element.attributes).forEach((attribute) => {
       const attributeName = attribute.name.toLowerCase()
 
-      if (attributeName.startsWith('on') || attributeName === 'style') {
+      if (attributeName.startsWith('on')) {
         element.removeAttribute(attribute.name)
+        return
+      }
+
+      if (attributeName === 'style') {
+        const safeStyle = sanitizeStyleAttribute(element)
+
+        if (safeStyle) {
+          element.setAttribute('style', safeStyle)
+        } else {
+          element.removeAttribute(attribute.name)
+        }
+
         return
       }
 
@@ -156,7 +231,7 @@ function sanitizeHtmlTree(root) {
 
       element.setAttribute('href', safeHref)
 
-      if (element.getAttribute('target') === '_blank') {
+      if (!isInternalSiteHref(safeHref) && element.getAttribute('target') === '_blank') {
         element.setAttribute('rel', 'noreferrer noopener')
       } else {
         element.removeAttribute('target')

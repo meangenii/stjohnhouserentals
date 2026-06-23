@@ -1,11 +1,12 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { getImageDimensions } from '../lib/imageSizePresets'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
   return phones.map((phone, index) => (
-    <span key={phone}>
+    <span key={index}>
       {index > 0 ? separator : ''}
       <EditableText
         as="a"
@@ -44,6 +45,11 @@ function getCarRentalImageSrc(image, fallbackOptions) {
 
 export function StJohnCarRentalsPage() {
   const page = useStructuredPageContent('stJohnCarRentals')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const directoryImage = mergeImageFallback(page.directory.detailImage, page.directory.directoryImage)
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 1080 })
   const directoryImageUrl = getCarRentalImageSrc(directoryImage, { width: 900, height: 900 })
@@ -87,7 +93,7 @@ export function StJohnCarRentalsPage() {
 
               <div className="st-john-car-rentals-list">
                 {page.directory.companies.map((company, companyIndex) => (
-                  <p className="st-john-car-rentals-entry" key={company.name}>
+                  <p className="st-john-car-rentals-entry" key={companyIndex}>
                     {company.website ? (
                       <EditableLink
                         className="st-john-car-rentals-name"

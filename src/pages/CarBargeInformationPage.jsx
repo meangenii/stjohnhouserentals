@@ -1,4 +1,5 @@
 import { EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -11,14 +12,14 @@ function ScheduleBlock({ title, columns, notes = [], pathPrefix }) {
 
       <div className="car-barge-schedule-columns">
         {columns.map((column, columnIndex) => (
-          <div className="car-barge-schedule-column" key={`${title}-${column.heading}`}>
+          <div className="car-barge-schedule-column" key={columnIndex}>
             <EditableText as="h4" label={`${column.heading} Heading`} path={[...pathPrefix, 'columns', columnIndex, 'heading']} value={column.heading}>
               {column.heading}
             </EditableText>
 
             <div className="car-barge-time-list">
               {column.times.map((time, timeIndex) => (
-                <EditableText as="p" key={`${column.heading}-${time}`} label={`${column.heading} Time ${timeIndex + 1}`} path={[...pathPrefix, 'columns', columnIndex, 'times', timeIndex]} value={time}>
+                <EditableText as="p" key={timeIndex} label={`${column.heading} Time ${timeIndex + 1}`} path={[...pathPrefix, 'columns', columnIndex, 'times', timeIndex]} value={time}>
                   {time}
                 </EditableText>
               ))}
@@ -30,7 +31,7 @@ function ScheduleBlock({ title, columns, notes = [], pathPrefix }) {
       {notes.length ? (
         <div className="car-barge-schedule-notes">
           {notes.map((note, noteIndex) => (
-            <EditableText as="p" key={`${title}-${note}`} label={`${title} Note ${noteIndex + 1}`} path={[...pathPrefix, 'notes', noteIndex]} value={note}>
+            <EditableText as="p" key={noteIndex} label={`${title} Note ${noteIndex + 1}`} path={[...pathPrefix, 'notes', noteIndex]} value={note}>
               {note}
             </EditableText>
           ))}
@@ -49,10 +50,7 @@ function RatesBlock({ heading, rows, footer, pathPrefix, url }) {
 
       <div className="car-barge-rates-copy">
         {rows.map((row, index) => (
-          <div
-            className={`car-barge-rates-row${row.label ? '' : ' is-values-only'}`}
-            key={`${heading}-${row.label || 'values-only'}-${index}`}
-          >
+          <div className={`car-barge-rates-row${row.label ? '' : ' is-values-only'}`} key={index}>
             {row.label ? (
               <EditableText as="span" className="car-barge-rates-row-label" label={`Rate Row ${index + 1} Label`} path={[...pathPrefix, 'rows', index, 'label']} value={row.label}>
                 {row.label}
@@ -61,7 +59,7 @@ function RatesBlock({ heading, rows, footer, pathPrefix, url }) {
 
             <div className="car-barge-rates-row-values">
               {row.values.map((value, valueIndex) => (
-                <EditableText as="span" key={`${heading}-${row.label}-${value}`} label={`Rate Row ${index + 1} Value ${valueIndex + 1}`} path={[...pathPrefix, 'rows', index, 'values', valueIndex]} value={value}>
+                <EditableText as="span" key={valueIndex} label={`Rate Row ${index + 1} Value ${valueIndex + 1}`} path={[...pathPrefix, 'rows', index, 'values', valueIndex]} value={value}>
                   {value}
                 </EditableText>
               ))}
@@ -71,7 +69,7 @@ function RatesBlock({ heading, rows, footer, pathPrefix, url }) {
 
         <div className="car-barge-rates-footer">
           {footer.map((line, lineIndex) => (
-            <EditableText as="p" key={`${heading}-${line}`} label={`Rates Footer ${lineIndex + 1}`} path={[...pathPrefix, 'footer', lineIndex]} value={line}>
+            <EditableText as="p" key={lineIndex} label={`Rates Footer ${lineIndex + 1}`} path={[...pathPrefix, 'footer', lineIndex]} value={line}>
               {line}
             </EditableText>
           ))}
@@ -135,7 +133,7 @@ function BargeOperatorSection({ operator, operatorIndex }) {
           {operator.schedules.map((schedule, scheduleIndex) => (
             <ScheduleBlock
               columns={schedule.columns}
-              key={`${operator.title}-${schedule.title}`}
+              key={scheduleIndex}
               notes={schedule.notes}
               pathPrefix={['operators', operatorIndex, 'schedules', scheduleIndex]}
               title={schedule.title}
@@ -157,6 +155,11 @@ function BargeOperatorSection({ operator, operatorIndex }) {
 
 export function CarBargeInformationPage() {
   const page = useStructuredPageContent('carBargeInformation')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1440, height: 560 })
 
   return (
@@ -190,7 +193,7 @@ export function CarBargeInformationPage() {
 
               <div className="car-barge-fee-list">
                 {page.intro.portAuthorityFees.map((fee, feeIndex) => (
-                  <div className="car-barge-fee-row" key={fee.label}>
+                  <div className="car-barge-fee-row" key={feeIndex}>
                     <EditableText as="span" label={`Port Fee ${feeIndex + 1} Label`} path={['intro', 'portAuthorityFees', feeIndex, 'label']} value={fee.label}>
                       {fee.label}
                     </EditableText>
@@ -202,7 +205,7 @@ export function CarBargeInformationPage() {
               </div>
 
               {page.intro.leftParagraphs.slice(1).map((paragraph, index) => (
-                <EditableText as="p" key={paragraph} label={`Left Paragraph ${index + 2}`} multiline path={['intro', 'leftParagraphs', index + 1]} rows={5} value={paragraph}>
+                <EditableText as="p" key={index} label={`Left Paragraph ${index + 2}`} multiline path={['intro', 'leftParagraphs', index + 1]} rows={5} value={paragraph}>
                   {paragraph}
                 </EditableText>
               ))}
@@ -210,7 +213,7 @@ export function CarBargeInformationPage() {
 
             <div className="car-barge-intro-copy">
               {page.intro.rightParagraphs.map((paragraph, index) => (
-                <EditableText as="p" key={paragraph} label={`Right Paragraph ${index + 1}`} multiline path={['intro', 'rightParagraphs', index]} rows={5} value={paragraph}>
+                <EditableText as="p" key={index} label={`Right Paragraph ${index + 1}`} multiline path={['intro', 'rightParagraphs', index]} rows={5} value={paragraph}>
                   {paragraph}
                 </EditableText>
               ))}
@@ -233,7 +236,7 @@ export function CarBargeInformationPage() {
         </section>
 
         {page.operators.map((operator, operatorIndex) => (
-          <BargeOperatorSection key={operator.title} operator={operator} operatorIndex={operatorIndex} />
+          <BargeOperatorSection key={operatorIndex} operator={operator} operatorIndex={operatorIndex} />
         ))}
 
         <section className="car-barge-note">

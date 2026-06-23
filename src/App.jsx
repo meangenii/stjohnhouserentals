@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
 import { AboutUsPage } from './pages/AboutUsPage'
 import { AdvertisePage } from './pages/AdvertisePage'
@@ -23,6 +24,9 @@ import { StJohnBookPage } from './pages/StJohnBookPage'
 import { StJohnCarRentalsPage } from './pages/StJohnCarRentalsPage'
 import { TermsOfAgreementPage } from './pages/TermsOfAgreementPage'
 import { DEFAULT_SITE_DESCRIPTION, SITE_TITLE, useDocumentMeta } from './lib/documentMeta'
+import { trackPageView } from './lib/analytics'
+import { isApiBackedSiteContentSource, isRouteSiteContentPreloaded, preloadRouteSiteContent } from './lib/siteContentRepository'
+import { buildCanonicalUrl, getCanonicalPath, getStaticSeoMeta } from '../shared/seoMetadata.js'
 
 const AdminPage = lazy(() =>
   import('./pages/AdminPage').then((module) => ({
@@ -139,6 +143,25 @@ function getRouteTitle(pathname) {
   return 'Page Not Found'
 }
 
+function getRouteSeoMeta(pathname) {
+  const staticMeta = getStaticSeoMeta(pathname)
+
+  if (staticMeta) {
+    return staticMeta
+  }
+
+  const canonicalPath = getCanonicalPath(pathname)
+  const title = getRouteTitle(pathname)
+
+  return {
+    title,
+    description: DEFAULT_SITE_DESCRIPTION,
+    canonicalPath,
+    canonicalUrl: buildCanonicalUrl(canonicalPath),
+    robots: pathname.startsWith('/admin') || title === 'Page Not Found' ? 'noindex, nofollow' : 'index, follow',
+  }
+}
+
 function readHashTarget(hash) {
   if (!hash) {
     return ''
@@ -153,9 +176,20 @@ function readHashTarget(hash) {
 
 function RouteEnhancements() {
   const location = useLocation()
-  const routeTitle = getRouteTitle(location.pathname)
+  const routeMeta = getRouteSeoMeta(location.pathname)
 
-  useDocumentMeta({ title: routeTitle, description: DEFAULT_SITE_DESCRIPTION, priority: 0 })
+  useDocumentMeta({ ...routeMeta, priority: 0 })
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) {
+      return
+    }
+
+    trackPageView({
+      path: `${location.pathname}${location.search}`,
+      title: document.title,
+    })
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     const hashTarget = readHashTarget(location.hash)
@@ -198,44 +232,127 @@ function RouteLoadingFallback() {
   )
 }
 
+function RouteErrorFallback({ message }) {
+  return (
+    <section className="page-section property-page property-page--status">
+      <h1>Content unavailable</h1>
+      <p>{message || 'Live site content could not be loaded.'}</p>
+    </section>
+  )
+}
+
+function createRoutePreloadState(pathname) {
+  if (!isApiBackedSiteContentSource()) {
+    return {
+      pathname,
+      message: 'Site content must be loaded from the Firebase-backed API.',
+      status: 'error',
+    }
+  }
+
+  return {
+    pathname,
+    message: '',
+    status: isRouteSiteContentPreloaded(pathname) ? 'ready' : 'loading',
+  }
+}
+
+function SiteContentRouteGate({ children }) {
+  const location = useLocation()
+  const pathname = location.pathname
+  const routePreloadState = createRoutePreloadState(pathname)
+  const [preloadState, setPreloadState] = useState(() => routePreloadState)
+  const activePreloadState = preloadState.pathname === pathname ? preloadState : routePreloadState
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (routePreloadState.status !== 'loading') {
+      return undefined
+    }
+
+    preloadRouteSiteContent(pathname)
+      .then(() => {
+        if (!cancelled) {
+          setPreloadState({ pathname, message: '', status: 'ready' })
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPreloadState({
+            pathname,
+            message: error instanceof Error ? error.message : 'Live site content could not be loaded.',
+            status: 'error',
+          })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [pathname, routePreloadState.status])
+
+  if (activePreloadState.status === 'loading') {
+    return <RouteLoadingFallback />
+  }
+
+  if (activePreloadState.status === 'error') {
+    return <RouteErrorFallback message={activePreloadState.message} />
+  }
+
+  return children
+}
+
 normalizeHashRoute()
+
+function AppRoutes() {
+  const location = useLocation()
+
+  return (
+    <RouteErrorBoundary locationKey={location.pathname}>
+      <SiteContentRouteGate>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <Routes>
+            <Route element={<SiteLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="admin" element={<AdminPage />} />
+              <Route path="about-us" element={<AboutUsPage />} />
+              <Route path="st-john-rentals" element={<HouseRentalsPage />} />
+              <Route path="1bedroom/:slug" element={<PropertyDetailPage />} />
+              <Route path="for-rent" element={<RentalAccommodationsPage />} />
+              <Route path="for-sale" element={<PropertyForSalePage />} />
+              <Route path="property-for-sale" element={<PropertyForSalePage />} />
+              <Route path="car-rental-ferry-boat-info" element={<CarBargeInformationPage />} />
+              <Route path="car-barge-information" element={<CarBargeInformationPage />} />
+              <Route path="passenger-ferry" element={<PassengerFerryPage />} />
+              <Route path="ferrys" element={<PassengerFerryPage />} />
+              <Route path="cars" element={<StJohnCarRentalsPage />} />
+              <Route path="boats" element={<CharterBoatsPage />} />
+              <Route path="map" element={<LocalAttractionsPage />} />
+              <Route path="advertise" element={<AdvertisePage />} />
+              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="terms-of-agreement" element={<TermsOfAgreementPage />} />
+              <Route path="blog" element={<BlogPage />} />
+              <Route path="jewelry" element={<JewelryPage />} />
+              <Route path="links" element={<LinksPage />} />
+              <Route path="st-john-book" element={<StJohnBookPage />} />
+              <Route path="art" element={<ArtPage />} />
+              <Route path="rental-properties/:slug" element={<PropertyDetailPage />} />
+              <Route path="charter-boat-rentals/:slug" element={<CharterBoatDetailPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </SiteContentRouteGate>
+    </RouteErrorBoundary>
+  )
+}
 
 function App() {
   return (
     <BrowserRouter>
       <RouteEnhancements />
-      <Suspense fallback={<RouteLoadingFallback />}>
-        <Routes>
-          <Route element={<SiteLayout />}>
-            <Route index element={<HomePage />} />
-            <Route path="admin" element={<AdminPage />} />
-            <Route path="about-us" element={<AboutUsPage />} />
-            <Route path="st-john-rentals" element={<HouseRentalsPage />} />
-            <Route path="1bedroom/:slug" element={<PropertyDetailPage />} />
-            <Route path="for-rent" element={<RentalAccommodationsPage />} />
-            <Route path="for-sale" element={<PropertyForSalePage />} />
-            <Route path="property-for-sale" element={<PropertyForSalePage />} />
-            <Route path="car-rental-ferry-boat-info" element={<CarBargeInformationPage />} />
-            <Route path="car-barge-information" element={<CarBargeInformationPage />} />
-            <Route path="passenger-ferry" element={<PassengerFerryPage />} />
-            <Route path="ferrys" element={<PassengerFerryPage />} />
-            <Route path="cars" element={<StJohnCarRentalsPage />} />
-            <Route path="boats" element={<CharterBoatsPage />} />
-            <Route path="map" element={<LocalAttractionsPage />} />
-            <Route path="advertise" element={<AdvertisePage />} />
-            <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
-            <Route path="terms-of-agreement" element={<TermsOfAgreementPage />} />
-            <Route path="blog" element={<BlogPage />} />
-            <Route path="jewelry" element={<JewelryPage />} />
-            <Route path="links" element={<LinksPage />} />
-            <Route path="st-john-book" element={<StJohnBookPage />} />
-            <Route path="art" element={<ArtPage />} />
-            <Route path="rental-properties/:slug" element={<PropertyDetailPage />} />
-            <Route path="charter-boat-rentals/:slug" element={<CharterBoatDetailPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
-        </Routes>
-      </Suspense>
+      <AppRoutes />
     </BrowserRouter>
   )
 }

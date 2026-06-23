@@ -1,9 +1,15 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function PropertyForSalePage() {
   const page = useStructuredPageContent('propertyForSale')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
   const storyImageUrl = getContentImageSrc(page.story.image, { width: 960, height: 720 })
   const detailsImageUrl = getContentImageSrc(page.details.image, { width: 960, height: 720 })
@@ -32,7 +38,7 @@ export function PropertyForSalePage() {
                 {page.story.title}
               </EditableText>
               {page.story.paragraphs.map((paragraph, index) => (
-                <EditableText as="p" key={`${index}-${paragraph}`} label={`Story Paragraph ${index + 1}`} multiline path={['story', 'paragraphs', index]} rows={5} value={paragraph}>
+                <EditableText as="p" key={index} label={`Story Paragraph ${index + 1}`} multiline path={['story', 'paragraphs', index]} rows={5} value={paragraph}>
                   {paragraph}
                 </EditableText>
               ))}
@@ -58,7 +64,7 @@ export function PropertyForSalePage() {
 
             <div className="property-for-sale-band-copy">
               {page.details.paragraphs.map((paragraph, index) => (
-                <EditableText as="p" key={`${index}-${paragraph}`} label={`Details Paragraph ${index + 1}`} multiline path={['details', 'paragraphs', index]} rows={5} value={paragraph}>
+                <EditableText as="p" key={index} label={`Details Paragraph ${index + 1}`} multiline path={['details', 'paragraphs', index]} rows={5} value={paragraph}>
                   {paragraph}
                 </EditableText>
               ))}

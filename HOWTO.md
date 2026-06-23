@@ -32,14 +32,15 @@ In `npm run dev`, `/api` is proxied to the local Functions emulator. If you want
 
 Optional:
 
-- `VITE_SITE_CONTENT_SOURCE=local` to read structured page content directly from `shared/siteContent.js`
+- `VITE_SITE_CONTENT_SOURCE=firebase` to read site shell and structured page content from Firebase-delivered API endpoints, with live admin editing routed through `siteApi`
 - `VITE_SITE_CONTENT_SOURCE=api` to read structured page content from `siteApi`
-- `VITE_SITE_CONTENT_SOURCE=firebase` or `firebase-preferred` for Firebase-delivered site shell and structured page content, with live admin editing routed through `siteApi`
 - `VITE_PROPERTY_DATA_SOURCE=firebase` to read rental properties through Firebase-backed API endpoints and edit them through the live admin
 - `VITE_CHARTER_DATA_SOURCE=firebase` to read and edit charter listings through Firebase-backed API endpoints
 - `VITE_PROPERTY_DATA_SOURCE=mock` or `VITE_CHARTER_DATA_SOURCE=mock` for browser-local admin drafts
 - `VITE_FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099` when using the Auth emulator locally
 - `VITE_ADMIN_AUTO_LOGIN_EMAIL` and `VITE_ADMIN_AUTO_LOGIN_PASSWORD` for localhost-only admin auto sign-in when you do not want to manually sign in on `/admin`
+- `VITE_FIREBASE_MEASUREMENT_ID` enables Firebase/Google Analytics pageview tracking outside localhost
+- `VITE_ENABLE_ANALYTICS_IN_DEV=true` allows analytics from localhost for intentional testing
 
 The Firebase client values are required for Firebase-backed admin sign-in and live editing.
 
@@ -67,7 +68,13 @@ npm run dev
 
 Open the Vite URL shown in the terminal.
 
-By default, the app reads structured singleton page content from `shared/siteContent.js` and uses the generated rental and charter catalogs in `public/`. Switch `VITE_SITE_CONTENT_SOURCE` only when you want to test the API or Firebase-backed path.
+By default, the app reads site shell, structured pages, rental properties, and charters from the Firebase-backed API. Use the `mock` catalog modes only when you intentionally want browser-local drafts for properties or charters.
+
+The Firebase-backed admin now uses a draft and publish workflow:
+
+- `Save` writes the draft to Firestore without changing the public site
+- After a successful save, the floating primary action switches to `Publish`
+- `Publish` copies the saved draft to the public live record
 
 ## Refresh The Live Snapshot
 

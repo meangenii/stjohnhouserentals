@@ -2,10 +2,12 @@ const { createHash, randomUUID } = require('node:crypto')
 const path = require('node:path')
 const sharp = require('sharp')
 const { HttpError, getDb, getServerTimestamp, getStorageBucket } = require('./firebaseAdmin')
+const mediaUploadConfig = require('./mediaUploadConfig.json')
 
 const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
 const MEDIA_FOLDER_COLLECTION = 'cmsMediaFolders'
-const MAX_MEDIA_UPLOAD_BYTES = 7864320
+const MAX_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
+const MAX_MEDIA_UPLOAD_LABEL = String(mediaUploadConfig.maxBinaryUploadLabel ?? '6 MB').trim() || '6 MB'
 const AVIF_CONVERSION_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const AVIF_QUALITY = 60
 const AVIF_EFFORT = 4
@@ -304,7 +306,7 @@ async function uploadMediaAsset(draft, actor) {
   }
 
   if (buffer.length > MAX_MEDIA_UPLOAD_BYTES) {
-    throw new HttpError(400, 'Images larger than 7.5 MB are not supported in this uploader yet.')
+    throw new HttpError(400, `Images larger than ${MAX_MEDIA_UPLOAD_LABEL} are not supported in this uploader yet.`)
   }
 
   const normalizedUpload = await normalizeUploadAsset(draft?.fileName, originalContentType, buffer)

@@ -1,9 +1,15 @@
 import { EditableBackgroundSection, EditableImage, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 export function AboutUsPage() {
   const page = useStructuredPageContent('aboutUs')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const storyImageUrl = getContentImageSrc(page.story.image)
   const essentialsImageUrl = getContentImageSrc(page.essentials.image)
@@ -49,7 +55,7 @@ export function AboutUsPage() {
                 {page.story.title}
               </EditableText>
               {page.story.leadParagraphs.map((paragraph, index) => (
-                <EditableText as="p" key={`${index}-${paragraph}`} label={`Lead Paragraph ${index + 1}`} multiline path={['story', 'leadParagraphs', index]} rows={4} value={paragraph}>
+                <EditableText as="p" key={index} label={`Lead Paragraph ${index + 1}`} multiline path={['story', 'leadParagraphs', index]} rows={4} value={paragraph}>
                   {paragraph}
                 </EditableText>
               ))}
@@ -58,7 +64,7 @@ export function AboutUsPage() {
 
           <div className="about-page-story-body">
             {page.story.bodyParagraphs.map((paragraph, index) => (
-              <EditableText as="p" key={`${index}-${paragraph}`} label={`Body Paragraph ${index + 1}`} multiline path={['story', 'bodyParagraphs', index]} rows={5} value={paragraph}>
+              <EditableText as="p" key={index} label={`Body Paragraph ${index + 1}`} multiline path={['story', 'bodyParagraphs', index]} rows={5} value={paragraph}>
                 {paragraph}
               </EditableText>
             ))}

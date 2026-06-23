@@ -48,13 +48,6 @@ function getStaticPageInventoryEntries() {
   return getPageIndexSeed().pageInventory.filter((page) => page.source !== 'structured')
 }
 
-function stripAdminMetadata(record = {}) {
-  const content = { ...record }
-  delete content.updatedBy
-  delete content.updatedAt
-  return content
-}
-
 function formatActor(actor) {
   if (typeof actor === 'string' && actor.trim()) {
     return actor.trim()
@@ -184,6 +177,104 @@ function normalizeStructuredPageDraft(key, draft) {
   return normalized
 }
 
+function hasPublicationEnvelope(record) {
+  return (
+    Boolean(record) &&
+    typeof record === 'object' &&
+    !Array.isArray(record) &&
+    (Object.prototype.hasOwnProperty.call(record, 'draft') || Object.prototype.hasOwnProperty.call(record, 'published'))
+  )
+}
+
+function cloneStructuredContentValue(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  return cloneData(value)
+}
+
+function normalizeStoredContentEnvelope(record) {
+  const draftSource = hasPublicationEnvelope(record) ? record.draft ?? null : record
+  const publishedSource = hasPublicationEnvelope(record) ? record.published ?? draftSource ?? null : record
+
+  return {
+    draft: cloneStructuredContentValue(draftSource),
+    published: cloneStructuredContentValue(publishedSource),
+    updatedAt: record?.updatedAt ?? null,
+    updatedBy: String(record?.updatedBy ?? '').trim(),
+    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
+  }
+}
+
+function buildPublicationState(envelope) {
+  return {
+    hasUnpublishedChanges: JSON.stringify(envelope?.draft ?? null) !== JSON.stringify(envelope?.published ?? null),
+    savedAt: envelope?.updatedAt ?? null,
+    savedBy: envelope?.updatedBy ?? '',
+    publishedAt: envelope?.published ? envelope?.publishedAt ?? envelope?.updatedAt ?? null : null,
+    publishedBy: envelope?.published ? envelope?.publishedBy || envelope?.updatedBy || '' : '',
+  }
+}
+
+function buildSiteShellAdminResponse(record) {
+  const envelope = normalizeStoredContentEnvelope(record)
+  return {
+    siteShell: envelope.draft ?? {},
+    publication: buildPublicationState(envelope),
+  }
+}
+
+function getPublishedSiteShell(record) {
+  return normalizeStoredContentEnvelope(record).published
+}
+
+function normalizeStructuredPageView(key, page) {
+  if (!page || typeof page !== 'object' || Array.isArray(page)) {
+    return null
+  }
+
+  const normalized = cloneData(page)
+  normalized.key = String(normalized.key ?? key).trim() || String(key ?? '').trim()
+  return normalized
+}
+
+function buildStructuredPageAdminResponse(key, record) {
+  const envelope = normalizeStoredContentEnvelope(record)
+  return {
+    page: normalizeStructuredPageView(key, envelope.draft),
+    publication: buildPublicationState(envelope),
+  }
+}
+
+function getStructuredPageView(key, record, mode = 'public') {
+  const envelope = normalizeStoredContentEnvelope(record)
+  return normalizeStructuredPageView(key, mode === 'admin' ? envelope.draft : envelope.published)
+}
+
+function buildStructuredPageSummaryList(records, mode = 'public') {
+  const pages = records
+    .map((record) => {
+      const page = getStructuredPageView(record.key, record.data, mode)
+
+      if (!page) {
+        return null
+      }
+
+      const summary = buildStructuredPageSummary(page)
+
+      if (mode === 'admin') {
+        summary.publication = buildPublicationState(normalizeStoredContentEnvelope(record.data))
+      }
+
+      return summary
+    })
+    .filter(Boolean)
+
+  return sortStructuredPages(pages)
+}
+
 async function getSiteContentDocument(documentId) {
   try {
     return await getDb().collection(SITE_CONTENT_COLLECTION).doc(documentId).get()
@@ -208,56 +299,14 @@ async function getStructuredPageDocument(key) {
   }
 }
 
-async function listStructuredPageRecordsFromFirestore() {
+async function listStructuredPageDocumentsFromFirestore() {
   try {
     const snapshot = await getDb().collection(STRUCTURED_PAGE_COLLECTION).get()
 
     return snapshot.docs.map((document) => ({
       key: document.id,
-      ...stripAdminMetadata(document.data()),
+      data: document.data(),
     }))
-  } catch (error) {
-    if (isFirestoreUnavailableError(error)) {
-      throw createSiteContentSetupError()
-    }
-
-    throw error
-  }
-}
-
-async function commitStructuredPageIndex(records, actor) {
-  const db = getDb()
-  const pageCollection = db.collection(STRUCTURED_PAGE_COLLECTION)
-  const contentCollection = db.collection(SITE_CONTENT_COLLECTION)
-  const pageIndex = buildPageIndexDocument(records)
-  const batch = db.batch()
-
-  batch.set(contentCollection.doc(PAGE_INDEX_DOCUMENT), {
-    ...pageIndex,
-    updatedBy: actor,
-    updatedAt: getServerTimestamp(),
-  })
-
-  records.forEach((page) => {
-    batch.set(pageCollection.doc(page.key), {
-      ...page,
-      updatedBy: actor,
-      updatedAt: getServerTimestamp(),
-    })
-  })
-
-  return { batch, pageCollection, pageIndex }
-}
-
-async function writeStructuredPageSet(nextRecords, actor, { removedKey = '' } = {}) {
-  try {
-    const { batch, pageCollection } = await commitStructuredPageIndex(nextRecords, actor)
-
-    if (removedKey) {
-      batch.delete(pageCollection.doc(removedKey))
-    }
-
-    await batch.commit()
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
@@ -306,9 +355,20 @@ exports.seedSiteContentRecords = async function seedSiteContentRecords({ replace
     }
 
     batch.set(contentCollection.doc(document.id), {
-      ...document.payload,
-      updatedBy: actor,
-      updatedAt: getServerTimestamp(),
+      ...(document.id === SITE_SHELL_DOCUMENT
+        ? {
+            draft: document.payload,
+            published: document.payload,
+            updatedBy: actor,
+            updatedAt: getServerTimestamp(),
+            publishedBy: actor,
+            publishedAt: getServerTimestamp(),
+          }
+        : {
+            ...document.payload,
+            updatedBy: actor,
+            updatedAt: getServerTimestamp(),
+          }),
     })
 
     if (existingContentIds.has(document.id)) {
@@ -324,10 +384,18 @@ exports.seedSiteContentRecords = async function seedSiteContentRecords({ replace
     }
 
     batch.set(pageCollection.doc(key), {
-      ...page,
-      key,
+      draft: {
+        ...page,
+        key,
+      },
+      published: {
+        ...page,
+        key,
+      },
       updatedBy: actor,
       updatedAt: getServerTimestamp(),
+      publishedBy: actor,
+      publishedAt: getServerTimestamp(),
     })
 
     if (existingPageIds.has(key)) {
@@ -368,20 +436,35 @@ exports.getSiteShellContent = async function getSiteShellContent() {
     throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
   }
 
-  return cloneData(stripAdminMetadata(snapshot.data()))
+  return cloneData(getPublishedSiteShell(snapshot.data()) ?? {})
+}
+
+exports.getAdminSiteShellContent = async function getAdminSiteShellContent() {
+  const snapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+
+  if (!snapshot.exists) {
+    throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
+  }
+
+  return cloneData(buildSiteShellAdminResponse(snapshot.data()))
 }
 
 exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor) {
   const normalized = normalizeSiteShellDraft(draft)
+  const snapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+  const currentEnvelope = snapshot.exists ? normalizeStoredContentEnvelope(snapshot.data()) : normalizeStoredContentEnvelope({})
 
   try {
     await getDb()
       .collection(SITE_CONTENT_COLLECTION)
       .doc(SITE_SHELL_DOCUMENT)
       .set({
-        ...normalized,
+        draft: normalized,
+        published: currentEnvelope.published,
         updatedBy: formatActor(actor),
         updatedAt: getServerTimestamp(),
+        publishedBy: currentEnvelope.publishedBy || '',
+        publishedAt: currentEnvelope.publishedAt || null,
       })
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {
@@ -391,11 +474,69 @@ exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor)
     throw error
   }
 
-  return normalized
+  const savedSnapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+  return cloneData(buildSiteShellAdminResponse(savedSnapshot.data()))
+}
+
+exports.publishSiteShellContent = async function publishSiteShellContent(actor) {
+  const snapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+
+  if (!snapshot.exists) {
+    throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
+  }
+
+  const currentEnvelope = normalizeStoredContentEnvelope(snapshot.data())
+  const normalized = normalizeSiteShellDraft(currentEnvelope.draft ?? currentEnvelope.published ?? {})
+
+  try {
+    await getDb()
+      .collection(SITE_CONTENT_COLLECTION)
+      .doc(SITE_SHELL_DOCUMENT)
+      .set({
+        draft: normalized,
+        published: normalized,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+        publishedBy: formatActor(actor),
+        publishedAt: getServerTimestamp(),
+      })
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  const savedSnapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+  return cloneData(buildSiteShellAdminResponse(savedSnapshot.data()))
 }
 
 exports.resetSiteShellContentToSeed = async function resetSiteShellContentToSeed(actor) {
-  return exports.saveSiteShellContent(getSiteShellSeed(), actor)
+  const normalized = normalizeSiteShellDraft(getSiteShellSeed())
+
+  try {
+    await getDb()
+      .collection(SITE_CONTENT_COLLECTION)
+      .doc(SITE_SHELL_DOCUMENT)
+      .set({
+        draft: normalized,
+        published: normalized,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+        publishedBy: formatActor(actor),
+        publishedAt: getServerTimestamp(),
+      })
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  const savedSnapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
+  return cloneData(buildSiteShellAdminResponse(savedSnapshot.data()))
 }
 
 exports.getStructuredPageContent = async function getStructuredPageContent(key) {
@@ -405,20 +546,86 @@ exports.getStructuredPageContent = async function getStructuredPageContent(key) 
     return null
   }
 
-  const data = snapshot.data()
-  return cloneData(stripAdminMetadata(data))
+  return cloneData(getStructuredPageView(key, snapshot.data(), 'public'))
+}
+
+exports.getAdminStructuredPageContent = async function getAdminStructuredPageContent(key) {
+  const snapshot = await getStructuredPageDocument(key)
+
+  if (!snapshot.exists) {
+    return null
+  }
+
+  return cloneData(buildStructuredPageAdminResponse(key, snapshot.data()))
 }
 
 exports.saveStructuredPageContent = async function saveStructuredPageContent(key, draft, actor) {
   const normalized = normalizeStructuredPageDraft(String(key ?? '').trim(), draft)
-  const currentRecords = await listStructuredPageRecordsFromFirestore()
-  const nextByKey = new Map(currentRecords.map((page) => [page.key, page]))
+  const snapshot = await getStructuredPageDocument(normalized.key)
+  const currentEnvelope = snapshot.exists ? normalizeStoredContentEnvelope(snapshot.data()) : normalizeStoredContentEnvelope({})
 
-  nextByKey.set(normalized.key, normalized)
+  try {
+    await getDb()
+      .collection(STRUCTURED_PAGE_COLLECTION)
+      .doc(normalized.key)
+      .set({
+        draft: normalized,
+        published: currentEnvelope.published,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+        publishedBy: currentEnvelope.publishedBy || '',
+        publishedAt: currentEnvelope.publishedAt || null,
+      })
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
 
-  await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor))
+    throw error
+  }
 
-  return normalized
+  const savedSnapshot = await getStructuredPageDocument(normalized.key)
+  return cloneData(buildStructuredPageAdminResponse(normalized.key, savedSnapshot.data()))
+}
+
+exports.publishStructuredPageContent = async function publishStructuredPageContent(key, actor) {
+  const normalizedKey = String(key ?? '').trim()
+
+  if (!normalizedKey) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  const snapshot = await getStructuredPageDocument(normalizedKey)
+
+  if (!snapshot.exists) {
+    return null
+  }
+
+  const currentEnvelope = normalizeStoredContentEnvelope(snapshot.data())
+  const normalized = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? currentEnvelope.published ?? {})
+
+  try {
+    await getDb()
+      .collection(STRUCTURED_PAGE_COLLECTION)
+      .doc(normalizedKey)
+      .set({
+        draft: normalized,
+        published: normalized,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+        publishedBy: formatActor(actor),
+        publishedAt: getServerTimestamp(),
+      })
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  const savedSnapshot = await getStructuredPageDocument(normalizedKey)
+  return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
 }
 
 exports.resetStructuredPageContentToSeed = async function resetStructuredPageContentToSeed(key, actor) {
@@ -428,38 +635,64 @@ exports.resetStructuredPageContentToSeed = async function resetStructuredPageCon
     throw createInvalidStructuredPageError('Structured page key is required.')
   }
 
-  const currentRecords = await listStructuredPageRecordsFromFirestore()
-  const nextByKey = new Map(currentRecords.map((page) => [page.key, page]))
   const seedPage = getStructuredPageSeed(normalizedKey)
 
   if (seedPage) {
     const normalized = normalizeStructuredPageDraft(normalizedKey, seedPage)
-    nextByKey.set(normalizedKey, normalized)
-    await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor))
-    return normalized
+
+    try {
+      await getDb()
+        .collection(STRUCTURED_PAGE_COLLECTION)
+        .doc(normalizedKey)
+        .set({
+          draft: normalized,
+          published: normalized,
+          updatedBy: formatActor(actor),
+          updatedAt: getServerTimestamp(),
+          publishedBy: formatActor(actor),
+          publishedAt: getServerTimestamp(),
+        })
+    } catch (error) {
+      if (isFirestoreUnavailableError(error)) {
+        throw createSiteContentSetupError()
+      }
+
+      throw error
+    }
+
+    const savedSnapshot = await getStructuredPageDocument(normalizedKey)
+    return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
   }
 
-  nextByKey.delete(normalizedKey)
-  await writeStructuredPageSet(Array.from(nextByKey.values()), formatActor(actor), { removedKey: normalizedKey })
+  try {
+    await getDb().collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey).delete()
+  } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
   return null
 }
 
 exports.listStructuredPages = async function listStructuredPages() {
-  const snapshot = await getSiteContentDocument(PAGE_INDEX_DOCUMENT)
+  const records = await listStructuredPageDocumentsFromFirestore()
+  return cloneData(buildStructuredPageSummaryList(records, 'public'))
+}
 
-  if (!snapshot.exists) {
-    throw createMissingSiteContentError(PAGE_INDEX_DOCUMENT)
-  }
-
-  return cloneData(snapshot.data()?.structuredPageSummaries || [])
+exports.listAdminStructuredPages = async function listAdminStructuredPages() {
+  const records = await listStructuredPageDocumentsFromFirestore()
+  return cloneData(buildStructuredPageSummaryList(records, 'admin'))
 }
 
 exports.listPageInventory = async function listPageInventory() {
-  const snapshot = await getSiteContentDocument(PAGE_INDEX_DOCUMENT)
+  const records = await listStructuredPageDocumentsFromFirestore()
+  return cloneData(buildPageIndexDocument(buildStructuredPageSummaryList(records, 'public')).pageInventory)
+}
 
-  if (!snapshot.exists) {
-    throw createMissingSiteContentError(PAGE_INDEX_DOCUMENT)
-  }
-
-  return cloneData(snapshot.data()?.pageInventory || [])
+exports.listAdminPageInventory = async function listAdminPageInventory() {
+  const records = await listStructuredPageDocumentsFromFirestore()
+  return cloneData(buildPageIndexDocument(buildStructuredPageSummaryList(records, 'admin')).pageInventory)
 }

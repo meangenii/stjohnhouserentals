@@ -62,7 +62,19 @@ function PreviewPlaceholder() {
   )
 }
 
-export function AdminPagePreview({ device = 'desktop', page, pageKey, siteShell }) {
+function getTargetOwnerElement(target) {
+  if (!target) {
+    return null
+  }
+
+  if (target instanceof Element) {
+    return target
+  }
+
+  return target.parentElement ?? null
+}
+
+export function AdminPagePreview({ device = 'desktop', page, pageKey, routeInventory = [], siteShell }) {
   if (!page || !pageKey || !siteShell) {
     return null
   }
@@ -71,7 +83,7 @@ export function AdminPagePreview({ device = 'desktop', page, pageKey, siteShell 
   const previewBody = renderPreviewBody(page, pageKey)
 
   return (
-    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, siteShell }}>
+    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, routeInventory, siteShell }}>
       <PreviewSurface device={device}>
         <SiteFrame interactive={false} pathname={page.path || '/'} siteShell={resolvedSiteShell}>
           {previewBody}
@@ -87,6 +99,7 @@ export function AdminPageEditorCanvas({
   onChange,
   page,
   pageKey,
+  routeInventory = [],
   siteShell,
 }) {
   const [activeFieldId, setActiveFieldId] = useState('')
@@ -105,23 +118,27 @@ export function AdminPageEditorCanvas({
   const previewBody = renderPreviewBody(page, pageKey)
 
   function handleCanvasClickCapture(event) {
-    const target = event.target
+    const target = getTargetOwnerElement(event.target)
 
     if (!(target instanceof Element)) {
       return
     }
 
-    if (target.closest('.admin-inline-popover')) {
+    const editorChromeTarget = target.closest(
+      '[data-admin-inline-editable="true"], .admin-inline-popover, .admin-inline-format-toolbar, .admin-inline-link-settings, .admin-inline-embedded-editor',
+    )
+
+    if (activeFieldId && !editorChromeTarget) {
+      setActiveFieldId('')
+    }
+
+    if (editorChromeTarget) {
       return
     }
 
-    const interactiveTarget = target.closest('a, button, form, input, textarea, select, label')
+    const interactiveTarget = target.closest('a, button, input, textarea, select, label')
 
     if (!interactiveTarget) {
-      return
-    }
-
-    if (target.closest('[data-admin-inline-editable="true"]')) {
       return
     }
 
@@ -130,6 +147,7 @@ export function AdminPageEditorCanvas({
     if (nestedEditableTarget instanceof HTMLElement) {
       event.preventDefault()
       event.stopPropagation()
+      nestedEditableTarget.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }))
       nestedEditableTarget.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
       return
     }
@@ -139,7 +157,7 @@ export function AdminPageEditorCanvas({
   }
 
   return (
-    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, pageEditor, siteShell }}>
+    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, pageEditor, routeInventory, siteShell }}>
       <PreviewSurface device={device} interactive>
         <SiteFrame interactive={false} pathname={page.path || '/'} siteShell={resolvedSiteShell}>
           <div className="admin-preview-editor-page" onClickCapture={handleCanvasClickCapture}>

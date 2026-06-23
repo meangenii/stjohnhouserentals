@@ -11,7 +11,7 @@ import {
   isCharterEditingEnabled,
   isFirebaseCharterData,
   listAllCharters,
-  resetAdminCharters,
+  publishAdminCharter,
   saveAdminCharter,
 } from '../lib/charterRepository'
 import { isFirebaseConfigured } from '../lib/firebase'
@@ -19,7 +19,7 @@ import {
   isFirebasePropertyData,
   isPropertyEditingEnabled,
   listAllProperties,
-  resetAdminProperties,
+  publishAdminProperty,
   saveAdminProperty,
 } from '../lib/propertyRepository'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
@@ -29,9 +29,8 @@ import {
   fetchAdminStructuredPageContent,
   fetchAdminStructuredPageDirectory,
   isSiteContentEditingEnabled,
-  readStructuredPageSummaries,
-  resetAdminSiteShellContent,
-  resetAdminStructuredPageContent,
+  publishAdminSiteShellContent,
+  publishAdminStructuredPageContent,
   saveAdminSiteShellContent,
   saveAdminStructuredPageContent,
 } from '../lib/siteContentRepository'
@@ -45,6 +44,18 @@ function jsonSnapshot(value) {
     return JSON.stringify(value ?? null)
   } catch {
     return ''
+  }
+}
+
+function cloneSnapshotValue(value) {
+  if (value === undefined) {
+    return undefined
+  }
+
+  try {
+    return JSON.parse(JSON.stringify(value))
+  } catch {
+    return value
   }
 }
 
@@ -603,22 +614,70 @@ function AdminPreviewDeviceButton({ active, label, onClick }) {
   )
 }
 
+function AdminFloatingSaveButton({
+  disabled = false,
+  label,
+  onReset = null,
+  resetDisabled = false,
+  resetLabel = 'Reset',
+  saveStatus = 'idle',
+  showReset = false,
+  visible = false,
+}) {
+  if (!visible && saveStatus !== 'saving' && saveStatus !== 'publishing') {
+    return null
+  }
+
+  const isBusy = saveStatus === 'saving' || saveStatus === 'publishing'
+
+  return (
+    <div className="admin-floating-save">
+      {showReset ? (
+        <button className="button-link button-link--ghost admin-action" type="button" disabled={resetDisabled || isBusy} onClick={onReset}>
+          {resetLabel}
+        </button>
+      ) : null}
+      <button
+        className="button-link button-link--primary admin-submit"
+        type="submit"
+        disabled={disabled || isBusy}
+      >
+        {saveStatus === 'publishing' ? 'Publishing...' : saveStatus === 'saving' ? 'Saving...' : label}
+      </button>
+    </div>
+  )
+}
+
+function hasPendingPublication(publication) {
+  return publication?.hasUnpublishedChanges === true
+}
+
+function getFeedbackStatusTone(status = 'idle') {
+  return status === 'publishing' ? 'saving' : status
+}
+
 export function AdminPage() {
+  const initialPropertyFormState = createEmptyFormState()
+  const initialCharterFormState = createEmptyCharterFormState()
   const [activeTab, setActiveTab] = useState('pages')
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
-  const [formState, setFormState] = useState(createEmptyFormState())
+  const [formState, setFormState] = useState(initialPropertyFormState)
+  const [savedFormState, setSavedFormState] = useState(initialPropertyFormState)
   const [editorState, setEditorState] = useState({ mode: 'create', activeSlug: '' })
   const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
+  const [propertyPublication, setPropertyPublication] = useState(null)
   const propertyEditingEnabled = isPropertyEditingEnabled()
   const propertyUsesFirebase = isFirebasePropertyData()
 
   const [charterWorkspaceState, setCharterWorkspaceState] = useState({ status: 'loading', charters: [] })
-  const [charterFormState, setCharterFormState] = useState(createEmptyCharterFormState())
+  const [charterFormState, setCharterFormState] = useState(initialCharterFormState)
+  const [savedCharterFormState, setSavedCharterFormState] = useState(initialCharterFormState)
   const [charterEditorState, setCharterEditorState] = useState({ mode: 'create', activeSlug: '' })
   const [charterFeedback, setCharterFeedback] = useState('')
   const [charterSaveStatus, setCharterSaveStatus] = useState('idle')
+  const [charterPublication, setCharterPublication] = useState(null)
   const charterEditingEnabled = isCharterEditingEnabled()
   const charterUsesFirebase = isFirebaseCharterData()
 
@@ -630,16 +689,19 @@ export function AdminPage() {
   const [siteShellDraft, setSiteShellDraft] = useState(null)
   const [siteShellFeedback, setSiteShellFeedback] = useState('')
   const [siteShellSaveStatus, setSiteShellSaveStatus] = useState('idle')
+  const [siteShellPublication, setSiteShellPublication] = useState(null)
   const [siteShellPreviewDevice, setSiteShellPreviewDevice] = useState('desktop')
 
   const [pageWorkspaceState, setPageWorkspaceState] = useState(() => ({
     status: 'loading',
-    pages: readStructuredPageSummaries(),
+    inventory: [],
+    pages: [],
     message: '',
   }))
   const [pageEditorState, setPageEditorState] = useState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
   const [pageFeedback, setPageFeedback] = useState('')
   const [pageSaveStatus, setPageSaveStatus] = useState('idle')
+  const [pagePublication, setPagePublication] = useState(null)
   const [pagePreviewDevice, setPagePreviewDevice] = useState('desktop')
 
   const siteContentEditingEnabled = isSiteContentEditingEnabled()
@@ -650,6 +712,8 @@ export function AdminPage() {
   }))
   const [authFeedback, setAuthFeedback] = useState('')
   const [authFeedbackStatus, setAuthFeedbackStatus] = useState('idle')
+  const propertyDirty = jsonSnapshot(formState) !== jsonSnapshot(savedFormState)
+  const charterDirty = jsonSnapshot(charterFormState) !== jsonSnapshot(savedCharterFormState)
   const siteShellDirty = jsonSnapshot(siteShellDraft) !== jsonSnapshot(siteShellWorkspaceState.shell)
   const pageDirty = jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft)
 
@@ -681,14 +745,20 @@ export function AdminPage() {
         setWorkspaceState({ status: 'ready', properties })
 
         if (properties.length > 0) {
+          const nextFormState = createFormState(properties[0])
           setEditorState({ mode: 'edit', activeSlug: properties[0].slug })
-          setFormState(createFormState(properties[0]))
+          setFormState(nextFormState)
+          setSavedFormState(nextFormState)
+          setPropertyPublication(properties[0].publication ?? null)
           setGalleryEditorExpanded(false)
           return
         }
 
+        const nextFormState = createEmptyFormState()
         setEditorState({ mode: 'create', activeSlug: '' })
-        setFormState(createEmptyFormState())
+        setFormState(nextFormState)
+        setSavedFormState(nextFormState)
+        setPropertyPublication(null)
         setGalleryEditorExpanded(false)
       } catch (error) {
         if (!cancelled) {
@@ -736,13 +806,19 @@ export function AdminPage() {
         setCharterWorkspaceState({ status: 'ready', charters })
 
         if (charters.length > 0) {
+          const nextFormState = createCharterFormState(charters[0])
           setCharterEditorState({ mode: 'edit', activeSlug: charters[0].slug })
-          setCharterFormState(createCharterFormState(charters[0]))
+          setCharterFormState(nextFormState)
+          setSavedCharterFormState(nextFormState)
+          setCharterPublication(charters[0].publication ?? null)
           return
         }
 
+        const nextFormState = createEmptyCharterFormState()
         setCharterEditorState({ mode: 'create', activeSlug: '' })
-        setCharterFormState(createEmptyCharterFormState())
+        setCharterFormState(nextFormState)
+        setSavedCharterFormState(nextFormState)
+        setCharterPublication(null)
       } catch (error) {
         if (!cancelled) {
           setCharterWorkspaceState({
@@ -762,18 +838,43 @@ export function AdminPage() {
   }, [authState.status, authState.user, charterUsesFirebase, requiresAdminSignIn])
 
   useEffect(() => {
+    if (requiresAdminSignIn && authState.status === 'loading') {
+      return undefined
+    }
+
+    if (requiresAdminSignIn && !authState.user) {
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadSiteShellWorkspace() {
       try {
-        const shell = await fetchAdminSiteShellContent()
+        let requestOptions = {}
+
+        if (requiresAdminSignIn) {
+          if (!isFirebaseConfigured()) {
+            throw new Error('Firebase client configuration is missing. Fill in the VITE_FIREBASE_* values first.')
+          }
+
+          const authToken = await getAdminIdToken()
+
+          if (!authToken) {
+            throw new Error('Sign in to Firebase before saving or resetting live edits.')
+          }
+
+          requestOptions = { authToken }
+        }
+
+        const response = await fetchAdminSiteShellContent(requestOptions)
 
         if (cancelled) {
           return
         }
 
-        setSiteShellWorkspaceState({ status: 'ready', shell, message: '' })
-        setSiteShellDraft(shell)
+        setSiteShellWorkspaceState({ status: 'ready', shell: response.siteShell, message: '' })
+        setSiteShellDraft(response.siteShell)
+        setSiteShellPublication(response.publication ?? null)
       } catch (error) {
         if (!cancelled) {
           setSiteShellWorkspaceState({
@@ -782,6 +883,7 @@ export function AdminPage() {
             message: error instanceof Error ? error.message : 'Unable to load the site shell.',
           })
           setSiteShellDraft(null)
+          setSiteShellPublication(null)
         }
       }
     }
@@ -791,23 +893,49 @@ export function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [authState.status, authState.user, requiresAdminSignIn])
 
   useEffect(() => {
+    if (requiresAdminSignIn && authState.status === 'loading') {
+      return undefined
+    }
+
+    if (requiresAdminSignIn && !authState.user) {
+      return undefined
+    }
+
     let cancelled = false
 
     async function loadStructuredPagesWorkspace() {
       try {
-        const directory = await fetchAdminStructuredPageDirectory()
+        let requestOptions = {}
+
+        if (requiresAdminSignIn) {
+          if (!isFirebaseConfigured()) {
+            throw new Error('Firebase client configuration is missing. Fill in the VITE_FIREBASE_* values first.')
+          }
+
+          const authToken = await getAdminIdToken()
+
+          if (!authToken) {
+            throw new Error('Sign in to Firebase before saving or resetting live edits.')
+          }
+
+          requestOptions = { authToken }
+        }
+
+        const directory = await fetchAdminStructuredPageDirectory(requestOptions)
 
         if (cancelled) {
           return
         }
 
-        const pages = Array.isArray(directory?.pages) && directory.pages.length > 0 ? directory.pages : readStructuredPageSummaries()
+        const inventory = Array.isArray(directory?.inventory) ? directory.inventory : []
+        const pages = Array.isArray(directory?.pages) ? directory.pages : []
 
         setPageWorkspaceState({
           status: 'ready',
+          inventory,
           pages,
           message: '',
         })
@@ -816,10 +944,11 @@ export function AdminPage() {
 
         if (!firstPage?.key) {
           setPageEditorState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
+          setPagePublication(null)
           return
         }
 
-        const page = await fetchAdminStructuredPageContent(firstPage.key)
+        const page = await fetchAdminStructuredPageContent(firstPage.key, requestOptions)
 
         if (cancelled) {
           return
@@ -828,17 +957,20 @@ export function AdminPage() {
         setPageEditorState({
           status: 'ready',
           activeKey: firstPage.key,
-          draft: page ?? {},
-          savedDraft: page ?? {},
+          draft: page?.page ?? {},
+          savedDraft: page?.page ?? {},
         })
+        setPagePublication(page?.publication ?? null)
       } catch (error) {
         if (!cancelled) {
           setPageWorkspaceState({
             status: 'error',
-            pages: readStructuredPageSummaries(),
+            inventory: [],
+            pages: [],
             message: error instanceof Error ? error.message : 'Unable to load structured pages.',
           })
           setPageEditorState({ status: 'error', activeKey: '', draft: null, savedDraft: null })
+          setPagePublication(null)
         }
       }
     }
@@ -848,7 +980,7 @@ export function AdminPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [authState.status, authState.user, requiresAdminSignIn])
 
   useEffect(() => {
     if (!requiresAdminSignIn) {
@@ -869,7 +1001,7 @@ export function AdminPage() {
   }, [requiresAdminSignIn])
 
   useEffect(() => {
-    if (!pageDirty && !siteShellDirty) {
+    if (!propertyDirty && !charterDirty && !pageDirty && !siteShellDirty) {
       return undefined
     }
 
@@ -883,7 +1015,7 @@ export function AdminPage() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [pageDirty, siteShellDirty])
+  }, [charterDirty, pageDirty, propertyDirty, siteShellDirty])
 
   async function getAdminRequestOptions() {
     if (!requiresAdminSignIn) {
@@ -931,10 +1063,12 @@ export function AdminPage() {
   async function loadCurrentSiteShellIntoEditor() {
     try {
       setSiteShellWorkspaceState((current) => ({ ...current, status: 'loading', message: '' }))
-      const shell = await fetchAdminSiteShellContent()
-      setSiteShellWorkspaceState({ status: 'ready', shell, message: '' })
-      setSiteShellDraft(shell)
-      setSiteShellFeedback('Reloaded the live site shell document.')
+      const requestOptions = await getAdminRequestOptions()
+      const response = await fetchAdminSiteShellContent(requestOptions)
+      setSiteShellWorkspaceState({ status: 'ready', shell: response.siteShell, message: '' })
+      setSiteShellDraft(response.siteShell)
+      setSiteShellPublication(response.publication ?? null)
+      setSiteShellFeedback('Reloaded the saved site shell draft.')
       setSiteShellSaveStatus('idle')
     } catch (error) {
       setSiteShellWorkspaceState({
@@ -944,6 +1078,7 @@ export function AdminPage() {
       })
       setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to reload the site shell.')
       setSiteShellSaveStatus('error')
+      setSiteShellPublication(null)
     }
   }
 
@@ -954,60 +1089,74 @@ export function AdminPage() {
 
     try {
       setPageEditorState((current) => ({ ...current, status: 'loading', activeKey: pageKey }))
-      const page = await fetchAdminStructuredPageContent(pageKey)
+      const requestOptions = await getAdminRequestOptions()
+      const page = await fetchAdminStructuredPageContent(pageKey, requestOptions)
       setPageEditorState({
         status: 'ready',
         activeKey: pageKey,
-        draft: page ?? {},
-        savedDraft: page ?? {},
+        draft: page?.page ?? {},
+        savedDraft: page?.page ?? {},
       })
+      setPagePublication(page?.publication ?? null)
       setPageFeedback('')
       setPageSaveStatus('idle')
     } catch (error) {
       setPageEditorState({ status: 'error', activeKey: pageKey, draft: null, savedDraft: null })
       setPageFeedback(error instanceof Error ? error.message : 'Unable to load the structured page.')
       setPageSaveStatus('error')
+      setPagePublication(null)
     }
   }
 
   async function reloadStructuredPageWorkspace(preferredKey = '') {
-    const directory = await fetchAdminStructuredPageDirectory()
-    const pages = Array.isArray(directory?.pages) && directory.pages.length > 0 ? directory.pages : readStructuredPageSummaries()
+    const requestOptions = await getAdminRequestOptions()
+    const directory = await fetchAdminStructuredPageDirectory(requestOptions)
+    const inventory = Array.isArray(directory?.inventory) ? directory.inventory : []
+    const pages = Array.isArray(directory?.pages) ? directory.pages : []
     const nextKey = preferredKey || pages[0]?.key || ''
 
     setPageWorkspaceState({
       status: 'ready',
+      inventory,
       pages,
       message: '',
     })
 
     if (!nextKey) {
       setPageEditorState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
+      setPagePublication(null)
       return null
     }
 
-    const page = await fetchAdminStructuredPageContent(nextKey)
+    const page = await fetchAdminStructuredPageContent(nextKey, requestOptions)
 
     setPageEditorState({
       status: 'ready',
       activeKey: nextKey,
-      draft: page ?? pages.find((entry) => entry.key === nextKey) ?? {},
-      savedDraft: page ?? pages.find((entry) => entry.key === nextKey) ?? {},
+      draft: page?.page ?? pages.find((entry) => entry.key === nextKey) ?? {},
+      savedDraft: page?.page ?? pages.find((entry) => entry.key === nextKey) ?? {},
     })
+    setPagePublication(page?.publication ?? null)
 
     return page
   }
 
   function openCreateForm() {
+    const nextFormState = createEmptyFormState()
     setEditorState({ mode: 'create', activeSlug: '' })
-    setFormState(createEmptyFormState())
+    setFormState(nextFormState)
+    setSavedFormState(nextFormState)
+    setPropertyPublication(null)
     setGalleryEditorExpanded(false)
     setFeedback('')
   }
 
   function openEditForm(property) {
+    const nextFormState = createFormState(property)
     setEditorState({ mode: 'edit', activeSlug: property.slug })
-    setFormState(createFormState(property))
+    setFormState(nextFormState)
+    setSavedFormState(nextFormState)
+    setPropertyPublication(property.publication ?? null)
     setGalleryEditorExpanded(false)
     setFeedback('')
   }
@@ -1128,8 +1277,11 @@ export function AdminPage() {
       )
       const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
+      const nextFormState = createFormState(savedProperty)
       setEditorState({ mode: 'edit', activeSlug: savedProperty.slug })
-      setFormState(createFormState(savedProperty))
+      setFormState(nextFormState)
+      setSavedFormState(nextFormState)
+      setPropertyPublication(savedProperty.publication ?? null)
       setFeedback(
         successMessage ||
           (editorMode === 'create'
@@ -1149,7 +1301,33 @@ export function AdminPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+
+    if (!propertyDirty && hasPendingPublication(propertyPublication)) {
+      await handlePublishProperty()
+      return
+    }
+
     await persistPropertyForm(formState)
+  }
+
+  async function handlePublishProperty() {
+    try {
+      setSaveStatus('publishing')
+      const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
+      const publishedProperty = await publishAdminProperty(formState.originalSlug, requestOptions)
+      const properties = await listAllProperties(requestOptions)
+      setWorkspaceState({ status: 'ready', properties })
+      const nextFormState = createFormState(publishedProperty)
+      setEditorState({ mode: 'edit', activeSlug: publishedProperty.slug })
+      setFormState(nextFormState)
+      setSavedFormState(nextFormState)
+      setPropertyPublication(publishedProperty.publication ?? null)
+      setFeedback(`Published ${publishedProperty.name} live.`)
+      setSaveStatus('idle')
+    } catch (error) {
+      setSaveStatus('error')
+      setFeedback(error instanceof Error ? error.message : 'Unable to publish property changes.')
+    }
   }
 
   async function handlePropertyVisibilityToggle() {
@@ -1161,7 +1339,7 @@ export function AdminPage() {
         active: nextActive,
       }))
       setSaveStatus('idle')
-      setFeedback(`This draft will be created as ${nextActive ? 'published' : 'unpublished'}.`)
+      setFeedback(`This draft will be created as ${nextActive ? 'visible' : 'hidden'} when published.`)
       return
     }
 
@@ -1170,59 +1348,45 @@ export function AdminPage() {
         ...formState,
         active: nextActive,
       },
-      `${formState.name || 'This property'} is now ${nextActive ? 'published' : 'unpublished'} on the site.`,
+      `Saved draft visibility for ${formState.name || 'this property'}. Publish to apply the ${nextActive ? 'visible' : 'hidden'} state live.`,
     )
   }
 
-  async function handleResetLocalEdits() {
-    const confirmationMessage = propertyUsesFirebase
-      ? 'Restore the Firebase property catalog to the generated baseline?'
-      : 'Reset all browser-local property edits and return to the generated catalog?'
+  function handleDiscardPropertyChanges() {
+    if (!propertyDirty) {
+      return
+    }
+
+    const confirmationMessage =
+      editorState.mode === 'create'
+        ? 'Discard this unsaved property draft and clear the form?'
+        : 'Discard your unsaved property changes and restore the last saved draft?'
 
     if (!window.confirm(confirmationMessage)) {
       return
     }
 
-    try {
-      const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
-      await resetAdminProperties(requestOptions)
-      setSaveStatus('idle')
-      setFeedback(
-        propertyUsesFirebase
-          ? 'Restored the Firebase property catalog to the generated baseline.'
-          : 'Restored the generated property catalog for this browser.',
-      )
-
-      const properties = await listAllProperties(requestOptions)
-      setWorkspaceState({ status: 'ready', properties })
-
-      if (properties.length > 0) {
-        setEditorState({ mode: 'edit', activeSlug: properties[0].slug })
-        setFormState(createFormState(properties[0]))
-        return
-      }
-
-      openCreateForm()
-    } catch (error) {
-      setWorkspaceState({
-        status: 'error',
-        properties: [],
-        message: error instanceof Error ? error.message : 'Unable to reload the property catalog.',
-      })
-      setSaveStatus('error')
-      setFeedback(error instanceof Error ? error.message : 'Unable to reset property edits.')
-    }
+    const nextFormState = cloneSnapshotValue(savedFormState)
+    setFormState(nextFormState)
+    setSaveStatus('idle')
+    setFeedback(editorState.mode === 'create' ? 'Cleared the unsaved property draft.' : 'Restored the last saved property draft.')
   }
 
   function openCreateCharterForm() {
+    const nextFormState = createEmptyCharterFormState()
     setCharterEditorState({ mode: 'create', activeSlug: '' })
-    setCharterFormState(createEmptyCharterFormState())
+    setCharterFormState(nextFormState)
+    setSavedCharterFormState(nextFormState)
+    setCharterPublication(null)
     setCharterFeedback('')
   }
 
   function openEditCharterForm(charter) {
+    const nextFormState = createCharterFormState(charter)
     setCharterEditorState({ mode: 'edit', activeSlug: charter.slug })
-    setCharterFormState(createCharterFormState(charter))
+    setCharterFormState(nextFormState)
+    setSavedCharterFormState(nextFormState)
+    setCharterPublication(charter.publication ?? null)
     setCharterFeedback('')
   }
 
@@ -1232,6 +1396,11 @@ export function AdminPage() {
 
   async function handleCharterSubmit(event) {
     event.preventDefault()
+
+    if (!charterDirty && hasPendingPublication(charterPublication)) {
+      await handlePublishCharter()
+      return
+    }
 
     try {
       setCharterSaveStatus('saving')
@@ -1243,8 +1412,11 @@ export function AdminPage() {
       )
       const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
+      const nextFormState = createCharterFormState(saved)
       setCharterEditorState({ mode: 'edit', activeSlug: saved.slug })
-      setCharterFormState(createCharterFormState(saved))
+      setCharterFormState(nextFormState)
+      setSavedCharterFormState(nextFormState)
+      setCharterPublication(saved.publication ?? null)
       setCharterFeedback(
         charterEditorState.mode === 'create'
           ? charterUsesFirebase
@@ -1259,44 +1431,44 @@ export function AdminPage() {
     }
   }
 
-  async function handleResetCharterEdits() {
-    const confirmationMessage = charterUsesFirebase
-      ? 'Restore the Firebase charter catalog to the generated baseline?'
-      : 'Reset all browser-local charter edits and return to the generated catalog?'
+  async function handlePublishCharter() {
+    try {
+      setCharterSaveStatus('publishing')
+      const requestOptions = charterUsesFirebase ? await getAdminRequestOptions() : {}
+      const publishedCharter = await publishAdminCharter(charterFormState.originalSlug, requestOptions)
+      const charters = await listAllCharters(requestOptions)
+      setCharterWorkspaceState({ status: 'ready', charters })
+      const nextFormState = createCharterFormState(publishedCharter)
+      setCharterEditorState({ mode: 'edit', activeSlug: publishedCharter.slug })
+      setCharterFormState(nextFormState)
+      setSavedCharterFormState(nextFormState)
+      setCharterPublication(publishedCharter.publication ?? null)
+      setCharterFeedback(`Published ${publishedCharter.name} live.`)
+      setCharterSaveStatus('idle')
+    } catch (error) {
+      setCharterSaveStatus('error')
+      setCharterFeedback(error instanceof Error ? error.message : 'Unable to publish charter changes.')
+    }
+  }
+
+  function handleDiscardCharterChanges() {
+    if (!charterDirty) {
+      return
+    }
+
+    const confirmationMessage =
+      charterEditorState.mode === 'create'
+        ? 'Discard this unsaved charter draft and clear the form?'
+        : 'Discard your unsaved charter changes and restore the last saved draft?'
 
     if (!window.confirm(confirmationMessage)) {
       return
     }
 
-    try {
-      const requestOptions = charterUsesFirebase ? await getAdminRequestOptions() : {}
-      await resetAdminCharters(requestOptions)
-      setCharterSaveStatus('idle')
-      setCharterFeedback(
-        charterUsesFirebase
-          ? 'Restored the Firebase charter catalog to the generated baseline.'
-          : 'Restored the generated charter catalog for this browser.',
-      )
-
-      const charters = await listAllCharters(requestOptions)
-      setCharterWorkspaceState({ status: 'ready', charters })
-
-      if (charters.length > 0) {
-        setCharterEditorState({ mode: 'edit', activeSlug: charters[0].slug })
-        setCharterFormState(createCharterFormState(charters[0]))
-        return
-      }
-
-      openCreateCharterForm()
-    } catch (error) {
-      setCharterWorkspaceState({
-        status: 'error',
-        charters: [],
-        message: error instanceof Error ? error.message : 'Unable to reload the charter catalog.',
-      })
-      setCharterSaveStatus('error')
-      setCharterFeedback(error instanceof Error ? error.message : 'Unable to reset charter edits.')
-    }
+    const nextFormState = cloneSnapshotValue(savedCharterFormState)
+    setCharterFormState(nextFormState)
+    setCharterSaveStatus('idle')
+    setCharterFeedback(charterEditorState.mode === 'create' ? 'Cleared the unsaved charter draft.' : 'Restored the last saved charter draft.')
   }
 
   async function handleSelectStructuredPage(page) {
@@ -1374,13 +1546,19 @@ export function AdminPage() {
   async function handleSiteShellSubmit(event) {
     event.preventDefault()
 
+    if (!siteShellDirty && hasPendingPublication(siteShellPublication)) {
+      await handlePublishSiteShell()
+      return
+    }
+
     try {
       setSiteShellSaveStatus('saving')
       const requestOptions = await getAdminRequestOptions()
       const savedSiteShell = await saveAdminSiteShellContent(siteShellDraft ?? {}, requestOptions)
-      setSiteShellWorkspaceState({ status: 'ready', shell: savedSiteShell, message: '' })
-      setSiteShellDraft(savedSiteShell)
-      setSiteShellFeedback('Saved changes to the live site shell document.')
+      setSiteShellWorkspaceState({ status: 'ready', shell: savedSiteShell.siteShell, message: '' })
+      setSiteShellDraft(savedSiteShell.siteShell)
+      setSiteShellPublication(savedSiteShell.publication ?? null)
+      setSiteShellFeedback('Saved draft changes to the site shell.')
       setSiteShellSaveStatus('idle')
     } catch (error) {
       setSiteShellSaveStatus('error')
@@ -1388,23 +1566,34 @@ export function AdminPage() {
     }
   }
 
-  async function handleResetSiteShell() {
-    if (!window.confirm('Restore the Firebase site shell document to the generated baseline?')) {
-      return
-    }
-
+  async function handlePublishSiteShell() {
     try {
-      setSiteShellSaveStatus('saving')
+      setSiteShellSaveStatus('publishing')
       const requestOptions = await getAdminRequestOptions()
-      const restoredSiteShell = await resetAdminSiteShellContent(requestOptions)
-      setSiteShellWorkspaceState({ status: 'ready', shell: restoredSiteShell, message: '' })
-      setSiteShellDraft(restoredSiteShell)
-      setSiteShellFeedback('Restored the site shell document to the generated baseline.')
+      const publishedSiteShell = await publishAdminSiteShellContent(requestOptions)
+      setSiteShellWorkspaceState({ status: 'ready', shell: publishedSiteShell.siteShell, message: '' })
+      setSiteShellDraft(publishedSiteShell.siteShell)
+      setSiteShellPublication(publishedSiteShell.publication ?? null)
+      setSiteShellFeedback('Published the site shell live.')
       setSiteShellSaveStatus('idle')
     } catch (error) {
       setSiteShellSaveStatus('error')
-      setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to restore the site shell.')
+      setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to publish the site shell.')
     }
+  }
+
+  function handleDiscardSiteShellChanges() {
+    if (!siteShellDirty) {
+      return
+    }
+
+    if (!window.confirm('Discard your unsaved shell changes and restore the last saved draft?')) {
+      return
+    }
+
+    setSiteShellDraft(cloneSnapshotValue(siteShellWorkspaceState.shell))
+    setSiteShellSaveStatus('idle')
+    setSiteShellFeedback('Restored the last saved shell draft.')
   }
 
   async function handleStructuredPageSubmit(event) {
@@ -1414,12 +1603,17 @@ export function AdminPage() {
       return
     }
 
+    if (!pageDirty && hasPendingPublication(pagePublication)) {
+      await handlePublishStructuredPage()
+      return
+    }
+
     try {
       setPageSaveStatus('saving')
       const requestOptions = await getAdminRequestOptions()
       const savedPage = await saveAdminStructuredPageContent(pageEditorState.activeKey, pageEditorState.draft ?? {}, requestOptions)
-      await reloadStructuredPageWorkspace(savedPage?.key ?? pageEditorState.activeKey)
-      setPageFeedback(`Saved changes to ${savedPage?.navLabel || savedPage?.key || pageEditorState.activeKey}.`)
+      await reloadStructuredPageWorkspace(savedPage?.page?.key ?? pageEditorState.activeKey)
+      setPageFeedback(`Saved draft changes to ${savedPage?.page?.navLabel || savedPage?.page?.key || pageEditorState.activeKey}.`)
       setPageSaveStatus('idle')
     } catch (error) {
       setPageSaveStatus('error')
@@ -1427,26 +1621,39 @@ export function AdminPage() {
     }
   }
 
-  async function handleResetStructuredPage() {
+  async function handlePublishStructuredPage() {
     if (!pageEditorState.activeKey) {
       return
     }
 
-    if (!window.confirm('Discard your changes and restore this page to its original content?')) {
-      return
-    }
-
     try {
-      setPageSaveStatus('saving')
+      setPageSaveStatus('publishing')
       const requestOptions = await getAdminRequestOptions()
-      await resetAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
-      await reloadStructuredPageWorkspace(pageEditorState.activeKey)
-      setPageFeedback('Page restored to its original content.')
+      const publishedPage = await publishAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
+      await reloadStructuredPageWorkspace(publishedPage?.page?.key ?? pageEditorState.activeKey)
+      setPageFeedback(`Published ${publishedPage?.page?.navLabel || publishedPage?.page?.key || pageEditorState.activeKey} live.`)
       setPageSaveStatus('idle')
     } catch (error) {
       setPageSaveStatus('error')
-      setPageFeedback(error instanceof Error ? error.message : 'Unable to restore the page.')
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to publish the structured page.')
     }
+  }
+
+  function handleDiscardStructuredPageChanges() {
+    if (!pageDirty || !pageEditorState.activeKey) {
+      return
+    }
+
+    if (!window.confirm('Discard your unsaved page changes and restore the last saved draft?')) {
+      return
+    }
+
+    setPageEditorState((current) => ({
+      ...current,
+      draft: cloneSnapshotValue(current.savedDraft),
+    }))
+    setPageSaveStatus('idle')
+    setPageFeedback(`Restored the last saved draft for ${selectedStructuredPage?.navLabel || selectedStructuredPage?.key || 'this page'}.`)
   }
 
   const properties = workspaceState.properties ?? []
@@ -1454,11 +1661,16 @@ export function AdminPage() {
   const selectedStructuredPage =
     structuredPages.find((page) => page.key === pageEditorState.activeKey) ?? structuredPages[0] ?? null
   const propertySaveEnabled = propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user))
+  const propertyHasPendingPublication = hasPendingPublication(propertyPublication)
+  const propertyActionBusy = saveStatus === 'saving' || saveStatus === 'publishing'
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
+  const charterHasPendingPublication = hasPendingPublication(charterPublication)
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
   const siteContentDraftEditingEnabled = siteContentEditingEnabled
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
+  const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
+  const pageHasPendingPublication = hasPendingPublication(pagePublication)
   const authBadgeDetail = authState.user?.email ?? ''
   const showGoogleSignInButton = authState.status === 'signed-out'
   const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
@@ -1574,11 +1786,6 @@ export function AdminPage() {
                   <button className="button-link button-link--ghost admin-action" type="button" onClick={handleReloadSiteShell}>
                     Refresh
                   </button>
-                  {siteContentEditingEnabled ? (
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetSiteShell}>
-                      Reset changes
-                    </button>
-                  ) : null}
                 </div>
               </div>
 
@@ -1597,53 +1804,54 @@ export function AdminPage() {
                 </div>
 
                 {siteShellFeedback ? (
-                  <p className={`admin-feedback admin-feedback--${siteShellSaveStatus}`}>{siteShellFeedback}</p>
+                  <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(siteShellSaveStatus)}`}>{siteShellFeedback}</p>
                 ) : null}
 
                 {!siteContentSaveEnabled ? (
-                  <p className="admin-note">You can edit the header and footer draft here, but you must sign in before saving those changes live.</p>
+                  <p className="admin-note">You can edit the header and footer draft here, but you must sign in before saving drafts or publishing changes live.</p>
                 ) : null}
 
                 {siteShellWorkspaceState.status === 'loading' ? (
                   <p className="admin-empty">Loading header and footer content...</p>
                 ) : (
                   <form className="admin-form" onSubmit={handleSiteShellSubmit}>
-                    <div className="admin-editor-workspace">
-                      <div>
-                        <AdminSiteShellEditor
-                          value={siteShellDraft}
-                          onChange={setSiteShellDraft}
-                          disabled={!siteContentDraftEditingEnabled}
-                        />
+                    <div className="admin-floating-save-shell">
+                      <AdminFloatingSaveButton
+                        disabled={!siteContentSaveEnabled}
+                        label={siteShellHasPendingPublication ? 'Publish shell changes' : 'Save shell changes'}
+                        onReset={handleDiscardSiteShellChanges}
+                        showReset={siteShellDirty}
+                        saveStatus={siteShellSaveStatus}
+                        visible={siteShellDirty || siteShellHasPendingPublication}
+                      />
 
-                        <div className="admin-form-actions">
-                          <button
-                            className="button-link button-link--primary admin-submit"
-                            type="submit"
-                            disabled={!siteContentSaveEnabled || siteShellSaveStatus === 'saving'}
-                          >
-                            {siteShellSaveStatus === 'saving' ? 'Saving...' : 'Save shell changes'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="admin-live-preview-column">
-                        <div className="admin-preview-panel">
-                          <div className="admin-panel-header">
-                            <div>
-                              <div className="eyebrow">Preview</div>
-                              <h3>Header and footer</h3>
-                            </div>
-                            <div className="admin-inline-actions">
-                              <AdminPreviewDeviceButton active={siteShellPreviewDevice === 'desktop'} label="Desktop" onClick={() => setSiteShellPreviewDevice('desktop')} />
-                              <AdminPreviewDeviceButton active={siteShellPreviewDevice === 'mobile'} label="Mobile" onClick={() => setSiteShellPreviewDevice('mobile')} />
-                            </div>
-                          </div>
-
-                          <AdminSiteShellPreview
-                            device={siteShellPreviewDevice}
-                            siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                      <div className="admin-editor-workspace">
+                        <div>
+                          <AdminSiteShellEditor
+                            value={siteShellDraft}
+                            onChange={setSiteShellDraft}
+                            disabled={!siteContentDraftEditingEnabled}
                           />
+                        </div>
+
+                        <div className="admin-live-preview-column">
+                          <div className="admin-preview-panel">
+                            <div className="admin-panel-header">
+                              <div>
+                                <div className="eyebrow">Preview</div>
+                                <h3>Header and footer</h3>
+                              </div>
+                              <div className="admin-inline-actions">
+                                <AdminPreviewDeviceButton active={siteShellPreviewDevice === 'desktop'} label="Desktop" onClick={() => setSiteShellPreviewDevice('desktop')} />
+                                <AdminPreviewDeviceButton active={siteShellPreviewDevice === 'mobile'} label="Mobile" onClick={() => setSiteShellPreviewDevice('mobile')} />
+                              </div>
+                            </div>
+
+                            <AdminSiteShellPreview
+                              device={siteShellPreviewDevice}
+                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1689,27 +1897,18 @@ export function AdminPage() {
                       >
                         Refresh
                       </button>
-                      {siteContentEditingEnabled ? (
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          type="button"
-                          onClick={handleResetStructuredPage}
-                        >
-                          Reset changes
-                        </button>
-                      ) : null}
                     </div>
                   ) : null}
                 </div>
               ) : null}
 
               <div className="admin-editor admin-editor--page">
-                {pageFeedback ? <p className={`admin-feedback admin-feedback--${pageSaveStatus}`}>{pageFeedback}</p> : null}
+                {pageFeedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(pageSaveStatus)}`}>{pageFeedback}</p> : null}
 
                 {pageEditorState.status === 'loading' ? <p className="admin-empty">Loading structured page content...</p> : null}
 
                 {!siteContentSaveEnabled ? (
-                  <p className="admin-note">You can edit this page draft now, but you must sign in before saving the changes live.</p>
+                  <p className="admin-note">You can edit this page draft now, but you must sign in before saving drafts or publishing changes live.</p>
                 ) : null}
 
                 {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
@@ -1726,28 +1925,30 @@ export function AdminPage() {
                       </div>
                     </div>
 
-                    <AdminPageEditorCanvas
-                      device={pagePreviewDevice}
-                      disabled={!siteContentDraftEditingEnabled}
-                      onChange={(updater) =>
-                        setPageEditorState((current) => ({
-                          ...current,
-                          draft: typeof updater === 'function' ? updater(current.draft) : updater,
-                        }))
-                      }
-                      page={pageEditorState.draft}
-                      pageKey={pageEditorState.activeKey}
-                      siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                    />
+                    <div className="admin-floating-save-shell">
+                      <AdminFloatingSaveButton
+                        disabled={!siteContentSaveEnabled}
+                        label={pageHasPendingPublication ? 'Publish page changes' : 'Save page changes'}
+                        onReset={handleDiscardStructuredPageChanges}
+                        showReset={pageDirty}
+                        saveStatus={pageSaveStatus}
+                        visible={pageDirty || pageHasPendingPublication}
+                      />
 
-                    <div className="admin-form-actions">
-                      <button
-                        className="button-link button-link--primary admin-submit"
-                        type="submit"
-                        disabled={!siteContentSaveEnabled || pageSaveStatus === 'saving'}
-                      >
-                        {pageSaveStatus === 'saving' ? 'Saving...' : 'Save page changes'}
-                      </button>
+                      <AdminPageEditorCanvas
+                        device={pagePreviewDevice}
+                        disabled={!siteContentDraftEditingEnabled}
+                        onChange={(updater) =>
+                          setPageEditorState((current) => ({
+                            ...current,
+                            draft: typeof updater === 'function' ? updater(current.draft) : updater,
+                          }))
+                        }
+                        page={pageEditorState.draft}
+                        pageKey={pageEditorState.activeKey}
+                        routeInventory={pageWorkspaceState.inventory}
+                        siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                      />
                     </div>
                   </form>
                 ) : null}
@@ -1766,11 +1967,6 @@ export function AdminPage() {
                   <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
                     New property
                   </button>
-                  {propertyEditingEnabled ? (
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetLocalEdits}>
-                      Reset to saved
-                    </button>
-                  ) : null}
                 </div>
               </div>
 
@@ -1805,12 +2001,15 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor">
-                {feedback ? <p className={`admin-feedback admin-feedback--${saveStatus}`}>{feedback}</p> : null}
+                {feedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(saveStatus)}`}>{feedback}</p> : null}
 
                 <form className="admin-form admin-form--flush" onSubmit={handleSubmit}>
                   <div className="admin-toolbar-row admin-toolbar-row--split">
                     <div className="admin-chip-row admin-chip-row--compact">
-                      <span className="admin-chip">{formState.active !== false ? 'Published' : 'Unpublished'}</span>
+                      <span className="admin-chip">{formState.active !== false ? 'Visible when published' : 'Hidden when published'}</span>
+                      {editorState.mode === 'edit' ? (
+                        <span className="admin-chip">{propertyHasPendingPublication ? 'Draft saved' : 'Live version current'}</span>
+                      ) : null}
                     </div>
 
                     <div className="admin-inline-actions">
@@ -1821,59 +2020,63 @@ export function AdminPage() {
                       ) : null}
                       <button
                         className="button-link button-link--ghost admin-action"
-                        disabled={!propertySaveEnabled || saveStatus === 'saving'}
+                        disabled={!propertySaveEnabled || propertyActionBusy}
                         type="button"
                         onClick={handlePropertyVisibilityToggle}
                       >
                         {editorState.mode === 'edit'
                           ? formState.active !== false
-                            ? 'Unpublish property'
-                            : 'Publish property'
+                            ? 'Hide when published'
+                            : 'Show when published'
                           : formState.active !== false
-                            ? 'Create as unpublished'
-                            : 'Create as published'}
+                            ? 'Create draft as visible'
+                            : 'Create draft as hidden'}
                       </button>
                     </div>
                   </div>
 
-                  <AdminPropertyPreview
-                    key={[
-                      propertyPreviewModel.slug,
-                      propertyPreviewModel.heroImage?.url,
-                      ...propertyPreviewModel.gallery.map((image) => image.url),
-                    ]
-                      .filter(Boolean)
-                      .join('|')}
-                    disabled={!propertySaveEnabled}
-                    editable
-                    formState={formState}
-                    galleryEditorExpanded={galleryEditorExpanded}
-                    onAddAmenityGroup={addAmenityGroup}
-                    onAddGalleryImage={addGalleryImage}
-                    onAddReviewEntry={addReviewEntry}
-                    onAmenityGroupChange={updateAmenityGroup}
-                    onFieldChange={updateFormState}
-                    onGalleryImageChange={updateGalleryImage}
-                    onMoveGalleryImage={moveGalleryImage}
-                    onToggleGalleryEditor={() => setGalleryEditorExpanded((currentState) => !currentState)}
-                    onRemoveAmenityGroup={removeAmenityGroup}
-                    onRemoveGalleryImage={removeGalleryImage}
-                    onRemoveReviewEntry={removeReviewEntry}
-                    onReviewEntryChange={updateReviewEntry}
-                    property={propertyPreviewModel}
-                  />
+                  <div className="admin-floating-save-shell">
+                    <AdminFloatingSaveButton
+                      disabled={!propertySaveEnabled}
+                      label={
+                        propertyHasPendingPublication
+                          ? 'Publish property'
+                          : editorState.mode === 'create'
+                            ? 'Create property'
+                            : 'Save property'
+                      }
+                      onReset={handleDiscardPropertyChanges}
+                      saveStatus={saveStatus}
+                      showReset={propertyDirty}
+                      visible={propertyDirty || propertyHasPendingPublication}
+                    />
 
-                  <div className="admin-form-actions">
-                    <button
-                      className="button-link button-link--primary admin-submit"
-                      type="submit"
-                      disabled={!propertySaveEnabled || saveStatus === 'saving'}
-                    >
-                      {saveStatus === 'saving' ? 'Saving...' : editorState.mode === 'create' ? 'Create property' : 'Save property'}
-                    </button>
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
-                      New property
-                    </button>
+                    <AdminPropertyPreview
+                      key={[
+                        propertyPreviewModel.slug,
+                        propertyPreviewModel.heroImage?.url,
+                        ...propertyPreviewModel.gallery.map((image) => image.url),
+                      ]
+                        .filter(Boolean)
+                        .join('|')}
+                      disabled={!propertySaveEnabled}
+                      editable
+                      formState={formState}
+                      galleryEditorExpanded={galleryEditorExpanded}
+                      onAddAmenityGroup={addAmenityGroup}
+                      onAddGalleryImage={addGalleryImage}
+                      onAddReviewEntry={addReviewEntry}
+                      onAmenityGroupChange={updateAmenityGroup}
+                      onFieldChange={updateFormState}
+                      onGalleryImageChange={updateGalleryImage}
+                      onMoveGalleryImage={moveGalleryImage}
+                      onToggleGalleryEditor={() => setGalleryEditorExpanded((currentState) => !currentState)}
+                      onRemoveAmenityGroup={removeAmenityGroup}
+                      onRemoveGalleryImage={removeGalleryImage}
+                      onRemoveReviewEntry={removeReviewEntry}
+                      onReviewEntryChange={updateReviewEntry}
+                      property={propertyPreviewModel}
+                    />
                   </div>
                 </form>
               </div>
@@ -1891,11 +2094,6 @@ export function AdminPage() {
                   <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>
                     New charter
                   </button>
-                  {charterEditingEnabled ? (
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={handleResetCharterEdits}>
-                      Reset to saved
-                    </button>
-                  ) : null}
                 </div>
               </div>
 
@@ -1931,7 +2129,7 @@ export function AdminPage() {
 
               <div className="admin-editor">
                 {charterFeedback ? (
-                  <p className={`admin-feedback admin-feedback--${charterSaveStatus}`}>{charterFeedback}</p>
+                  <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(charterSaveStatus)}`}>{charterFeedback}</p>
                 ) : null}
 
                 <form className="admin-form admin-form--flush" onSubmit={handleCharterSubmit}>
@@ -1945,28 +2143,28 @@ export function AdminPage() {
                       </div>
                     ) : null}
 
-                    <AdminCharterEditorPreview
-                      charter={charterPreviewModel}
-                      disabled={!charterSaveEnabled}
-                      formState={charterFormState}
-                      onFieldChange={updateCharterFormState}
-                    />
+                    <div className="admin-floating-save-shell">
+                      <AdminFloatingSaveButton
+                        disabled={!charterSaveEnabled}
+                        label={
+                          charterHasPendingPublication
+                            ? 'Publish charter'
+                            : charterEditorState.mode === 'create'
+                              ? 'Create charter'
+                              : 'Save charter'
+                        }
+                        onReset={handleDiscardCharterChanges}
+                        saveStatus={charterSaveStatus}
+                        showReset={charterDirty}
+                        visible={charterDirty || charterHasPendingPublication}
+                      />
 
-                    <div className="admin-form-actions">
-                      <button
-                        className="button-link button-link--primary admin-submit"
-                        type="submit"
-                        disabled={!charterSaveEnabled || charterSaveStatus === 'saving'}
-                      >
-                        {charterSaveStatus === 'saving'
-                          ? 'Saving...'
-                          : charterEditorState.mode === 'create'
-                            ? 'Create charter'
-                            : 'Save charter'}
-                      </button>
-                      <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>
-                        New charter
-                      </button>
+                      <AdminCharterEditorPreview
+                        charter={charterPreviewModel}
+                        disabled={!charterSaveEnabled}
+                        formState={charterFormState}
+                        onFieldChange={updateCharterFormState}
+                      />
                     </div>
                 </form>
               </div>

@@ -95,7 +95,17 @@ function looksLikeManagedImageObject(value) {
     return false
   }
 
-  const imageOnlyKeys = new Set(['kind', 'url', 'alt', 'title', 'width', 'height', 'originalWidth', 'originalHeight'])
+  const imageOnlyKeys = new Set([
+    'kind',
+    'url',
+    'alt',
+    'title',
+    'backgroundColor',
+    'width',
+    'height',
+    'originalWidth',
+    'originalHeight',
+  ])
   const keys = Object.keys(value)
 
   if (keys.every((key) => imageOnlyKeys.has(key))) {

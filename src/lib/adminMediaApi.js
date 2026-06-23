@@ -1,7 +1,61 @@
 import { getAdminIdToken } from './adminAuth'
 import { postJson } from './api'
+import mediaUploadConfig from '../../shared/mediaUploadConfig.json'
 
-export const MAX_ADMIN_MEDIA_UPLOAD_BYTES = 7864320
+export const MAX_ADMIN_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
+const MAX_ADMIN_MEDIA_UPLOAD_LABEL = String(mediaUploadConfig.maxBinaryUploadLabel ?? '6 MB').trim() || '6 MB'
+const SUPPORTED_IMAGE_CONTENT_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'image/avif',
+])
+
+function inferImageContentType(file) {
+  const normalizedType = String(file?.type ?? '').trim().toLowerCase()
+
+  if (normalizedType.startsWith('image/')) {
+    if (normalizedType === 'image/jpg') {
+      return 'image/jpeg'
+    }
+
+    if (normalizedType === 'image/x-png') {
+      return 'image/png'
+    }
+
+    return normalizedType
+  }
+
+  const normalizedName = String(file?.name ?? '').trim().toLowerCase()
+
+  if (normalizedName.endsWith('.jpg') || normalizedName.endsWith('.jpeg')) {
+    return 'image/jpeg'
+  }
+
+  if (normalizedName.endsWith('.png')) {
+    return 'image/png'
+  }
+
+  if (normalizedName.endsWith('.webp')) {
+    return 'image/webp'
+  }
+
+  if (normalizedName.endsWith('.gif')) {
+    return 'image/gif'
+  }
+
+  if (normalizedName.endsWith('.svg')) {
+    return 'image/svg+xml'
+  }
+
+  if (normalizedName.endsWith('.avif')) {
+    return 'image/avif'
+  }
+
+  return ''
+}
 
 function readFileAsBase64(file) {
   return new Promise((resolve, reject) => {
@@ -62,12 +116,14 @@ export async function uploadAdminMediaFile({
     throw new Error('Choose an image file before uploading.')
   }
 
-  if (!String(file.type ?? '').toLowerCase().startsWith('image/')) {
+  const contentType = inferImageContentType(file)
+
+  if (!SUPPORTED_IMAGE_CONTENT_TYPES.has(contentType)) {
     throw new Error('Only image files can be uploaded to the media library.')
   }
 
   if (file.size > MAX_ADMIN_MEDIA_UPLOAD_BYTES) {
-    throw new Error('Images larger than 7.5 MB are not supported in this uploader yet.')
+    throw new Error(`Images larger than ${MAX_ADMIN_MEDIA_UPLOAD_LABEL} are not supported in this uploader yet.`)
   }
 
   const authToken = await requireAdminAuthToken()
@@ -77,7 +133,7 @@ export async function uploadAdminMediaFile({
     '/admin/media/upload',
     {
       alt,
-      contentType: file.type,
+      contentType,
       dataBase64,
       fileName: file.name,
       folderPath,

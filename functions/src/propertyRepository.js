@@ -209,6 +209,88 @@ function normalizePropertyRecord(record) {
   }
 }
 
+function normalizeStoredPropertyEnvelope(record, documentId = '') {
+  const hasEnvelope =
+    Boolean(record) &&
+    typeof record === 'object' &&
+    !Array.isArray(record) &&
+    (Object.prototype.hasOwnProperty.call(record, 'draft') || Object.prototype.hasOwnProperty.call(record, 'published'))
+
+  const draftSource = hasEnvelope ? record.draft ?? null : record
+  const publishedSource = hasEnvelope ? record.published ?? draftSource ?? null : record
+
+  return {
+    draft: draftSource ? normalizePropertyRecord({ ...draftSource, id: draftSource.id ?? documentId }) : null,
+    published: publishedSource ? normalizePropertyRecord({ ...publishedSource, id: publishedSource.id ?? documentId }) : null,
+    updatedAt: record?.updatedAt ?? null,
+    updatedBy: String(record?.updatedBy ?? '').trim(),
+    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
+  }
+}
+
+function buildPropertyPublicationState(envelope) {
+  return {
+    hasUnpublishedChanges: JSON.stringify(envelope?.draft ?? null) !== JSON.stringify(envelope?.published ?? null),
+    savedAt: envelope?.updatedAt ?? null,
+    savedBy: envelope?.updatedBy ?? '',
+    publishedAt: envelope?.published ? envelope?.publishedAt ?? envelope?.updatedAt ?? null : null,
+    publishedBy: envelope?.published ? envelope?.publishedBy || envelope?.updatedBy || '' : '',
+  }
+}
+
+function buildPropertyViewFromStoredRecord(record, documentId = '', { mode = 'public' } = {}) {
+  const envelope = normalizeStoredPropertyEnvelope(record, documentId)
+  const selectedRecord = mode === 'admin' ? envelope.draft : envelope.published
+
+  if (!selectedRecord) {
+    return null
+  }
+
+  const property = {
+    ...selectedRecord,
+  }
+
+  if (mode === 'admin') {
+    property.adminOriginalSlug = documentId || selectedRecord.adminOriginalSlug || selectedRecord.slug
+    property.publication = buildPropertyPublicationState(envelope)
+  } else {
+    delete property.adminOriginalSlug
+    delete property.publication
+  }
+
+  return property
+}
+
+function buildPropertyCatalogFromStoredDocuments(documents, { mode = 'public' } = {}) {
+  const properties = documents
+    .map((document) => buildPropertyViewFromStoredRecord(document.data, document.id, { mode }))
+    .filter(Boolean)
+  const propertySummaries = properties.map((property) => summarizeProperty(property))
+  const propertyGroups = groupProperties(propertySummaries)
+  const propertyIndex = new Map()
+
+  properties.forEach((property) => {
+    const slugCandidates = mode === 'admin' ? [property.slug, property.adminOriginalSlug] : [property.slug]
+
+    slugCandidates.forEach((candidate) => {
+      getRouteSlugVariants(candidate).forEach((variant) => {
+        if (!propertyIndex.has(variant)) {
+          propertyIndex.set(variant, property)
+        }
+      })
+    })
+  })
+
+  return {
+    properties,
+    propertySummaries,
+    propertyGroups,
+    propertyIndex,
+    source: 'firestore',
+  }
+}
+
 function groupProperties(properties) {
   const groups = new Map()
 
@@ -257,10 +339,9 @@ function attachAdjacentProperties(property, properties) {
 }
 
 function summarizeProperty(property) {
-  return {
+  const summary = {
     id: property.id,
     slug: property.slug,
-    adminOriginalSlug: property.adminOriginalSlug ?? property.slug,
     path: property.path,
     name: property.name,
     active: property.active !== false,
@@ -269,9 +350,16 @@ function summarizeProperty(property) {
     bedrooms: property.bedrooms,
     bathrooms: property.bathrooms,
     maxGuests: property.maxGuests,
+    location: property.location,
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
   }
+
+  if (property.adminOriginalSlug) {
+    summary.adminOriginalSlug = property.adminOriginalSlug
+  }
+
+  return summary
 }
 
 function paragraphListToHtml(values) {
@@ -417,7 +505,7 @@ function createFirestoreCatalogSetupError() {
   )
 }
 
-async function readPropertyCollection() {
+async function readPropertyCollectionRaw() {
   let snapshot
 
   try {
@@ -430,9 +518,10 @@ async function readPropertyCollection() {
     throw error
   }
 
-  return snapshot.docs
-    .map((document) => normalizePropertyRecord({ ...document.data(), id: document.id }))
-    .filter(Boolean)
+  return snapshot.docs.map((document) => ({
+    id: document.id,
+    data: document.data(),
+  }))
 }
 
 async function syncSeedPropertiesToFirestore({ replace = false, actor = 'seed-sync' } = {}) {
@@ -453,10 +542,18 @@ async function syncSeedPropertiesToFirestore({ replace = false, actor = 'seed-sy
       }
 
       batch.set(collectionRef.doc(property.slug), {
-        ...property,
-        adminOriginalSlug: property.slug,
+        draft: {
+          ...property,
+          adminOriginalSlug: property.slug,
+        },
+        published: {
+          ...property,
+          adminOriginalSlug: property.slug,
+        },
         updatedBy: actor,
         updatedAt: getServerTimestamp(),
+        publishedBy: actor,
+        publishedAt: getServerTimestamp(),
       })
 
       if (existingIds.has(property.slug)) {
@@ -497,49 +594,36 @@ async function syncSeedPropertiesToFirestore({ replace = false, actor = 'seed-sy
 }
 
 async function getCanonicalPropertyCatalog() {
-  const propertiesFromFirestore = await readPropertyCollection()
-  if (propertiesFromFirestore.length === 0) {
+  return getCanonicalPropertyCatalogForMode('public')
+}
+
+async function getCanonicalPropertyCatalogForMode(mode = 'public') {
+  const propertyDocuments = await readPropertyCollectionRaw()
+  const catalog = buildPropertyCatalogFromStoredDocuments(propertyDocuments, { mode })
+
+  if (catalog.properties.length === 0) {
     throw new HttpError(
       503,
       'The Firestore property catalog is empty. Seed the Firestore property collection before serving live property content.',
     )
   }
 
-  const propertySummaries = propertiesFromFirestore.map((property) => summarizeProperty(property))
-  const propertyGroups = groupProperties(propertySummaries)
-  const propertyIndex = new Map()
-
-  propertiesFromFirestore.forEach((property) => {
-    getRouteSlugVariants(property.slug).forEach((variant) => {
-      if (!propertyIndex.has(variant)) {
-        propertyIndex.set(variant, property)
-      }
-    })
-
-    getRouteSlugVariants(property.adminOriginalSlug).forEach((variant) => {
-      if (!propertyIndex.has(variant)) {
-        propertyIndex.set(variant, property)
-      }
-    })
-  })
-
-  return {
-    properties: propertiesFromFirestore,
-    propertySummaries,
-    propertyGroups,
-    propertyIndex,
-    source: 'firestore',
-  }
+  return catalog
 }
 
-function assertUniquePropertySlug(properties, nextSlug, originalSlug) {
+function assertUniquePropertySlug(propertyDocuments, nextSlug, previousDocumentId = '') {
   if (!nextSlug) {
     return
   }
 
-  const hasConflict = properties.some(
-    (property) => property.slug === nextSlug && property.adminOriginalSlug !== originalSlug && property.slug !== originalSlug,
-  )
+  const hasConflict = propertyDocuments.some((document) => {
+    if (document.id === previousDocumentId) {
+      return false
+    }
+
+    const envelope = normalizeStoredPropertyEnvelope(document.data, document.id)
+    return envelope.draft?.slug === nextSlug || envelope.published?.slug === nextSlug
+  })
 
   if (hasConflict) {
     throw new Error(`A property with slug "${nextSlug}" already exists.`)
@@ -557,7 +641,7 @@ exports.listProperties = async function listProperties() {
 }
 
 exports.listAllProperties = async function listAllProperties() {
-  const catalog = await getCanonicalPropertyCatalog()
+  const catalog = await getCanonicalPropertyCatalogForMode('admin')
   return cloneData(catalog.properties)
 }
 
@@ -582,11 +666,13 @@ exports.getPropertyBySlug = async function getPropertyBySlug(slug) {
 exports.savePropertyRecord = async function savePropertyRecord(draft, originalSlug, adminUser) {
   await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
 
-  const catalog = await getCanonicalPropertyCatalog()
+  const propertyDocuments = await readPropertyCollectionRaw()
   const normalizedOriginalSlug = String(originalSlug ?? '').trim()
   const property = buildPropertyRecordFromAdminDraft(draft, normalizedOriginalSlug || draft?.slug)
+  const currentDocument = propertyDocuments.find((document) => document.id === normalizedOriginalSlug)
+  const currentEnvelope = currentDocument ? normalizeStoredPropertyEnvelope(currentDocument.data, currentDocument.id) : null
 
-  assertUniquePropertySlug(catalog.properties, property.slug, normalizedOriginalSlug)
+  assertUniquePropertySlug(propertyDocuments, property.slug, normalizedOriginalSlug)
 
   const collectionRef = getDb().collection(PROPERTY_COLLECTION)
   const nextDocId = property.slug
@@ -598,16 +684,71 @@ exports.savePropertyRecord = async function savePropertyRecord(draft, originalSl
   }
 
   batch.set(collectionRef.doc(nextDocId), {
-    ...property,
-    adminOriginalSlug: property.slug,
+    draft: {
+      ...property,
+      adminOriginalSlug: property.slug,
+    },
+    published: currentEnvelope?.published
+      ? {
+          ...currentEnvelope.published,
+          adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
+        }
+      : null,
     updatedBy: adminUser.email || adminUser.uid,
     updatedAt: getServerTimestamp(),
+    publishedBy: currentEnvelope?.publishedBy || '',
+    publishedAt: currentEnvelope?.publishedAt || null,
   })
 
   await batch.commit()
 
   const savedSnapshot = await collectionRef.doc(nextDocId).get()
-  return cloneData(normalizePropertyRecord({ ...savedSnapshot.data(), id: nextDocId }))
+  return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), nextDocId, { mode: 'admin' }))
+}
+
+exports.publishPropertyRecord = async function publishPropertyRecord(originalSlug, adminUser) {
+  await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
+
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Property identifier is required to publish.')
+  }
+
+  const propertyDocuments = await readPropertyCollectionRaw()
+  const currentDocument = propertyDocuments.find((document) => document.id === documentId)
+
+  if (!currentDocument) {
+    throw new HttpError(404, 'Property draft not found.')
+  }
+
+  const currentEnvelope = normalizeStoredPropertyEnvelope(currentDocument.data, currentDocument.id)
+
+  if (!currentEnvelope.draft) {
+    throw new HttpError(400, 'Property draft is missing and cannot be published.')
+  }
+
+  assertUniquePropertySlug(propertyDocuments, currentEnvelope.draft.slug, documentId)
+
+  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
+
+  await collectionRef.doc(documentId).set({
+    draft: {
+      ...currentEnvelope.draft,
+      adminOriginalSlug: currentEnvelope.draft.slug,
+    },
+    published: {
+      ...currentEnvelope.draft,
+      adminOriginalSlug: currentEnvelope.draft.slug,
+    },
+    updatedBy: adminUser.email || adminUser.uid,
+    updatedAt: getServerTimestamp(),
+    publishedBy: adminUser.email || adminUser.uid,
+    publishedAt: getServerTimestamp(),
+  })
+
+  const savedSnapshot = await collectionRef.doc(documentId).get()
+  return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
 }
 
 exports.resetPropertyRecordsToSeed = async function resetPropertyRecordsToSeed() {

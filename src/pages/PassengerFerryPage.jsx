@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { EditableImage, EditableText } from '../components/AdminInlinePageEdit'
+import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -24,12 +25,12 @@ function DirectionBlock({ direction, pathPrefix }) {
 
       <div className="passenger-ferry-time-lines">
         {chunkTimes(direction.times, chunkSize).map((line, lineIndex) => (
-          <p key={`${direction.heading}-${lineIndex}`}>
+          <p key={lineIndex}>
             {line.map((time, timeOffset) => {
               const timeIndex = lineIndex * chunkSize + timeOffset
 
               return (
-                <Fragment key={`${direction.heading}-${timeIndex}`}>
+                <Fragment key={timeIndex}>
                   {timeOffset > 0 ? ' - ' : null}
                   <EditableText as="span" label={`Time ${timeIndex + 1}`} path={[...pathPrefix, 'times', timeIndex]} value={time}>
                     {time}
@@ -46,6 +47,11 @@ function DirectionBlock({ direction, pathPrefix }) {
 
 export function PassengerFerryPage() {
   const page = useStructuredPageContent('passengerFerry')
+
+  if (!page) {
+    return <PageLoadingState />
+  }
+
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1440, height: 720 })
 
   return (
@@ -68,7 +74,7 @@ export function PassengerFerryPage() {
         <section className="passenger-ferry-block">
           <h1>
             {page.redHook.titleLines.map((line, index) => (
-              <EditableText as="span" key={`${index}-${line}`} label={`Red Hook Title Line ${index + 1}`} path={['redHook', 'titleLines', index]} value={line}>
+              <EditableText as="span" key={index} label={`Red Hook Title Line ${index + 1}`} path={['redHook', 'titleLines', index]} value={line}>
                 {line}
               </EditableText>
             ))}
@@ -76,14 +82,14 @@ export function PassengerFerryPage() {
 
           <div className="passenger-ferry-meta">
             {page.redHook.meta.map((line, index) => (
-              <EditableText as="p" key={`${index}-${line}`} label={`Red Hook Meta ${index + 1}`} path={['redHook', 'meta', index]} value={line}>
+              <EditableText as="p" key={index} label={`Red Hook Meta ${index + 1}`} path={['redHook', 'meta', index]} value={line}>
                 {line}
               </EditableText>
             ))}
           </div>
 
           {page.redHook.directions.map((direction, index) => (
-            <DirectionBlock direction={direction} key={direction.heading} pathPrefix={['redHook', 'directions', index]} />
+            <DirectionBlock direction={direction} key={index} pathPrefix={['redHook', 'directions', index]} />
           ))}
 
           <section className="passenger-ferry-rates">
@@ -93,7 +99,7 @@ export function PassengerFerryPage() {
 
             <div className="passenger-ferry-rates-copy">
               {page.redHook.rates.lines.map((line, index) => (
-                <EditableText as="p" key={`${index}-${line}`} label={`Rates Line ${index + 1}`} path={['redHook', 'rates', 'lines', index]} value={line}>
+                <EditableText as="p" key={index} label={`Rates Line ${index + 1}`} path={['redHook', 'rates', 'lines', index]} value={line}>
                   {line}
                 </EditableText>
               ))}
@@ -111,14 +117,14 @@ export function PassengerFerryPage() {
 
           <div className="passenger-ferry-meta">
             {page.crownBay.meta.map((line, index) => (
-              <EditableText as="p" key={`${index}-${line}`} label={`Crown Bay Meta ${index + 1}`} path={['crownBay', 'meta', index]} value={line}>
+              <EditableText as="p" key={index} label={`Crown Bay Meta ${index + 1}`} path={['crownBay', 'meta', index]} value={line}>
                 {line}
               </EditableText>
             ))}
           </div>
 
           {page.crownBay.directions.map((direction, index) => (
-            <DirectionBlock direction={direction} key={direction.heading} pathPrefix={['crownBay', 'directions', index]} />
+            <DirectionBlock direction={direction} key={index} pathPrefix={['crownBay', 'directions', index]} />
           ))}
         </section>
       </div>

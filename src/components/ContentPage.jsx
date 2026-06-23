@@ -13,7 +13,14 @@ export function ContentPage({ page }) {
   const pageTitle = page.title || page.navLabel
   const pageDescription = page.metaDescription || DEFAULT_SITE_DESCRIPTION
 
-  useDocumentMeta({ title: pageTitle, description: pageDescription, priority: 1 })
+  useDocumentMeta({
+    canonicalPath: page.path,
+    description: pageDescription,
+    image: imageGallery[0],
+    imageAlt: imageGallery[0]?.alt || pageTitle,
+    priority: 1,
+    title: pageTitle,
+  })
 
   return (
     <article className="snapshot-page">
