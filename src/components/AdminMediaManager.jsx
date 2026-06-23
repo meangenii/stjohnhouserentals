@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
-import { createAdminMediaFolder, uploadAdminMediaFile } from '../lib/adminMediaApi'
+import { createAdminMediaFolder, deleteAdminMediaFile, uploadAdminMediaFile } from '../lib/adminMediaApi'
 import { loadAdminMediaLibrary, normalizeAdminMediaSearchValue } from '../lib/adminMediaLibrary'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
@@ -666,6 +666,40 @@ export function AdminMediaManager({
     }
   }
 
+  async function handleDeleteEntry(entry) {
+    if (!entry?.id) {
+      return
+    }
+
+    const confirmationMessage = `Delete ${entry.fileName || 'this image'} from the media library? This removes the stored file.`
+
+    if (!window.confirm(confirmationMessage)) {
+      return
+    }
+
+    setActionFeedback('')
+    setActionStatus('saving')
+
+    try {
+      await deleteAdminMediaFile(entry.id)
+
+      if (entry.managedUrl === normalizedCurrentUrl) {
+        onClear?.()
+      }
+
+      setActionFeedback(`Deleted ${entry.fileName || 'the selected image'}.`)
+      setActionStatus('success')
+      setSelectedEntryId('')
+      refreshLibrary({
+        nextFolderPath: effectiveFolderPathFilter || libraryState.browserRootPath || 'media',
+        nextSelectedId: '',
+      })
+    } catch (error) {
+      setActionFeedback(error instanceof Error ? error.message : 'Unable to delete the selected image.')
+      setActionStatus('error')
+    }
+  }
+
   function handleSelectEntry(entry) {
     setSelectedEntryId(entry.id)
   }
@@ -1044,6 +1078,14 @@ export function AdminMediaManager({
                         </a>
                         <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedEntry.managedUrl)}>
                           Copy URL
+                        </button>
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={toolbarBusy}
+                          type="button"
+                          onClick={() => handleDeleteEntry(selectedEntry)}
+                        >
+                          Delete image
                         </button>
                       </div>
                     </section>

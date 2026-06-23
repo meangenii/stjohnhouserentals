@@ -50,15 +50,96 @@ function normalizeImageAsset(asset) {
 function normalizeExternalLinks(links) {
   return Array.isArray(links)
     ? links
-        .map((link) => ({
-          href: String(link?.href ?? '').trim(),
-          label: String(link?.label ?? '').trim(),
-          isMailto: Boolean(link?.isMailto),
-          isPhone: Boolean(link?.isPhone),
-          isInternal: Boolean(link?.isInternal),
-        }))
+        .map((link) => {
+          const href = String(link?.href ?? '').trim()
+          const normalizedHref = href.toLowerCase()
+
+          return {
+            href,
+            label: String(link?.label ?? '').trim(),
+            isMailto: Boolean(link?.isMailto) || normalizedHref.startsWith('mailto:'),
+            isPhone: Boolean(link?.isPhone) || normalizedHref.startsWith('tel:'),
+            isInternal: Boolean(link?.isInternal),
+          }
+        })
         .filter((link) => link.href && link.label)
     : []
+}
+
+function decodeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replaceAll('&amp;', '&')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&quot;', '"')
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+}
+
+function extractFirstHrefFromHtml(html = '', prefix = '') {
+  const markup = String(html ?? '')
+  const normalizedPrefix = String(prefix ?? '').trim().toLowerCase()
+
+  if (!markup) {
+    return ''
+  }
+
+  const hrefMatches = markup.matchAll(/href=(['"])(.*?)\1/gi)
+
+  for (const match of hrefMatches) {
+    const href = decodeHtmlAttribute(match[2]).trim()
+
+    if (!href) {
+      continue
+    }
+
+    if (!normalizedPrefix || href.toLowerCase().startsWith(normalizedPrefix)) {
+      return href
+    }
+  }
+
+  return ''
+}
+
+function extractContactValueFromHref(href = '', prefix = '') {
+  const normalizedHref = String(href ?? '').trim()
+  const normalizedPrefix = String(prefix ?? '').trim().toLowerCase()
+
+  if (!normalizedHref || !normalizedPrefix || !normalizedHref.toLowerCase().startsWith(normalizedPrefix)) {
+    return ''
+  }
+
+  const rawValue = normalizedHref.slice(normalizedPrefix.length).split('?')[0].trim()
+
+  if (!rawValue) {
+    return ''
+  }
+
+  try {
+    return decodeURIComponent(rawValue)
+  } catch {
+    return rawValue
+  }
+}
+
+function buildPhoneHref(phone) {
+  const normalizedPhone = String(phone ?? '').trim()
+
+  if (!normalizedPhone) {
+    return ''
+  }
+
+  if (normalizedPhone.toLowerCase().startsWith('tel:')) {
+    return normalizedPhone
+  }
+
+  const hasLeadingPlus = normalizedPhone.startsWith('+')
+  const digitsOnly = normalizedPhone.replace(/\D+/g, '')
+
+  if (!digitsOnly) {
+    return ''
+  }
+
+  return `tel:${hasLeadingPlus ? `+${digitsOnly}` : digitsOnly}`
 }
 
 function normalizePublicationState(publication) {
@@ -110,6 +191,25 @@ function normalizePropertyShortDescription(shortDescription, fallbackLines = [])
   return fallbackLines.join('\n')
 }
 
+function normalizePropertyBooking(record, externalLinks, descriptionHtml = '') {
+  const bookingSource =
+    record?.booking && typeof record.booking === 'object' && !Array.isArray(record.booking) ? record.booking : null
+  const rawEmail = String(bookingSource?.email ?? '').trim()
+  const rawPhone = String(bookingSource?.phone ?? '').trim()
+  const emailLink =
+    externalLinks.find((link) => link.isMailto)?.href || extractFirstHrefFromHtml(descriptionHtml, 'mailto:')
+  const phoneLink =
+    externalLinks.find((link) => link.isPhone)?.href || extractFirstHrefFromHtml(descriptionHtml, 'tel:')
+  const booking = {
+    contactName: String(bookingSource?.contactName ?? '').trim(),
+    email: extractContactValueFromHref(rawEmail, 'mailto:') || rawEmail || extractContactValueFromHref(emailLink, 'mailto:'),
+    phone: extractContactValueFromHref(rawPhone, 'tel:') || rawPhone || extractContactValueFromHref(phoneLink, 'tel:'),
+    note: String(bookingSource?.note ?? '').trim(),
+  }
+
+  return booking.contactName || booking.email || booking.phone || booking.note ? booking : null
+}
+
 function normalizePropertyRecord(record) {
   if (!record?.slug || !record?.name) {
     return null
@@ -123,6 +223,8 @@ function normalizePropertyRecord(record) {
     : []
   const heroImage = normalizeImageAsset(record.heroImage) ?? gallery[0] ?? null
   const legacyLines = getLegacyPropertyLines(record)
+  const descriptionHtml = String(record.descriptionHtml ?? '').trim()
+  const externalLinks = normalizeExternalLinks(record.externalLinks)
 
   const property = {
     ...recordWithoutLegacyLines,
@@ -139,22 +241,15 @@ function normalizePropertyRecord(record) {
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
     bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
     location: String(record.location ?? '').trim(),
-    descriptionHtml: String(record.descriptionHtml ?? '').trim(),
+    descriptionHtml,
     amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
     amenityGroups: normalizeAmenityGroups(record.amenityGroups),
     reviewsHtml: String(record.reviewsHtml ?? '').trim(),
     reviewEntries: Array.isArray(record.reviewEntries) ? record.reviewEntries : [],
-    booking:
-      record.booking && typeof record.booking === 'object'
-        ? {
-            contactName: String(record.booking.contactName ?? '').trim(),
-            email: String(record.booking.email ?? '').trim(),
-            note: String(record.booking.note ?? '').trim(),
-          }
-        : null,
+    booking: normalizePropertyBooking(record, externalLinks, descriptionHtml),
     heroImage,
     gallery,
-    externalLinks: normalizeExternalLinks(record.externalLinks),
+    externalLinks,
     pageTitle: String(record.pageTitle ?? '').trim(),
     publication: normalizePublicationState(record.publication),
   }
@@ -374,6 +469,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
   const booking = {
     contactName: String(draft?.booking?.contactName ?? '').trim(),
     email: String(draft?.booking?.email ?? '').trim(),
+    phone: String(draft?.booking?.phone ?? '').trim(),
     note: String(draft?.booking?.note ?? '').trim(),
   }
   const heroImage = normalizeImageAsset(draft?.heroImage)
@@ -390,6 +486,18 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
       label: booking.contactName ? `Email ${booking.contactName}` : 'Email inquiry',
       isMailto: true,
       isPhone: false,
+      isInternal: false,
+    })
+  }
+
+  const phoneHref = buildPhoneHref(booking.phone)
+
+  if (phoneHref) {
+    externalLinks.push({
+      href: phoneHref,
+      label: booking.contactName ? `Call ${booking.contactName}` : 'Phone inquiry',
+      isMailto: false,
+      isPhone: true,
       isInternal: false,
     })
   }

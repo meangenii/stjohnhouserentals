@@ -281,6 +281,7 @@ function createEmptyFormState() {
     heroImageAlt: '',
     bookingContactName: '',
     bookingEmail: '',
+    bookingPhone: '',
     bookingNote: '',
     galleryImages: [],
     amenityGroups: [createAmenityEditor({ title: 'Amenities' })],
@@ -344,6 +345,7 @@ function createFormState(property) {
     heroImageAlt: repairSnapshotText(property.heroImage?.alt ?? ''),
     bookingContactName: repairSnapshotText(property.booking?.contactName ?? ''),
     bookingEmail: repairSnapshotText(property.booking?.email ?? ''),
+    bookingPhone: repairSnapshotText(property.booking?.phone ?? ''),
     bookingNote: repairSnapshotText(property.booking?.note ?? ''),
     galleryImages: createInitialGalleryImages(property),
     amenityGroups: createInitialAmenityGroups(property),
@@ -393,6 +395,7 @@ function buildPropertyDraft(formState) {
     booking: {
       contactName: repairSnapshotText(formState.bookingContactName).trim(),
       email: repairSnapshotText(formState.bookingEmail).trim(),
+      phone: repairSnapshotText(formState.bookingPhone).trim(),
       note: repairSnapshotText(formState.bookingNote).trim(),
     },
     heroImage,
@@ -481,6 +484,7 @@ function buildPropertyPreviewModel(formState) {
     booking: {
       contactName: repairSnapshotText(formState.bookingContactName).trim(),
       email: repairSnapshotText(formState.bookingEmail).trim(),
+      phone: repairSnapshotText(formState.bookingPhone).trim(),
       note: repairSnapshotText(formState.bookingNote).trim(),
     },
   }

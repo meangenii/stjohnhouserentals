@@ -3139,6 +3139,39 @@ img {
   line-height: 1.24;
 }
 
+.property-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.property-contact-actions--preview {
+  margin-top: 0.9rem;
+}
+
+.property-contact-button {
+  width: auto;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.85rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: none;
+}
+
+.property-contact-button.button-link--primary {
+  color: var(--brand-navy);
+  border-color: #c8d9fb;
+  background: #f2f7ff;
+}
+
+.property-contact-button.button-link--secondary {
+  border-color: #d3ddf0;
+  background: #ffffff;
+}
+
 .property-rich-copy {
   color: var(--brand-navy);
 }

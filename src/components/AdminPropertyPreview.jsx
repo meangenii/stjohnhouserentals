@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
+import { getPropertyContactActions } from '../lib/propertyContact'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { richTextLinesToHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
@@ -220,6 +221,7 @@ export function AdminPropertyPreview({
   const activeImage = galleryImages[safeImageIndex] ?? property?.heroImage ?? null
   const bannerImage = property?.heroImage ?? activeImage ?? null
   const shortDescriptionLines = getShortDescriptionLines(property ?? {})
+  const contactActions = getPropertyContactActions(property)
   const templateVariant = getPropertyTemplateVariantConfig(property?.templateVariant)
   const sectionConfigs = templateVariant.sections
   const detailLine = [property?.bedroomLabel, property?.maxGuests ? `${property.maxGuests} guests` : '', property?.location]
@@ -240,6 +242,9 @@ export function AdminPropertyPreview({
                 value={formState.shortDescription}
                 wide
               />
+              <PreviewInput disabled={disabled} label="Contact Name" onChange={(value) => onFieldChange('bookingContactName', value)} value={formState.bookingContactName} wide />
+              <PreviewInput disabled={disabled} label="Contact Email" onChange={(value) => onFieldChange('bookingEmail', value)} type="email" value={formState.bookingEmail} />
+              <PreviewInput disabled={disabled} label="Contact Phone" onChange={(value) => onFieldChange('bookingPhone', value)} type="tel" value={formState.bookingPhone} />
             </div>
           ) : null
         }
@@ -255,6 +260,20 @@ export function AdminPropertyPreview({
           ) : (
             <p className="admin-empty">Add short description copy to preview this section.</p>
           )}
+
+          {contactActions.length > 0 ? (
+            <div className="property-contact-actions property-contact-actions--preview">
+              {contactActions.map((action) => (
+                <a
+                  className={`button-link ${action.toneClassName} property-contact-button`.trim()}
+                  href={action.href}
+                  key={action.key}
+                >
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </div>
       </PreviewSection>
     ),

@@ -21,7 +21,7 @@ const {
   savePropertyRecord,
   seedPropertyRecords,
 } = require('./propertyRepository')
-const { createMediaFolder, listMediaLibrary, uploadMediaAsset } = require('./mediaRepository')
+const { createMediaFolder, deleteMediaAsset, listMediaLibrary, uploadMediaAsset } = require('./mediaRepository')
 const {
   getAdminSiteShellContent,
   getAdminStructuredPageContent,
@@ -368,6 +368,19 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
     if (request.method === 'POST' && path === 'admin/media/upload') {
       const adminUser = await requireAdminUser(request)
       const media = await uploadMediaAsset(request.body ?? {}, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        media,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && path.startsWith('admin/media/library/')) {
+      await requireAdminUser(request)
+      const mediaId = path.replace(/^admin\/media\/library\//, '')
+      const media = await deleteMediaAsset(mediaId)
 
       response.json({
         source: 'firestore',

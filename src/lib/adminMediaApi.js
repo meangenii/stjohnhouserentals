@@ -1,5 +1,5 @@
 import { getAdminIdToken } from './adminAuth'
-import { postJson } from './api'
+import { deleteJson, postJson } from './api'
 import mediaUploadConfig from '../../shared/mediaUploadConfig.json'
 
 export const MAX_ADMIN_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
@@ -144,4 +144,15 @@ export async function uploadAdminMediaFile({
     },
     { authToken },
   )
+}
+
+export async function deleteAdminMediaFile(mediaId) {
+  const normalizedMediaId = String(mediaId ?? '').trim()
+
+  if (!normalizedMediaId) {
+    throw new Error('Choose an image before deleting it.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return deleteJson(`/admin/media/library/${encodeURIComponent(normalizedMediaId)}`, { authToken })
 }

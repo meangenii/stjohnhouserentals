@@ -4,6 +4,7 @@ import { RichTextValue } from '../components/RichTextValue'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
+import { getPropertyContactActions } from '../lib/propertyContact'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
@@ -227,6 +228,7 @@ export function PropertyDetailPage() {
       ? buildRemoteImageUrl(activeImage, { width: 1600, height: 540 })
       : ''
   const sectionConfigs = templateVariant.sections
+  const contactActions = getPropertyContactActions(property)
   const propertySections = {
     shortDescription:
       shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
@@ -241,6 +243,20 @@ export function PropertyDetailPage() {
               <RichTextValue as="div" className="property-fact-line" key={line} value={line} />
             ))}
           </div>
+
+          {contactActions.length > 0 ? (
+            <div className="property-contact-actions">
+              {contactActions.map((action) => (
+                <a
+                  className={`button-link ${action.toneClassName} property-contact-button`.trim()}
+                  href={action.href}
+                  key={action.key}
+                >
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
         </PropertyContentSection>
       ) : null,
     description: (

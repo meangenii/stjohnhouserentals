@@ -375,6 +375,50 @@ async function uploadMediaAsset(draft, actor) {
   }
 }
 
+async function deleteMediaAsset(mediaId) {
+  const normalizedMediaId = normalizeString(mediaId)
+
+  if (!normalizedMediaId) {
+    throw new HttpError(400, 'Choose a media item before deleting it.')
+  }
+
+  const db = getDb()
+  const mediaDocumentRef = db.collection(MEDIA_LIBRARY_COLLECTION).doc(normalizedMediaId)
+  const mediaDocument = await mediaDocumentRef.get()
+
+  if (!mediaDocument.exists) {
+    throw new HttpError(404, 'The selected media item no longer exists.')
+  }
+
+  const mediaRecord = mediaDocument.data() ?? {}
+  const storagePath = normalizeString(mediaRecord.storagePath)
+
+  if (!storagePath) {
+    throw new HttpError(409, 'The selected media item is missing its storage path and cannot be deleted safely.')
+  }
+
+  const bucket = getStorageBucket(normalizeString(mediaRecord.bucket))
+
+  try {
+    await bucket.file(storagePath).delete({ ignoreNotFound: true })
+  } catch (error) {
+    const statusCode = Number(error?.code ?? error?.statusCode ?? 0)
+
+    if (statusCode !== 404) {
+      throw error
+    }
+  }
+
+  await mediaDocumentRef.delete()
+
+  return {
+    bucket: normalizeString(mediaRecord.bucket) || bucket.name,
+    id: normalizedMediaId,
+    managedUrl: normalizeString(mediaRecord.managedUrl),
+    storagePath,
+  }
+}
+
 async function listMediaLibrary() {
   const [entrySnapshot, folderSnapshot] = await Promise.all([
     getDb().collection(MEDIA_LIBRARY_COLLECTION).orderBy('storagePath').get(),
@@ -406,5 +450,6 @@ exports.MAX_MEDIA_UPLOAD_BYTES = MAX_MEDIA_UPLOAD_BYTES
 exports.MEDIA_FOLDER_COLLECTION = MEDIA_FOLDER_COLLECTION
 exports.MEDIA_LIBRARY_COLLECTION = MEDIA_LIBRARY_COLLECTION
 exports.createMediaFolder = createMediaFolder
+exports.deleteMediaAsset = deleteMediaAsset
 exports.listMediaLibrary = listMediaLibrary
 exports.uploadMediaAsset = uploadMediaAsset

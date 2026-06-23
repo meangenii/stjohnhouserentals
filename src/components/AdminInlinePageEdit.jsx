@@ -1308,8 +1308,6 @@ export function EditableBackgroundSection({
         ref={anchorRef}
         {...rest}
         className={buildEditableClassName(className, field.isEnabled, isActive)}
-        data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
-        onClick={handleActivate}
         style={sectionStyle}
       >
         {field.isEnabled ? (
