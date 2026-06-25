@@ -87,7 +87,7 @@ export function PropertyDetailPage() {
   const propertyStructuredData = property
     ? buildBreadcrumbJsonLd([
         { name: 'Home', path: '/' },
-        { name: 'St. John Rentals', path: '/st-john-rentals' },
+        { name: 'Rental Accommodations', path: '/for-rent' },
         { name: property.name, path: property.path },
       ])
     : null

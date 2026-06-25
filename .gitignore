@@ -13,8 +13,8 @@ dist-ssr
 *.local
 .firebase
 .firebaserc
-.env
 .env.local
+functions/.env
 firebase-debug.log
 functions/node_modules
 functions/src/generated/siteContent.json

@@ -9,6 +9,7 @@ export const CANONICAL_PATH_ALIASES = {
   '/car-rental-ferry-boat-info': '/car-barge-information',
   '/ferrys': '/passenger-ferry',
   '/for-sale': '/property-for-sale',
+  '/st-john-rentals': '/for-rent',
 }
 
 export const STATIC_SEO_ROUTES = [
@@ -25,13 +26,6 @@ export const STATIC_SEO_ROUTES = [
     description: 'Learn about St. John House Rentals, local island guides connecting visitors with St. John homes and services.',
     priority: '0.8',
     changefreq: 'monthly',
-  },
-  {
-    path: '/st-john-rentals',
-    title: 'Houses | St. John House Rentals',
-    description: 'Browse private villas and Caribbean homes for rent on St. John. Email owners directly for bookings.',
-    priority: '0.9',
-    changefreq: 'weekly',
   },
   {
     path: '/for-rent',

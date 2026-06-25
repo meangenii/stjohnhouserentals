@@ -4,7 +4,9 @@ import { useSiteShellContent } from '../lib/useSiteContent'
 import { RichTextValue } from './RichTextValue'
 
 function isActiveNavItem(pathname, matchPaths) {
-  return matchPaths.some((matchPath) => pathname === matchPath || pathname.startsWith(`${matchPath}/`))
+  return (Array.isArray(matchPaths) ? matchPaths : []).some(
+    (matchPath) => pathname === matchPath || pathname.startsWith(`${matchPath}/`),
+  )
 }
 
 function isActiveChildItem(pathname, child) {
@@ -42,6 +44,7 @@ function SiteMenu({
   pathname,
   responsive = false,
 }) {
+  const navItems = Array.isArray(items) ? items.filter(Boolean) : []
   const menuStateScope = `${pathname}|${responsive ? (isExpanded ? 'expanded' : 'collapsed') : 'static'}`
   const [openMenuState, setOpenMenuState] = useState({ label: '', scope: menuStateScope })
   const navRef = useRef(null)
@@ -98,8 +101,8 @@ function SiteMenu({
       id={navId}
       ref={navRef}
     >
-      {items.map((item, itemIndex) => {
-        const isActive = isActiveNavItem(pathname, item.matchPaths)
+      {navItems.map((item, itemIndex) => {
+        const isActive = isActiveNavItem(pathname, item.matchPaths ?? [item.path])
 
         if (item.children?.length) {
           if (!interactive) {
@@ -202,11 +205,15 @@ function SiteMenu({
 export function SiteFrame({ children, interactive = true, pathname, siteShell }) {
   const [mobileMenuState, setMobileMenuState] = useState({ open: false, pathname })
   const mobileNavRef = useRef(null)
-  const siteNavItems = siteShell.header.primaryNav
-  const footerNavItems = siteShell.footer.primaryNav
-  const footerMetaItems = siteShell.footer.legalNav
-  const logo = siteShell.header.logo
-  const utility = siteShell.header.utility
+  const header = siteShell?.header ?? {}
+  const footer = siteShell?.footer ?? {}
+  const siteNavItems = Array.isArray(header.primaryNav) ? header.primaryNav : []
+  const footerNavItems = Array.isArray(footer.primaryNav) ? footer.primaryNav : []
+  const footerMetaItems = Array.isArray(footer.legalNav) ? footer.legalNav : []
+  const logo = header.logo ?? {}
+  const utility = header.utility ?? {}
+  const socialLink = utility.socialLink ?? {}
+  const bookingCallouts = Array.isArray(utility.bookingCallouts) ? utility.bookingCallouts : []
   const isMobileMenuOpen = mobileMenuState.pathname === pathname && mobileMenuState.open
 
   function setCurrentMobileMenuOpen(nextValue) {
@@ -257,24 +264,24 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
         <div className="utility-bar">
           <div className="utility-inner">
             <div className="utility-social">
-              {interactive ? (
+              {interactive && socialLink.href ? (
                 <a
                   className="utility-social-link"
-                  href={utility.socialLink.href}
+                  href={socialLink.href}
                   rel="noreferrer noopener"
                   target="_blank"
                 >
                   <span aria-hidden="true" className="utility-facebook">
                     f
                   </span>
-                  <RichTextValue as="span" value={utility.socialLink.label} />
+                  <RichTextValue as="span" value={socialLink.label} />
                 </a>
               ) : (
                 <span className="utility-social-link site-link--static">
                   <span aria-hidden="true" className="utility-facebook">
                     f
                   </span>
-                  <RichTextValue as="span" value={utility.socialLink.label} />
+                  <RichTextValue as="span" value={socialLink.label} />
                 </span>
               )}
             </div>
@@ -282,7 +289,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
             <RichTextValue as="p" className="utility-message" value={utility.message} />
 
             <div className="utility-booking">
-              {utility.bookingCallouts.map((line) => (
+              {bookingCallouts.map((line) => (
                 <RichTextValue as="span" key={line} value={line} />
               ))}
             </div>
@@ -375,8 +382,8 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
 
         <div className="footer-bottom">
           <div className="footer-bottom-inner">
-            <RichTextValue as="p" className="footer-copyright" value={siteShell.footer.copyright} />
-            <RichTextValue as="p" className="footer-design" value={siteShell.footer.designCredit} />
+            <RichTextValue as="p" className="footer-copyright" value={footer.copyright} />
+            <RichTextValue as="p" className="footer-design" value={footer.designCredit} />
           </div>
         </div>
       </footer>

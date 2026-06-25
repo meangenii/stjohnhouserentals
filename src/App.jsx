@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
 import { AboutUsPage } from './pages/AboutUsPage'
@@ -10,7 +10,6 @@ import { CarBargeInformationPage } from './pages/CarBargeInformationPage'
 import { CharterBoatDetailPage } from './pages/CharterBoatDetailPage'
 import { CharterBoatsPage } from './pages/CharterBoatsPage'
 import { HomePage } from './pages/HomePage'
-import { HouseRentalsPage } from './pages/HouseRentalsPage'
 import { JewelryPage } from './pages/JewelryPage'
 import { LinksPage } from './pages/LinksPage'
 import { LocalAttractionsPage } from './pages/LocalAttractionsPage'
@@ -125,7 +124,7 @@ function getRouteTitle(pathname) {
   }
 
   if (pathname === '/st-john-rentals') {
-    return 'St. John Rentals'
+    return 'Rental Accommodations'
   }
 
   if (pathname === '/terms-of-agreement') {
@@ -317,7 +316,7 @@ function AppRoutes() {
               <Route index element={<HomePage />} />
               <Route path="admin" element={<AdminPage />} />
               <Route path="about-us" element={<AboutUsPage />} />
-              <Route path="st-john-rentals" element={<HouseRentalsPage />} />
+              <Route path="st-john-rentals" element={<Navigate replace to="/for-rent" />} />
               <Route path="1bedroom/:slug" element={<PropertyDetailPage />} />
               <Route path="for-rent" element={<RentalAccommodationsPage />} />
               <Route path="for-sale" element={<PropertyForSalePage />} />

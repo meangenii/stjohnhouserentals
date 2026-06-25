@@ -56,8 +56,8 @@ function formatActor(actor) {
   return actor?.email || actor?.uid || 'admin'
 }
 
-function createInvalidSiteShellError() {
-  return new HttpError(400, 'Site shell content must be a JSON object.')
+function createInvalidSiteShellError(message = 'Site shell content must be a JSON object.') {
+  return new HttpError(400, message)
 }
 
 function createInvalidStructuredPageError(message) {
@@ -69,8 +69,26 @@ function normalizeSiteShellDraft(draft) {
     throw createInvalidSiteShellError()
   }
 
-  assertStorageImagesInValue(draft, 'Site shell image')
-  return cloneData(draft)
+  const normalized = cloneData(draft)
+
+  if (
+    !normalized.header ||
+    typeof normalized.header !== 'object' ||
+    Array.isArray(normalized.header) ||
+    !normalized.footer ||
+    typeof normalized.footer !== 'object' ||
+    Array.isArray(normalized.footer) ||
+    !Array.isArray(normalized.header.primaryNav) ||
+    !Array.isArray(normalized.footer.primaryNav) ||
+    !Array.isArray(normalized.footer.legalNav)
+  ) {
+    throw createInvalidSiteShellError(
+      'Site shell content requires header.primaryNav, footer.primaryNav, and footer.legalNav arrays.',
+    )
+  }
+
+  assertStorageImagesInValue(normalized, 'Site shell image')
+  return normalized
 }
 
 function resolveStructuredPageTitle(page = {}) {

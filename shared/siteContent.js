@@ -6,7 +6,7 @@ const primaryNavItems = [
   { label: 'ABOUT', path: '/about-us', matchPaths: ['/about-us'] },
   {
     label: 'HOUSES',
-    path: '/st-john-rentals',
+    path: '/for-rent',
     matchPaths: ['/st-john-rentals', '/for-rent', '/for-sale', '/property-for-sale', '/rental-properties'],
     children: [
       { label: 'Rental Accommodations', path: '/for-rent', matchPaths: ['/for-rent'] },
@@ -185,7 +185,7 @@ const structuredSitePages = {
       title: "We've been a trusted St. John business for over 25 years!",
       lead:
         "St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you're looking for a way to support locals, you've found it!",
-      action: { label: 'Browse Rentals', path: '/st-john-rentals', backgroundColor: '#6da6dc' },
+      action: { label: 'Browse Rentals', path: '/for-rent', backgroundColor: '#6da6dc' },
       image: {
         kind: 'image',
         url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-trust.jpg?alt=media&token=c5ad7fd6-0243-4d4f-b34e-50945dd03e50',

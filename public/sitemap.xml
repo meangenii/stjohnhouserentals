@@ -874,15 +874,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://www.stjohnhouserentals.com/st-john-rentals</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-    <image:image>
-      <image:loc>https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-hero.png?alt=media&amp;token=deba52c2-f3ce-42e7-85e5-db2e42bf4819</image:loc>
-      <image:caption>St. John House Rentals</image:caption>
-    </image:image>
-  </url>
-  <url>
     <loc>https://www.stjohnhouserentals.com/terms-of-agreement</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>

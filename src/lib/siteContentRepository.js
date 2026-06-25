@@ -89,6 +89,33 @@ function normalizeAdminSiteShellPayload(payload = {}) {
   }
 }
 
+function normalizeLiveSiteShellPayload(payload = {}) {
+  const candidate =
+    payload?.siteShell && typeof payload.siteShell === 'object' && !Array.isArray(payload.siteShell)
+      ? payload.siteShell
+      : payload
+  const siteShell = resolveContentAssets(candidate)
+
+  if (
+    !siteShell ||
+    typeof siteShell !== 'object' ||
+    Array.isArray(siteShell) ||
+    !siteShell.header ||
+    typeof siteShell.header !== 'object' ||
+    Array.isArray(siteShell.header) ||
+    !siteShell.footer ||
+    typeof siteShell.footer !== 'object' ||
+    Array.isArray(siteShell.footer) ||
+    !Array.isArray(siteShell.header.primaryNav) ||
+    !Array.isArray(siteShell.footer.primaryNav) ||
+    !Array.isArray(siteShell.footer.legalNav)
+  ) {
+    throw new Error('Live site shell content is incomplete.')
+  }
+
+  return siteShell
+}
+
 function normalizeAdminStructuredPagePayload(payload = {}) {
   return {
     page: payload?.page ? resolveContentAssets(payload.page) : null,
@@ -239,6 +266,7 @@ export async function fetchSiteShellContent() {
 
   if (!liveSiteShellPromise) {
     liveSiteShellPromise = fetchApiContent('site-shell')
+      .then((content) => normalizeLiveSiteShellPayload(content))
       .then((content) => storeLiveSiteShellCache(content))
       .catch((error) => {
         liveSiteShellPromise = null
