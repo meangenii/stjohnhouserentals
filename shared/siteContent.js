@@ -369,7 +369,7 @@ const structuredSitePages = {
     intro: {
       title: 'Where do you want to spend your day?',
       paragraphs: [
-        'The National Park Service map above has the major features and routes you need to plan which beaches and hiking trails will be closest as you pick your perfect accommodations.',
+        'The National Park Service map below has the major features and routes you need to plan which beaches and hiking trails will be closest as you pick your perfect accommodations.',
       ],
     },
     dining: {

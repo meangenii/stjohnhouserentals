@@ -2495,27 +2495,47 @@ img {
 }
 
 .local-attractions-page {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 30%, #ffffff 100%);
+  background: #f4f7f5;
 }
 
 .local-attractions-hero {
+  position: relative;
   min-height: var(--page-hero-height);
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
+  scroll-margin-top: 1rem;
 }
 
 .local-attractions-hero-overlay {
   display: grid;
   place-items: center;
   min-height: var(--page-hero-height);
-  padding: 3.5rem 1rem 3.8rem;
-  background: linear-gradient(180deg, rgba(7, 19, 46, 0.28) 0%, rgba(7, 19, 46, 0.42) 100%);
+  padding: 4.25rem 1.25rem 4.6rem;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(22, 87, 103, 0.12), transparent 48%),
+    linear-gradient(180deg, rgba(5, 22, 42, 0.35) 0%, rgba(5, 23, 47, 0.72) 100%);
 }
 
 .local-attractions-hero-copy {
-  width: min(100%, 56rem);
+  width: min(100%, 61rem);
   text-align: center;
+  color: #ffffff;
+}
+
+.local-attractions-hero-kicker,
+.local-attractions-eyebrow {
+  margin: 0;
+  color: var(--brand-orange);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.local-attractions-hero-copy .local-attractions-hero-kicker {
+  margin-bottom: 0.85rem;
   color: #ffffff;
 }
 
@@ -2523,47 +2543,41 @@ img {
   margin: 0;
   color: #ffffff;
   font-family: var(--font-display);
-  font-size: clamp(3rem, 7vw, 5.9rem);
+  font-size: clamp(3.4rem, 8vw, 6.35rem);
   font-weight: 400;
-  line-height: 0.98;
-  text-shadow: 0 10px 26px rgba(7, 19, 46, 0.22);
+  line-height: 0.94;
+  text-wrap: balance;
+  text-shadow: 0 12px 32px rgba(4, 18, 38, 0.32);
 }
 
 .local-attractions-hero-copy p {
-  margin: 1.45rem auto 0;
-  max-width: 34rem;
+  margin: 1.2rem auto 0;
+  max-width: 38rem;
   color: rgba(255, 255, 255, 0.96);
-  font-size: clamp(1rem, 1.6vw, 1.18rem);
-  line-height: 1.45;
-}
-
-.local-attractions-hero-button {
-  width: auto;
-  margin-top: 1.75rem;
-  padding-inline: 1.65rem;
-  border-color: #ffffff;
-  color: var(--brand-navy);
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 18px 34px rgba(7, 19, 46, 0.18);
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem);
+  line-height: 1.5;
 }
 
 .local-attractions-map-section,
 .local-attractions-dining-section,
 .local-attractions-categories {
-  width: min(1440px, calc(100% - 2rem));
+  width: min(1280px, calc(100% - 2rem));
   margin: 0 auto;
 }
 
 .local-attractions-map-section {
-  padding-top: 2.4rem;
+  padding: 4.5rem 0 4.8rem;
+  scroll-margin-top: 1.5rem;
 }
 
 .local-attractions-map-card {
+  position: relative;
   overflow: hidden;
-  border: 1px solid #dbe6f4;
-  border-radius: 2rem;
-  background: #edf6ff;
-  box-shadow: 0 24px 42px rgba(7, 33, 74, 0.1);
+  margin-top: 2.25rem;
+  border: 1px solid rgba(11, 43, 95, 0.12);
+  border-radius: 1.75rem;
+  background: #e8f1ec;
+  box-shadow: 0 28px 70px rgba(7, 33, 55, 0.14);
 }
 
 .local-attractions-map-image {
@@ -2572,122 +2586,344 @@ img {
   height: auto;
 }
 
+.local-attractions-map-caption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  justify-content: space-between;
+  padding: 0.9rem 1.2rem;
+  color: #52625a;
+  background: rgba(255, 255, 255, 0.96);
+  font-size: 0.82rem;
+}
+
+.local-attractions-map-caption span:first-child {
+  color: var(--brand-navy);
+  font-weight: 600;
+}
+
 .local-attractions-intro-row {
   display: grid;
-  gap: 1.35rem;
-  align-items: start;
-  padding-top: 2rem;
+  gap: 1.5rem;
+  align-items: end;
 }
 
 .local-attractions-intro-copy h2 {
-  margin: 0;
-  color: #000000;
+  margin: 0.45rem 0 0;
+  max-width: 52rem;
+  color: var(--brand-navy-deep);
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  font-size: clamp(2.55rem, 6vw, 4.35rem);
   font-weight: 400;
-  line-height: 1.08;
+  line-height: 1;
+  text-wrap: balance;
 }
 
 .local-attractions-intro-copy p {
-  margin: 1rem 0 0;
-  max-width: 73rem;
-  color: #000000;
-  font-size: clamp(1rem, 1.25vw, 1.18rem);
-  line-height: 1.55;
+  margin: 0.85rem 0 0;
+  max-width: 48rem;
+  color: #4b5b54;
+  font-size: clamp(1rem, 1.25vw, 1.12rem);
+  line-height: 1.65;
+}
+
+.local-attractions-intro-copy .local-attractions-eyebrow {
+  margin: 0;
+  color: var(--brand-orange);
+  font-size: 0.78rem;
 }
 
 .local-attractions-map-button {
-  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 3.15rem;
+  padding: 0.8rem 1.35rem;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--brand-navy);
+  box-shadow: 0 14px 28px rgba(7, 33, 74, 0.18);
+  font-size: 0.95rem;
+  font-weight: 600;
   justify-self: start;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease;
+}
+
+.local-attractions-map-button:hover,
+.local-attractions-map-button:focus-visible {
+  transform: translateY(-2px);
+  background: var(--brand-navy-deep);
 }
 
 .local-attractions-dining-section {
-  padding-top: 3rem;
+  padding: 5.25rem 0 6.5rem;
+  scroll-margin-top: 1.5rem;
 }
 
 .local-attractions-dining-header {
+  max-width: 48rem;
+  margin: 0 auto;
   text-align: center;
 }
 
 .local-attractions-dining-header h2 {
-  margin: 0;
-  color: #000000;
+  margin: 0.45rem 0 0;
+  color: var(--brand-navy-deep);
   font-family: var(--font-display);
-  font-size: clamp(2.45rem, 6vw, 3.95rem);
+  font-size: clamp(2.8rem, 6vw, 4.75rem);
   font-weight: 400;
-  line-height: 1.04;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.local-attractions-dining-intro {
+  margin: 1rem auto 0;
+  color: #53625b;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.local-attractions-dining-tools {
+  justify-items: center;
+  margin: 2.2rem auto 0;
+}
+
+.local-attractions-dining-results {
+  margin: 0;
+  color: #66756e;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .local-attractions-dining-group {
-  margin-top: 2.4rem;
+  margin-top: 3.6rem;
+  scroll-margin-top: 2rem;
 }
 
-.local-attractions-dining-group-label {
-  margin: 0 0 1rem;
-  color: #000000;
-  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
+.local-attractions-dining-group-header {
+  display: flex;
+  gap: 1rem;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ccd9d2;
 }
 
-.local-attractions-dining-list {
-  overflow: hidden;
-  border: 1px solid var(--brand-orange-hover);
-  background: var(--brand-orange);
+.local-attractions-dining-group-header h3 {
+  margin: 0.25rem 0 0;
+  color: var(--brand-navy-deep);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 400;
+  line-height: 1;
 }
 
-.local-attractions-dining-row {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.local-attractions-dining-row + .local-attractions-dining-row {
-  border-top: 1px solid rgba(255, 255, 255, 0.24);
-}
-
-.local-attractions-restaurant-entry {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.05fr) auto;
-  gap: 0.35rem 1rem;
-  align-items: start;
-  padding: 0.85rem 1rem;
-  color: #000000;
-}
-
-.local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
-  border-top: 1px solid rgba(255, 255, 255, 0.24);
-}
-
-.local-attractions-restaurant-entry p {
+.local-attractions-dining-count {
   margin: 0;
-  color: inherit;
-  font-size: 0.98rem;
-  line-height: 1.35;
-}
-
-.local-attractions-restaurant-name {
-  font-weight: 500;
-}
-
-.local-attractions-restaurant-cuisine {
-  text-align: center;
-}
-
-.local-attractions-restaurant-phone {
-  text-align: right;
+  color: #64736c;
+  font-size: 0.86rem;
   white-space: nowrap;
 }
 
-.local-attractions-restaurant-phone--empty {
-  visibility: hidden;
+.local-attractions-restaurant-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.local-attractions-restaurant-card {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dce6e0;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(7, 40, 35, 0.05);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.local-attractions-restaurant-card:hover {
+  transform: translateY(-3px);
+  border-color: #bdcec4;
+  box-shadow: 0 18px 36px rgba(7, 40, 35, 0.1);
+}
+
+.local-attractions-restaurant-card-copy {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.1rem 1.2rem;
+}
+
+.local-attractions-restaurant-name {
+  margin: 0;
+  color: var(--brand-navy-deep);
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.local-attractions-restaurant-cuisine {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  padding: 0.28rem 0.58rem;
+  border-radius: 999px;
+  color: #315c38;
+  background: #e9f4ea;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.local-attractions-restaurant-location-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: flex-start;
+  margin-top: 0;
+  color: #65736c;
+}
+
+.local-attractions-restaurant-location-row svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  margin-top: 0.13rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
 }
 
 .local-attractions-restaurant-location {
-  grid-column: 2 / 4;
-  justify-self: end;
-  text-align: right;
+  margin: 0;
+  color: inherit;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.local-attractions-restaurant-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid #e3ebe6;
+  background: #fbfcfb;
+}
+
+.local-attractions-restaurant-action {
+  display: flex;
+  gap: 0.42rem;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 3.25rem;
+  padding: 0.68rem 0.7rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--brand-navy);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+  text-decoration: none;
+}
+
+.local-attractions-restaurant-action:hover,
+.local-attractions-restaurant-action:focus-visible {
+  transform: none;
+}
+
+.local-attractions-restaurant-action + .local-attractions-restaurant-action {
+  border-left: 1px solid #e3ebe6;
+}
+
+.local-attractions-restaurant-action svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.local-attractions-restaurant-action--online:hover,
+.local-attractions-restaurant-action--online:focus-visible {
+  color: #ffffff;
+  background: var(--brand-navy);
+}
+
+.local-attractions-restaurant-action--phone {
+  color: #24672d;
+}
+
+.local-attractions-restaurant-action--phone:hover,
+.local-attractions-restaurant-action--phone:focus-visible {
+  color: #ffffff;
+  background: #24672d;
+}
+
+.local-attractions-restaurant-action--unavailable {
+  color: #859089;
+  cursor: default;
+}
+
+@media (min-width: 700px) {
+  .local-attractions-intro-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .local-attractions-map-button {
+    justify-self: end;
+  }
+
+}
+
+@media (min-width: 900px) {
+  .local-attractions-restaurant-card {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.42fr);
+  }
+
+  .local-attractions-restaurant-card-copy {
+    grid-template-columns: minmax(13rem, 1.25fr) minmax(10rem, 0.9fr) minmax(10rem, 0.9fr);
+    gap: 1.2rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+  }
+
+  .local-attractions-restaurant-actions {
+    border-top: 0;
+    border-left: 1px solid #e3ebe6;
+  }
+}
+
+@media (max-width: 520px) {
+  .local-attractions-dining-group-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .local-attractions-restaurant-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .local-attractions-restaurant-action + .local-attractions-restaurant-action {
+    border-top: 1px solid #e3ebe6;
+    border-left: 0;
+  }
 }
 
 .local-attractions-categories {
@@ -4024,20 +4260,11 @@ img {
   .local-attractions-map-section,
   .local-attractions-dining-section,
   .local-attractions-categories {
-    width: min(1440px, calc(100% - 5rem));
+    width: min(1280px, calc(100% - 5rem));
   }
 
   .local-attractions-hero-overlay {
     padding: 4.75rem 2rem 5.2rem;
-  }
-
-  .local-attractions-dining-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .local-attractions-dining-row:not(.local-attractions-dining-row--single) .local-attractions-restaurant-entry + .local-attractions-restaurant-entry {
-    border-top: 0;
-    border-left: 1px solid rgba(255, 255, 255, 0.24);
   }
 
   .rental-accommodations-hero-inner,
