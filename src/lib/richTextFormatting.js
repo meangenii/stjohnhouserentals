@@ -129,6 +129,112 @@ export function captureRichTextSelectionRange(root) {
   return range ? range.cloneRange() : null
 }
 
+function collectTextOffset(root, target, targetOffset) {
+  let consumed = 0
+  let found = false
+  let resolvedOffset = 0
+
+  function walk(node) {
+    if (found) {
+      return
+    }
+
+    if (node === target) {
+      resolvedOffset = consumed + targetOffset
+      found = true
+      return
+    }
+
+    if (node.nodeType === 3) {
+      consumed += node.textContent.length
+      return
+    }
+
+    Array.from(node.childNodes).forEach(walk)
+  }
+
+  walk(root)
+  return found ? resolvedOffset : consumed
+}
+
+export function captureCaretOffset(root) {
+  const range = getSelectionRangeInRoot(root)
+
+  if (!range) {
+    return null
+  }
+
+  return {
+    start: collectTextOffset(root, range.startContainer, range.startOffset),
+    end: collectTextOffset(root, range.endContainer, range.endOffset),
+  }
+}
+
+function locatePointAtOffset(root, offset) {
+  let remaining = offset
+  let lastTextNode = null
+
+  function walk(node) {
+    if (node.nodeType === 3) {
+      lastTextNode = node
+
+      if (remaining <= node.textContent.length) {
+        return { node, offset: remaining }
+      }
+
+      remaining -= node.textContent.length
+      return null
+    }
+
+    for (const child of Array.from(node.childNodes)) {
+      const result = walk(child)
+
+      if (result) {
+        return result
+      }
+    }
+
+    return null
+  }
+
+  const point = walk(root)
+
+  if (point) {
+    return point
+  }
+
+  if (lastTextNode) {
+    return { node: lastTextNode, offset: lastTextNode.textContent.length }
+  }
+
+  return { node: root, offset: 0 }
+}
+
+export function restoreCaretOffset(root, caretOffsets) {
+  if (!root || !caretOffsets || typeof window === 'undefined') {
+    return false
+  }
+
+  const selection = window.getSelection()
+
+  if (!selection) {
+    return false
+  }
+
+  try {
+    const startPoint = locatePointAtOffset(root, caretOffsets.start)
+    const endPoint = locatePointAtOffset(root, caretOffsets.end)
+    const range = document.createRange()
+    range.setStart(startPoint.node, startPoint.offset)
+    range.setEnd(endPoint.node, endPoint.offset)
+    selection.removeAllRanges()
+    selection.addRange(range)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function restoreRichTextSelectionRange(root, savedRange) {
   if (!root || !savedRange || typeof window === 'undefined' || !isRangeWithinRoot(root, savedRange)) {
     return false

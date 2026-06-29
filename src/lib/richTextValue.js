@@ -5,7 +5,7 @@ const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 
 function escapeHtml(value) {
   return String(value ?? '')
-    .replaceAll('&', '&amp;')
+    .replace(/&(?!(?:[a-z]+|#\d+|#x[0-9a-f]+);)/gi, '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
@@ -85,27 +85,30 @@ export function richTextValueToPlainText(value) {
   return (documentNode.body.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 
-export function richTextValueToLines(value) {
+export function richTextValueToLines(value, { preserveBlankLines = false } = {}) {
   const sourceValue = String(value ?? '')
+  const dropBlankLines = (lines) => (preserveBlankLines ? lines : lines.filter(Boolean))
 
   if (!sourceValue.trim()) {
     return []
   }
 
   if (!hasRichTextMarkup(sourceValue)) {
-    return sourceValue
-      .split(/\r?\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean)
+    return dropBlankLines(
+      sourceValue
+        .split(/\r?\n/)
+        .map((line) => line.trim()),
+    )
   }
 
   if (typeof DOMParser === 'undefined') {
-    return sourceValue
-      .replace(/<\/p>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .split(/\r?\n+/)
-      .map((line) => normalizeSiteHtml(line).trim())
-      .filter(Boolean)
+    return dropBlankLines(
+      sourceValue
+        .replace(/<\/p>/gi, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .split(/\r?\n/)
+        .map((line) => normalizeSiteHtml(line).trim()),
+    )
   }
 
   const normalizedHtml = normalizeSiteHtml(sourceValue)
@@ -120,12 +123,8 @@ export function richTextValueToLines(value) {
 
   Array.from(root.childNodes).forEach((node) => {
     if (node.nodeType === 3) {
-      const text = node.textContent?.trim()
-
-      if (text) {
-        lines.push(text)
-      }
-
+      const text = node.textContent?.trim() ?? ''
+      lines.push(text)
       return
     }
 
@@ -136,19 +135,20 @@ export function richTextValueToLines(value) {
     const tagName = node.nodeName.toUpperCase()
 
     if (tagName === 'BR') {
+      lines.push('')
       return
     }
 
     lines.push(...blockInnerHtmlToLines(node.innerHTML))
   })
 
-  return lines.filter(Boolean)
+  return dropBlankLines(lines)
 }
 
-export function richTextLinesToHtml(values = []) {
+export function richTextLinesToHtml(values = [], { preserveBlankLines = false } = {}) {
   return values
     .map((value) => richTextValueToHtml(value).trim())
-    .filter(Boolean)
-    .map((value) => `<p>${value}</p>`)
+    .filter((value) => preserveBlankLines || Boolean(value))
+    .map((value) => `<p>${value || '<br />'}</p>`)
     .join('')
 }

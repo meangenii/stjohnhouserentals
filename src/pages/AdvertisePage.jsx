@@ -25,6 +25,9 @@ export function AdvertisePage() {
 
   const heroImageUrl = getContentImageSrc(page.hero.image)
   const contactEmail = siteShell.contact.primaryEmail
+  const visibleContactLines = page.contact.contactLines.filter(
+    (line) => String(line?.value ?? '').trim().toLowerCase() !== 'stjohnlinks@gmail.com',
+  )
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -129,7 +132,7 @@ export function AdvertisePage() {
               <EditableText as="h3" label="Contact Section Title" path={['contact', 'contactTitle']} value={page.contact.contactTitle}>
                 {page.contact.contactTitle}
               </EditableText>
-              {page.contact.contactLines.map((line, index) => (
+              {visibleContactLines.map((line, index) => (
                 <p key={index}>
                   <EditableText as="span" label={`Contact Label ${index + 1}`} path={['contact', 'contactLines', index, 'label']} value={line.label}>
                     {line.label}

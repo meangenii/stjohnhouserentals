@@ -2056,13 +2056,7 @@ export function AdminPage() {
                     />
 
                     <AdminPropertyPreview
-                      key={[
-                        propertyPreviewModel.slug,
-                        propertyPreviewModel.heroImage?.url,
-                        ...propertyPreviewModel.gallery.map((image) => image.url),
-                      ]
-                        .filter(Boolean)
-                        .join('|')}
+                      key={formState.originalSlug || 'new-property'}
                       disabled={!propertySaveEnabled}
                       editable
                       formState={formState}

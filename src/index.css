@@ -6113,6 +6113,11 @@ button.admin-auth-badge {
   background: transparent;
 }
 
+.admin-preview-page-only {
+  min-height: 20rem;
+  background: transparent;
+}
+
 .admin-site-preview-surface--interactive .admin-preview-editor-page :is(a, button, input, textarea, select) {
   pointer-events: none;
 }

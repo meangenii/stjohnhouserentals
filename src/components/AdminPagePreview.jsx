@@ -83,11 +83,11 @@ export function AdminPagePreview({ device = 'desktop', page, pageKey, routeInven
   const previewBody = renderPreviewBody(page, pageKey)
 
   return (
-    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, routeInventory, siteShell }}>
+    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, routeInventory, siteShell: resolvedSiteShell }}>
       <PreviewSurface device={device}>
-        <SiteFrame interactive={false} pathname={page.path || '/'} siteShell={resolvedSiteShell}>
+        <div className="site-main admin-preview-page-only">
           {previewBody}
-        </SiteFrame>
+        </div>
       </PreviewSurface>
     </SiteContentPreviewContext.Provider>
   )
@@ -157,13 +157,11 @@ export function AdminPageEditorCanvas({
   }
 
   return (
-    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, pageEditor, routeInventory, siteShell }}>
+    <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, pageEditor, routeInventory, siteShell: resolvedSiteShell }}>
       <PreviewSurface device={device} interactive>
-        <SiteFrame interactive={false} pathname={page.path || '/'} siteShell={resolvedSiteShell}>
-          <div className="admin-preview-editor-page" onClickCapture={handleCanvasClickCapture}>
-            {previewBody}
-          </div>
-        </SiteFrame>
+        <div className="site-main admin-preview-editor-page" onClickCapture={handleCanvasClickCapture}>
+          {previewBody}
+        </div>
       </PreviewSurface>
     </SiteContentPreviewContext.Provider>
   )

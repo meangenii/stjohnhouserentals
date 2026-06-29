@@ -90,9 +90,9 @@ function PreviewRichTextLineList({ disabled, helperText = '', label, onChange, p
         disabled={disabled}
         helperText={helperText}
         label={label}
-        onChange={(nextValue) => onChange(richTextValueToLines(nextValue).join('\n'))}
+        onChange={(nextValue) => onChange(richTextValueToLines(nextValue, { preserveBlankLines: true }).join('\n'))}
         placeholder={placeholder}
-        value={richTextLinesToHtml(getAmenityGroupItems(value))}
+        value={richTextLinesToHtml(getAmenityGroupItems(value, { preserveBlankLines: true }), { preserveBlankLines: true })}
       />
     </div>
   )
@@ -153,11 +153,12 @@ function getShortDescriptionLines(property) {
   return richTextValueToLines(property.shortDescription ?? '')
 }
 
-function getAmenityGroupItems(itemsText = '') {
-  return String(itemsText ?? '')
-    .split(/\r?\n+/)
+function getAmenityGroupItems(itemsText = '', { preserveBlankLines = false } = {}) {
+  const lines = String(itemsText ?? '')
+    .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter(Boolean)
+
+  return preserveBlankLines ? lines : lines.filter(Boolean)
 }
 
 export function AdminPropertyPreview({

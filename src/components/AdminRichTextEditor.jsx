@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   applyRichTextFontSize,
+  captureCaretOffset,
   captureRichTextSelectionRange,
+  restoreCaretOffset,
   restoreRichTextSelectionRange,
   RICH_TEXT_BLOCK_OPTIONS,
   RICH_TEXT_FONT_SIZE_OPTIONS,
@@ -46,13 +48,25 @@ export function AdminRichTextEditor({
   }))
   const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (mode !== 'visual' || !editorRef.current) {
       return
     }
 
-    if (editorRef.current.innerHTML !== String(value ?? '')) {
-      editorRef.current.innerHTML = String(value ?? '')
+    const editor = editorRef.current
+    const nextHtml = String(value ?? '')
+
+    if (editor.innerHTML === nextHtml) {
+      return
+    }
+
+    const isFocused = document.activeElement === editor
+    const caretOffsets = isFocused ? captureCaretOffset(editor) : null
+
+    editor.innerHTML = nextHtml
+
+    if (isFocused) {
+      restoreCaretOffset(editor, caretOffsets)
     }
   }, [mode, value])
 
@@ -87,7 +101,7 @@ export function AdminRichTextEditor({
     return () => {
       document.removeEventListener('selectionchange', updateSelectionState)
     }
-  }, [mode, value])
+  }, [mode])
 
   function syncValue() {
     if (!editorRef.current) {

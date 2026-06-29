@@ -6,7 +6,9 @@ import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
   applyRichTextFontSize,
+  captureCaretOffset,
   captureRichTextSelectionRange,
+  restoreCaretOffset,
   restoreRichTextSelectionRange,
   RICH_TEXT_BLOCK_OPTIONS,
   RICH_TEXT_FONT_SIZE_OPTIONS,
@@ -630,6 +632,23 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   }, [active, renderedValue])
 
   useLayoutEffect(() => {
+    const element = elementRef.current
+
+    if (!active || !element || element.innerHTML === renderedValue) {
+      return
+    }
+
+    const isFocused = document.activeElement === element
+    const caretOffsets = isFocused ? captureCaretOffset(element) : null
+
+    element.innerHTML = renderedValue
+
+    if (isFocused) {
+      restoreCaretOffset(element, caretOffsets)
+    }
+  }, [active, renderedValue])
+
+  useLayoutEffect(() => {
     if (!active) {
       return
     }
@@ -748,7 +767,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
       data-admin-inline-empty={isEmpty ? 'true' : undefined}
       data-admin-inline-editing={active ? 'true' : undefined}
       data-placeholder={isEmpty ? label : undefined}
-      dangerouslySetInnerHTML={{ __html: currentValue }}
+      dangerouslySetInnerHTML={active ? undefined : { __html: renderedValue }}
       suppressContentEditableWarning
       onBlur={active ? handleBlur : undefined}
       onClick={handleClick}

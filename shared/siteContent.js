@@ -323,7 +323,7 @@ const structuredSitePages = {
           ' from the page of each vacation rental home of interest. The email link or phone number on each vacation rental page will get you directly to the person who can help!',
       },
       contactTitle: 'Contact Us',
-      contactLines: [{ label: 'Email', value: 'stjohnlinks@gmail.com', href: 'mailto:stjohnlinks@gmail.com' }],
+      contactLines: [],
     },
     form: {
       fields: [
