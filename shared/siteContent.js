@@ -478,7 +478,7 @@ const structuredSitePages = {
       ],
       referenceLink: {
         href: 'https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/',
-        label: 'Link for information is here.',
+        label: 'View the VINow car ferry guide',
       },
     },
     operators: [
@@ -486,7 +486,7 @@ const structuredSitePages = {
         title: 'LOVE CITY CAR FERRIES',
         meta: {
           names: 'M/V Grand Vic and M/V Capt Vic',
-          phone: '(340) 779-4000',
+          phone: '340-779-4000',
           travelTime: '30 minutes',
         },
         image: {
@@ -530,6 +530,7 @@ const structuredSitePages = {
             { label: 'Round Trip', values: ['$80'] },
           ],
           footer: ['Last Updated: 4/13/2026'],
+          linkLabel: 'Visit Love City Car Ferries website',
           url: 'https://www.lovecitycarferries.com/',
         },
       },
@@ -537,7 +538,7 @@ const structuredSitePages = {
         title: 'BIG RED BARGE CO.',
         meta: {
           names: 'M/V Todd G. and M/V Virginia Pride',
-          phone: '(340) 227-0918',
+          phone: '340-227-0918',
           travelTime: '30 minutes',
         },
         image: {
@@ -568,6 +569,7 @@ const structuredSitePages = {
             { label: '', values: ['$60'] },
           ],
           footer: ['Last Updated: 4/13/2026', '*Must show a valid US Virgin Islands ID'],
+          linkLabel: 'Visit Big Red Barge website',
           url: 'https://www.bigredbarge.co/',
         },
       },
@@ -593,7 +595,7 @@ const structuredSitePages = {
     },
     redHook: {
       titleLines: ['Passenger Ferry Schedule', 'St. Thomas - St. John', 'Red Hook Ferry', 'Red Hook, St. Thomas - Cruz Bay, St. John'],
-      meta: ['Operated by: Transportation Services and Varlack Ventures', 'Telephone: (340) 776-6282 and (340) 776-6412', 'Travel Time: 15 minutes'],
+      meta: ['Operated by: Transportation Services and Varlack Ventures', 'Telephone: 340-776-6282 and 340-776-6412', 'Travel Time: 15 minutes'],
       directions: [
         {
           heading: 'Red Hook -> Cruz Bay',
@@ -625,7 +627,7 @@ const structuredSitePages = {
       routeLine: '(Route: Crown Bay, St. Thomas to Cruz Bay, St. John)',
       meta: [
         'Operated by: Inter Island Boat Services',
-        'Telephone: (340) 776-6597',
+        'Telephone: 340-776-6597',
         'St. Thomas Ferry Landing: Crown Bay Marina',
         'St. John Ferry Landing: Victor William Sewer Marine Facility (AKA: The Creek)',
         'Travel Time: 35 minutes',
@@ -721,11 +723,13 @@ const structuredSitePages = {
           label: 'Hurricane Guide',
           paragraph:
             'The Virgin Islands Territorial Emergency Management Agency (VITEMA) is an excellent resource for disaster preparedness and response. Hurricane season is June 1st through November 30th. You can find basic information, tracking maps, emergency communication methods and kit suggestions for the various dangerous conditions you can encounter in the Caribbean islands. Visit them at',
+          linkLabel: 'Visit the VITEMA hurricane guide',
           href: 'https://vitema.vi.gov/',
         },
         {
           label: 'Maritime Safety',
           paragraph: 'The USCG has provided the following link for those who are interested in learning more.',
+          linkLabel: 'Review rental boat safety guidance',
           href: 'https://www.rentalboatsafety.com/',
         },
       ],

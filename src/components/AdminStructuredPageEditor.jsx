@@ -1020,6 +1020,7 @@ function renderCarBargeEditor(page, helpers) {
                     />
 
                     <LinesField disabled={disabled} label="Rates Footer Lines" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'footer'], value)} rows={4} value={operator?.rates?.footer ?? []} />
+                    <TextField disabled={disabled} label="Rates Website Link Text" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'linkLabel'], value)} value={operator?.rates?.linkLabel ?? ''} wide />
                     <TextField disabled={disabled} label="Rates Website URL" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'url'], value)} value={operator?.rates?.url ?? ''} wide />
                   </Field>
                 </ItemCard>
@@ -1193,7 +1194,7 @@ function renderCharterBoatsEditor(page, helpers) {
             disabled={disabled}
             itemLabel="safety note"
             items={safetySections}
-            onAdd={() => helpers.addItem(['safety', 'sections'], { label: '', paragraph: '', href: '' })}
+            onAdd={() => helpers.addItem(['safety', 'sections'], { label: '', paragraph: '', linkLabel: '', href: '' })}
             renderItem={(section, sectionIndex) => (
               <ItemCard
                 canMoveDown={sectionIndex < safetySections.length - 1}
@@ -1207,6 +1208,7 @@ function renderCharterBoatsEditor(page, helpers) {
               >
                 <TextField disabled={disabled} label="Label" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'label'], value)} value={section?.label ?? ''} />
                 <TextAreaField disabled={disabled} label="Paragraph" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'paragraph'], value)} rows={4} value={section?.paragraph ?? ''} />
+                <TextField disabled={disabled} label="Link Text" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'linkLabel'], value)} value={section?.linkLabel ?? ''} wide />
                 <TextField disabled={disabled} label="Link URL" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'href'], value)} value={section?.href ?? ''} wide />
               </ItemCard>
             )}

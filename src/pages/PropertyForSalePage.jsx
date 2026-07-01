@@ -1,4 +1,5 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { EditablePhoneText } from '../components/EditablePhoneText'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -85,15 +86,10 @@ export function PropertyForSalePage() {
                   labelLabel="Website Label"
                   labelPath={['details', 'contact', 'website', 'label']}
                 />
-                <EditableText
-                  as="a"
-                  href={`tel:${page.details.contact.phone.replace(/[^0-9+]/g, '')}`}
-                  label="Contact Phone"
-                  path={['details', 'contact', 'phone']}
-                  value={page.details.contact.phone}
-                >
-                  {`Phone: ${page.details.contact.phone}`}
-                </EditableText>
+                <p>
+                  Phone:{' '}
+                  <EditablePhoneText label="Contact Phone" path={['details', 'contact', 'phone']} value={page.details.contact.phone} />
+                </p>
               </div>
             </div>
           </div>

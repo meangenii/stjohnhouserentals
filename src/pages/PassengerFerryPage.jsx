@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { EditableImage, EditableText } from '../components/AdminInlinePageEdit'
+import { EditablePhoneText } from '../components/EditablePhoneText'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -52,25 +53,25 @@ export function PassengerFerryPage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1440, height: 720 })
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
 
   return (
     <article className="passenger-ferry-page">
-      <div className="passenger-ferry-page-inner">
-        <div className="passenger-ferry-hero">
-          {heroImageUrl ? (
-            <EditableImage
-              alt={page.hero.image.alt}
-              className="passenger-ferry-hero-image"
-              decoding="async"
-              fetchPriority="high"
-              image={page.hero.image}
-              path={['hero', 'image']}
-              src={heroImageUrl}
-            />
-          ) : null}
-        </div>
+      <div className="passenger-ferry-hero">
+        {heroImageUrl ? (
+          <EditableImage
+            alt={page.hero.image.alt}
+            className="passenger-ferry-hero-image"
+            decoding="async"
+            fetchPriority="high"
+            image={page.hero.image}
+            path={['hero', 'image']}
+            src={heroImageUrl}
+          />
+        ) : null}
+      </div>
 
+      <div className="passenger-ferry-page-inner">
         <section className="passenger-ferry-block">
           <h1>
             {page.redHook.titleLines.map((line, index) => (
@@ -82,9 +83,7 @@ export function PassengerFerryPage() {
 
           <div className="passenger-ferry-meta">
             {page.redHook.meta.map((line, index) => (
-              <EditableText as="p" key={index} label={`Red Hook Meta ${index + 1}`} path={['redHook', 'meta', index]} value={line}>
-                {line}
-              </EditableText>
+              <EditablePhoneText as="p" key={index} label={`Red Hook Meta ${index + 1}`} path={['redHook', 'meta', index]} value={line} />
             ))}
           </div>
 
@@ -117,9 +116,7 @@ export function PassengerFerryPage() {
 
           <div className="passenger-ferry-meta">
             {page.crownBay.meta.map((line, index) => (
-              <EditableText as="p" key={index} label={`Crown Bay Meta ${index + 1}`} path={['crownBay', 'meta', index]} value={line}>
-                {line}
-              </EditableText>
+              <EditablePhoneText as="p" key={index} label={`Crown Bay Meta ${index + 1}`} path={['crownBay', 'meta', index]} value={line} />
             ))}
           </div>
 

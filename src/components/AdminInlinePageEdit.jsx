@@ -214,6 +214,10 @@ function isExternalLinkValue(value) {
   return /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i.test(normalizedValue)
 }
 
+function shouldOpenLinkInNewTab(value) {
+  return /^(?:https?:)?\/\//i.test(normalizeLinkValue(value))
+}
+
 function buildRouteOptionLabel(route, path, isAlias = false) {
   const label = String(route?.label ?? route?.navLabel ?? route?.title ?? route?.key ?? '').trim()
   const title = String(route?.title ?? '').trim()
@@ -876,19 +880,21 @@ export function EditableLink({
   const field = useEditableField(textPath, `${pathToKey(textPath ?? [])}:${pathToKey(destinationPath ?? [])}`)
   const isActive = field.isActive
   const shouldRenderExternalLink = isExternalDestination
+  const shouldOpenExternalDocument = shouldRenderExternalLink && shouldOpenLinkInNewTab(normalizedDestination)
+  const resolvedTarget = shouldOpenExternalDocument ? target ?? '_blank' : undefined
   const linkStyle = buttonColorPath && normalizedButtonColor ? { ...style, backgroundColor: normalizedButtonColor } : style
   const Component = field.isEnabled ? 'a' : shouldRenderExternalLink ? 'a' : Link
   const linkProps = field.isEnabled
     ? {
         href: normalizedDestination || '#',
-        rel: shouldRenderExternalLink ? 'noreferrer' : undefined,
-        target: shouldRenderExternalLink ? target ?? '_blank' : undefined,
+        rel: resolvedTarget === '_blank' ? 'noreferrer noopener' : undefined,
+        target: resolvedTarget,
       }
     : shouldRenderExternalLink
       ? {
           href: normalizedDestination,
-          rel: 'noreferrer',
-          target: target ?? '_blank',
+          rel: resolvedTarget === '_blank' ? 'noreferrer noopener' : undefined,
+          target: resolvedTarget,
         }
       : {
           to: normalizedDestination,

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
+import { buildPhoneHref } from '../lib/contactLinks'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -17,17 +18,6 @@ const DINING_FOOD_FILTERS = [
   { id: 'vegan-healthy', label: 'Vegan & Healthy', pattern: /vegan|healthy/i },
   { id: 'food-trucks', label: 'Food Trucks', pattern: /food truck/i },
 ]
-
-function buildPhoneHref(phone) {
-  const normalizedPhone = String(phone ?? '').trim()
-  const dialablePhone = normalizedPhone.replace(/[^\d+]/g, '')
-
-  if (dialablePhone.replace(/\D/g, '').length < 7) {
-    return ''
-  }
-
-  return `tel:${dialablePhone}`
-}
 
 function buildRestaurantOnlineHref(restaurant) {
   const website = String(restaurant?.website ?? '').trim()

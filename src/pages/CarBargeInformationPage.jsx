@@ -1,4 +1,5 @@
 import { EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { EditablePhoneText } from '../components/EditablePhoneText'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -41,7 +42,7 @@ function ScheduleBlock({ title, columns, notes = [], pathPrefix }) {
   )
 }
 
-function RatesBlock({ heading, rows, footer, pathPrefix, url }) {
+function RatesBlock({ heading, linkLabel, rows, footer, pathPrefix, url }) {
   return (
     <section className="car-barge-rates">
       <EditableText as="h3" label="Rates Heading" path={[...pathPrefix, 'heading']} value={heading}>
@@ -74,9 +75,15 @@ function RatesBlock({ heading, rows, footer, pathPrefix, url }) {
             </EditableText>
           ))}
 
-          <EditableText as="a" href={url} label="Rates Link" path={[...pathPrefix, 'url']} value={url}>
-            {url}
-          </EditableText>
+          <EditableLink
+            destination={url}
+            destinationLabel="Rates Website URL"
+            destinationPath={[...pathPrefix, 'url']}
+            external
+            label={linkLabel || 'Visit operator website'}
+            labelLabel="Rates Website Link Text"
+            labelPath={[...pathPrefix, 'linkLabel']}
+          />
         </div>
       </div>
     </section>
@@ -102,9 +109,7 @@ function BargeOperatorSection({ operator, operatorIndex }) {
           </p>
           <p>
             <strong>Telephone:</strong>{' '}
-            <EditableText as="span" label="Operator Phone" path={['operators', operatorIndex, 'meta', 'phone']} value={operator.meta.phone}>
-              {operator.meta.phone}
-            </EditableText>
+            <EditablePhoneText label="Operator Phone" path={['operators', operatorIndex, 'meta', 'phone']} value={operator.meta.phone} />
           </p>
           <p>
             <strong>Travel Time:</strong>{' '}
@@ -143,6 +148,7 @@ function BargeOperatorSection({ operator, operatorIndex }) {
           <RatesBlock
             footer={operator.rates.footer}
             heading={operator.rates.heading}
+            linkLabel={operator.rates.linkLabel}
             pathPrefix={['operators', operatorIndex, 'rates']}
             rows={operator.rates.rows}
             url={operator.rates.url}
@@ -160,30 +166,30 @@ export function CarBargeInformationPage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1440, height: 560 })
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
 
   return (
     <article className="car-barge-page">
+      <section className="car-barge-hero">
+        <div className="car-barge-hero-media">
+          {heroImageUrl ? (
+            <EditableImage
+              alt={page.hero.image.alt || page.hero.title}
+              decoding="async"
+              fetchPriority="high"
+              image={page.hero.image}
+              path={['hero', 'image']}
+              src={heroImageUrl}
+            />
+          ) : null}
+        </div>
+
+        <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
+          {page.hero.title}
+        </EditableText>
+      </section>
+
       <div className="car-barge-page-inner">
-        <section className="car-barge-hero">
-          <div className="car-barge-hero-media">
-            {heroImageUrl ? (
-              <EditableImage
-                alt={page.hero.image.alt || page.hero.title}
-                decoding="async"
-                fetchPriority="high"
-                image={page.hero.image}
-                path={['hero', 'image']}
-                src={heroImageUrl}
-              />
-            ) : null}
-          </div>
-
-          <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
-            {page.hero.title}
-          </EditableText>
-        </section>
-
         <section className="car-barge-intro">
           <div className="car-barge-intro-grid">
             <div className="car-barge-intro-copy">

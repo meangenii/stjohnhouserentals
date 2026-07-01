@@ -59,10 +59,12 @@ a {
 .site-main :is(p, li, h1, h2, h3, h4, h5, h6) a[href]:not(.button-link):not(.site-nav-link):not(.site-subnav-link),
 .site-main a[href^='mailto:']:not(.button-link):not(.site-nav-link):not(.site-subnav-link),
 .site-main a[href^='tel:']:not(.button-link):not(.site-nav-link):not(.site-subnav-link) {
-  color: var(--brand-blue);
+  color: var(--inline-link-color, var(--brand-blue));
   text-decoration: underline;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.14em;
+  text-decoration-skip-ink: auto;
+  transition: color 150ms ease;
 }
 
 .site-main :is(p, li, h1, h2, h3, h4, h5, h6) a[href]:not(.button-link):not(.site-nav-link):not(.site-subnav-link):hover,
@@ -71,7 +73,13 @@ a {
 .site-main a[href^='mailto:']:not(.button-link):not(.site-nav-link):not(.site-subnav-link):focus-visible,
 .site-main a[href^='tel:']:not(.button-link):not(.site-nav-link):not(.site-subnav-link):hover,
 .site-main a[href^='tel:']:not(.button-link):not(.site-nav-link):not(.site-subnav-link):focus-visible {
-  color: var(--brand-navy);
+  color: var(--inline-link-hover-color, var(--brand-navy));
+}
+
+.site-main a[href]:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 0.15rem;
 }
 
 button,
@@ -847,9 +855,15 @@ img {
 }
 
 .home-about-link {
-  color: inherit;
+  color: var(--brand-blue);
   text-decoration: underline;
+  text-decoration-thickness: 0.08em;
   text-underline-offset: 0.14em;
+}
+
+.home-about-link:hover,
+.home-about-link:focus-visible {
+  color: var(--brand-navy);
 }
 
 .home-about-media {
@@ -1784,6 +1798,8 @@ img {
   display: grid;
   gap: 0.15rem;
   margin-top: 1.5rem;
+  --inline-link-color: #ffffff;
+  --inline-link-hover-color: #d8e6ff;
 }
 
 .property-for-sale-contact a {
@@ -1801,9 +1817,11 @@ img {
 }
 
 .car-barge-page {
-  padding: 2rem 0 2.75rem;
+  padding: 0 0 2.75rem;
   background: #1f2d63;
   color: #ffffff;
+  --inline-link-color: #ffffff;
+  --inline-link-hover-color: #d9e7ff;
 }
 
 .car-barge-page-inner {
@@ -1818,13 +1836,12 @@ img {
 
 .car-barge-hero-media {
   overflow: hidden;
-  border-radius: 1.5rem;
 }
 
 .car-barge-hero-media img {
   width: 100%;
+  height: var(--page-hero-height);
   display: block;
-  aspect-ratio: var(--page-hero-image-aspect);
   object-fit: cover;
 }
 
@@ -1838,6 +1855,8 @@ img {
 }
 
 .car-barge-hero h1 {
+  width: min(1440px, calc(100% - 2rem));
+  margin: 0 auto;
   font-size: clamp(2.8rem, 5.3vw, 4.7rem);
   text-align: center;
 }
@@ -2021,9 +2040,11 @@ img {
 }
 
 .passenger-ferry-page {
-  padding: 2rem 0 3rem;
+  padding: 0 0 3rem;
   background: #1f2d63;
   color: #ffffff;
+  --inline-link-color: #ffffff;
+  --inline-link-hover-color: #d9e7ff;
 }
 
 .passenger-ferry-page-inner {
@@ -2032,16 +2053,14 @@ img {
 }
 
 .passenger-ferry-hero {
-  width: min(100%, 72rem);
-  margin: 0 auto;
+  width: 100%;
   overflow: hidden;
-  border-radius: 1.6rem;
 }
 
 .passenger-ferry-hero-image {
   width: 100%;
+  height: var(--page-hero-height);
   display: block;
-  aspect-ratio: var(--page-hero-image-aspect);
   object-fit: cover;
 }
 
@@ -2233,18 +2252,18 @@ img {
 }
 
 .st-john-car-rentals-name,
-.st-john-car-rentals-phone {
-  color: inherit;
-  text-decoration: none;
+.st-john-car-rentals-phone a {
+  color: var(--brand-blue);
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.14em;
 }
 
 .st-john-car-rentals-name:hover,
 .st-john-car-rentals-name:focus-visible,
-.st-john-car-rentals-phone:hover,
-.st-john-car-rentals-phone:focus-visible {
-  color: #66768d;
-  text-decoration: underline;
-  text-underline-offset: 0.14em;
+.st-john-car-rentals-phone a:hover,
+.st-john-car-rentals-phone a:focus-visible {
+  color: var(--brand-navy);
 }
 
 .st-john-car-rentals-directory-media,
@@ -2421,8 +2440,9 @@ img {
 
 .charter-boats-card-more,
 .charter-boats-safety-copy a {
-  color: #8a96a8;
+  color: var(--brand-blue);
   text-decoration: underline;
+  text-decoration-thickness: 0.08em;
   text-underline-offset: 0.14em;
 }
 
@@ -2435,7 +2455,7 @@ img {
 .charter-boats-card-more:focus-visible,
 .charter-boats-safety-copy a:hover,
 .charter-boats-safety-copy a:focus-visible {
-  color: #66768d;
+  color: var(--brand-navy);
 }
 
 .charter-boats-card-more-spacer {
@@ -3155,6 +3175,35 @@ img {
 
 .property-page--template {
   background: #ffffff;
+}
+
+.property-route-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  background: #ffffff;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.property-route-transition--covering,
+.property-route-transition--revealing {
+  pointer-events: auto;
+}
+
+.property-route-transition--covering {
+  opacity: 1;
+}
+
+.property-route-transition--revealing {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-route-transition {
+    transition: none;
+  }
 }
 
 .property-banner {
@@ -3901,6 +3950,11 @@ img {
   transform: translateY(-1px);
 }
 
+.button-link:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
 .button-link--primary {
   color: #ffffff;
   background: var(--brand-navy);
@@ -4336,7 +4390,7 @@ img {
   }
 
   .car-barge-page {
-    padding-top: 2.25rem;
+    padding-top: 0;
     padding-bottom: 3rem;
   }
 
@@ -4346,6 +4400,10 @@ img {
 
   .car-barge-hero {
     gap: 1.65rem;
+  }
+
+  .car-barge-hero h1 {
+    width: min(1440px, calc(100% - 5rem));
   }
 
   .car-barge-intro {
@@ -4367,7 +4425,7 @@ img {
   }
 
   .passenger-ferry-page {
-    padding-top: 2.35rem;
+    padding-top: 0;
     padding-bottom: 3.2rem;
   }
 

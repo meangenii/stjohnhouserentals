@@ -200,9 +200,9 @@ export function CharterBoatsPage() {
                     destinationLabel="Link URL"
                     destinationPath={['safety', 'sections', index, 'href']}
                     external
-                    label={section.href}
-                    labelLabel="Link URL"
-                    labelPath={['safety', 'sections', index, 'href']}
+                    label={section.linkLabel || `Visit the ${section.label} resource`}
+                    labelLabel="Link Text"
+                    labelPath={['safety', 'sections', index, 'linkLabel']}
                   />
                 </p>
               </div>

@@ -1,4 +1,5 @@
 import { deleteJson, getJson, postJson } from './api'
+import { buildPhoneHref } from './contactLinks'
 import { getRouteSlugVariants } from './routeSlug'
 import { normalizeSiteHtml } from './normalizeSiteHtml'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
@@ -166,7 +167,7 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
 
   if (phoneNumber) {
     externalLinks.push({
-      href: `tel:${phoneNumber.replace(/[^\d+]/g, '')}`,
+      href: buildPhoneHref(phoneNumber),
       label: 'Call charter',
       isMailto: false,
       isPhone: true,

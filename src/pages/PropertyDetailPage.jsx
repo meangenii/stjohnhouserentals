@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { RichTextValue } from '../components/RichTextValue'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
@@ -63,8 +63,25 @@ function getShortDescriptionLines(property) {
   return richTextValueToLines(property.shortDescription ?? '')
 }
 
+const PROPERTY_CROSSFADE_DURATION_MS = 180
+const PROPERTY_CROSSFADE_NAVIGATION_DELAY_MS = PROPERTY_CROSSFADE_DURATION_MS + 40
+
+function isUnmodifiedPrimaryClick(event) {
+  return event.button === 0 && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey
+}
+
+function scrollToElementWithoutAnimation(element) {
+  const documentElement = document.documentElement
+  const previousScrollBehavior = documentElement.style.scrollBehavior
+
+  documentElement.style.scrollBehavior = 'auto'
+  element.scrollIntoView({ behavior: 'auto', block: 'start' })
+  documentElement.style.scrollBehavior = previousScrollBehavior
+}
+
 export function PropertyDetailPage() {
   const { slug = '' } = useParams()
+  const navigate = useNavigate()
   const [state, setState] = useState({ status: 'loading' })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [thumbnailRailState, setThumbnailRailState] = useState({
@@ -72,8 +89,16 @@ export function PropertyDetailPage() {
     atStart: true,
     atEnd: true,
   })
+  const [routeTransitionPhase, setRouteTransitionPhase] = useState('idle')
+  const routeTransitionPhaseRef = useRef('idle')
+  const pendingDestinationRef = useRef('')
+  const propertyHeadingRef = useRef(null)
+  const navigationTimerRef = useRef(null)
+  const revealFrameRef = useRef(null)
+  const revealTimerRef = useRef(null)
   const thumbnailsRef = useRef(null)
   const property = state.status === 'ready' ? state.property : null
+  const loadedPropertyPath = property?.path ?? ''
   const shortDescriptionLines = property ? getShortDescriptionLines(property) : []
   const documentTitle =
     state.status === 'not-found'
@@ -103,6 +128,52 @@ export function PropertyDetailPage() {
     type: 'article',
   })
 
+  useLayoutEffect(() => {
+    if (
+      !loadedPropertyPath ||
+      routeTransitionPhaseRef.current !== 'covering' ||
+      pendingDestinationRef.current !== loadedPropertyPath ||
+      !propertyHeadingRef.current
+    ) {
+      return
+    }
+
+    const activeElement = document.activeElement
+
+    if (activeElement instanceof HTMLElement && activeElement.closest('.property-adjacent-nav')) {
+      activeElement.blur()
+    }
+
+    scrollToElementWithoutAnimation(propertyHeadingRef.current)
+
+    revealFrameRef.current = window.requestAnimationFrame(() => {
+      routeTransitionPhaseRef.current = 'revealing'
+      setRouteTransitionPhase('revealing')
+      revealTimerRef.current = window.setTimeout(() => {
+        routeTransitionPhaseRef.current = 'idle'
+        pendingDestinationRef.current = ''
+        setRouteTransitionPhase('idle')
+      }, PROPERTY_CROSSFADE_DURATION_MS)
+    })
+  }, [loadedPropertyPath])
+
+  useEffect(
+    () => () => {
+      if (navigationTimerRef.current) {
+        window.clearTimeout(navigationTimerRef.current)
+      }
+
+      if (revealFrameRef.current) {
+        window.cancelAnimationFrame(revealFrameRef.current)
+      }
+
+      if (revealTimerRef.current) {
+        window.clearTimeout(revealTimerRef.current)
+      }
+    },
+    [],
+  )
+
   useEffect(() => {
     let cancelled = false
 
@@ -131,6 +202,26 @@ export function PropertyDetailPage() {
       cancelled = true
     }
   }, [slug])
+
+  function handleAdjacentPropertyNavigation(event, destination) {
+    if (!isUnmodifiedPrimaryClick(event) || routeTransitionPhaseRef.current !== 'idle') {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.blur()
+    routeTransitionPhaseRef.current = 'covering'
+    pendingDestinationRef.current = destination
+    setRouteTransitionPhase('covering')
+
+    const transitionDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : PROPERTY_CROSSFADE_NAVIGATION_DELAY_MS
+
+    navigationTimerRef.current = window.setTimeout(() => {
+      navigate(destination)
+    }, transitionDelay)
+  }
 
   useEffect(() => {
     const thumbnailsElement = thumbnailsRef.current
@@ -295,6 +386,11 @@ export function PropertyDetailPage() {
 
   return (
     <article className="property-page property-page--template">
+      <div
+        aria-hidden="true"
+        className={`property-route-transition property-route-transition--${routeTransitionPhase}`}
+      />
+
       <section
         className="property-banner"
         style={bannerImageUrl ? { backgroundImage: `linear-gradient(rgba(7, 26, 54, 0.18), rgba(7, 26, 54, 0.18)), url(${bannerImageUrl})` } : undefined}
@@ -303,7 +399,7 @@ export function PropertyDetailPage() {
 
       <section className="property-template-shell">
         <div className="property-template-inner">
-          <header className="property-template-header">
+          <header className="property-template-header" ref={propertyHeadingRef}>
             <h1>{property.name}</h1>
           </header>
 
@@ -370,6 +466,7 @@ export function PropertyDetailPage() {
                   <Link
                     aria-label={`Previous property: ${property.previousProperty.name}`}
                     className="property-adjacent-link"
+                    onClick={(event) => handleAdjacentPropertyNavigation(event, property.previousProperty.path)}
                     to={property.previousProperty.path}
                   >
                     previous item
@@ -382,6 +479,7 @@ export function PropertyDetailPage() {
                   <Link
                     aria-label={`Next property: ${property.nextProperty.name}`}
                     className="property-adjacent-link"
+                    onClick={(event) => handleAdjacentPropertyNavigation(event, property.nextProperty.path)}
                     to={property.nextProperty.path}
                   >
                     next item

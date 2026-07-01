@@ -1,4 +1,5 @@
 import { deleteJson, getJson, postJson } from './api'
+import { buildPhoneHref } from './contactLinks'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT, normalizePropertyTemplateVariant } from './propertyTemplateVariants'
 import { richTextValueToHtml } from './richTextValue'
 import { getRouteSlugVariants } from './routeSlug'
@@ -119,27 +120,6 @@ function extractContactValueFromHref(href = '', prefix = '') {
   } catch {
     return rawValue
   }
-}
-
-function buildPhoneHref(phone) {
-  const normalizedPhone = String(phone ?? '').trim()
-
-  if (!normalizedPhone) {
-    return ''
-  }
-
-  if (normalizedPhone.toLowerCase().startsWith('tel:')) {
-    return normalizedPhone
-  }
-
-  const hasLeadingPlus = normalizedPhone.startsWith('+')
-  const digitsOnly = normalizedPhone.replace(/\D+/g, '')
-
-  if (!digitsOnly) {
-    return ''
-  }
-
-  return `tel:${hasLeadingPlus ? `+${digitsOnly}` : digitsOnly}`
 }
 
 function normalizePublicationState(publication) {

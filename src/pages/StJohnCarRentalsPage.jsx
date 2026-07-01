@@ -1,4 +1,5 @@
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { EditablePhoneText } from '../components/EditablePhoneText'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { getImageDimensions } from '../lib/imageSizePresets'
 import { PageLoadingState } from '../components/PageLoadingState'
@@ -8,16 +9,12 @@ function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
   return phones.map((phone, index) => (
     <span key={index}>
       {index > 0 ? separator : ''}
-      <EditableText
-        as="a"
+      <EditablePhoneText
         className="st-john-car-rentals-phone"
-        href={`tel:${phone.replace(/[^0-9+]/g, '')}`}
         label={`Phone ${index + 1}`}
         path={[...pathPrefix, index]}
         value={phone}
-      >
-        {phone}
-      </EditableText>
+      />
     </span>
   ))
 }
@@ -162,16 +159,12 @@ export function StJohnCarRentalsPage() {
                 <EditableText as="span" label="Dependable Paragraph" multiline path={['directory', 'dependableParagraph']} rows={5} value={page.directory.dependableParagraph}>
                   {page.directory.dependableParagraph}
                 </EditableText>{' '}
-                <EditableText
-                  as="a"
+                <EditablePhoneText
                   className="st-john-car-rentals-phone"
-                  href={`tel:${page.directory.dependablePhone.replace(/[^0-9+]/g, '')}`}
                   label="Dependable Phone"
                   path={['directory', 'dependablePhone']}
                   value={page.directory.dependablePhone}
-                >
-                  {page.directory.dependablePhone}
-                </EditableText>
+                />
               </p>
             </div>
           </div>

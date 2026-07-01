@@ -1,23 +1,4 @@
-function buildPhoneHref(phone) {
-  const normalizedPhone = String(phone ?? '').trim()
-
-  if (!normalizedPhone) {
-    return ''
-  }
-
-  if (normalizedPhone.toLowerCase().startsWith('tel:')) {
-    return normalizedPhone
-  }
-
-  const hasLeadingPlus = normalizedPhone.startsWith('+')
-  const digitsOnly = normalizedPhone.replace(/\D+/g, '')
-
-  if (!digitsOnly) {
-    return ''
-  }
-
-  return `tel:${hasLeadingPlus ? `+${digitsOnly}` : digitsOnly}`
-}
+import { buildPhoneHref } from './contactLinks'
 
 function findPropertyLink(property, matcher) {
   const links = Array.isArray(property?.externalLinks) ? property.externalLinks.filter(Boolean) : []
