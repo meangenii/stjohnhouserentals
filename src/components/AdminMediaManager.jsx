@@ -267,6 +267,7 @@ export function AdminMediaManager({
 }) {
   const fileInputRef = useRef(null)
   const shouldForceRefreshOnLoadRef = useRef(defaultOpen || !showToggle)
+  const latestLibraryLoadIdRef = useRef(0)
   const [open, setOpen] = useState(defaultOpen || !showToggle)
   const [query, setQuery] = useState('')
   const [folderPathFilter, setFolderPathFilter] = useState('auto')
@@ -279,6 +280,7 @@ export function AdminMediaManager({
   const [selectedEntryId, setSelectedEntryId] = useState('')
   const [expandedFolderPaths, setExpandedFolderPaths] = useState(() => new Set())
   const [measuredDimensionsById, setMeasuredDimensionsById] = useState({})
+  const [libraryLoadVersion, setLibraryLoadVersion] = useState(0)
   const [libraryState, setLibraryState] = useState({
     bucket: '',
     browserRootPath: '',
@@ -386,12 +388,14 @@ export function AdminMediaManager({
     }
 
     let cancelled = false
+    const loadId = latestLibraryLoadIdRef.current + 1
+    latestLibraryLoadIdRef.current = loadId
     const forceRefresh = shouldForceRefreshOnLoadRef.current
     shouldForceRefreshOnLoadRef.current = false
 
     loadAdminMediaLibrary({ forceRefresh })
       .then((library) => {
-        if (cancelled) {
+        if (cancelled || loadId !== latestLibraryLoadIdRef.current) {
           return
         }
 
@@ -402,7 +406,7 @@ export function AdminMediaManager({
         })
       })
       .catch((error) => {
-        if (!cancelled) {
+        if (!cancelled && loadId === latestLibraryLoadIdRef.current) {
           setLibraryState({
             bucket: '',
             browserRootPath: '',
@@ -419,7 +423,7 @@ export function AdminMediaManager({
     return () => {
       cancelled = true
     }
-  }, [isOpen, libraryState.status])
+  }, [isOpen, libraryLoadVersion, libraryState.status])
   const effectiveExpandedFolderPaths = useMemo(() => {
     const nextPaths = new Set(expandedFolderPaths)
     ;[libraryState.browserRootPath, effectiveFolderPathFilter, preferredFolderPath].forEach((folderPath) => {
@@ -542,6 +546,7 @@ export function AdminMediaManager({
     }
 
     shouldForceRefreshOnLoadRef.current = true
+    setLibraryLoadVersion((currentVersion) => currentVersion + 1)
     setLibraryState((currentState) => ({
       ...currentState,
       error: '',
@@ -562,8 +567,7 @@ export function AdminMediaManager({
     const nextOpen = !open
 
     if (nextOpen) {
-      shouldForceRefreshOnLoadRef.current = true
-      setLibraryState((currentState) => ({ ...currentState, error: '', status: 'loading' }))
+      refreshLibrary()
     }
 
     setOpen(nextOpen)
@@ -627,6 +631,13 @@ export function AdminMediaManager({
     const files = Array.from(event.target.files ?? []).filter((file) => file instanceof File)
 
     if (files.length === 0) {
+      return
+    }
+
+    if (libraryState.status !== 'ready') {
+      setActionFeedback('Wait for the current media library refresh to finish before uploading.')
+      setActionStatus('error')
+      event.target.value = ''
       return
     }
 
@@ -766,7 +777,9 @@ export function AdminMediaManager({
     }
   }
 
-  const toolbarBusy = disabled || actionStatus === 'saving'
+  const actionBusy = disabled || actionStatus === 'saving'
+  const refreshBusy = actionBusy || libraryState.status === 'loading'
+  const libraryMutationBusy = actionBusy || libraryState.status !== 'ready'
 
   return (
     <div className="admin-media-manager">
@@ -823,7 +836,7 @@ export function AdminMediaManager({
             <div className="admin-inline-actions admin-media-toolbar-actions">
               <button
                 className="button-link button-link--ghost admin-action"
-                disabled={toolbarBusy}
+                disabled={refreshBusy}
                 type="button"
                 onClick={() => refreshLibrary({ nextFolderPath: effectiveFolderPathFilter })}
               >
@@ -831,7 +844,7 @@ export function AdminMediaManager({
               </button>
               <button
                 className="button-link button-link--ghost admin-action"
-                disabled={toolbarBusy}
+                disabled={libraryMutationBusy}
                 type="button"
                 onClick={() => setShowCreateFolderForm((currentValue) => !currentValue)}
               >
@@ -839,7 +852,7 @@ export function AdminMediaManager({
               </button>
               <button
                 className="button-link button-link--ghost admin-action"
-                disabled={toolbarBusy}
+                disabled={libraryMutationBusy}
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -870,6 +883,7 @@ export function AdminMediaManager({
             <input
               ref={fileInputRef}
               accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
+              disabled={libraryMutationBusy}
               hidden
               multiple
               type="file"
@@ -892,7 +906,7 @@ export function AdminMediaManager({
                   Create in <strong>{effectiveFolderPathFilter || libraryState.browserRootPath || 'media'}</strong>
                 </p>
                 <div className="admin-inline-actions">
-                  <button className="button-link button-link--ghost admin-action" disabled={toolbarBusy} type="submit">
+                  <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="submit">
                     Create folder
                   </button>
                 </div>
@@ -1081,7 +1095,7 @@ export function AdminMediaManager({
                         </button>
                         <button
                           className="button-link button-link--ghost admin-action"
-                          disabled={toolbarBusy}
+                          disabled={libraryMutationBusy}
                           type="button"
                           onClick={() => handleDeleteEntry(selectedEntry)}
                         >
