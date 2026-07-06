@@ -752,6 +752,49 @@ export async function publishAdminProperty(originalSlug, options = {}) {
   return cloneData(normalizePropertyRecord(payload?.property))
 }
 
+export async function setAdminPropertyActiveState(originalSlug, active, options = {}) {
+  if (!isFirebasePropertyData()) {
+    throw new Error('Property visibility updates are only available when VITE_PROPERTY_DATA_SOURCE=firebase.')
+  }
+
+  const payload = await postJson('/admin/properties/active', { originalSlug, active: active !== false }, options)
+  invalidatePropertyCaches()
+
+  return cloneData(normalizePropertyRecord(payload?.property))
+}
+
+export async function deleteAdminProperty(originalSlug, options = {}) {
+  const normalizedOriginalSlug = String(originalSlug ?? '').trim()
+
+  if (!normalizedOriginalSlug) {
+    throw new Error('Property identifier is required to delete.')
+  }
+
+  if (isMockPropertyData()) {
+    const catalog = await loadMockCatalog()
+    const properties = catalog.properties.filter((property) => property.slug !== normalizedOriginalSlug)
+
+    localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify({ properties }))
+    mockCatalog = buildCatalogFromPayload({ properties })
+    localPropertySummaryCatalogPromise = null
+
+    return {
+      name: catalog.properties.find((property) => property.slug === normalizedOriginalSlug)?.name || normalizedOriginalSlug,
+      slug: normalizedOriginalSlug,
+      tombstoned: false,
+    }
+  }
+
+  if (!isFirebasePropertyData()) {
+    throw new Error('Property deletion is only available when VITE_PROPERTY_DATA_SOURCE=mock or firebase.')
+  }
+
+  const payload = await deleteJson('/admin/properties', { ...options, body: { originalSlug: normalizedOriginalSlug } })
+  invalidatePropertyCaches()
+
+  return cloneData(payload?.property ?? null)
+}
+
 export async function resetAdminProperties(options = {}) {
   if (isMockPropertyData()) {
     localStorage.removeItem(MOCK_STORAGE_KEY)

@@ -481,12 +481,25 @@ export function AdminPropertyPreview({
         )}
 
         <div className="admin-property-preview-body">
+          <div className="admin-property-preview-title">
+            <h3>{property?.name || 'Untitled Property'}</h3>
+            {detailLine ? <p>{detailLine}</p> : null}
+          </div>
+
           {editable && formState ? (
             <div className="admin-property-preview-controls">
-              <div className="admin-preview-field-grid">
-                <PreviewInput disabled={disabled} label="Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />
-                <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
+              <div className="admin-preview-field-grid admin-preview-field-grid--tight">
+                <PreviewInput disabled={disabled} label="Property Name" onChange={(value) => onFieldChange('name', value)} value={formState.name} />
+                <PreviewInput disabled={disabled} label="Bedrooms" onChange={(value) => onFieldChange('bedrooms', value)} type="number" value={formState.bedrooms} />
+                <PreviewInput disabled={disabled} label="Bathrooms" onChange={(value) => onFieldChange('bathrooms', value)} type="number" value={formState.bathrooms} />
+                <PreviewInput disabled={disabled} label="Max Guests" onChange={(value) => onFieldChange('maxGuests', value)} type="number" value={formState.maxGuests} />
+                <PreviewInput disabled={disabled} label="Location" onChange={(value) => onFieldChange('location', value)} value={formState.location} wide />
               </div>
+            </div>
+          ) : null}
+
+          {editable && formState ? (
+            <div className="admin-property-preview-controls">
               <AdminMediaManager
                 currentUrl={formState.heroImageUrl}
                 disabled={disabled}
@@ -497,25 +510,9 @@ export function AdminPropertyPreview({
                 preferredOwnerType="property"
                 title="Property Hero Media"
               />
-            </div>
-          ) : null}
-
-          <div className="admin-property-preview-title">
-            <h3>{property?.name || 'Untitled Property'}</h3>
-            {detailLine ? <p>{detailLine}</p> : null}
-            <p>{property?.active !== false ? 'Will be visible when published' : 'Will stay hidden when published'}</p>
-          </div>
-
-          {editable && formState ? (
-            <div className="admin-property-preview-controls">
-              <div className="admin-preview-field-grid admin-preview-field-grid--tight">
-                <PreviewInput disabled={disabled} label="Property Name" onChange={(value) => onFieldChange('name', value)} value={formState.name} />
-                <PreviewInput disabled={disabled} label="URL Path" onChange={(value) => onFieldChange('slug', value)} value={formState.slug} />
-                <PreviewInput disabled={disabled} label="Bedrooms" onChange={(value) => onFieldChange('bedrooms', value)} type="number" value={formState.bedrooms} />
-                <PreviewInput disabled={disabled} label="Bathrooms" onChange={(value) => onFieldChange('bathrooms', value)} type="number" value={formState.bathrooms} />
-                <PreviewInput disabled={disabled} label="Max Guests" onChange={(value) => onFieldChange('maxGuests', value)} type="number" value={formState.maxGuests} />
-                <PreviewInput disabled={disabled} label="Price" onChange={(value) => onFieldChange('price', value)} value={formState.price} />
-                <PreviewInput disabled={disabled} label="Location" onChange={(value) => onFieldChange('location', value)} value={formState.location} wide />
+              <div className="admin-preview-field-grid">
+                <PreviewInput disabled={disabled} label="Manual Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />
+                <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
               </div>
             </div>
           ) : null}
@@ -599,14 +596,6 @@ export function AdminPropertyPreview({
                           <span>{index === 0 ? 'First thumbnail in the gallery strip' : 'Shown in the gallery strip'}</span>
                         </div>
 
-                        <PreviewInput
-                          disabled={disabled}
-                          label="Image URL"
-                          onChange={(value) => onGalleryImageChange(image.id, 'url', value)}
-                          type="url"
-                          value={image.url}
-                          wide
-                        />
                         <AdminMediaManager
                           currentUrl={image.url}
                           disabled={disabled}
@@ -616,6 +605,14 @@ export function AdminPropertyPreview({
                           preferredOwnerName={formState.name}
                           preferredOwnerType="property"
                           title={`Gallery Image ${index + 1} Media`}
+                        />
+                        <PreviewInput
+                          disabled={disabled}
+                          label="Manual Image URL"
+                          onChange={(value) => onGalleryImageChange(image.id, 'url', value)}
+                          type="url"
+                          value={image.url}
+                          wide
                         />
                         <PreviewInput
                           disabled={disabled}

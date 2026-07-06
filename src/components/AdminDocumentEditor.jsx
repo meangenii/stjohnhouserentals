@@ -2,6 +2,22 @@ import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { AdminMediaManager } from './AdminMediaManager'
 
+const IMAGE_CONTEXT_PATTERN = /(image|photo|gallery|hero|logo|thumbnail|icon|picture)/i
+
+function isImageSourceField(fieldKey, path = []) {
+  const normalizedFieldKey = String(fieldKey ?? '')
+
+  if (/(image|photo|gallery|logo|thumbnail|icon|picture)/i.test(normalizedFieldKey)) {
+    return true
+  }
+
+  if (!/^(url|src)$/i.test(normalizedFieldKey)) {
+    return false
+  }
+
+  return IMAGE_CONTEXT_PATTERN.test(path.slice(0, -1).join('.'))
+}
+
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
 }
@@ -95,12 +111,11 @@ function shouldUseTextarea(fieldKey, value) {
 
 function isLikelyImageUrl(fieldKey, path, value) {
   const text = String(value ?? '').trim()
-  const fieldPath = `${path.join('.')} ${fieldKey}`.trim()
 
   return Boolean(
     text &&
       /^https?:\/\//i.test(text) &&
-      /(image|photo|gallery|hero|logo|thumbnail|icon|picture|url|src)/i.test(fieldPath),
+      isImageSourceField(fieldKey, path),
   )
 }
 
@@ -190,12 +205,22 @@ function ScalarField({ fieldKey, label, onChange, path, value, disabled }) {
   }
 
   const useTextarea = typeof value === 'string' && shouldUseTextarea(fieldKey, value)
-  const showMediaLibrary = typeof value === 'string' && (isLikelyImageUrl(fieldKey, path, value) || /(image|photo|gallery|hero|logo|thumbnail|icon|picture|url|src)/i.test(`${path.join('.')} ${fieldKey}`.trim()))
+  const showMediaLibrary = typeof value === 'string' && isImageSourceField(fieldKey, path)
 
   return (
     <div className="admin-field">
+      {showMediaLibrary ? (
+        <AdminMediaManager
+          currentUrl={value ?? ''}
+          disabled={disabled}
+          onClear={() => onChange(path, '')}
+          onSelect={(nextUrl) => onChange(path, nextUrl)}
+          preferredOwnerType="page"
+          title={`${label} Media`}
+        />
+      ) : null}
       <label htmlFor={inputId}>
-        <span>{label}</span>
+        <span>{showMediaLibrary ? `Manual ${label}` : label}</span>
       </label>
       {useTextarea ? (
         <textarea id={inputId} rows="4" value={value ?? ''} onChange={(event) => onChange(path, event.target.value)} disabled={disabled} />
@@ -211,16 +236,6 @@ function ScalarField({ fieldKey, label, onChange, path, value, disabled }) {
         />
       )}
       {typeof value === 'string' ? <DocumentPreview fieldKey={fieldKey} path={path} value={value} /> : null}
-      {showMediaLibrary ? (
-        <AdminMediaManager
-          currentUrl={value ?? ''}
-          disabled={disabled}
-          onClear={() => onChange(path, '')}
-          onSelect={(nextUrl) => onChange(path, nextUrl)}
-          preferredOwnerType="page"
-          title={`${label} Media`}
-        />
-      ) : null}
     </div>
   )
 }

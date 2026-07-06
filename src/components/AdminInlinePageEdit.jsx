@@ -1114,8 +1114,16 @@ function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSiz
 
   return (
     <>
+      <AdminMediaManager
+        currentUrl={image?.url ?? ''}
+        disabled={field.disabled}
+        onClear={() => field.updatePath([...path, 'url'], '')}
+        onSelect={handleSelectImage}
+        preferredOwnerType="page"
+        title={`${title} Media`}
+      />
       <label className="admin-field">
-        <span>Image URL</span>
+        <span>Manual Image URL</span>
         <input type="text" value={image?.url ?? ''} onChange={(event) => field.updatePath([...path, 'url'], event.target.value)} />
       </label>
       <label className="admin-field">
@@ -1129,14 +1137,6 @@ function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSiz
         </label>
       ) : null}
       {showSizeControls ? <AdminImageSizeControls disabled={field.disabled} displaySize={displaySize} image={image} onChange={handleSizeChange} /> : null}
-      <AdminMediaManager
-        currentUrl={image?.url ?? ''}
-        disabled={field.disabled}
-        onClear={() => field.updatePath([...path, 'url'], '')}
-        onSelect={handleSelectImage}
-        preferredOwnerType="page"
-        title={`${title} Media`}
-      />
     </>
   )
 }

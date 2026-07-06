@@ -75,7 +75,7 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
       const ownerKey = decodeValue(entry.ownerKey)
       const ownerName = decodeValue(entry.ownerName)
       const storagePath = decodeValue(entry.storagePath)
-      const folderPath = getStorageFolderPath(storagePath)
+      const folderPath = decodeValue(entry.folderPath) || getStorageFolderPath(storagePath)
       const managedUrl = String(entry.managedUrl ?? '').trim()
       const ownerType = String(entry.ownerType ?? '').trim()
       const bytes = Number(entry.bytes ?? 0) || 0

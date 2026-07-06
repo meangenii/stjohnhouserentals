@@ -5302,6 +5302,11 @@ button.admin-auth-badge {
   color: #7b5a00;
 }
 
+.admin-feedback--warning {
+  background: #fff7e8;
+  color: #8f5b00;
+}
+
 .admin-feedback--error {
   background: #fff0ee;
   color: #a63c24;
@@ -5431,6 +5436,10 @@ button.admin-auth-badge {
 .admin-collection-list {
   display: grid;
   gap: 1rem;
+}
+
+.admin-editor-workspace--full-width {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-toolbar-row {
@@ -6772,13 +6781,76 @@ button.admin-auth-badge {
   min-width: 0;
   display: grid;
   gap: 0;
+  border-radius: 0.85rem;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-media-browser--drop-active {
+  background: #f3f8ff;
+  box-shadow: inset 0 0 0 2px rgba(55, 114, 255, 0.22);
 }
 
 .admin-media-manager-panel {
+  position: relative;
   padding: 0.6rem;
   border: 1px solid #cfd9e4;
   border-radius: 0.45rem;
   background: #ffffff;
+}
+
+.admin-media-upload-modal-shell {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(248, 251, 255, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.admin-media-upload-modal {
+  width: min(100%, 26rem);
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid #cfd9e4;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 18px 44px rgba(15, 33, 55, 0.18);
+  text-align: center;
+}
+
+.admin-media-upload-modal strong {
+  color: var(--brand-navy);
+  font-size: 0.95rem;
+}
+
+.admin-media-upload-modal p {
+  margin: 0;
+  color: #5a6f86;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.admin-media-upload-modal-detail strong {
+  color: var(--brand-navy);
+}
+
+.admin-media-upload-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(45, 117, 215, 0.16);
+  border-top-color: #2d75d7;
+  border-radius: 999px;
+  animation: admin-media-upload-spin 0.85s linear infinite;
+}
+
+@keyframes admin-media-upload-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .admin-media-manager-header,
@@ -6858,6 +6930,67 @@ button.admin-auth-badge {
   color: #173b6b;
   border-color: #d1dbe6;
   background: #f7f9fc;
+}
+
+.admin-media-manager .admin-media-picker-toggle {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.84rem;
+}
+
+.admin-media-dropzone {
+  width: 100%;
+  display: grid;
+  gap: 0.22rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px dashed #b9cee3;
+  border-radius: 0.45rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #f0f6fc 100%);
+  color: var(--brand-navy);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.admin-media-dropzone strong {
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+.admin-media-dropzone span {
+  color: #5a6f86;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.admin-media-dropzone:hover,
+.admin-media-dropzone:focus-visible {
+  border-color: #6baff0;
+  background: linear-gradient(180deg, #fdfefe 0%, #eef6ff 100%);
+  box-shadow: 0 0 0 3px rgba(34, 105, 255, 0.12);
+  outline: none;
+}
+
+.admin-media-dropzone--active {
+  border-color: #2d75d7;
+  background: linear-gradient(180deg, #eef6ff 0%, #e1efff 100%);
+  box-shadow: 0 0 0 3px rgba(34, 105, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.admin-media-dropzone--disabled,
+.admin-media-dropzone--disabled:hover,
+.admin-media-dropzone--disabled:focus-visible {
+  border-color: #d5dee8;
+  background: #f7f9fc;
+  box-shadow: none;
+  color: #7d90a5;
+  cursor: default;
+  transform: none;
+}
+
+.admin-media-dropzone--disabled span {
+  color: #7d90a5;
 }
 
 .admin-media-folder-header,
@@ -6956,6 +7089,30 @@ button.admin-auth-badge {
   font-size: 0.76rem;
 }
 
+.admin-media-browser-note {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid #dbe4ec;
+  background: #f7f9fc;
+}
+
+.admin-media-bulk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.6rem;
+  padding: 0.45rem 0.55rem;
+  border-bottom: 1px solid #dbe4ec;
+  background: #eef5ff;
+}
+
+.admin-media-bulk-summary {
+  color: var(--brand-navy);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .admin-media-explorer {
   display: grid;
   gap: 0;
@@ -7018,6 +7175,11 @@ button.admin-auth-badge {
 
 .admin-media-tree-row--active {
   background: #dcecff;
+}
+
+.admin-media-tree-row--drop-active {
+  background: #cfe3ff;
+  box-shadow: inset 0 0 0 1px rgba(55, 114, 255, 0.28);
 }
 
 .admin-media-tree-toggle,
@@ -7117,23 +7279,37 @@ button.admin-auth-badge {
 }
 
 .admin-media-list th:nth-child(1) {
-  width: 42%;
+  width: 4%;
 }
 
 .admin-media-list th:nth-child(2) {
-  width: 15%;
+  width: 42%;
 }
 
 .admin-media-list th:nth-child(3) {
-  width: 12%;
+  width: 15%;
 }
 
 .admin-media-list th:nth-child(4) {
-  width: 17%;
+  width: 12%;
 }
 
 .admin-media-list th:nth-child(5) {
+  width: 17%;
+}
+
+.admin-media-list th:nth-child(6) {
   width: 14%;
+}
+
+.admin-media-list-select-cell {
+  width: 2rem;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.admin-media-list-select-cell input {
+  margin: 0;
 }
 
 .admin-media-list-row {
@@ -7142,6 +7318,11 @@ button.admin-auth-badge {
 
 .admin-media-list-row--folder {
   background: #ffffff;
+}
+
+.admin-media-list-row--drop-active,
+.admin-media-list-row--drop-active:hover {
+  background: #dcecff;
 }
 
 .admin-media-list-row:hover {
@@ -7163,6 +7344,24 @@ button.admin-auth-badge {
   color: var(--brand-navy);
   cursor: pointer;
   text-align: left;
+}
+
+.admin-media-list-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-media-list-cell .admin-media-list-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-media-list-inline-action {
+  min-height: auto;
+  padding: 0.2rem 0;
+  flex: 0 0 auto;
 }
 
 .admin-media-list-name--file {
@@ -7378,6 +7577,10 @@ button.admin-auth-badge {
     align-items: start;
   }
 
+  .admin-editor-workspace--full-width {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .admin-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7445,4 +7648,35 @@ button.admin-auth-badge {
   .admin-media-details {
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
+}
+
+.site-main img,
+.site-main :is(
+    .home-trust-media,
+    .home-discover-media,
+    .home-about-media,
+    .about-page-story-media,
+    .about-page-essentials-media,
+    .snapshot-gallery-item,
+    .listing-card,
+    .listing-card-media,
+    .detail-hero,
+    .rental-accommodations-card,
+    .rental-accommodations-card-media,
+    .property-for-sale-story-media,
+    .property-for-sale-band-media,
+    .car-barge-hero-media,
+    .car-barge-operator-media,
+    .passenger-ferry-hero,
+    .st-john-car-rentals-directory-media,
+    .st-john-car-rentals-airport-notes-media,
+    .charter-boats-intro-media,
+    .charter-boats-card,
+    .charter-boats-card-media,
+    .local-attractions-map-card,
+    .local-attractions-restaurant-card,
+    .property-gallery-stage,
+    .property-gallery-thumbnail
+  ) {
+  border-radius: 0 !important;
 }

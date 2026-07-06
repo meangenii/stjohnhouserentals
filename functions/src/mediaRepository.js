@@ -8,7 +8,7 @@ const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
 const MEDIA_FOLDER_COLLECTION = 'cmsMediaFolders'
 const MAX_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
 const MAX_MEDIA_UPLOAD_LABEL = String(mediaUploadConfig.maxBinaryUploadLabel ?? '6 MB').trim() || '6 MB'
-const AVIF_CONVERSION_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const AVIF_CONVERSION_CONTENT_TYPES = new Set(['image/jpeg', 'image/png'])
 const AVIF_QUALITY = 60
 const AVIF_EFFORT = 4
 
@@ -70,6 +70,26 @@ function createMediaDocumentId(storagePath) {
 
 function buildDownloadUrl(bucketName, storagePath, token) {
   return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucketName)}/o/${encodeURIComponent(storagePath)}?alt=media&token=${encodeURIComponent(token)}`
+}
+
+function getFolderPathFromStoragePath(storagePath) {
+  const normalizedStoragePath = normalizeString(storagePath)
+
+  if (!normalizedStoragePath.includes('/')) {
+    return 'media'
+  }
+
+  return sanitizeFolderPath(normalizedStoragePath.slice(0, normalizedStoragePath.lastIndexOf('/')))
+}
+
+function getMediaRecordFolderPath(mediaRecord) {
+  const explicitFolderPath = normalizeString(mediaRecord?.folderPath)
+
+  if (explicitFolderPath) {
+    return sanitizeFolderPath(explicitFolderPath)
+  }
+
+  return getFolderPathFromStoragePath(mediaRecord?.storagePath)
 }
 
 function inferContentType(fileName, contentType) {
@@ -344,6 +364,7 @@ async function uploadMediaAsset(draft, actor) {
     downloadToken,
     fieldPath: '',
     fileName,
+    folderPath,
     managedUrl,
     migratedAt: getServerTimestamp(),
     originalSourceUrl: '',
@@ -375,6 +396,63 @@ async function uploadMediaAsset(draft, actor) {
   }
 }
 
+async function deleteMediaAssets(mediaIds) {
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : [mediaIds]).map((value) => normalizeString(value)).filter(Boolean))]
+
+  if (!normalizedMediaIds.length) {
+    throw new HttpError(400, 'Choose at least one media item before deleting it.')
+  }
+
+  const db = getDb()
+  const mediaDocumentRefs = normalizedMediaIds.map((mediaId) => db.collection(MEDIA_LIBRARY_COLLECTION).doc(mediaId))
+  const mediaDocuments = await Promise.all(mediaDocumentRefs.map((reference) => reference.get()))
+  const missingDocument = mediaDocuments.find((document) => !document.exists)
+
+  if (missingDocument) {
+    throw new HttpError(404, 'One or more selected media items no longer exist.')
+  }
+
+  const deletedMedia = []
+
+  for (const mediaDocument of mediaDocuments) {
+    const mediaRecord = mediaDocument.data() ?? {}
+    const storagePath = normalizeString(mediaRecord.storagePath)
+
+    if (!storagePath) {
+      throw new HttpError(409, 'A selected media item is missing its storage path and cannot be deleted safely.')
+    }
+
+    const bucket = getStorageBucket(normalizeString(mediaRecord.bucket))
+
+    try {
+      await bucket.file(storagePath).delete({ ignoreNotFound: true })
+    } catch (error) {
+      const statusCode = Number(error?.code ?? error?.statusCode ?? 0)
+
+      if (statusCode !== 404) {
+        throw error
+      }
+    }
+
+    deletedMedia.push({
+      bucket: normalizeString(mediaRecord.bucket) || bucket.name,
+      fileName: normalizeString(mediaRecord.fileName),
+      folderPath: getMediaRecordFolderPath(mediaRecord),
+      id: mediaDocument.id,
+      managedUrl: normalizeString(mediaRecord.managedUrl),
+      storagePath,
+    })
+  }
+
+  for (let index = 0; index < mediaDocumentRefs.length; index += 400) {
+    const batch = db.batch()
+    mediaDocumentRefs.slice(index, index + 400).forEach((reference) => batch.delete(reference))
+    await batch.commit()
+  }
+
+  return deletedMedia
+}
+
 async function deleteMediaAsset(mediaId) {
   const normalizedMediaId = normalizeString(mediaId)
 
@@ -382,40 +460,117 @@ async function deleteMediaAsset(mediaId) {
     throw new HttpError(400, 'Choose a media item before deleting it.')
   }
 
+  const [deletedMedia] = await deleteMediaAssets([normalizedMediaId])
+  return deletedMedia
+}
+
+async function moveMediaAssets(mediaIds, folderPath, actor) {
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : [mediaIds]).map((value) => normalizeString(value)).filter(Boolean))]
+
+  if (!normalizedMediaIds.length) {
+    throw new HttpError(400, 'Choose at least one media item before moving it.')
+  }
+
+  const normalizedFolderPath = sanitizeFolderPath(folderPath || 'media')
   const db = getDb()
-  const mediaDocumentRef = db.collection(MEDIA_LIBRARY_COLLECTION).doc(normalizedMediaId)
-  const mediaDocument = await mediaDocumentRef.get()
+  const mediaDocumentRefs = normalizedMediaIds.map((mediaId) => db.collection(MEDIA_LIBRARY_COLLECTION).doc(mediaId))
+  const mediaDocuments = await Promise.all(mediaDocumentRefs.map((reference) => reference.get()))
+  const missingDocument = mediaDocuments.find((document) => !document.exists)
 
-  if (!mediaDocument.exists) {
-    throw new HttpError(404, 'The selected media item no longer exists.')
+  if (missingDocument) {
+    throw new HttpError(404, 'One or more selected media items no longer exist.')
   }
 
-  const mediaRecord = mediaDocument.data() ?? {}
-  const storagePath = normalizeString(mediaRecord.storagePath)
+  await ensureFolderRecords(normalizedFolderPath, actor)
 
-  if (!storagePath) {
-    throw new HttpError(409, 'The selected media item is missing its storage path and cannot be deleted safely.')
-  }
+  const moved = []
+  const skipped = []
 
-  const bucket = getStorageBucket(normalizeString(mediaRecord.bucket))
+  for (const mediaDocument of mediaDocuments) {
+    const mediaRecord = mediaDocument.data() ?? {}
+    const currentFolderPath = getMediaRecordFolderPath(mediaRecord)
 
-  try {
-    await bucket.file(storagePath).delete({ ignoreNotFound: true })
-  } catch (error) {
-    const statusCode = Number(error?.code ?? error?.statusCode ?? 0)
-
-    if (statusCode !== 404) {
-      throw error
+    if (currentFolderPath === normalizedFolderPath) {
+      skipped.push({
+        fileName: normalizeString(mediaRecord.fileName),
+        folderPath: currentFolderPath,
+        id: mediaDocument.id,
+        managedUrl: normalizeString(mediaRecord.managedUrl),
+        storagePath: normalizeString(mediaRecord.storagePath),
+      })
+      continue
     }
-  }
 
-  await mediaDocumentRef.delete()
+    await mediaDocument.ref.set(
+      {
+        folderPath: normalizedFolderPath,
+        updatedAt: getServerTimestamp(),
+        updatedBy: actor.email || actor.uid || 'admin',
+      },
+      { merge: true },
+    )
+
+    moved.push({
+      fileName: normalizeString(mediaRecord.fileName),
+      folderPath: normalizedFolderPath,
+      id: mediaDocument.id,
+      managedUrl: normalizeString(mediaRecord.managedUrl),
+      storagePath: normalizeString(mediaRecord.storagePath),
+      updatedAt: new Date().toISOString(),
+    })
+  }
 
   return {
-    bucket: normalizeString(mediaRecord.bucket) || bucket.name,
-    id: normalizedMediaId,
-    managedUrl: normalizeString(mediaRecord.managedUrl),
-    storagePath,
+    moved,
+    movedCount: moved.length,
+    skipped,
+    skippedCount: skipped.length,
+    targetFolderPath: normalizedFolderPath,
+  }
+}
+
+async function deleteMediaFolder(folderPath, actor) {
+  const normalizedFolderPath = sanitizeFolderPath(folderPath)
+
+  if (normalizedFolderPath === 'media') {
+    throw new HttpError(400, 'The root media folder cannot be deleted.')
+  }
+
+  const db = getDb()
+  const folderCollection = db.collection(MEDIA_FOLDER_COLLECTION)
+  const mediaCollection = db.collection(MEDIA_LIBRARY_COLLECTION)
+  const folderDocument = await folderCollection.doc(createFolderDocumentId(normalizedFolderPath)).get()
+
+  if (!folderDocument.exists) {
+    throw new HttpError(404, 'The selected folder no longer exists.')
+  }
+
+  const prefix = `${normalizedFolderPath}/`
+  const [folderSnapshot, mediaSnapshot] = await Promise.all([folderCollection.get(), mediaCollection.get()])
+  const folderDocsToDelete = folderSnapshot.docs.filter((document) => {
+    const documentPath = normalizeString(document.data()?.path)
+    return documentPath === normalizedFolderPath || documentPath.startsWith(prefix)
+  })
+  const mediaDocsToDelete = mediaSnapshot.docs.filter((document) => {
+    const mediaFolderPath = getMediaRecordFolderPath(document.data())
+    return mediaFolderPath === normalizedFolderPath || mediaFolderPath.startsWith(prefix)
+  })
+
+  if (mediaDocsToDelete.length > 0) {
+    await deleteMediaAssets(mediaDocsToDelete.map((document) => document.id))
+  }
+
+  for (let index = 0; index < folderDocsToDelete.length; index += 400) {
+    const batch = db.batch()
+    folderDocsToDelete.slice(index, index + 400).forEach((document) => batch.delete(document.ref))
+    await batch.commit()
+  }
+
+  return {
+    deletedFolderCount: folderDocsToDelete.length,
+    deletedMediaCount: mediaDocsToDelete.length,
+    deletedBy: actor.email || actor.uid || 'admin',
+    path: normalizedFolderPath,
   }
 }
 
@@ -451,5 +606,8 @@ exports.MEDIA_FOLDER_COLLECTION = MEDIA_FOLDER_COLLECTION
 exports.MEDIA_LIBRARY_COLLECTION = MEDIA_LIBRARY_COLLECTION
 exports.createMediaFolder = createMediaFolder
 exports.deleteMediaAsset = deleteMediaAsset
+exports.deleteMediaAssets = deleteMediaAssets
+exports.deleteMediaFolder = deleteMediaFolder
 exports.listMediaLibrary = listMediaLibrary
+exports.moveMediaAssets = moveMediaAssets
 exports.uploadMediaAsset = uploadMediaAsset

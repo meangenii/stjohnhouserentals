@@ -156,3 +156,41 @@ export async function deleteAdminMediaFile(mediaId) {
   const authToken = await requireAdminAuthToken()
   return deleteJson(`/admin/media/library/${encodeURIComponent(normalizedMediaId)}`, { authToken })
 }
+
+export async function deleteAdminMediaFiles(mediaIds) {
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : []).map((value) => String(value ?? '').trim()).filter(Boolean))]
+
+  if (!normalizedMediaIds.length) {
+    throw new Error('Choose at least one image before deleting it.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return postJson('/admin/media/library/delete', { mediaIds: normalizedMediaIds }, { authToken })
+}
+
+export async function moveAdminMediaFiles({ folderPath, mediaIds }) {
+  const normalizedFolderPath = String(folderPath ?? '').trim()
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : []).map((value) => String(value ?? '').trim()).filter(Boolean))]
+
+  if (!normalizedFolderPath) {
+    throw new Error('Choose a destination folder before moving images.')
+  }
+
+  if (!normalizedMediaIds.length) {
+    throw new Error('Choose at least one image before moving it.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return postJson('/admin/media/library/move', { folderPath: normalizedFolderPath, mediaIds: normalizedMediaIds }, { authToken })
+}
+
+export async function deleteAdminMediaFolder(folderPath) {
+  const normalizedFolderPath = String(folderPath ?? '').trim()
+
+  if (!normalizedFolderPath) {
+    throw new Error('Choose a folder before deleting it.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return deleteJson('/admin/media/folders', { authToken, body: { folderPath: normalizedFolderPath } })
+}

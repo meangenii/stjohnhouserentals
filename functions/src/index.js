@@ -11,6 +11,7 @@ const {
 } = require('./charterRepository')
 const { HttpError, requireAdminUser } = require('./firebaseAdmin')
 const {
+  deletePropertyRecord,
   getPropertyBySlug,
   listAllProperties,
   listBedroomGroups,
@@ -19,9 +20,18 @@ const {
   publishPropertyRecord,
   resetPropertyRecordsToSeed,
   savePropertyRecord,
+  setPropertyActiveState,
   seedPropertyRecords,
 } = require('./propertyRepository')
-const { createMediaFolder, deleteMediaAsset, listMediaLibrary, uploadMediaAsset } = require('./mediaRepository')
+const {
+  createMediaFolder,
+  deleteMediaAsset,
+  deleteMediaAssets,
+  deleteMediaFolder,
+  listMediaLibrary,
+  moveMediaAssets,
+  uploadMediaAsset,
+} = require('./mediaRepository')
 const {
   getAdminSiteShellContent,
   getAdminStructuredPageContent,
@@ -273,6 +283,30 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       return
     }
 
+    if (request.method === 'POST' && path === 'admin/properties/active') {
+      const adminUser = await requireAdminUser(request)
+      const property = await setPropertyActiveState(request.body?.originalSlug ?? '', request.body?.active !== false, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && path === 'admin/properties') {
+      const adminUser = await requireAdminUser(request)
+      const deletedProperty = await deletePropertyRecord(request.body?.originalSlug ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property: deletedProperty,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/properties/catalog') {
       await requireAdminUser(request)
       response.json({
@@ -355,6 +389,18 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
       return
     }
 
+    if (request.method === 'DELETE' && path === 'admin/media/folders') {
+      const adminUser = await requireAdminUser(request)
+      const result = await deleteMediaFolder(request.body?.folderPath ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        result,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/media/library') {
       await requireAdminUser(request)
       response.json({
@@ -373,6 +419,30 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         media,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/media/library/delete') {
+      await requireAdminUser(request)
+      const media = await deleteMediaAssets(request.body?.mediaIds ?? [])
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        media,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/media/library/move') {
+      const adminUser = await requireAdminUser(request)
+      const result = await moveMediaAssets(request.body?.mediaIds ?? [], request.body?.folderPath ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        result,
       })
       return
     }

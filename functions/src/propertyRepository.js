@@ -605,6 +605,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
 const seedProperties = Array.isArray(propertyCatalog.properties)
   ? propertyCatalog.properties.map((property) => normalizePropertyRecord(property)).filter(Boolean)
   : []
+const seedPropertyIds = new Set(seedProperties.map((property) => property.slug))
 
 function createFirestoreCatalogSetupError() {
   return new HttpError(
@@ -709,7 +710,7 @@ async function getCanonicalPropertyCatalogForMode(mode = 'public') {
   const propertyDocuments = await readPropertyCollectionRaw()
   const catalog = buildPropertyCatalogFromStoredDocuments(propertyDocuments, { mode })
 
-  if (catalog.properties.length === 0) {
+  if (catalog.properties.length === 0 && propertyDocuments.length === 0 && mode !== 'admin') {
     throw new HttpError(
       503,
       'The Firestore property catalog is empty. Seed the Firestore property collection before serving live property content.',
@@ -857,6 +858,106 @@ exports.publishPropertyRecord = async function publishPropertyRecord(originalSlu
 
   const savedSnapshot = await collectionRef.doc(documentId).get()
   return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
+}
+
+exports.setPropertyActiveState = async function setPropertyActiveState(originalSlug, active, adminUser) {
+  await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
+
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Property identifier is required to update visibility.')
+  }
+
+  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
+  const snapshot = await collectionRef.doc(documentId).get()
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'Property record not found.')
+  }
+
+  const currentEnvelope = normalizeStoredPropertyEnvelope(snapshot.data(), documentId)
+  const nextActive = active !== false
+  const nextDraftSource = currentEnvelope.draft ?? currentEnvelope.published
+
+  if (!nextDraftSource) {
+    throw new HttpError(400, 'Property draft is missing and cannot be updated.')
+  }
+
+  const nextDraft = {
+    ...nextDraftSource,
+    active: nextActive,
+    adminOriginalSlug: nextDraftSource.adminOriginalSlug || nextDraftSource.slug || documentId,
+  }
+
+  const nextPublished = currentEnvelope.published
+    ? {
+        ...currentEnvelope.published,
+        active: nextActive,
+        adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug || documentId,
+      }
+    : null
+
+  await collectionRef.doc(documentId).set({
+    draft: nextDraft,
+    published: nextPublished,
+    updatedBy: adminUser.email || adminUser.uid,
+    updatedAt: getServerTimestamp(),
+    publishedBy: nextPublished ? adminUser.email || adminUser.uid : currentEnvelope?.publishedBy || '',
+    publishedAt: nextPublished ? getServerTimestamp() : currentEnvelope?.publishedAt || null,
+  })
+
+  const savedSnapshot = await collectionRef.doc(documentId).get()
+  return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
+}
+
+exports.deletePropertyRecord = async function deletePropertyRecord(originalSlug, adminUser) {
+  await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
+
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Property identifier is required to delete.')
+  }
+
+  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
+  const snapshot = await collectionRef.doc(documentId).get()
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'Property record not found.')
+  }
+
+  const currentEnvelope = normalizeStoredPropertyEnvelope(snapshot.data(), documentId)
+  const propertyName = currentEnvelope.draft?.name || currentEnvelope.published?.name || documentId
+  const deletedBy = adminUser.email || adminUser.uid || 'admin'
+
+  if (seedPropertyIds.has(documentId)) {
+    await collectionRef.doc(documentId).set({
+      deleted: true,
+      deletedAt: getServerTimestamp(),
+      deletedBy,
+      draft: null,
+      published: null,
+      publishedAt: null,
+      publishedBy: '',
+      updatedAt: getServerTimestamp(),
+      updatedBy: deletedBy,
+    })
+
+    return {
+      name: propertyName,
+      slug: documentId,
+      tombstoned: true,
+    }
+  }
+
+  await collectionRef.doc(documentId).delete()
+
+  return {
+    name: propertyName,
+    slug: documentId,
+    tombstoned: false,
+  }
 }
 
 exports.resetPropertyRecordsToSeed = async function resetPropertyRecordsToSeed() {

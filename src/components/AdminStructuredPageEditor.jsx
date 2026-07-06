@@ -262,14 +262,6 @@ function ImageField({ label, image, disabled, onChange }) {
         <h5>{label}</h5>
       </div>
 
-      <div className="admin-content-grid">
-        <TextField disabled={disabled} label="Image URL" onChange={(value) => onChange('url', value)} value={image?.url ?? ''} wide />
-        <TextField disabled={disabled} label="Alt Text" onChange={(value) => onChange('alt', value)} value={image?.alt ?? ''} />
-        <TextField disabled={disabled} label="Image Title" onChange={(value) => onChange('title', value)} value={image?.title ?? ''} />
-      </div>
-
-      <AdminImageSizeControls disabled={disabled} image={image} onChange={handleSizeChange} />
-
       <AdminMediaManager
         currentUrl={image?.url ?? ''}
         disabled={disabled}
@@ -278,6 +270,14 @@ function ImageField({ label, image, disabled, onChange }) {
         preferredOwnerType="page"
         title={`${label} Media`}
       />
+
+      <div className="admin-content-grid">
+        <TextField disabled={disabled} label="Manual Image URL" onChange={(value) => onChange('url', value)} value={image?.url ?? ''} wide />
+        <TextField disabled={disabled} label="Alt Text" onChange={(value) => onChange('alt', value)} value={image?.alt ?? ''} />
+        <TextField disabled={disabled} label="Image Title" onChange={(value) => onChange('title', value)} value={image?.title ?? ''} />
+      </div>
+
+      <AdminImageSizeControls disabled={disabled} image={image} onChange={handleSizeChange} />
 
       {previewSrc ? (
         <div className="admin-content-image-preview">
