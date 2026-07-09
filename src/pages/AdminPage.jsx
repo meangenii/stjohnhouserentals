@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
+import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas } from '../components/AdminPagePreview'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
@@ -25,7 +26,7 @@ import {
   setAdminPropertyActiveState,
 } from '../lib/propertyRepository'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
-import { richTextValueToHtml } from '../lib/richTextValue'
+import { richTextValueToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
@@ -224,11 +225,32 @@ function parseLineList(value = '') {
     .filter(Boolean)
 }
 
+function normalizeBedroomCount(value) {
+  const count = Number.parseInt(String(value ?? '').trim(), 10)
+  return Number.isInteger(count) && count > 0 ? count : 0
+}
+
+function normalizeAlternateBedroomCounts(values, primaryBedrooms = 0) {
+  const normalizedPrimaryBedrooms = normalizeBedroomCount(primaryBedrooms)
+
+  if (!Array.isArray(values) || normalizedPrimaryBedrooms <= 1) {
+    return []
+  }
+
+  return Array.from(
+    new Set(
+      values
+        .map((value) => normalizeBedroomCount(value))
+        .filter((value) => value > 0 && value < normalizedPrimaryBedrooms),
+    ),
+  ).sort((left, right) => left - right)
+}
+
 function createAmenityEditor(group = {}) {
   return {
     id: makeToken(),
-    title: repairSnapshotText(group.title ?? ''),
-    itemsText: linesToText(group.items ?? []),
+    title: richTextValueToInlineHtml(repairSnapshotText(group.title ?? '')),
+    itemsText: linesToText(Array.isArray(group.items) ? group.items : []),
   }
 }
 
@@ -263,9 +285,9 @@ function parseAmenityTextLines(value = '') {
 
 function normalizeAmenityGroup(group = {}) {
   return {
-    title: repairSnapshotText(group.title ?? '').trim(),
+    title: richTextValueToInlineHtml(repairSnapshotText(group.title ?? '').trim()),
     items: Array.isArray(group.items)
-      ? group.items.map((item) => repairSnapshotText(item).trim()).filter(Boolean)
+      ? group.items.map((item) => richTextValueToInlineHtml(repairSnapshotText(item).trim())).filter(Boolean)
       : [],
   }
 }
@@ -400,9 +422,11 @@ function createEmptyFormState() {
     originalSlug: '',
     name: '',
     slug: '',
-    active: true,
+    active: false,
     templateVariant: DEFAULT_PROPERTY_TEMPLATE_VARIANT,
     bedrooms: '1',
+    rentFewerRooms: false,
+    alternateBedroomCounts: [],
     bathrooms: '1',
     maxGuests: '2',
     location: 'St. John, USVI',
@@ -418,7 +442,7 @@ function createEmptyFormState() {
     bookingPhone: '',
     bookingNote: '',
     galleryImages: [],
-    amenityGroups: [createAmenityEditor({ title: 'Amenities' })],
+    amenityGroups: [createAmenityEditor()],
     reviewEntries: [createReviewEditor()],
   }
 }
@@ -435,7 +459,7 @@ function createInitialAmenityGroups(property = {}) {
   }
 
   const amenityLines = parseLineList(htmlToText(property.amenitiesHtml ?? ''))
-  return [createAmenityEditor({ title: 'Amenities', items: amenityLines })]
+  return [createAmenityEditor({ items: amenityLines })]
 }
 
 function createInitialReviewEntries(property = {}) {
@@ -460,13 +484,18 @@ function createInitialGalleryImages(property = {}) {
 }
 
 function createFormState(property) {
+  const bedrooms = normalizeBedroomCount(property.bedrooms)
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(property.alternateBedroomCounts, bedrooms)
+
   return {
     originalSlug: property.adminOriginalSlug ?? property.slug,
     name: repairSnapshotText(property.name ?? ''),
     slug: property.slug ?? '',
     active: property.active !== false,
     templateVariant: property.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT,
-    bedrooms: String(property.bedrooms ?? 0),
+    bedrooms: String(bedrooms),
+    rentFewerRooms: (property.rentFewerRooms === true || alternateBedroomCounts.length > 0) && bedrooms > 1,
+    alternateBedroomCounts,
     bathrooms: String(property.bathrooms ?? 0),
     maxGuests: String(property.maxGuests ?? 0),
     location: repairSnapshotText(property.location ?? 'St. John, USVI'),
@@ -488,10 +517,13 @@ function createFormState(property) {
 }
 
 function buildPropertyDraft(formState) {
+  const bedrooms = normalizeBedroomCount(formState.bedrooms)
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(formState.alternateBedroomCounts, bedrooms)
+
   const amenityGroups = formState.amenityGroups
     .map((group) => ({
-      title: group.title.trim(),
-      items: parseLineList(group.itemsText),
+      title: richTextValueToInlineHtml(group.title),
+      items: parseLineList(group.itemsText).map((item) => richTextValueToInlineHtml(item)).filter(Boolean),
     }))
     .filter((group) => group.title || group.items.length)
 
@@ -515,7 +547,9 @@ function buildPropertyDraft(formState) {
     slug: repairSnapshotText(formState.slug).trim(),
     active: formState.active,
     templateVariant: formState.templateVariant,
-    bedrooms: Number(formState.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms: Boolean(formState.rentFewerRooms) && bedrooms > 1,
+    alternateBedroomCounts,
     bathrooms: Number(formState.bathrooms) || 0,
     maxGuests: Number(formState.maxGuests) || 0,
     location: repairSnapshotText(formState.location).trim(),
@@ -548,16 +582,16 @@ function paragraphListToHtml(values = []) {
 function amenityGroupsToHtml(groups = []) {
   return groups
     .flatMap((group) => {
-      const title = String(group?.title ?? '').trim()
-      const items = parseLineList(group?.itemsText ?? '')
+      const title = richTextValueToInlineHtml(group?.title ?? '')
+      const items = parseLineList(group?.itemsText ?? '').map((item) => richTextValueToInlineHtml(item)).filter(Boolean)
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${richTextValueToHtml(title)}</h4>`)
+        lines.push(`<h4>${title}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${richTextValueToHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -596,7 +630,8 @@ function buildPropertyPreviewModel(formState) {
     : gallery[0] ?? null
   const amenityHtml = amenityGroupsToHtml(formState.amenityGroups)
   const reviewsHtml = reviewEntriesToHtml(formState.reviewEntries)
-  const bedrooms = Number(formState.bedrooms) || 0
+  const bedrooms = normalizeBedroomCount(formState.bedrooms)
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(formState.alternateBedroomCounts, bedrooms)
 
   return {
     slug: repairSnapshotText(formState.slug).trim(),
@@ -604,6 +639,8 @@ function buildPropertyPreviewModel(formState) {
     active: formState.active,
     templateVariant: formState.templateVariant,
     bedrooms,
+    rentFewerRooms: Boolean(formState.rentFewerRooms) && bedrooms > 1,
+    alternateBedroomCounts,
     bedroomLabel: bedrooms > 0 ? `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}` : '',
     bathrooms: Number(formState.bathrooms) || 0,
     maxGuests: Number(formState.maxGuests) || 0,
@@ -858,6 +895,7 @@ export function AdminPage() {
   const [pageSaveStatus, setPageSaveStatus] = useState('idle')
   const [pagePublication, setPagePublication] = useState(null)
   const [pagePreviewDevice, setPagePreviewDevice] = useState('desktop')
+  const propertyFloatingSaveRef = useRef(null)
 
   const siteContentEditingEnabled = isSiteContentEditingEnabled()
   const requiresAdminSignIn = propertyUsesFirebase || charterUsesFirebase || siteContentEditingEnabled
@@ -1384,6 +1422,36 @@ export function AdminPage() {
         }
       }
 
+      if (field === 'bedrooms') {
+        const bedrooms = normalizeBedroomCount(value)
+        const alternateBedroomCounts = normalizeAlternateBedroomCounts(currentState.alternateBedroomCounts, bedrooms)
+        const rentFewerRooms = currentState.rentFewerRooms && bedrooms > 1
+
+        return {
+          ...currentState,
+          bedrooms: value,
+          rentFewerRooms,
+          alternateBedroomCounts,
+        }
+      }
+
+      if (field === 'rentFewerRooms') {
+        const bedrooms = normalizeBedroomCount(currentState.bedrooms)
+
+        return {
+          ...currentState,
+          rentFewerRooms: Boolean(value) && bedrooms > 1,
+          alternateBedroomCounts: Boolean(value) && bedrooms > 1 ? currentState.alternateBedroomCounts : [],
+        }
+      }
+
+      if (field === 'alternateBedroomCounts') {
+        return {
+          ...currentState,
+          alternateBedroomCounts: normalizeAlternateBedroomCounts(value, currentState.bedrooms),
+        }
+      }
+
       return {
         ...currentState,
         [field]: value,
@@ -1400,11 +1468,48 @@ export function AdminPage() {
     }))
   }
 
-  function addGalleryImage() {
+  function addGalleryImage(nextUrl = '', entry = null) {
+    const normalizedUrl = String(nextUrl ?? entry?.managedUrl ?? entry?.url ?? '').trim()
+    const image = createImageEditor({
+      alt: repairSnapshotText(entry?.alt ?? ''),
+      title: repairSnapshotText(entry?.title ?? ''),
+      url: normalizedUrl,
+    })
+
     setFormState((currentState) => ({
       ...currentState,
-      galleryImages: [...currentState.galleryImages, createImageEditor()],
+      galleryImages: [...currentState.galleryImages, image],
     }))
+  }
+
+  function addGalleryImagesFromFolder(entries = []) {
+    const galleryImagesToAdd = (Array.isArray(entries) ? entries : [])
+      .map((entry) => ({
+        alt: repairSnapshotText(entry?.alt ?? ''),
+        title: repairSnapshotText(entry?.title ?? ''),
+        url: String(entry?.managedUrl ?? entry?.url ?? '').trim(),
+      }))
+      .filter((image) => image.url)
+
+    if (galleryImagesToAdd.length === 0) {
+      return
+    }
+
+    setFormState((currentState) => {
+      const existingUrls = new Set(currentState.galleryImages.map((image) => String(image?.url ?? '').trim()).filter(Boolean))
+      const nextGalleryImages = galleryImagesToAdd
+        .filter((image) => !existingUrls.has(image.url))
+        .map((image) => createImageEditor(image))
+
+      if (nextGalleryImages.length === 0) {
+        return currentState
+      }
+
+      return {
+        ...currentState,
+        galleryImages: [...currentState.galleryImages, ...nextGalleryImages],
+      }
+    })
   }
 
   function moveGalleryImage(imageId, direction) {
@@ -1456,7 +1561,7 @@ export function AdminPage() {
 
       return {
         ...currentState,
-        amenityGroups: nextGroups.length > 0 ? nextGroups : [createAmenityEditor({ title: 'Amenities' })],
+        amenityGroups: nextGroups.length > 0 ? nextGroups : [createAmenityEditor()],
       }
     })
   }
@@ -1525,8 +1630,7 @@ export function AdminPage() {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    if (!propertyDirty && hasPendingPublication(propertyPublication)) {
-      await handlePublishProperty()
+    if (!propertyDirty) {
       return
     }
 
@@ -1978,6 +2082,8 @@ export function AdminPage() {
   const propertySaveEnabled = propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user))
   const propertyHasPendingPublication = hasPendingPublication(propertyPublication)
   const propertyActionBusy = saveStatus === 'saving' || saveStatus === 'publishing'
+  const propertyPublishVisible = propertyUsesFirebase && editorState.mode === 'edit' && propertyHasPendingPublication
+  const propertyPublishEnabled = propertyPublishVisible && propertySaveEnabled && !propertyDirty && !propertyActionBusy
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
   const charterHasPendingPublication = hasPendingPublication(charterPublication)
@@ -1986,6 +2092,19 @@ export function AdminPage() {
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
   const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
   const showSiteShellPublishAction = siteShellHasPendingPublication && siteShellEditedSinceLoad && !siteShellDirty
+  const propertyFloatingSaveVisible = propertyDirty || propertyPublishVisible || propertyActionBusy
+
+  useLayoutEffect(() => {
+    if (activeTab !== 'properties' || !propertyFloatingSaveVisible) {
+      setAdminFloatingStackOffset(ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, 0)
+
+      return () => {
+        setAdminFloatingStackOffset(ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, 0)
+      }
+    }
+
+    return observeAdminFloatingStackOffset(propertyFloatingSaveRef.current, ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR)
+  }, [activeTab, propertyFloatingSaveVisible])
   const pageHasPendingPublication = hasPendingPublication(pagePublication)
   const authBadgeDetail = authState.user?.email ?? ''
   const showGoogleSignInButton = authState.status === 'signed-out'
@@ -2206,7 +2325,7 @@ export function AdminPage() {
 
                 {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
                   <form className="admin-form admin-form--flush" onSubmit={handleStructuredPageSubmit}>
-                    <div className="admin-toolbar-row">
+                    <div className="admin-toolbar-row admin-toolbar-row--sticky">
                       <div className="admin-inline-actions">
                         {selectedStructuredPage?.path ? (
                           <Link className="button-link button-link--ghost admin-action" to={selectedStructuredPage.path}>
@@ -2282,7 +2401,9 @@ export function AdminPage() {
                   <label className="admin-field admin-selector-field">
                     <span>Property</span>
                     <select value={editorState.mode === 'edit' ? editorState.activeSlug : ''} onChange={handlePropertySelectionChange}>
-                      <option value="">Create a new property</option>
+                      <option disabled hidden value="">
+                        {editorState.mode === 'create' ? 'New property draft' : 'Select a property'}
+                      </option>
                       {properties.map((property) => (
                         <option key={property.slug} value={property.slug}>
                           {formatPropertySelectorLabel(property)}
@@ -2305,7 +2426,7 @@ export function AdminPage() {
                     </div>
 
                     <div className="admin-inline-actions">
-                      {editorState.mode === 'edit' && editorState.activeSlug && formState.active !== false ? (
+                      {editorState.mode === 'edit' && editorState.activeSlug ? (
                         <Link className="button-link button-link--ghost admin-action" to={`/rental-properties/${editorState.activeSlug}`}>
                           View on site
                         </Link>
@@ -2338,20 +2459,42 @@ export function AdminPage() {
                   </div>
 
                   <div className="admin-floating-save-shell">
-                    <AdminFloatingSaveButton
-                      disabled={!propertySaveEnabled}
-                      label={
-                        propertyHasPendingPublication
-                          ? 'Publish property'
-                          : editorState.mode === 'create'
-                            ? 'Save draft'
-                            : 'Save property'
-                      }
-                      onReset={handleDiscardPropertyChanges}
-                      saveStatus={saveStatus}
-                      showReset={propertyDirty}
-                      visible={propertyDirty || propertyHasPendingPublication}
-                    />
+                    {(propertyDirty || propertyPublishVisible || propertyActionBusy) ? (
+                      <div className="admin-floating-save" ref={propertyFloatingSaveRef}>
+                        {propertyDirty ? (
+                          <button
+                            className="button-link button-link--ghost admin-action"
+                            disabled={propertyActionBusy}
+                            type="button"
+                            onClick={handleDiscardPropertyChanges}
+                          >
+                            Reset
+                          </button>
+                        ) : null}
+
+                        {propertyPublishVisible ? (
+                          <button
+                            className="button-link button-link--secondary admin-submit"
+                            disabled={!propertyPublishEnabled}
+                            title={propertyDirty ? 'Save the draft before publishing it live.' : 'Publish the saved draft live.'}
+                            type="button"
+                            onClick={handlePublishProperty}
+                          >
+                            {saveStatus === 'publishing' ? 'Publishing...' : 'Publish draft'}
+                          </button>
+                        ) : null}
+
+                        {(propertyDirty || saveStatus === 'saving') ? (
+                          <button
+                            className="button-link button-link--primary admin-submit"
+                            disabled={!propertySaveEnabled || propertyActionBusy}
+                            type="submit"
+                          >
+                            {saveStatus === 'saving' ? 'Saving...' : 'Save draft'}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     <AdminPropertyPreview
                       key={formState.originalSlug || 'new-property'}
@@ -2360,6 +2503,7 @@ export function AdminPage() {
                       formState={formState}
                       galleryEditorExpanded={galleryEditorExpanded}
                       onAddAmenityGroup={addAmenityGroup}
+                      onAddGalleryFolderImages={addGalleryImagesFromFolder}
                       onAddGalleryImage={addGalleryImage}
                       onAddReviewEntry={addReviewEntry}
                       onAmenityGroupChange={updateAmenityGroup}
@@ -2485,5 +2629,3 @@ export function AdminPage() {
     </article>
   )
 }
-
-

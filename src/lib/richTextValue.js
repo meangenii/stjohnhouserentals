@@ -18,6 +18,20 @@ function normalizePlainTextForHtml(value) {
     .replace(/\r?\n/g, '<br />')
 }
 
+const HTML_ENTITY_DECODE_MAP = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+}
+
+function decodeBasicHtmlEntities(value) {
+  return String(value ?? '').replace(/&(?:nbsp|amp|lt|gt|quot|#39|apos);/gi, (match) => HTML_ENTITY_DECODE_MAP[match.toLowerCase()] ?? match)
+}
+
 function blockInnerHtmlToLines(innerHtml = '') {
   return String(innerHtml ?? '')
     .split(/<br\s*\/?>/i)
@@ -59,6 +73,22 @@ export function richTextValueToInlineHtml(value) {
   return richTextValueToLines(normalizedHtml).join('<br />')
 }
 
+export function getClipboardRichTextHtml(clipboardData, { inline = false } = {}) {
+  if (!clipboardData || typeof clipboardData.getData !== 'function') {
+    return ''
+  }
+
+  const htmlValue = String(clipboardData.getData('text/html') ?? '').trim()
+  const plainTextValue = String(clipboardData.getData('text/plain') ?? '').trim()
+  const sourceValue = htmlValue || plainTextValue
+
+  if (!sourceValue) {
+    return ''
+  }
+
+  return inline ? richTextValueToInlineHtml(sourceValue) : richTextValueToHtml(sourceValue)
+}
+
 export function richTextValueToPlainText(value) {
   const sourceValue = String(value ?? '')
 
@@ -67,14 +97,16 @@ export function richTextValueToPlainText(value) {
   }
 
   if (!hasRichTextMarkup(sourceValue)) {
-    return sourceValue.replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim()
+    return decodeBasicHtmlEntities(sourceValue).replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim()
   }
 
   if (typeof DOMParser === 'undefined') {
-    return sourceValue
-      .replace(/<\/p>/gi, ' ')
-      .replace(/<br\s*\/?>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
+    return decodeBasicHtmlEntities(
+      sourceValue
+        .replace(/<\/p>/gi, ' ')
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]+>/g, ' '),
+    )
       .replace(/\s+/g, ' ')
       .trim()
   }
@@ -97,7 +129,7 @@ export function richTextValueToLines(value, { preserveBlankLines = false } = {})
     return dropBlankLines(
       sourceValue
         .split(/\r?\n/)
-        .map((line) => line.trim()),
+        .map((line) => decodeBasicHtmlEntities(line).trim()),
     )
   }
 

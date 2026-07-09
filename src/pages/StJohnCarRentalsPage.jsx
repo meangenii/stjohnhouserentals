@@ -95,9 +95,12 @@ export function StJohnCarRentalsPage() {
                       <EditableLink
                         className="st-john-car-rentals-name"
                         destination={company.website}
+                        destinationField="website"
                         destinationLabel="Company Website"
                         destinationPath={['directory', 'companies', companyIndex, 'website']}
                         external
+                        link={company}
+                        linkPath={['directory', 'companies', companyIndex]}
                         label={company.name}
                         labelLabel="Company Name"
                         labelPath={['directory', 'companies', companyIndex, 'name']}

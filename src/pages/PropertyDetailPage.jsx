@@ -1,67 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { PropertyContentSection } from '../components/PropertyContentSection'
 import { RichTextValue } from '../components/RichTextValue'
+import { getAdminIdToken } from '../lib/adminAuth'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
-import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
-import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { getPropertyContactActions } from '../lib/propertyContact'
+import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
-import { richTextValueToLines } from '../lib/richTextValue'
+import { useAdminSession } from '../lib/useAdminSession'
 import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
-
-function PropertyContentSection({
-  title,
-  html,
-  children,
-  className = '',
-  compactTail = false,
-  listSections = false,
-  reviewEntries = false,
-  renderWhenEmpty = false,
-  showHeader = true,
-}) {
-  const navigate = useNavigate()
-  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
-  const hasHtml = Boolean(normalizedHtml.trim())
-  const hasChildren = Boolean(children)
-  const shouldRender = renderWhenEmpty || hasHtml || hasChildren
-
-  if (!shouldRender) {
-    return null
-  }
-
-  return (
-    <section className={`property-template-section ${className}`.trim()}>
-      {showHeader ? (
-        <header className="property-template-section-header">
-          <h2>{title}</h2>
-          <div aria-hidden="true" className="property-template-rule" />
-        </header>
-      ) : null}
-
-      {hasHtml ? (
-        <div
-          className="property-rich-copy"
-          dangerouslySetInnerHTML={{ __html: normalizedHtml }}
-          onClick={(event) => {
-            const nextPath = findInternalNavigationTarget(event)
-
-            if (nextPath) {
-              event.preventDefault()
-              navigate(nextPath)
-            }
-          }}
-        />
-      ) : children}
-    </section>
-  )
-}
-
-function getShortDescriptionLines(property) {
-  return richTextValueToLines(property.shortDescription ?? '')
-}
 
 const PROPERTY_CROSSFADE_DURATION_MS = 180
 const PROPERTY_CROSSFADE_NAVIGATION_DELAY_MS = PROPERTY_CROSSFADE_DURATION_MS + 40
@@ -82,7 +31,8 @@ function scrollToElementWithoutAnimation(element) {
 export function PropertyDetailPage() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
-  const [state, setState] = useState({ status: 'loading' })
+  const { isAdmin } = useAdminSession()
+  const [state, setState] = useState({ status: 'loading', slug })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [thumbnailRailState, setThumbnailRailState] = useState({
     canScroll: false,
@@ -97,13 +47,15 @@ export function PropertyDetailPage() {
   const revealFrameRef = useRef(null)
   const revealTimerRef = useRef(null)
   const thumbnailsRef = useRef(null)
-  const property = state.status === 'ready' ? state.property : null
+  const stateMatchesSlug = state.slug === slug
+  const effectiveStatus = stateMatchesSlug ? state.status : 'loading'
+  const property = effectiveStatus === 'ready' ? state.property : null
   const loadedPropertyPath = property?.path ?? ''
   const shortDescriptionLines = property ? getShortDescriptionLines(property) : []
   const documentTitle =
-    state.status === 'not-found'
+    effectiveStatus === 'not-found'
       ? 'Property Not Found'
-      : state.status === 'error'
+      : effectiveStatus === 'error'
         ? 'Property Unavailable'
         : property?.pageTitle || property?.name || 'Rental Property'
   const documentDescription =
@@ -177,31 +129,50 @@ export function PropertyDetailPage() {
   useEffect(() => {
     let cancelled = false
 
-    getPropertyBySlug(slug)
-      .then((property) => {
+    async function loadProperty() {
+      try {
+        const property = await getPropertyBySlug(slug)
+
         if (cancelled) {
           return
         }
 
-        if (!property) {
-          setState({ status: 'not-found' })
+        if (property) {
+          setActiveImageIndex(0)
+          setState({ status: 'ready', property, slug })
           return
         }
 
-        setActiveImageIndex(0)
-        setState({ status: 'ready', property })
-      })
-      .catch((error) => {
+        if (isAdmin) {
+          const authToken = await getAdminIdToken()
+          const adminProperty = authToken ? await getPropertyBySlug(slug, { authToken }) : null
+
+          if (cancelled) {
+            return
+          }
+
+          if (adminProperty) {
+            setActiveImageIndex(0)
+            setState({ status: 'ready', property: adminProperty, slug })
+            return
+          }
+        }
+
+        setState({ status: 'not-found', slug })
+      } catch (error) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : 'Unknown property load error'
-          setState({ status: 'error', message })
+          setState({ status: 'error', message, slug })
         }
-      })
+      }
+    }
+
+    loadProperty()
 
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [isAdmin, slug])
 
   function handleAdjacentPropertyNavigation(event, destination) {
     if (!isUnmodifiedPrimaryClick(event) || routeTransitionPhaseRef.current !== 'idle') {
@@ -272,9 +243,9 @@ export function PropertyDetailPage() {
       resizeObserver?.disconnect()
       window.removeEventListener('resize', syncThumbnailRailState)
     }
-  }, [slug, state.status])
+  }, [slug, effectiveStatus])
 
-  if (state.status === 'loading') {
+  if (effectiveStatus === 'loading') {
     return (
       <section className="page-section property-page property-page--status">
         <h1>Loading property...</h1>
@@ -282,7 +253,7 @@ export function PropertyDetailPage() {
     )
   }
 
-  if (state.status === 'error') {
+  if (effectiveStatus === 'error') {
     return (
       <section className="page-section property-page property-page--status">
         <h1>Property unavailable</h1>
@@ -291,7 +262,7 @@ export function PropertyDetailPage() {
     )
   }
 
-  if (state.status === 'not-found') {
+  if (effectiveStatus === 'not-found') {
     return (
       <section className="page-section property-page property-page--status">
         <h1>Property not found</h1>

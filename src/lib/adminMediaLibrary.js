@@ -74,12 +74,16 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
       const fileName = decodeValue(entry.fileName)
       const ownerKey = decodeValue(entry.ownerKey)
       const ownerName = decodeValue(entry.ownerName)
+      const originalFileName = decodeValue(entry.originalFileName)
+      const originalBytes = Number(entry.originalBytes ?? 0) || 0
       const storagePath = decodeValue(entry.storagePath)
       const folderPath = decodeValue(entry.folderPath) || getStorageFolderPath(storagePath)
       const managedUrl = String(entry.managedUrl ?? '').trim()
       const ownerType = String(entry.ownerType ?? '').trim()
       const bytes = Number(entry.bytes ?? 0) || 0
       const contentType = String(entry.contentType ?? '').trim()
+      const sourceHashSha256 = String(entry.sourceHashSha256 ?? '').trim().toLowerCase()
+      const storageHashSha256 = String(entry.storageHashSha256 ?? '').trim().toLowerCase()
       const width = Number.parseInt(String(entry.width ?? ''), 10) || 0
       const height = Number.parseInt(String(entry.height ?? ''), 10) || 0
 
@@ -96,7 +100,11 @@ function buildMediaLibrary(rawEntries = [], rawFolders = [], { bucket = '', gene
         ownerKey,
         ownerName,
         ownerType,
+        originalBytes,
+        originalFileName,
+        sourceHashSha256,
         storagePath,
+        storageHashSha256,
         title: decodeValue(entry.title),
         updatedAt: normalizeTimestampValue(entry.updatedAt ?? entry.migratedAt),
         width,

@@ -8,6 +8,37 @@ export const RICH_TEXT_BLOCK_OPTIONS = [
   { label: 'H6', value: 'h6' },
 ]
 
+const REM_TO_PX = 16
+const MIN_RICH_TEXT_FONT_SIZE_PX = 8
+const MAX_RICH_TEXT_FONT_SIZE_PX = 96
+const RICH_TEXT_FONT_SIZE_VALUE_PATTERN = /^(\d+(?:\.\d+)?)(px|rem|em|pt)$/
+
+function formatFontSizeOptionLabel(label, value) {
+  const px = Math.round(estimateFontSizePx(value))
+  return `${label} (${px}px)`
+}
+
+function estimateFontSizePx(value) {
+  const match = String(value ?? '').match(RICH_TEXT_FONT_SIZE_VALUE_PATTERN)
+
+  if (!match) {
+    return 0
+  }
+
+  const numericValue = Number(match[1])
+  const unit = match[2]
+
+  if (unit === 'px') {
+    return numericValue
+  }
+
+  if (unit === 'pt') {
+    return numericValue * (96 / 72)
+  }
+
+  return numericValue * REM_TO_PX
+}
+
 export const RICH_TEXT_FONT_SIZE_OPTIONS = [
   { label: 'Default', value: 'default' },
   { label: 'Small', value: '0.875rem' },
@@ -17,11 +48,10 @@ export const RICH_TEXT_FONT_SIZE_OPTIONS = [
   { label: '2XL', value: '1.5rem' },
   { label: '3XL', value: '1.875rem' },
   { label: '4XL', value: '2.25rem' },
-]
-
-export const ALLOWED_RICH_TEXT_FONT_SIZE_VALUES = new Set(
-  RICH_TEXT_FONT_SIZE_OPTIONS.map((option) => option.value).filter((value) => value !== 'default'),
-)
+].map((option) => ({
+  ...option,
+  label: option.value === 'default' ? option.label : formatFontSizeOptionLabel(option.label, option.value),
+}))
 
 function unwrapElement(element) {
   const parent = element.parentNode
@@ -37,9 +67,23 @@ function unwrapElement(element) {
   parent.removeChild(element)
 }
 
-function normalizeRichTextFontSize(value = '') {
+export function normalizeRichTextFontSize(value = '') {
   const normalizedValue = String(value ?? '').trim().toLowerCase()
-  return ALLOWED_RICH_TEXT_FONT_SIZE_VALUES.has(normalizedValue) ? normalizedValue : ''
+  const match = normalizedValue.match(RICH_TEXT_FONT_SIZE_VALUE_PATTERN)
+
+  if (!match) {
+    return ''
+  }
+
+  const numericValue = Number(match[1])
+  const unit = match[2]
+  const approximatePx = estimateFontSizePx(normalizedValue)
+
+  if (!Number.isFinite(numericValue) || numericValue <= 0 || approximatePx < MIN_RICH_TEXT_FONT_SIZE_PX || approximatePx > MAX_RICH_TEXT_FONT_SIZE_PX) {
+    return ''
+  }
+
+  return `${numericValue}${unit}`
 }
 
 function getNodeOwnerElement(node) {
@@ -96,7 +140,7 @@ function getSelectionElement(root) {
   return selectionNode instanceof Element && root.contains(selectionNode) ? selectionNode : null
 }
 
-function elementIntersectsRange(element, range) {
+export function elementIntersectsRange(element, range) {
   const elementRange = document.createRange()
   elementRange.selectNodeContents(element)
 
@@ -122,6 +166,17 @@ function selectNodeContents(node) {
   range.collapse(false)
   selection.removeAllRanges()
   selection.addRange(range)
+}
+
+function getSelectionBlockElement(root) {
+  const selectionElement = getSelectionElement(root)
+
+  if (!selectionElement) {
+    return null
+  }
+
+  const blockElement = selectionElement.closest('p, li, blockquote, h1, h2, h3, h4, h5, h6')
+  return blockElement instanceof HTMLElement && root.contains(blockElement) ? blockElement : null
 }
 
 export function captureRichTextSelectionRange(root) {
@@ -403,6 +458,26 @@ export function applyRichTextFontSize(root, nextValue, { collapsedBehavior = 'se
     const anchorSizedSpan = anchorElement?.closest?.('span[style]')
 
     if (!(anchorSizedSpan instanceof HTMLElement) || !root.contains(anchorSizedSpan)) {
+      if (collapsedBehavior === 'block') {
+        const blockElement = getSelectionBlockElement(root)
+
+        if (!(blockElement instanceof HTMLElement)) {
+          return false
+        }
+
+        const blockWrapper = document.createElement('span')
+        blockWrapper.style.fontSize = normalizedValue
+
+        while (blockElement.firstChild) {
+          blockWrapper.appendChild(blockElement.firstChild)
+        }
+
+        blockElement.appendChild(blockWrapper)
+        cleanupFontSizeSpans(root)
+        selectNodeContents(blockWrapper)
+        return true
+      }
+
       if (collapsedBehavior !== 'root') {
         return false
       }

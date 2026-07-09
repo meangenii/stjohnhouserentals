@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 export function AdminRichTextMenu({
   disabled = false,
+  footer = null,
   inline = false,
   label,
   onBeforeOpen,
@@ -13,7 +14,17 @@ export function AdminRichTextMenu({
   const [open, setOpen] = useState(false)
   const isOpen = open && !disabled
   const currentOption = useMemo(() => {
-    return options.find((option) => option.value === value) ?? options[0] ?? { label: '', value: '' }
+    const matchedOption = options.find((option) => option.value === value)
+
+    if (matchedOption) {
+      return matchedOption
+    }
+
+    if (value && value !== 'default') {
+      return { label: value, value }
+    }
+
+    return options[0] ?? { label: '', value: '' }
   }, [options, value])
 
   useEffect(() => {
@@ -117,6 +128,7 @@ export function AdminRichTextMenu({
               </button>
             )
           })}
+          {footer ? <div className="admin-rich-text-menu-footer">{footer}</div> : null}
         </div>
       ) : null}
     </div>

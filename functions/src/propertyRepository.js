@@ -23,6 +23,39 @@ function formatBedroomLabel(bedrooms) {
   return `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}`
 }
 
+function normalizeAlternateBedroomCounts(values, primaryBedrooms = 0) {
+  const normalizedPrimaryBedrooms = Number(primaryBedrooms) || 0
+
+  if (!Array.isArray(values) || normalizedPrimaryBedrooms <= 1) {
+    return []
+  }
+
+  return Array.from(
+    new Set(
+      values
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0 && value < normalizedPrimaryBedrooms),
+    ),
+  ).sort((left, right) => left - right)
+}
+
+function buildAvailableBedroomCounts(primaryBedrooms, alternateBedroomCounts = [], rentFewerRooms = false) {
+  const counts = new Set()
+  const normalizedPrimaryBedrooms = Number(primaryBedrooms) || 0
+
+  if (Number.isInteger(normalizedPrimaryBedrooms) && normalizedPrimaryBedrooms > 0) {
+    counts.add(normalizedPrimaryBedrooms)
+  }
+
+  if (rentFewerRooms) {
+    normalizeAlternateBedroomCounts(alternateBedroomCounts, normalizedPrimaryBedrooms).forEach((count) => {
+      counts.add(count)
+    })
+  }
+
+  return Array.from(counts).sort((left, right) => left - right)
+}
+
 function safeDecodeRouteSegment(value) {
   try {
     return decodeURIComponent(value)
@@ -274,6 +307,18 @@ function normalizePropertyRecord(record) {
   const legacyLines = getLegacyPropertyLines(record)
   const descriptionHtml = String(record.descriptionHtml ?? '').trim()
   const externalLinks = normalizeExternalLinks(record.externalLinks)
+  const amenityGroups = normalizeAmenityGroups(record.amenityGroups)
+  const bedrooms = Number(record.bedrooms) || 0
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(record.alternateBedroomCounts, bedrooms)
+  const rentFewerRooms = (record.rentFewerRooms === true || alternateBedroomCounts.length > 0) && bedrooms > 1
+  const reviewEntries = Array.isArray(record.reviewEntries)
+    ? record.reviewEntries
+        .map((entry) => ({
+          quote: String(entry?.quote ?? '').trim(),
+          author: String(entry?.author ?? '').trim(),
+        }))
+        .filter((entry) => entry.quote || entry.author)
+    : []
 
   return {
     ...recordWithoutLegacyLines,
@@ -284,18 +329,21 @@ function normalizePropertyRecord(record) {
     name: String(record.name).trim(),
     active: record.active !== false,
     price: String(record.price ?? '').trim(),
-    bedrooms: Number(record.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms,
+    alternateBedroomCounts,
+    availableBedroomCounts: buildAvailableBedroomCounts(bedrooms, alternateBedroomCounts, rentFewerRooms),
     bathrooms: Number(record.bathrooms) || 0,
     maxGuests: Number(record.maxGuests) || 0,
     shortDescription: normalizePropertyShortDescription(record.shortDescription, legacyLines),
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
-    bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
+    bedroomLabel: formatBedroomLabel(bedrooms),
     location: String(record.location ?? '').trim(),
     descriptionHtml,
-    amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
-    amenityGroups: normalizeAmenityGroups(record.amenityGroups),
-    reviewsHtml: String(record.reviewsHtml ?? '').trim(),
-    reviewEntries: Array.isArray(record.reviewEntries) ? record.reviewEntries : [],
+    amenitiesHtml: amenityGroups.length > 0 ? amenityGroupsToHtml(amenityGroups) : String(record.amenitiesHtml ?? '').trim(),
+    amenityGroups,
+    reviewsHtml: reviewEntries.length > 0 ? reviewEntriesToHtml(reviewEntries) : String(record.reviewsHtml ?? '').trim(),
+    reviewEntries,
     booking: normalizePropertyBooking(record, externalLinks, descriptionHtml),
     heroImage,
     gallery,
@@ -312,7 +360,7 @@ function normalizeStoredPropertyEnvelope(record, documentId = '') {
     (Object.prototype.hasOwnProperty.call(record, 'draft') || Object.prototype.hasOwnProperty.call(record, 'published'))
 
   const draftSource = hasEnvelope ? record.draft ?? null : record
-  const publishedSource = hasEnvelope ? record.published ?? draftSource ?? null : record
+  const publishedSource = hasEnvelope ? record.published ?? null : record
 
   return {
     draft: draftSource ? normalizePropertyRecord({ ...draftSource, id: draftSource.id ?? documentId }) : null,
@@ -336,7 +384,7 @@ function buildPropertyPublicationState(envelope) {
 
 function buildPropertyViewFromStoredRecord(record, documentId = '', { mode = 'public' } = {}) {
   const envelope = normalizeStoredPropertyEnvelope(record, documentId)
-  const selectedRecord = mode === 'admin' ? envelope.draft : envelope.published
+  const selectedRecord = mode === 'admin' ? envelope.draft ?? envelope.published : envelope.published
 
   if (!selectedRecord) {
     return null
@@ -350,6 +398,7 @@ function buildPropertyViewFromStoredRecord(record, documentId = '', { mode = 'pu
     property.adminOriginalSlug = documentId || selectedRecord.adminOriginalSlug || selectedRecord.slug
     property.publication = buildPropertyPublicationState(envelope)
   } else {
+    property.active = selectedRecord.active !== false && envelope.draft?.active !== false
     delete property.adminOriginalSlug
     delete property.publication
   }
@@ -390,15 +439,22 @@ function groupProperties(properties) {
   const groups = new Map()
 
   properties.forEach((property) => {
-    if (!groups.has(property.bedrooms)) {
-      groups.set(property.bedrooms, {
-        bedrooms: property.bedrooms,
-        label: formatBedroomLabel(property.bedrooms),
-        properties: [],
-      })
-    }
+    const bedroomCounts =
+      Array.isArray(property.availableBedroomCounts) && property.availableBedroomCounts.length > 0
+        ? property.availableBedroomCounts
+        : buildAvailableBedroomCounts(property.bedrooms, property.alternateBedroomCounts, property.rentFewerRooms)
 
-    groups.get(property.bedrooms).properties.push(property)
+    bedroomCounts.forEach((bedroomCount) => {
+      if (!groups.has(bedroomCount)) {
+        groups.set(bedroomCount, {
+          bedrooms: bedroomCount,
+          label: formatBedroomLabel(bedroomCount),
+          properties: [],
+        })
+      }
+
+      groups.get(bedroomCount).properties.push(property)
+    })
   })
 
   return Array.from(groups.values())
@@ -443,11 +499,15 @@ function summarizeProperty(property) {
     price: property.price,
     shortDescription: property.shortDescription,
     bedrooms: property.bedrooms,
+    rentFewerRooms: Boolean(property.rentFewerRooms),
+    alternateBedroomCounts: normalizeAlternateBedroomCounts(property.alternateBedroomCounts, property.bedrooms),
+    availableBedroomCounts: buildAvailableBedroomCounts(property.bedrooms, property.alternateBedroomCounts, property.rentFewerRooms),
     bathrooms: property.bathrooms,
     maxGuests: property.maxGuests,
     location: property.location,
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
+    amenitiesHtml: property.amenitiesHtml,
   }
 
   if (property.adminOriginalSlug) {
@@ -473,11 +533,11 @@ function amenityGroupsToHtml(groups) {
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${escapeHtml(title)}</h4>`)
+        lines.push(`<h4>${title}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -497,7 +557,7 @@ function reviewEntriesToHtml(entries) {
       }
 
       if (quote) {
-        lines.push(`<p>${escapeHtml(quote)}</p>`)
+        lines.push(`<p>${quote}</p>`)
       }
 
       return lines
@@ -540,6 +600,9 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     phone: String(draft?.booking?.phone ?? '').trim(),
     note: String(draft?.booking?.note ?? '').trim(),
   }
+  const bedrooms = Number(draft?.bedrooms) || 0
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(draft?.alternateBedroomCounts, bedrooms)
+  const rentFewerRooms = Boolean(draft?.rentFewerRooms) && bedrooms > 1
   const heroImage = normalizeImageAsset(draft?.heroImage)
   const gallery = Array.isArray(draft?.gallery)
     ? draft.gallery.map((asset) => normalizeImageAsset(asset)).filter(Boolean)
@@ -579,7 +642,9 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     active: draft?.active !== false,
     templateVariant: normalizePropertyTemplateVariant(draft?.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT),
     price: String(draft?.price ?? '').trim(),
-    bedrooms: Number(draft?.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms,
+    alternateBedroomCounts,
     bathrooms: Number(draft?.bathrooms) || 0,
     maxGuests: Number(draft?.maxGuests) || 0,
     shortDescription,
@@ -588,9 +653,10 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
       descriptionHtml || (description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim()),
     amenityGroups,
     amenitiesHtml:
-      amenityGroups.some((group) => group.title || group.items.length)
+      String(draft?.amenitiesHtml ?? '').trim() ||
+      (amenityGroups.some((group) => group.title || group.items.length)
         ? amenityGroupsToHtml(amenityGroups)
-        : String(draft?.existingAmenitiesHtml ?? '').trim(),
+        : String(draft?.existingAmenitiesHtml ?? '').trim()),
     reviewsHtml:
       reviewEntries.length > 0 ? reviewEntriesToHtml(reviewEntries) : String(draft?.existingReviewsHtml ?? '').trim(),
     reviewEntries,

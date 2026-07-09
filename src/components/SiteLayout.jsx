@@ -1,7 +1,20 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { resolveLinkRenderConfig } from '../lib/linkRecords'
+import { useAdminSession } from '../lib/useAdminSession'
 import { useSiteShellContent } from '../lib/useSiteContent'
 import { RichTextValue } from './RichTextValue'
+
+const ADMIN_NAV_ITEM = { label: 'Editor', path: '/admin', matchPaths: ['/admin'] }
+const DESKTOP_NAV_MEDIA_QUERY = '(min-width: 900px)'
+
+function getMediaQueryMatches(query, fallback = false) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return fallback
+  }
+
+  return window.matchMedia(query).matches
+}
 
 function isActiveNavItem(pathname, matchPaths) {
   return (Array.isArray(matchPaths) ? matchPaths : []).some(
@@ -17,12 +30,20 @@ function buildNavItemId(baseId, itemIndex, suffix) {
   return `${baseId}-${itemIndex}-${suffix}`
 }
 
-function NavText({ children, className, interactive, to, ...rest }) {
-  if (interactive) {
+function NavText({ children, className, href = '', interactive, rel, target, to = '', ...rest }) {
+  if (interactive && to) {
     return (
       <Link className={className} to={to} {...rest}>
         {children}
       </Link>
+    )
+  }
+
+  if (interactive && href) {
+    return (
+      <a className={className} href={href} rel={rel} target={target} {...rest}>
+        {children}
+      </a>
     )
   }
 
@@ -47,8 +68,9 @@ function SiteMenu({
   const navItems = Array.isArray(items) ? items.filter(Boolean) : []
   const menuStateScope = `${pathname}|${responsive ? (isExpanded ? 'expanded' : 'collapsed') : 'static'}`
   const [openMenuState, setOpenMenuState] = useState({ label: '', scope: menuStateScope })
+  const [isDesktopNavigation, setIsDesktopNavigation] = useState(() => getMediaQueryMatches(DESKTOP_NAV_MEDIA_QUERY, true))
   const navRef = useRef(null)
-  const isCollapsible = responsive && interactive
+  const isCollapsible = responsive && interactive && !isDesktopNavigation
   const openMenuLabel = openMenuState.scope === menuStateScope ? openMenuState.label : ''
   const navBaseId = navId || `${String(ariaLabel ?? 'site-navigation').toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'site-navigation'}-group`
 
@@ -65,6 +87,30 @@ function SiteMenu({
   const closeOpenMenu = useEffectEvent(() => {
     setCurrentOpenMenuLabel('')
   })
+
+  useEffect(() => {
+    if (!responsive || !interactive) {
+      return undefined
+    }
+
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined
+    }
+
+    const mediaQueryList = window.matchMedia(DESKTOP_NAV_MEDIA_QUERY)
+
+    function handleViewportChange(event) {
+      setIsDesktopNavigation(event.matches)
+    }
+
+    if (typeof mediaQueryList.addEventListener === 'function') {
+      mediaQueryList.addEventListener('change', handleViewportChange)
+      return () => mediaQueryList.removeEventListener('change', handleViewportChange)
+    }
+
+    mediaQueryList.addListener(handleViewportChange)
+    return () => mediaQueryList.removeListener(handleViewportChange)
+  }, [interactive, responsive])
 
   useEffect(() => {
     if (!openMenuLabel) {
@@ -103,6 +149,8 @@ function SiteMenu({
     >
       {navItems.map((item, itemIndex) => {
         const isActive = isActiveNavItem(pathname, item.matchPaths ?? [item.path])
+        const itemLink = resolveLinkRenderConfig(item, { defaultType: 'internal', destinationField: 'path' })
+        const hasItemDestination = Boolean(itemLink.isInternal ? itemLink.to : itemLink.href)
 
         if (item.children?.length) {
           if (!interactive) {
@@ -114,13 +162,15 @@ function SiteMenu({
           }
 
           const isOpen = openMenuLabel === item.label
+          const shouldSplitParentControls = hasItemDestination && !isCollapsible
+          const labelId = buildNavItemId(navBaseId, itemIndex, 'label')
           const toggleId = buildNavItemId(navBaseId, itemIndex, 'toggle')
           const submenuId = buildNavItemId(navBaseId, itemIndex, 'submenu')
 
           return (
             <div
               className={`site-nav-item ${isActive ? 'site-nav-item--active' : ''} ${isOpen ? 'site-nav-item--open' : ''}`.trim()}
-              key={item.label}
+              key={item.path || item.href || item.label}
               onBlurCapture={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) {
                   setCurrentOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : currentLabel))
@@ -142,53 +192,83 @@ function SiteMenu({
                 }
               }}
             >
-              <button
-                aria-controls={submenuId}
-                aria-expanded={isOpen}
-                className="site-nav-link site-nav-toggle"
-                id={toggleId}
-                type="button"
-                onClick={() => setCurrentOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : item.label))}
-              >
-                <RichTextValue as="span" value={item.label} />
-                <span aria-hidden="true" className="site-nav-caret">
-                  {isOpen ? '-' : '+'}
-                </span>
-              </button>
-
-              <div
-                aria-labelledby={toggleId}
-                className="site-subnav"
-                hidden={!isOpen}
-                id={submenuId}
-              >
-                {item.children.map((child) => (
+              {shouldSplitParentControls ? (
+                <div className="site-nav-parent-link-row">
                   <NavText
-                    aria-current={isActiveChildItem(pathname, child) ? 'page' : undefined}
-                    className={`site-subnav-link ${isActiveChildItem(pathname, child) ? 'active' : ''}`.trim()}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
+                    href={itemLink.href}
+                    id={labelId}
                     interactive={interactive}
-                    key={child.path}
-                    to={child.path}
+                    rel={itemLink.rel}
+                    target={itemLink.target}
+                    to={itemLink.to}
                     onClick={() => {
                       setCurrentOpenMenuLabel('')
                       onNavigate?.()
                     }}
                   >
-                    <RichTextValue value={child.label} />
+                    <RichTextValue as="span" value={item.label} />
                   </NavText>
-                ))}
+                </div>
+              ) : (
+                <button
+                  aria-controls={submenuId}
+                  aria-expanded={isOpen}
+                  className="site-nav-link site-nav-toggle"
+                  id={toggleId}
+                  type="button"
+                  onClick={() => setCurrentOpenMenuLabel((currentLabel) => (currentLabel === item.label ? '' : item.label))}
+                >
+                  <RichTextValue as="span" value={item.label} />
+                </button>
+              )}
+
+              <div
+                aria-labelledby={shouldSplitParentControls ? labelId : toggleId}
+                className="site-subnav"
+                hidden={!isOpen}
+                id={submenuId}
+              >
+                {item.children.map((child) => {
+                  const childLink = resolveLinkRenderConfig(child, { defaultType: 'internal', destinationField: 'path' })
+
+                  return (
+                    <NavText
+                      aria-current={isActiveChildItem(pathname, child) ? 'page' : undefined}
+                      className={`site-subnav-link ${isActiveChildItem(pathname, child) ? 'active' : ''}`.trim()}
+                      href={childLink.href}
+                      interactive={interactive}
+                      key={child.path || child.href || child.label}
+                      rel={childLink.rel}
+                      target={childLink.target}
+                      to={childLink.to}
+                      onClick={() => {
+                        setCurrentOpenMenuLabel('')
+                        onNavigate?.()
+                      }}
+                    >
+                      <RichTextValue value={child.label} />
+                    </NavText>
+                  )
+                })}
               </div>
             </div>
           )
         }
 
+        const directItemLink = resolveLinkRenderConfig(item, { defaultType: 'internal', destinationField: 'path' })
+
         return (
           <NavText
             aria-current={isActive ? 'page' : undefined}
             className={`site-nav-link ${isActive ? 'active' : ''}`.trim()}
+            href={directItemLink.href}
             interactive={interactive}
-            key={item.path}
-            to={item.path}
+            key={item.path || item.href || item.label}
+            rel={directItemLink.rel}
+            target={directItemLink.target}
+            to={directItemLink.to}
             onClick={() => {
               setCurrentOpenMenuLabel('')
               onNavigate?.()
@@ -203,11 +283,13 @@ function SiteMenu({
 }
 
 export function SiteFrame({ children, interactive = true, pathname, siteShell }) {
+  const { isAdmin } = useAdminSession()
   const [mobileMenuState, setMobileMenuState] = useState({ open: false, pathname })
   const mobileNavRef = useRef(null)
   const header = siteShell?.header ?? {}
   const footer = siteShell?.footer ?? {}
-  const siteNavItems = Array.isArray(header.primaryNav) ? header.primaryNav : []
+  const baseNavItems = Array.isArray(header.primaryNav) ? header.primaryNav : []
+  const siteNavItems = interactive && isAdmin ? [...baseNavItems, ADMIN_NAV_ITEM] : baseNavItems
   const footerNavItems = Array.isArray(footer.primaryNav) ? footer.primaryNav : []
   const footerMetaItems = Array.isArray(footer.legalNav) ? footer.legalNav : []
   const logo = header.logo ?? {}
@@ -215,6 +297,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   const socialLink = utility.socialLink ?? {}
   const bookingCallouts = Array.isArray(utility.bookingCallouts) ? utility.bookingCallouts : []
   const isMobileMenuOpen = mobileMenuState.pathname === pathname && mobileMenuState.open
+  const socialLinkConfig = resolveLinkRenderConfig(socialLink, { defaultType: 'external', destinationField: 'href' })
 
   function setCurrentMobileMenuOpen(nextValue) {
     setMobileMenuState((currentState) => ({
@@ -264,18 +347,27 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
         <div className="utility-bar">
           <div className="utility-inner">
             <div className="utility-social">
-              {interactive && socialLink.href ? (
-                <a
-                  className="utility-social-link"
-                  href={socialLink.href}
-                  rel="noreferrer noopener"
-                  target="_blank"
-                >
-                  <span aria-hidden="true" className="utility-facebook">
-                    f
-                  </span>
-                  <RichTextValue as="span" value={socialLink.label} />
-                </a>
+              {interactive && socialLinkConfig.destination ? (
+                socialLinkConfig.isInternal ? (
+                  <Link className="utility-social-link" to={socialLinkConfig.to}>
+                    <span aria-hidden="true" className="utility-facebook">
+                      f
+                    </span>
+                    <RichTextValue as="span" value={socialLink.label} />
+                  </Link>
+                ) : (
+                  <a
+                    className="utility-social-link"
+                    href={socialLinkConfig.href}
+                    rel={socialLinkConfig.rel}
+                    target={socialLinkConfig.target}
+                  >
+                    <span aria-hidden="true" className="utility-facebook">
+                      f
+                    </span>
+                    <RichTextValue as="span" value={socialLink.label} />
+                  </a>
+                )
               ) : (
                 <span className="utility-social-link site-link--static">
                   <span aria-hidden="true" className="utility-facebook">
@@ -364,17 +456,24 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
               />
 
               <nav aria-label="Footer legal" className="footer-meta-nav">
-                {footerMetaItems.map((item) => (
-                  <NavText
-                    aria-current={isActiveNavItem(pathname, item.matchPaths) ? 'page' : undefined}
-                    className={isActiveNavItem(pathname, item.matchPaths) ? 'active' : ''}
-                    interactive={interactive}
-                    key={`footer-meta-${item.path}`}
-                    to={item.path}
-                  >
-                    <RichTextValue value={item.label} />
-                  </NavText>
-                ))}
+                {footerMetaItems.map((item) => {
+                  const footerLink = resolveLinkRenderConfig(item, { defaultType: 'internal', destinationField: 'path' })
+
+                  return (
+                    <NavText
+                      aria-current={isActiveNavItem(pathname, item.matchPaths) ? 'page' : undefined}
+                      className={isActiveNavItem(pathname, item.matchPaths) ? 'active' : ''}
+                      href={footerLink.href}
+                      interactive={interactive}
+                      key={`footer-meta-${item.path || item.href || item.label}`}
+                      rel={footerLink.rel}
+                      target={footerLink.target}
+                      to={footerLink.to}
+                    >
+                      <RichTextValue value={item.label} />
+                    </NavText>
+                  )
+                })}
               </nav>
             </div>
           </div>

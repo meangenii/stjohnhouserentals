@@ -1,6 +1,8 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
+import { buildRouteOptions, detectLinkType } from '../lib/linkRecords'
 import { richTextLinesToHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
+import { AdminLinkFields } from './AdminLinkFields'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
@@ -35,6 +37,13 @@ function normalizeNavPath(value) {
   return normalizedPath === '/' ? '/' : normalizedPath.replace(/\/+$/, '') || '/'
 }
 
+function getInternalNavMatchPath(item) {
+  const normalizedItem = item && typeof item === 'object' && !Array.isArray(item) ? item : {}
+  return detectLinkType(normalizedItem, { defaultType: 'internal', destinationField: 'path' }) === 'internal'
+    ? normalizeNavPath(normalizedItem.path)
+    : ''
+}
+
 function moveArrayItem(items, fromIndex, toIndex) {
   if (!Array.isArray(items) || fromIndex === toIndex) {
     return
@@ -58,10 +67,10 @@ function rebuildPrimaryNavMatchPaths(item) {
     return
   }
 
-  const currentPath = normalizeNavPath(item.path)
+  const currentPath = getInternalNavMatchPath(item)
 
   if (Array.isArray(item.children) && item.children.length > 0) {
-    const childPaths = item.children.map((child) => normalizeNavPath(child?.path)).filter(Boolean)
+    const childPaths = item.children.map((child) => getInternalNavMatchPath(child)).filter(Boolean)
     item.matchPaths = Array.from(new Set([currentPath, ...childPaths].filter(Boolean)))
     return
   }
@@ -261,7 +270,7 @@ function collectRouteSuggestions(routeInventory = [], navItems = []) {
 
   const collectNavPaths = (items = []) => {
     items.forEach((item) => {
-      const path = normalizeNavPath(item?.path)
+      const path = getInternalNavMatchPath(item)
 
       if (path) {
         routePaths.add(path)
@@ -284,13 +293,14 @@ function NavEditor({
   onAddChild,
   onAddItem,
   onChildLabelChange,
-  onChildPathChange,
+  onChildLinkChange,
   onLabelChange,
+  onLinkChange,
   onMoveChild,
   onMoveItem,
-  onPathChange,
   onRemoveChild,
   onRemoveItem,
+  routeOptions,
   routeSuggestions,
   title,
 }) {
@@ -348,13 +358,18 @@ function NavEditor({
 
               <div className="admin-content-grid">
                 <PlainTextField disabled={disabled} label="Name" onChange={(value) => onLabelChange(itemIndex, value)} value={richTextValueToPlainText(item.label ?? '')} />
-                <RouteField
-                  disabled={disabled}
-                  label="Route"
-                  onChange={(value) => onPathChange(itemIndex, value)}
-                  suggestions={routeSuggestions}
-                  value={item.path ?? ''}
-                />
+                <div className="admin-field admin-field--wide">
+                  <AdminLinkFields
+                    defaultType="internal"
+                    destinationField="path"
+                    destinationLabel="Menu Link"
+                    disabled={disabled}
+                    link={item}
+                    routeOptions={routeOptions}
+                    routeSuggestions={routeSuggestions}
+                    onChange={(value) => onLinkChange(itemIndex, value)}
+                  />
+                </div>
                 {item.children?.length ? (
                   <div className="admin-field admin-field--wide">
                     <div className="admin-content-list">
@@ -404,13 +419,18 @@ function NavEditor({
                                 onChange={(value) => onChildLabelChange(itemIndex, childIndex, value)}
                                 value={richTextValueToPlainText(child.label ?? '')}
                               />
-                              <RouteField
-                                disabled={disabled}
-                                label="Route"
-                                onChange={(value) => onChildPathChange(itemIndex, childIndex, value)}
-                                suggestions={routeSuggestions}
-                                value={child.path ?? ''}
-                              />
+                              <div className="admin-field admin-field--wide">
+                                <AdminLinkFields
+                                  defaultType="internal"
+                                  destinationField="path"
+                                  destinationLabel="Submenu Link"
+                                  disabled={disabled}
+                                  link={child}
+                                  routeOptions={routeOptions}
+                                  routeSuggestions={routeSuggestions}
+                                  onChange={(value) => onChildLinkChange(itemIndex, childIndex, value)}
+                                />
+                              </div>
                             </div>
                           </div>
                         )
@@ -434,6 +454,7 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
 
   const effectiveRouteSuggestions =
     routeSuggestions.length > 0 ? routeSuggestions : collectRouteSuggestions(routeInventory, value.header?.primaryNav ?? [])
+  const effectiveRouteOptions = buildRouteOptions(routeInventory)
 
   function setPath(path, nextValue) {
     onChange((currentValue) => updateValueAtPath(currentValue, path, nextValue))
@@ -447,10 +468,10 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
     )
   }
 
-  function setPrimaryNavPath(parentIndex, nextValue) {
+  function setPrimaryNavLink(parentIndex, nextValue) {
     onChange((currentValue) =>
       updatePrimaryNav(currentValue, parentIndex, (item) => {
-        item.path = normalizeNavPath(nextValue)
+        Object.assign(item, nextValue)
         rebuildPrimaryNavMatchPaths(item)
       }),
     )
@@ -464,11 +485,12 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
     )
   }
 
-  function setPrimaryNavChildPath(parentIndex, childIndex, nextValue) {
+  function setPrimaryNavChildLink(parentIndex, childIndex, nextValue) {
     onChange((currentValue) =>
       updatePrimaryNavChild(currentValue, parentIndex, childIndex, (childItem, parentItem) => {
-        childItem.path = normalizeNavPath(nextValue)
-        childItem.matchPaths = childItem.path ? [childItem.path] : []
+        Object.assign(childItem, nextValue)
+        const childPath = getInternalNavMatchPath(childItem)
+        childItem.matchPaths = childPath ? [childPath] : []
         rebuildPrimaryNavMatchPaths(parentItem)
       }),
     )
@@ -544,8 +566,19 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
       <section className="admin-content-section">
         <div className="admin-content-grid">
           <RichTextField disabled={disabled} label="Top Message" onChange={(value) => setPath(['header', 'utility', 'message'], value)} value={value.header?.utility?.message ?? ''} wide />
-          <RichTextField disabled={disabled} label="Facebook Label" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'label'], nextValue)} value={value.header?.utility?.socialLink?.label ?? ''} />
-          <PlainTextField disabled={disabled} label="Facebook URL" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'href'], nextValue)} type="url" value={value.header?.utility?.socialLink?.href ?? ''} />
+          <RichTextField disabled={disabled} label="Social Link Label" onChange={(nextValue) => setPath(['header', 'utility', 'socialLink', 'label'], nextValue)} value={value.header?.utility?.socialLink?.label ?? ''} />
+          <div className="admin-field admin-field--wide">
+            <AdminLinkFields
+              defaultType="external"
+              destinationField="href"
+              destinationLabel="Social Link"
+              disabled={disabled}
+              link={value.header?.utility?.socialLink ?? {}}
+              routeOptions={effectiveRouteOptions}
+              routeSuggestions={effectiveRouteSuggestions}
+              onChange={(nextValue) => setPath(['header', 'utility', 'socialLink'], nextValue)}
+            />
+          </div>
           <RichLineListField
             disabled={disabled}
             label="Booking Callouts"
@@ -600,13 +633,14 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
         onAddChild={addPrimaryNavChild}
         onAddItem={addPrimaryNavItem}
         onChildLabelChange={setPrimaryNavChildLabel}
-        onChildPathChange={setPrimaryNavChildPath}
+        onChildLinkChange={setPrimaryNavChildLink}
         onLabelChange={setPrimaryNavLabel}
+        onLinkChange={setPrimaryNavLink}
         onMoveChild={movePrimaryNavChild}
         onMoveItem={movePrimaryNavItem}
-        onPathChange={setPrimaryNavPath}
         onRemoveChild={removePrimaryNavChild}
         onRemoveItem={removePrimaryNavItem}
+        routeOptions={effectiveRouteOptions}
         routeSuggestions={effectiveRouteSuggestions}
         title="Primary Navigation"
       />
@@ -626,12 +660,24 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
 
         <div className="admin-content-list">
           {(value.footer?.legalNav ?? []).map((item, index) => (
-            <article className="admin-content-item-card" key={`${item.path}-${index}`}>
+            <article className="admin-content-item-card" key={`${item.path || item.href || index}`}>
               <div className="admin-content-item-header">
-                <h5>{item.path}</h5>
+                <h5>{item.path || item.href || `Legal Link ${index + 1}`}</h5>
               </div>
               <div className="admin-content-grid">
                 <RichTextField disabled={disabled} label="Legal Link Label" onChange={(nextValue) => setPath(['footer', 'legalNav', index, 'label'], nextValue)} value={item.label ?? ''} wide />
+                <div className="admin-field admin-field--wide">
+                  <AdminLinkFields
+                    defaultType="internal"
+                    destinationField="path"
+                    destinationLabel="Legal Link"
+                    disabled={disabled}
+                    link={item}
+                    routeOptions={effectiveRouteOptions}
+                    routeSuggestions={effectiveRouteSuggestions}
+                    onChange={(nextValue) => setPath(['footer', 'legalNav', index], nextValue)}
+                  />
+                </div>
               </div>
             </article>
           ))}

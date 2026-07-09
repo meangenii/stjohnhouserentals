@@ -1,7 +1,7 @@
 import { deleteJson, getJson, postJson } from './api'
 import { buildPhoneHref } from './contactLinks'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT, normalizePropertyTemplateVariant } from './propertyTemplateVariants'
-import { richTextValueToHtml } from './richTextValue'
+import { richTextValueToHtml, richTextValueToInlineHtml } from './richTextValue'
 import { getRouteSlugVariants } from './routeSlug'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
 
@@ -30,6 +30,39 @@ function escapeHtml(value) {
 
 function formatBedroomLabel(bedrooms) {
   return `${bedrooms} Bedroom${bedrooms === 1 ? '' : 's'}`
+}
+
+function normalizeAlternateBedroomCounts(values, primaryBedrooms = 0) {
+  const normalizedPrimaryBedrooms = Number(primaryBedrooms) || 0
+
+  if (!Array.isArray(values) || normalizedPrimaryBedrooms <= 1) {
+    return []
+  }
+
+  return Array.from(
+    new Set(
+      values
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0 && value < normalizedPrimaryBedrooms),
+    ),
+  ).sort((left, right) => left - right)
+}
+
+function buildAvailableBedroomCounts(primaryBedrooms, alternateBedroomCounts = [], rentFewerRooms = false) {
+  const counts = new Set()
+  const normalizedPrimaryBedrooms = Number(primaryBedrooms) || 0
+
+  if (Number.isInteger(normalizedPrimaryBedrooms) && normalizedPrimaryBedrooms > 0) {
+    counts.add(normalizedPrimaryBedrooms)
+  }
+
+  if (rentFewerRooms) {
+    normalizeAlternateBedroomCounts(alternateBedroomCounts, normalizedPrimaryBedrooms).forEach((count) => {
+      counts.add(count)
+    })
+  }
+
+  return Array.from(counts).sort((left, right) => left - right)
 }
 
 function normalizeImageAsset(asset) {
@@ -74,6 +107,10 @@ function decodeHtmlAttribute(value) {
     .replaceAll('&quot;', '"')
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
+}
+
+function normalizeAmenityRichValue(value = '') {
+  return richTextValueToInlineHtml(String(value ?? '').trim())
 }
 
 function extractFirstHrefFromHtml(html = '', prefix = '') {
@@ -140,8 +177,8 @@ function normalizeAmenityGroups(groups) {
   return Array.isArray(groups)
     ? groups
         .map((group) => ({
-          title: String(group?.title ?? '').trim(),
-          items: Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : [],
+          title: normalizeAmenityRichValue(group?.title ?? ''),
+          items: Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : [],
         }))
         .filter((group) => group.title || group.items.length)
     : []
@@ -205,6 +242,11 @@ function normalizePropertyRecord(record) {
   const legacyLines = getLegacyPropertyLines(record)
   const descriptionHtml = String(record.descriptionHtml ?? '').trim()
   const externalLinks = normalizeExternalLinks(record.externalLinks)
+  const amenityGroups = normalizeAmenityGroups(record.amenityGroups)
+  const bedrooms = Number(record.bedrooms) || 0
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(record.alternateBedroomCounts, bedrooms)
+  const rentFewerRooms = (record.rentFewerRooms === true || alternateBedroomCounts.length > 0) && bedrooms > 1
+  const availableBedroomCounts = buildAvailableBedroomCounts(bedrooms, alternateBedroomCounts, rentFewerRooms)
 
   const property = {
     ...recordWithoutLegacyLines,
@@ -214,16 +256,19 @@ function normalizePropertyRecord(record) {
     name: String(record.name).trim(),
     active: record.active !== false,
     price: String(record.price ?? '').trim(),
-    bedrooms: Number(record.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms,
+    alternateBedroomCounts,
+    availableBedroomCounts,
     bathrooms: Number(record.bathrooms) || 0,
     maxGuests: Number(record.maxGuests) || 0,
     shortDescription: normalizePropertyShortDescription(record.shortDescription, legacyLines),
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
-    bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
+    bedroomLabel: formatBedroomLabel(bedrooms),
     location: String(record.location ?? '').trim(),
     descriptionHtml,
-    amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
-    amenityGroups: normalizeAmenityGroups(record.amenityGroups),
+    amenitiesHtml: amenityGroups.length > 0 ? amenityGroupsToHtml(amenityGroups) : String(record.amenitiesHtml ?? '').trim(),
+    amenityGroups,
     reviewsHtml: String(record.reviewsHtml ?? '').trim(),
     reviewEntries: Array.isArray(record.reviewEntries) ? record.reviewEntries : [],
     booking: normalizePropertyBooking(record, externalLinks, descriptionHtml),
@@ -248,6 +293,9 @@ function normalizePropertySummaryRecord(record) {
 
   const heroImage = normalizeImageAsset(record.heroImage)
   const legacyLines = getLegacyPropertyLines(record)
+  const bedrooms = Number(record.bedrooms) || 0
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(record.alternateBedroomCounts, bedrooms)
+  const rentFewerRooms = (record.rentFewerRooms === true || alternateBedroomCounts.length > 0) && bedrooms > 1
 
   const property = {
     id: record.id ?? record.slug,
@@ -257,13 +305,17 @@ function normalizePropertySummaryRecord(record) {
     active: record.active !== false,
     price: String(record.price ?? '').trim(),
     shortDescription: normalizePropertyShortDescription(record.shortDescription, legacyLines),
-    bedrooms: Number(record.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms,
+    alternateBedroomCounts,
+    availableBedroomCounts: buildAvailableBedroomCounts(bedrooms, alternateBedroomCounts, rentFewerRooms),
     bathrooms: Number(record.bathrooms) || 0,
     maxGuests: Number(record.maxGuests) || 0,
     location: String(record.location ?? '').trim(),
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
-    bedroomLabel: formatBedroomLabel(Number(record.bedrooms) || 0),
+    bedroomLabel: formatBedroomLabel(bedrooms),
     heroImage,
+    amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
   }
 
   if (Object.prototype.hasOwnProperty.call(record, 'adminOriginalSlug')) {
@@ -277,15 +329,22 @@ function groupProperties(properties) {
   const groups = new Map()
 
   properties.forEach((property) => {
-    if (!groups.has(property.bedrooms)) {
-      groups.set(property.bedrooms, {
-        bedrooms: property.bedrooms,
-        label: formatBedroomLabel(property.bedrooms),
-        properties: [],
-      })
-    }
+    const bedroomCounts =
+      Array.isArray(property.availableBedroomCounts) && property.availableBedroomCounts.length > 0
+        ? property.availableBedroomCounts
+        : buildAvailableBedroomCounts(property.bedrooms, property.alternateBedroomCounts, property.rentFewerRooms)
 
-    groups.get(property.bedrooms).properties.push(property)
+    bedroomCounts.forEach((bedroomCount) => {
+      if (!groups.has(bedroomCount)) {
+        groups.set(bedroomCount, {
+          bedrooms: bedroomCount,
+          label: formatBedroomLabel(bedroomCount),
+          properties: [],
+        })
+      }
+
+      groups.get(bedroomCount).properties.push(property)
+    })
   })
 
   return Array.from(groups.values())
@@ -354,6 +413,12 @@ function buildSummaryCatalogFromPayload(payload) {
   }
 }
 
+function findPropertyInCatalog(catalog, slug) {
+  return getRouteSlugVariants(slug)
+    .map((variant) => catalog.index.get(variant))
+    .find(Boolean)
+}
+
 function fetchCatalog(url) {
   return fetch(url)
     .then((response) => {
@@ -382,16 +447,16 @@ function paragraphListToHtml(values) {
 function amenityGroupsToHtml(groups) {
   return groups
     .flatMap((group) => {
-      const title = String(group?.title ?? '').trim()
-      const items = Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : []
+      const title = normalizeAmenityRichValue(group?.title ?? '')
+      const items = Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : []
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${richTextValueToHtml(title)}</h4>`)
+        lines.push(`<h4>${title}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${richTextValueToHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -434,8 +499,8 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     : []
   const amenityGroups = Array.isArray(draft?.amenityGroups)
     ? draft.amenityGroups.map((group) => ({
-        title: String(group?.title ?? '').trim(),
-        items: Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : [],
+        title: normalizeAmenityRichValue(group?.title ?? ''),
+        items: Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : [],
       }))
     : []
   const reviewEntries = Array.isArray(draft?.reviewEntries)
@@ -452,6 +517,9 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     phone: String(draft?.booking?.phone ?? '').trim(),
     note: String(draft?.booking?.note ?? '').trim(),
   }
+  const bedrooms = Number(draft?.bedrooms) || 0
+  const alternateBedroomCounts = normalizeAlternateBedroomCounts(draft?.alternateBedroomCounts, bedrooms)
+  const rentFewerRooms = Boolean(draft?.rentFewerRooms) && bedrooms > 1
   const heroImage = normalizeImageAsset(draft?.heroImage)
   const gallery = Array.isArray(draft?.gallery)
     ? draft.gallery.map((asset) => normalizeImageAsset(asset)).filter(Boolean)
@@ -491,7 +559,9 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     active: draft?.active !== false,
     templateVariant: normalizePropertyTemplateVariant(draft?.templateVariant ?? DEFAULT_PROPERTY_TEMPLATE_VARIANT),
     price: String(draft?.price ?? '').trim(),
-    bedrooms: Number(draft?.bedrooms) || 0,
+    bedrooms,
+    rentFewerRooms,
+    alternateBedroomCounts,
     bathrooms: Number(draft?.bathrooms) || 0,
     maxGuests: Number(draft?.maxGuests) || 0,
     shortDescription,
@@ -501,9 +571,10 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
       descriptionHtml || (description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim()),
     amenityGroups,
     amenitiesHtml:
-      amenityGroups.some((group) => group.title || group.items.length)
+      String(draft?.amenitiesHtml ?? '').trim() ||
+      (amenityGroups.some((group) => group.title || group.items.length)
         ? amenityGroupsToHtml(amenityGroups)
-        : String(draft?.existingAmenitiesHtml ?? '').trim(),
+        : String(draft?.existingAmenitiesHtml ?? '').trim()),
     reviewsHtml:
       reviewEntries.length > 0 ? reviewEntriesToHtml(reviewEntries) : String(draft?.existingReviewsHtml ?? '').trim(),
     reviewEntries,
@@ -627,11 +698,15 @@ function summarizeProperty(property) {
     price: property.price,
     shortDescription: property.shortDescription,
     bedrooms: property.bedrooms,
+    rentFewerRooms: Boolean(property.rentFewerRooms),
+    alternateBedroomCounts: normalizeAlternateBedroomCounts(property.alternateBedroomCounts, property.bedrooms),
+    availableBedroomCounts: buildAvailableBedroomCounts(property.bedrooms, property.alternateBedroomCounts, property.rentFewerRooms),
     bathrooms: property.bathrooms,
     maxGuests: property.maxGuests,
     location: property.location,
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
+    amenitiesHtml: property.amenitiesHtml,
   }
 
   if (property.adminOriginalSlug) {
@@ -686,16 +761,30 @@ export async function listAllProperties(options = {}) {
   return cloneData(catalog.properties)
 }
 
-export async function listPropertySummaries() {
+export async function listPropertySummaries(options = {}) {
+  if ((isFirebasePropertyData() || isApiPropertyData()) && options.authToken) {
+    const adminCatalog = await loadAdminRemoteCatalog(options)
+    return cloneData(adminCatalog.properties.map((property) => summarizeProperty(property)))
+  }
+
   const catalog = await loadSummaryCatalog()
   return cloneData(getPublishedProperties(catalog.properties).map((property) => summarizeProperty(property)))
 }
 
-export async function getPropertyBySlug(slug) {
+export async function getPropertyBySlug(slug, options = {}) {
+  if ((isFirebasePropertyData() || isApiPropertyData()) && options.authToken) {
+    const adminCatalog = await loadAdminRemoteCatalog(options)
+    const property = findPropertyInCatalog(adminCatalog, slug)
+
+    if (!property) {
+      return null
+    }
+
+    return cloneData(attachAdjacentProperties(property, adminCatalog.properties))
+  }
+
   const catalog = await loadCatalog()
-  const property = getRouteSlugVariants(slug)
-    .map((variant) => catalog.index.get(variant))
-    .find(Boolean)
+  const property = findPropertyInCatalog(catalog, slug)
 
   if (!property || !isPublishedProperty(property)) {
     return null

@@ -1,12 +1,13 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
-import { getPropertyContactActions } from '../lib/propertyContact'
-import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
-import { buildRemoteImageUrl } from '../lib/remoteImage'
-import { richTextLinesToHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import {
+  ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR,
+  observeAdminFloatingStackOffset,
+  setAdminFloatingStackOffset,
+} from '../lib/adminFloatingLayout'
+import { richTextLinesToHtml, richTextValueToInlineHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
-import { RichTextValue } from './RichTextValue'
+import { PropertyDetailView } from './PropertyDetailView'
 
 const PROPERTY_DESCRIPTION_SNIPPETS = [
   {
@@ -74,23 +75,39 @@ function PreviewInput({ disabled, inlineLabel = false, label, onChange, type = '
   )
 }
 
-function PreviewRichText({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
-  return (
-    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <AdminRichTextEditor compact disabled={disabled} helperText={helperText} label={label} onChange={onChange} placeholder={placeholder} value={value ?? ''} />
-    </div>
-  )
-}
-
-function PreviewRichTextLineList({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
+function PreviewRichText({ collapsedFontSizeBehavior = 'selection', disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
   return (
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
       <AdminRichTextEditor
+        collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
         disabled={disabled}
         helperText={helperText}
         label={label}
-        onChange={(nextValue) => onChange(richTextValueToLines(nextValue, { preserveBlankLines: true }).join('\n'))}
+        onChange={onChange}
+        placeholder={placeholder}
+        value={value ?? ''}
+      />
+    </div>
+  )
+}
+
+function PreviewRichTextLineList({ collapsedFontSizeBehavior = 'selection', disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
+  return (
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        collapsedFontSizeBehavior={collapsedFontSizeBehavior}
+        compact
+        disabled={disabled}
+        helperText={helperText}
+        label={label}
+        onChange={(nextValue) =>
+          onChange(
+            richTextValueToLines(nextValue, { preserveBlankLines: true })
+              .map((line) => richTextValueToInlineHtml(line))
+              .join('\n'),
+          )
+        }
         placeholder={placeholder}
         value={richTextLinesToHtml(getAmenityGroupItems(value, { preserveBlankLines: true }), { preserveBlankLines: true })}
       />
@@ -98,59 +115,20 @@ function PreviewRichTextLineList({ disabled, helperText = '', label, onChange, p
   )
 }
 
-function PreviewSection({
-  title,
-  html,
-  children,
-  controls,
-  actions = null,
-  className = '',
-  compactTail = false,
-  controlsAfterContent = false,
-  listSections = false,
-  reviewEntries = false,
-  renderWhenEmpty = false,
-  showHeader = true,
-}) {
-  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
-  const hasHtml = Boolean(normalizedHtml.trim())
-  const hasChildren = Boolean(children)
-  const hasControls = Boolean(controls)
-  const shouldRender = renderWhenEmpty || hasHtml || hasChildren || hasControls
-
-  if (!shouldRender) {
-    return null
-  }
-
+function EditSection({ actions = null, children, title }) {
   return (
-    <section className={`admin-property-preview-section ${className}`.trim()}>
-      {showHeader ? (
-        <div className="admin-property-preview-section-header admin-property-preview-section-header--split">
-          <div>
-            <h4>{title}</h4>
-            <div aria-hidden="true" className="admin-property-preview-rule" />
-          </div>
-          {actions}
+    <section className="admin-property-preview-section">
+      <div className="admin-property-preview-section-header admin-property-preview-section-header--split">
+        <div>
+          <h4>{title}</h4>
+          <div aria-hidden="true" className="admin-property-preview-rule" />
         </div>
-      ) : actions ? (
-        <div className="admin-property-preview-section-actions">{actions}</div>
-      ) : null}
+        {actions}
+      </div>
 
-      {hasControls && !controlsAfterContent ? <div className="admin-property-preview-controls">{controls}</div> : null}
-
-      {hasHtml ? (
-        <div className="admin-property-preview-rich-copy" dangerouslySetInnerHTML={{ __html: normalizedHtml }} />
-      ) : (
-        children
-      )}
-
-      {hasControls && controlsAfterContent ? <div className="admin-property-preview-controls">{controls}</div> : null}
+      <div className="admin-property-preview-controls">{children}</div>
     </section>
   )
-}
-
-function getShortDescriptionLines(property) {
-  return richTextValueToLines(property.shortDescription ?? '')
 }
 
 function getAmenityGroupItems(itemsText = '', { preserveBlankLines = false } = {}) {
@@ -161,12 +139,23 @@ function getAmenityGroupItems(itemsText = '', { preserveBlankLines = false } = {
   return preserveBlankLines ? lines : lines.filter(Boolean)
 }
 
+function getReducedBedroomOptions(primaryBedrooms = 0) {
+  const normalizedPrimaryBedrooms = Number.parseInt(String(primaryBedrooms ?? '').trim(), 10)
+
+  if (!Number.isInteger(normalizedPrimaryBedrooms) || normalizedPrimaryBedrooms <= 1) {
+    return []
+  }
+
+  return Array.from({ length: normalizedPrimaryBedrooms - 1 }, (_, index) => normalizedPrimaryBedrooms - index - 1)
+}
+
 export function AdminPropertyPreview({
   disabled = false,
   editable = false,
   formState = null,
   galleryEditorExpanded = false,
   onAddAmenityGroup,
+  onAddGalleryFolderImages,
   onAddGalleryImage,
   onAddReviewEntry,
   onAmenityGroupChange,
@@ -180,19 +169,91 @@ export function AdminPropertyPreview({
   onToggleGalleryEditor,
   property,
 }) {
-  const galleryImages = useMemo(
-    () => (Array.isArray(property?.gallery) ? property.gallery.filter((image) => image?.url) : []),
-    [property],
-  )
-  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const [mode, setMode] = useState('edit')
   const [descriptionEditorExpanded, setDescriptionEditorExpanded] = useState(false)
   const [amenitiesEditorExpanded, setAmenitiesEditorExpanded] = useState(false)
   const [expandedAmenityGroupId, setExpandedAmenityGroupId] = useState(null)
+  const [heroMediaEditorOpen, setHeroMediaEditorOpen] = useState(false)
+  const [galleryAddImagePickerOpen, setGalleryAddImagePickerOpen] = useState(false)
+  const [galleryFolderPickerOpen, setGalleryFolderPickerOpen] = useState(false)
+  const [selectedGalleryImageId, setSelectedGalleryImageId] = useState(null)
+  const previewFrameRef = useRef(null)
+  const modeToggleShellRef = useRef(null)
+  const modeToggleRef = useRef(null)
   const galleryEditorId = useId()
   const descriptionEditorId = useId()
   const amenitiesEditorId = useId()
   const hasTrackedAmenityGroupsRef = useRef(false)
   const previousAmenityGroupIdsRef = useRef([])
+  const amenityCardRefs = useRef(new Map())
+  const pendingAmenityViewportRef = useRef(null)
+  const [modeToggleLayout, setModeToggleLayout] = useState(() => ({
+    floating: false,
+    height: 0,
+    left: 0,
+    width: 0,
+  }))
+  const reducedBedroomOptions = getReducedBedroomOptions(formState?.bedrooms)
+  const selectedAlternateBedroomCounts = Array.isArray(formState?.alternateBedroomCounts)
+    ? formState.alternateBedroomCounts
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value > 0)
+    : []
+
+  function toggleAlternateBedroomCount(bedroomCount, isChecked) {
+    const nextCounts = isChecked
+      ? [...selectedAlternateBedroomCounts, bedroomCount]
+      : selectedAlternateBedroomCounts.filter((value) => value !== bedroomCount)
+
+    onFieldChange('alternateBedroomCounts', nextCounts)
+  }
+
+  function handleToggleGalleryEditor() {
+    if (galleryEditorExpanded) {
+      setGalleryAddImagePickerOpen(false)
+      setGalleryFolderPickerOpen(false)
+      setSelectedGalleryImageId(null)
+    }
+
+    onToggleGalleryEditor?.()
+  }
+
+  function registerAmenityCard(groupId, node) {
+    if (!groupId) {
+      return
+    }
+
+    if (node) {
+      amenityCardRefs.current.set(groupId, node)
+      return
+    }
+
+    amenityCardRefs.current.delete(groupId)
+  }
+
+  function preserveAmenityViewport(groupId) {
+    if (!groupId || typeof window === 'undefined') {
+      pendingAmenityViewportRef.current = null
+      return
+    }
+
+    const card = amenityCardRefs.current.get(groupId)
+
+    if (!card) {
+      pendingAmenityViewportRef.current = null
+      return
+    }
+
+    pendingAmenityViewportRef.current = {
+      groupId,
+      top: card.getBoundingClientRect().top,
+    }
+  }
+
+  function toggleAmenityGroupEditor(groupId) {
+    preserveAmenityViewport(groupId)
+    setExpandedAmenityGroupId((currentValue) => (currentValue === groupId ? null : groupId))
+  }
 
   useEffect(() => {
     const groupIds = Array.isArray(formState?.amenityGroups)
@@ -218,22 +279,306 @@ export function AdminPropertyPreview({
     previousAmenityGroupIdsRef.current = groupIds
   }, [expandedAmenityGroupId, formState?.amenityGroups])
 
-  const safeImageIndex = galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
-  const activeImage = galleryImages[safeImageIndex] ?? property?.heroImage ?? null
-  const bannerImage = property?.heroImage ?? activeImage ?? null
-  const shortDescriptionLines = getShortDescriptionLines(property ?? {})
-  const contactActions = getPropertyContactActions(property)
-  const templateVariant = getPropertyTemplateVariantConfig(property?.templateVariant)
-  const sectionConfigs = templateVariant.sections
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') {
+      pendingAmenityViewportRef.current = null
+      return
+    }
+
+    const pendingViewport = pendingAmenityViewportRef.current
+
+    if (!pendingViewport) {
+      return
+    }
+
+    pendingAmenityViewportRef.current = null
+
+    const card = amenityCardRefs.current.get(pendingViewport.groupId)
+
+    if (!card) {
+      return
+    }
+
+    const nextTop = card.getBoundingClientRect().top
+    const scrollDelta = nextTop - pendingViewport.top
+
+    if (Math.abs(scrollDelta) > 1) {
+      window.scrollBy({
+        top: scrollDelta,
+        left: 0,
+        behavior: 'auto',
+      })
+    }
+  }, [amenitiesEditorExpanded, expandedAmenityGroupId, formState?.amenityGroups])
+
+  const selectedGalleryImage =
+    selectedGalleryImageId && Array.isArray(formState?.galleryImages)
+      ? formState.galleryImages.find((image) => image?.id === selectedGalleryImageId) ?? null
+      : null
+  const selectedGalleryImageIndex =
+    selectedGalleryImageId && Array.isArray(formState?.galleryImages)
+      ? formState.galleryImages.findIndex((image) => image?.id === selectedGalleryImageId)
+      : -1
   const detailLine = [property?.bedroomLabel, property?.maxGuests ? `${property.maxGuests} guests` : '', property?.location]
     .filter(Boolean)
     .join(' | ')
-  const propertySections = {
-    shortDescription: (
-      <PreviewSection
-        key="shortDescription"
-        controls={
-          editable && formState ? (
+  const canToggleMode = editable && Boolean(formState)
+  const effectiveMode = canToggleMode ? mode : 'preview'
+  const amenityGroupCount = Array.isArray(formState?.amenityGroups) ? formState.amenityGroups.length : 0
+  const modeToggleFloating = canToggleMode && modeToggleLayout.floating
+  const modeToggleStyle = modeToggleFloating
+    ? {
+        left: `${modeToggleLayout.left}px`,
+        top: 'calc(var(--admin-floating-base-top, 1rem) + var(--admin-floating-save-stack-offset, 0px))',
+      }
+    : undefined
+
+  useLayoutEffect(() => {
+    if (!canToggleMode) {
+      setAdminFloatingStackOffset(ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, 0)
+
+      return () => {
+        setAdminFloatingStackOffset(ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, 0)
+      }
+    }
+
+    return observeAdminFloatingStackOffset(modeToggleRef.current, ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR)
+  }, [canToggleMode])
+
+  useLayoutEffect(() => {
+    if (!canToggleMode || typeof window === 'undefined') {
+      return undefined
+    }
+
+    let animationFrameId = 0
+
+    function updateModeToggleLayout() {
+      const previewFrame = previewFrameRef.current
+      const modeToggleShell = modeToggleShellRef.current
+      const modeToggle = modeToggleRef.current
+
+      if (!previewFrame || !modeToggleShell || !modeToggle) {
+        return
+      }
+
+      const previewFrameBounds = previewFrame.getBoundingClientRect()
+      const modeToggleShellBounds = modeToggleShell.getBoundingClientRect()
+      const modeToggleBounds = modeToggle.getBoundingClientRect()
+      const modeToggleHeight = modeToggle.offsetHeight
+      const margin = 14
+      const nextWidth = Math.min(Math.max(modeToggleBounds.width, modeToggleShellBounds.width), Math.max(0, window.innerWidth - margin * 2))
+      const maxLeft = Math.max(margin, window.innerWidth - nextWidth - margin)
+      const canFloatWithinPreview = previewFrameBounds.bottom - margin >= modeToggleHeight + margin
+      const previewFrameVisible =
+        previewFrameBounds.top <= window.innerHeight - margin && previewFrameBounds.bottom >= margin + modeToggleHeight
+      const shouldFloat = previewFrameVisible && canFloatWithinPreview
+
+      setModeToggleLayout((currentLayout) => {
+        const nextLayout = shouldFloat
+          ? {
+              floating: true,
+              height: modeToggleHeight,
+              left: Math.min(Math.max(margin, modeToggleShellBounds.left), maxLeft),
+              width: nextWidth,
+            }
+          : {
+              floating: false,
+              height: modeToggleHeight,
+              left: 0,
+              width: 0,
+            }
+
+        if (
+          currentLayout.floating === nextLayout.floating &&
+          currentLayout.height === nextLayout.height &&
+          currentLayout.left === nextLayout.left &&
+          currentLayout.width === nextLayout.width
+        ) {
+          return currentLayout
+        }
+
+        return nextLayout
+      })
+    }
+
+    function scheduleModeToggleLayoutUpdate() {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateModeToggleLayout)
+    }
+
+    scheduleModeToggleLayoutUpdate()
+    window.addEventListener('resize', scheduleModeToggleLayoutUpdate)
+    window.addEventListener('scroll', scheduleModeToggleLayoutUpdate, true)
+
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      window.removeEventListener('resize', scheduleModeToggleLayoutUpdate)
+      window.removeEventListener('scroll', scheduleModeToggleLayoutUpdate, true)
+    }
+  }, [canToggleMode])
+
+  return (
+    <aside className="admin-property-preview">
+      <div className="admin-property-preview-frame" ref={previewFrameRef}>
+        <div className="admin-property-preview-summary">
+          <div className="admin-property-preview-title">
+            <h3>{property?.name || 'Untitled Property'}</h3>
+            {detailLine ? <p>{detailLine}</p> : null}
+            <p>{property?.active !== false ? 'Will be visible when published' : 'Will stay hidden when published'}</p>
+          </div>
+
+          {canToggleMode ? (
+            <div
+              ref={modeToggleShellRef}
+              className={`admin-property-preview-mode-toggle-shell${
+                modeToggleFloating ? ' admin-property-preview-mode-toggle-shell--floating' : ''
+              }`.trim()}
+              style={modeToggleFloating ? { minHeight: `${modeToggleLayout.height}px`, width: `${modeToggleLayout.width}px` } : undefined}
+            >
+              <div ref={modeToggleRef} aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group" style={modeToggleStyle}>
+                <button
+                  aria-pressed={effectiveMode === 'edit'}
+                  className={`button-link admin-action ${effectiveMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                  type="button"
+                  onClick={() => setMode('edit')}
+                >
+                  Edit
+                </button>
+                <button
+                  aria-pressed={effectiveMode === 'preview'}
+                  className={`button-link admin-action ${effectiveMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                  type="button"
+                  onClick={() => setMode('preview')}
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {effectiveMode === 'preview' ? (
+          <div className="admin-property-live-preview">
+            <PropertyDetailView property={property} />
+          </div>
+        ) : null}
+
+        {canToggleMode && effectiveMode === 'edit' ? (
+          <div className="admin-property-preview-body">
+            <EditSection title="Basic Info">
+              <div className="admin-preview-field-grid admin-preview-field-grid--tight">
+                <PreviewInput disabled={disabled} label="Property Name" onChange={(value) => onFieldChange('name', value)} value={formState.name} />
+                <PreviewInput disabled={disabled} label="Bedrooms" onChange={(value) => onFieldChange('bedrooms', value)} type="number" value={formState.bedrooms} />
+                <PreviewInput disabled={disabled} label="Bathrooms" onChange={(value) => onFieldChange('bathrooms', value)} type="number" value={formState.bathrooms} />
+                <PreviewInput disabled={disabled} label="Max Guests" onChange={(value) => onFieldChange('maxGuests', value)} type="number" value={formState.maxGuests} />
+                <PreviewInput disabled={disabled} label="Location" onChange={(value) => onFieldChange('location', value)} value={formState.location} wide />
+                <label className="admin-field admin-field--wide">
+                  <span>Reduced Bedroom Availability</span>
+                  <div className="admin-preview-checkbox">
+                    <input
+                      checked={Boolean(formState.rentFewerRooms)}
+                      disabled={disabled || reducedBedroomOptions.length === 0}
+                      onChange={(event) => onFieldChange('rentFewerRooms', event.target.checked)}
+                      type="checkbox"
+                    />
+                    <strong>Rent fewer rooms</strong>
+                  </div>
+                  {Boolean(formState.rentFewerRooms) && reducedBedroomOptions.length > 0 ? (
+                    <div className="admin-property-preview-bedroom-options">
+                      <span className="admin-property-preview-bedroom-options-label">Also show this property in:</span>
+                      <div className="admin-property-preview-bedroom-option-list">
+                        {reducedBedroomOptions.map((bedroomCount) => (
+                          <label className="admin-checkbox-field" key={`reduced-bedroom-${bedroomCount}`}>
+                            <input
+                              checked={selectedAlternateBedroomCounts.includes(bedroomCount)}
+                              disabled={disabled}
+                              onChange={(event) => toggleAlternateBedroomCount(bedroomCount, event.target.checked)}
+                              type="checkbox"
+                            />
+                            <span>{bedroomCount} Bedroom{bedroomCount === 1 ? '' : 's'}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </label>
+              </div>
+            </EditSection>
+
+          <EditSection title="Hero Image">
+            <div className="admin-property-hero-media-layout">
+              <div className="admin-image-thumb-shell">
+                {formState.heroImageUrl ? (
+                  <div className="admin-image-thumb">
+                    <img alt={formState.heroImageAlt || formState.name || 'Hero image'} loading="lazy" src={formState.heroImageUrl} />
+                  </div>
+                ) : (
+                  <div className="admin-image-placeholder">Choose a hero image to preview it here.</div>
+                )}
+
+                <button
+                  aria-pressed={heroMediaEditorOpen}
+                  className={`button-link button-link--secondary admin-action admin-image-thumb-action${
+                    heroMediaEditorOpen ? ' admin-image-thumb-action--active' : ''
+                  }`}
+                  disabled={disabled}
+                  title="Edit hero image from media library"
+                  type="button"
+                  onClick={() => setHeroMediaEditorOpen(true)}
+                >
+                  <span aria-hidden="true">✎</span>
+                  <span className="visually-hidden">Edit hero image from media library</span>
+                </button>
+              </div>
+
+              <div className="admin-image-card-fields">
+                <div className="admin-preview-field-grid">
+                  <PreviewInput
+                    disabled={disabled}
+                    label="Manual Hero Image URL"
+                    onChange={(value) => onFieldChange('heroImageUrl', value)}
+                    type="url"
+                    value={formState.heroImageUrl}
+                    wide
+                  />
+                  <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
+                </div>
+              </div>
+            </div>
+
+            {heroMediaEditorOpen ? (
+              <div className="admin-property-hero-media-editor">
+                <div className="admin-property-gallery-media-editor-bar">
+                  <strong>Editing hero image</strong>
+                  <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => setHeroMediaEditorOpen(false)}>
+                    Done
+                  </button>
+                </div>
+
+                <AdminMediaManager
+                  currentUrl={formState.heroImageUrl}
+                  defaultOpen
+                  disabled={disabled}
+                  onClear={() => onFieldChange('heroImageUrl', '')}
+                  onRequestClose={() => setHeroMediaEditorOpen(false)}
+                  onSelect={(nextUrl) => onFieldChange('heroImageUrl', nextUrl)}
+                  preferredOwnerKey={formState.slug}
+                  preferredOwnerName={formState.name}
+                  preferredOwnerType="property"
+                  showToggle={false}
+                  title="Media Library"
+                />
+              </div>
+            ) : null}
+          </EditSection>
+
+          <EditSection title="Short Description & Contact">
             <div className="admin-preview-field-grid">
               <PreviewRichText
                 disabled={disabled}
@@ -247,198 +592,150 @@ export function AdminPropertyPreview({
               <PreviewInput disabled={disabled} label="Contact Email" onChange={(value) => onFieldChange('bookingEmail', value)} type="email" value={formState.bookingEmail} />
               <PreviewInput disabled={disabled} label="Contact Phone" onChange={(value) => onFieldChange('bookingPhone', value)} type="tel" value={formState.bookingPhone} />
             </div>
-          ) : null
-        }
-        renderWhenEmpty={sectionConfigs.shortDescription.renderWhenEmpty}
-        showHeader={sectionConfigs.shortDescription.showHeader}
-        title={sectionConfigs.shortDescription.title}
-      >
-        <div className="admin-property-preview-facts">
-          {shortDescriptionLines.length > 0 ? (
-            shortDescriptionLines.map((line) => (
-              <RichTextValue as="div" className="property-fact-line" key={line} value={line} />
-            ))
-          ) : (
-            <p className="admin-empty">Add short description copy to preview this section.</p>
-          )}
+          </EditSection>
 
-          {contactActions.length > 0 ? (
-            <div className="property-contact-actions property-contact-actions--preview">
-              {contactActions.map((action) => (
-                <a
-                  className={`button-link ${action.toneClassName} property-contact-button`.trim()}
-                  href={action.href}
-                  key={action.key}
-                >
-                  {action.label}
-                </a>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      </PreviewSection>
-    ),
-    description: (
-      <PreviewSection
-        key="description"
-        actions={
-          editable ? (
-            <button
-              aria-controls={descriptionEditorId}
-              aria-expanded={descriptionEditorExpanded}
-              className="button-link button-link--ghost admin-action"
-              disabled={disabled}
-              type="button"
-              onClick={() => setDescriptionEditorExpanded((currentValue) => !currentValue)}
-            >
-              {descriptionEditorExpanded ? 'Hide editor' : 'Edit content'}
-            </button>
-          ) : null
-        }
-        controlsAfterContent
-        controls={
-          editable && formState && descriptionEditorExpanded ? (
-            <div id={descriptionEditorId}>
-              <AdminRichTextEditor
-                disabled={disabled}
-                helperText="Rates are optional. Use bold paragraph lines, line breaks, and the quick inserts below to build rate, booking, and policy layouts like the live property pages."
-                label="Description, Rates, and Booking Copy"
-                onChange={(value) => onFieldChange('descriptionHtml', value)}
-                placeholder="Write the property description here. Rates, booking contact, and rental policy content can be added if needed."
-                snippets={PROPERTY_DESCRIPTION_SNIPPETS}
-                value={formState.descriptionHtml}
-              />
-            </div>
-          ) : null
-        }
-        compactTail
-        html={property?.descriptionHtml}
-        renderWhenEmpty={sectionConfigs.description.renderWhenEmpty || editable}
-        showHeader={sectionConfigs.description.showHeader}
-        title={sectionConfigs.description.title}
-      >
-        <p className="admin-empty">Add description, rate, booking, or policy copy to preview this section.</p>
-      </PreviewSection>
-    ),
-    amenities: (
-      <PreviewSection
-        key="amenities"
-        className="admin-property-preview-section--amenities"
-        actions={
-          editable ? (
-            <div className="admin-inline-actions">
+          <EditSection
+            actions={
               <button
-                aria-controls={amenitiesEditorId}
-                aria-expanded={amenitiesEditorExpanded}
+                aria-controls={descriptionEditorId}
+                aria-expanded={descriptionEditorExpanded}
                 className="button-link button-link--ghost admin-action"
                 disabled={disabled}
                 type="button"
-                onClick={() => {
-                  setAmenitiesEditorExpanded((currentValue) => {
-                    const nextValue = !currentValue
-
-                    if (nextValue && !expandedAmenityGroupId) {
-                      setExpandedAmenityGroupId(formState?.amenityGroups?.[0]?.id ?? null)
-                    }
-
-                    return nextValue
-                  })
-                }}
+                onClick={() => setDescriptionEditorExpanded((currentValue) => !currentValue)}
               >
-                {amenitiesEditorExpanded ? 'Hide editor' : 'Edit categories'}
+                {descriptionEditorExpanded ? 'Hide editor' : 'Edit content'}
               </button>
-              {amenitiesEditorExpanded ? (
+            }
+            title="Description, Rates & Booking Copy"
+          >
+            {descriptionEditorExpanded ? (
+              <div id={descriptionEditorId}>
+                <AdminRichTextEditor
+                  disabled={disabled}
+                  helperText="Rates are optional. Use bold paragraph lines, line breaks, and the quick inserts below to build rate, booking, and policy layouts like the live property pages."
+                  label="Description, Rates, and Booking Copy"
+                  onChange={(value) => onFieldChange('descriptionHtml', value)}
+                  placeholder="Write the property description here. Rates, booking contact, and rental policy content can be added if needed."
+                  snippets={PROPERTY_DESCRIPTION_SNIPPETS}
+                  value={formState.descriptionHtml}
+                />
+              </div>
+            ) : (
+              <p className="admin-empty">
+                {formState.descriptionHtml ? 'Description content saved.' : 'Expand the editor to add description, rate, or booking copy.'}
+              </p>
+            )}
+          </EditSection>
+
+          <EditSection
+            actions={
+              <div className="admin-inline-actions">
+                <button
+                  aria-controls={amenitiesEditorId}
+                  aria-expanded={amenitiesEditorExpanded}
+                  className="button-link button-link--ghost admin-action"
+                  disabled={disabled}
+                  type="button"
+                  onClick={() => {
+                    setAmenitiesEditorExpanded((currentValue) => {
+                      const nextValue = !currentValue
+
+                      if (nextValue && !expandedAmenityGroupId) {
+                        setExpandedAmenityGroupId(formState?.amenityGroups?.[0]?.id ?? null)
+                      }
+
+                      return nextValue
+                    })
+                  }}
+                >
+                  {amenitiesEditorExpanded ? 'Hide editor' : 'Edit categories'}
+                </button>
                 <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={onAddAmenityGroup} type="button">
                   Add Category
                 </button>
-              ) : null}
-            </div>
-          ) : null
-        }
-        controls={
-          editable && formState && amenitiesEditorExpanded ? (
-            <div className="admin-collection-list" id={amenitiesEditorId}>
-              {formState.amenityGroups.map((group, groupIndex) => {
-                const itemCount = getAmenityGroupItems(group.itemsText).length
-                const isExpanded = expandedAmenityGroupId === group.id
-                const categoryLabel = richTextValueToPlainText(group.title) || `Category ${groupIndex + 1}`
-                const itemCountLabel = `${itemCount} item${itemCount === 1 ? '' : 's'}`
+              </div>
+            }
+            title="Amenities"
+          >
+            {amenitiesEditorExpanded ? (
+              <div className="admin-collection-list" id={amenitiesEditorId}>
+                {formState.amenityGroups.map((group, groupIndex) => {
+                  const itemCount = getAmenityGroupItems(group.itemsText).length
+                  const isExpanded = expandedAmenityGroupId === group.id
+                  const categoryLabel = richTextValueToPlainText(group.title) || `Category ${groupIndex + 1}`
+                  const itemCountLabel = `${itemCount} item${itemCount === 1 ? '' : 's'}`
 
-                return (
-                  <div className="admin-collection-card admin-collection-card--compact" key={group.id}>
-                    <div className="admin-collection-card-header">
-                      <div className="admin-collection-card-summary">
-                        <strong>{categoryLabel}</strong>
-                        <span>{itemCountLabel}</span>
+                  return (
+                    <div
+                      className="admin-collection-card admin-collection-card--compact"
+                      key={group.id}
+                      ref={(node) => registerAmenityCard(group.id, node)}
+                    >
+                      <div className="admin-collection-card-header">
+                        <div className="admin-collection-card-summary">
+                          <strong>{categoryLabel}</strong>
+                          <span>{itemCountLabel}</span>
+                        </div>
+
+                        <div className="admin-inline-actions">
+                          <button
+                            aria-expanded={isExpanded}
+                            className="button-link button-link--ghost admin-action"
+                            disabled={disabled}
+                            type="button"
+                            onClick={() => toggleAmenityGroupEditor(group.id)}
+                          >
+                            {isExpanded ? 'Done' : 'Edit'}
+                          </button>
+                          <button
+                            className="button-link button-link--ghost admin-action"
+                            disabled={disabled}
+                            type="button"
+                            onClick={() => onRemoveAmenityGroup(group.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="admin-inline-actions">
-                        <button
-                          aria-expanded={isExpanded}
-                          className="button-link button-link--ghost admin-action"
-                          disabled={disabled}
-                          type="button"
-                          onClick={() => setExpandedAmenityGroupId(isExpanded ? null : group.id)}
-                        >
-                          {isExpanded ? 'Done' : 'Edit'}
-                        </button>
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={disabled}
-                          type="button"
-                          onClick={() => onRemoveAmenityGroup(group.id)}
-                        >
-                          Remove
-                        </button>
-                      </div>
+                      {isExpanded ? (
+                        <div className="admin-compact-field-grid">
+                          <PreviewRichText
+                            collapsedFontSizeBehavior="block"
+                            disabled={disabled}
+                            label="Category"
+                            onChange={(value) => onAmenityGroupChange(group.id, 'title', richTextValueToInlineHtml(value))}
+                            value={group.title}
+                          />
+                          <PreviewRichTextLineList
+                            collapsedFontSizeBehavior="block"
+                            disabled={disabled}
+                            helperText="Press Enter to create the next amenity line."
+                            label="Items"
+                            onChange={(value) => onAmenityGroupChange(group.id, 'itemsText', value)}
+                            placeholder="One bullet per line&#10;Air conditioning&#10;Full kitchen&#10;Private pool"
+                            value={group.itemsText}
+                          />
+                        </div>
+                      ) : null}
                     </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="admin-empty">{`${amenityGroupCount} categor${amenityGroupCount === 1 ? 'y' : 'ies'} configured.`}</p>
+            )}
+          </EditSection>
 
-                    {isExpanded ? (
-                      <div className="admin-compact-field-grid">
-                        <PreviewRichText
-                          disabled={disabled}
-                          label="Category"
-                          onChange={(value) => onAmenityGroupChange(group.id, 'title', value)}
-                          value={group.title}
-                        />
-                        <PreviewRichTextLineList
-                          disabled={disabled}
-                          helperText="Press Enter to create the next amenity line."
-                          label="Items"
-                          onChange={(value) => onAmenityGroupChange(group.id, 'itemsText', value)}
-                          placeholder="One bullet per line&#10;Air conditioning&#10;Full kitchen&#10;Private pool"
-                          value={group.itemsText}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-            </div>
-          ) : null
-        }
-        html={property?.amenitiesHtml}
-        listSections
-        renderWhenEmpty={sectionConfigs.amenities.renderWhenEmpty || editable}
-        showHeader={sectionConfigs.amenities.showHeader}
-        title={sectionConfigs.amenities.title}
-      >
-        <p className="admin-empty">Add categories to preview this section.</p>
-      </PreviewSection>
-    ),
-    reviews: (
-      <PreviewSection
-        key="reviews"
-        className="admin-property-preview-section--reviews"
-        actions={
-          editable ? (
-            <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={onAddReviewEntry} type="button">
-              Add Review
-            </button>
-          ) : null
-        }
-        controls={
-          editable && formState ? (
+          <EditSection
+            actions={
+              <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={onAddReviewEntry} type="button">
+                Add Review
+              </button>
+            }
+            title="Reviews"
+          >
             <div className="admin-collection-list">
               {formState.reviewEntries.map((entry) => (
                 <div className="admin-collection-card" key={entry.id}>
@@ -450,186 +747,51 @@ export function AdminPropertyPreview({
                 </div>
               ))}
             </div>
-          ) : null
-        }
-        html={property?.reviewsHtml}
-        reviewEntries
-        renderWhenEmpty={sectionConfigs.reviews.renderWhenEmpty}
-        showHeader={sectionConfigs.reviews.showHeader}
-        title={sectionConfigs.reviews.title}
-      />
-    ),
-  }
+          </EditSection>
 
-  return (
-    <aside className="admin-property-preview">
-      <div className="admin-property-preview-frame">
-        {bannerImage?.url ? (
-          <div
-            className="admin-property-preview-banner"
-            style={{
-              backgroundImage: `linear-gradient(rgba(7, 26, 54, 0.2), rgba(7, 26, 54, 0.2)), url(${buildRemoteImageUrl(bannerImage, {
-                width: 1400,
-                height: 520,
-              })})`,
-            }}
-          />
-        ) : (
-          <div className="admin-property-preview-banner admin-property-preview-banner--empty">
-            Add a hero image to preview the banner.
-          </div>
-        )}
-
-        <div className="admin-property-preview-body">
-          <div className="admin-property-preview-title">
-            <h3>{property?.name || 'Untitled Property'}</h3>
-            {detailLine ? <p>{detailLine}</p> : null}
-          </div>
-
-          {editable && formState ? (
-            <div className="admin-property-preview-controls">
-              <div className="admin-preview-field-grid admin-preview-field-grid--tight">
-                <PreviewInput disabled={disabled} label="Property Name" onChange={(value) => onFieldChange('name', value)} value={formState.name} />
-                <PreviewInput disabled={disabled} label="Bedrooms" onChange={(value) => onFieldChange('bedrooms', value)} type="number" value={formState.bedrooms} />
-                <PreviewInput disabled={disabled} label="Bathrooms" onChange={(value) => onFieldChange('bathrooms', value)} type="number" value={formState.bathrooms} />
-                <PreviewInput disabled={disabled} label="Max Guests" onChange={(value) => onFieldChange('maxGuests', value)} type="number" value={formState.maxGuests} />
-                <PreviewInput disabled={disabled} label="Location" onChange={(value) => onFieldChange('location', value)} value={formState.location} wide />
-              </div>
-            </div>
-          ) : null}
-
-          {editable && formState ? (
-            <div className="admin-property-preview-controls">
-              <AdminMediaManager
-                currentUrl={formState.heroImageUrl}
-                disabled={disabled}
-                onClear={() => onFieldChange('heroImageUrl', '')}
-                onSelect={(nextUrl) => onFieldChange('heroImageUrl', nextUrl)}
-                preferredOwnerKey={formState.slug}
-                preferredOwnerName={formState.name}
-                preferredOwnerType="property"
-                title="Property Hero Media"
-              />
-              <div className="admin-preview-field-grid">
-                <PreviewInput disabled={disabled} label="Manual Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />
-                <PreviewInput disabled={disabled} label="Hero Image Alt Text" onChange={(value) => onFieldChange('heroImageAlt', value)} value={formState.heroImageAlt} wide />
-              </div>
-            </div>
-          ) : null}
-
-          {activeImage?.url ? (
-            <section className="admin-property-preview-gallery">
-              <div className="admin-property-preview-stage">
-                <img
-                  alt={activeImage.alt || property?.name || 'Property image'}
-                  decoding="async"
-                  loading="lazy"
-                  src={buildRemoteImageUrl(activeImage, { width: 1200, height: 780 })}
-                />
-              </div>
-
-              {galleryImages.length > 1 ? (
-                <div aria-label="Property image gallery" className="admin-property-preview-thumbnails" role="list">
-                  {galleryImages.map((image, imageIndex) => (
-                    <button
-                      aria-label={`Show property image ${imageIndex + 1}`}
-                      aria-pressed={imageIndex === safeImageIndex}
-                      className={`admin-property-preview-thumbnail ${
-                        imageIndex === safeImageIndex ? 'admin-property-preview-thumbnail--active' : ''
-                      }`.trim()}
-                      key={`${image.url}-${imageIndex}`}
-                      type="button"
-                      onClick={() => setActiveImageIndex(imageIndex)}
-                    >
-                      <img
-                        alt={image.alt || `${property?.name || 'Property'} view ${imageIndex + 1}`}
-                        decoding="async"
-                        loading="lazy"
-                        src={buildRemoteImageUrl(image, { width: 320, height: 220 })}
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          {editable && formState ? (
-            <PreviewSection
-              actions={
-                <div className="admin-inline-actions">
-                  <button
-                    aria-controls={galleryEditorId}
-                    aria-expanded={galleryEditorExpanded}
-                    className="button-link button-link--ghost admin-action"
-                    type="button"
-                    onClick={onToggleGalleryEditor}
-                  >
-                    {galleryEditorExpanded ? 'Hide editor' : 'Expand editor'}
-                  </button>
-                  {galleryEditorExpanded ? (
-                    <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={onAddGalleryImage} type="button">
-                      Add Image
-                    </button>
-                  ) : null}
-                </div>
-              }
-              title="Gallery Images"
-            >
-              <div id={galleryEditorId}>
+          <EditSection
+            actions={
+              <div className="admin-inline-actions">
+                <button
+                  aria-controls={galleryEditorId}
+                  aria-expanded={galleryEditorExpanded}
+                  className="button-link button-link--ghost admin-action"
+                  type="button"
+                  onClick={handleToggleGalleryEditor}
+                >
+                  {galleryEditorExpanded ? 'Hide editor' : 'Expand editor'}
+                </button>
                 {galleryEditorExpanded ? (
-                  <div className="admin-image-grid">
-                    {formState.galleryImages.length === 0 ? <p className="admin-empty">No gallery images yet.</p> : null}
+                  <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={() => setGalleryFolderPickerOpen(true)} type="button">
+                    Add folder
+                  </button>
+                ) : null}
+                {galleryEditorExpanded ? (
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={disabled}
+                    onClick={() => setGalleryAddImagePickerOpen(true)}
+                    type="button"
+                  >
+                    Add Image
+                  </button>
+                ) : null}
+              </div>
+            }
+            title="Gallery Images"
+          >
+            <div id={galleryEditorId}>
+              {galleryEditorExpanded ? (
+                <div className="admin-image-grid">
+                  {formState.galleryImages.length === 0 ? <p className="admin-empty">No gallery images yet.</p> : null}
 
-                    {formState.galleryImages.map((image, index) => (
-                      <div className="admin-image-card" key={image.id}>
-                        {image.url ? (
-                          <div className="admin-image-thumb">
-                            <img alt={image.alt || `Property image ${index + 1}`} loading="lazy" src={image.url} />
-                          </div>
-                        ) : (
-                          <div className="admin-image-placeholder">Add an image URL to preview it here.</div>
-                        )}
-
-                        <div className="admin-image-card-meta">
-                          <strong>Gallery image {index + 1}</strong>
-                          <span>{index === 0 ? 'First thumbnail in the gallery strip' : 'Shown in the gallery strip'}</span>
-                        </div>
-
-                        <AdminMediaManager
-                          currentUrl={image.url}
-                          disabled={disabled}
-                          onClear={() => onGalleryImageChange(image.id, 'url', '')}
-                          onSelect={(nextUrl) => onGalleryImageChange(image.id, 'url', nextUrl)}
-                          preferredOwnerKey={formState.slug}
-                          preferredOwnerName={formState.name}
-                          preferredOwnerType="property"
-                          title={`Gallery Image ${index + 1} Media`}
-                        />
-                        <PreviewInput
-                          disabled={disabled}
-                          label="Manual Image URL"
-                          onChange={(value) => onGalleryImageChange(image.id, 'url', value)}
-                          type="url"
-                          value={image.url}
-                          wide
-                        />
-                        <PreviewInput
-                          disabled={disabled}
-                          label="Image Description"
-                          onChange={(value) => onGalleryImageChange(image.id, 'alt', value)}
-                          value={image.alt}
-                        />
-                        <PreviewInput
-                          disabled={disabled}
-                          label="Image Title"
-                          onChange={(value) => onGalleryImageChange(image.id, 'title', value)}
-                          value={image.title}
-                        />
-
+                  {formState.galleryImages.map((image, index) => (
+                    <div className="admin-image-card admin-image-card--property-gallery" key={image.id}>
+                      <div className="admin-image-card-header">
+                        <strong className="admin-image-card-label">Image {index + 1}</strong>
                         <div className="admin-inline-actions">
                           <button className="button-link button-link--ghost admin-action" disabled={disabled || index === 0} onClick={() => onMoveGalleryImage(image.id, -1)} type="button">
-                            Move Earlier
+                            Earlier
                           </button>
                           <button
                             className="button-link button-link--ghost admin-action"
@@ -637,28 +799,145 @@ export function AdminPropertyPreview({
                             onClick={() => onMoveGalleryImage(image.id, 1)}
                             type="button"
                           >
-                            Move Later
+                            Later
                           </button>
                           <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={() => onRemoveGalleryImage(image.id)} type="button">
                             Remove
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="admin-empty">
-                    {formState.galleryImages.length > 0
-                      ? `${formState.galleryImages.length} gallery image${formState.galleryImages.length === 1 ? '' : 's'} configured.`
-                      : 'Expand the editor to add gallery images.'}
-                  </p>
-                )}
-              </div>
-            </PreviewSection>
-          ) : null}
 
-          {templateVariant.sectionOrder.map((sectionKey) => propertySections[sectionKey]).filter(Boolean)}
-        </div>
+                      <div className="admin-image-card-layout">
+                        <div className="admin-image-thumb-shell">
+                          {image.url ? (
+                            <div className="admin-image-thumb">
+                              <img alt={image.alt || `Property image ${index + 1}`} loading="lazy" src={image.url} />
+                            </div>
+                          ) : (
+                            <div className="admin-image-placeholder">Add an image URL to preview it here.</div>
+                          )}
+
+                          <button
+                            aria-pressed={selectedGalleryImageId === image.id}
+                            className={`button-link button-link--secondary admin-action admin-image-thumb-action${
+                              selectedGalleryImageId === image.id ? ' admin-image-thumb-action--active' : ''
+                            }`}
+                            disabled={disabled}
+                            title={`Edit image ${index + 1} from media library`}
+                            type="button"
+                            onClick={() => setSelectedGalleryImageId(image.id)}
+                          >
+                            <span aria-hidden="true">✎</span>
+                            <span className="visually-hidden">{`Edit image ${index + 1} from media library`}</span>
+                          </button>
+                        </div>
+
+                        <div className="admin-image-card-fields">
+                          <div className="admin-compact-field-grid admin-compact-field-grid--gallery">
+                            <PreviewInput
+                              disabled={disabled}
+                              inlineLabel
+                              label="URL"
+                              onChange={(value) => onGalleryImageChange(image.id, 'url', value)}
+                              type="url"
+                              value={image.url}
+                              wide
+                            />
+                            <PreviewInput
+                              disabled={disabled}
+                              inlineLabel
+                              label="Alt"
+                              onChange={(value) => onGalleryImageChange(image.id, 'alt', value)}
+                              value={image.alt}
+                            />
+                            <PreviewInput
+                              disabled={disabled}
+                              inlineLabel
+                              label="Title"
+                              onChange={(value) => onGalleryImageChange(image.id, 'title', value)}
+                              value={image.title}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {selectedGalleryImage ? (
+                    <div className="admin-property-gallery-media-editor">
+                      <div className="admin-property-gallery-media-editor-bar">
+                        <strong>{`Editing image ${selectedGalleryImageIndex + 1}`}</strong>
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={disabled}
+                          type="button"
+                          onClick={() => setSelectedGalleryImageId(null)}
+                        >
+                          Done
+                        </button>
+                      </div>
+
+                      <AdminMediaManager
+                        currentUrl={selectedGalleryImage.url}
+                        defaultOpen
+                        disabled={disabled}
+                        onClear={() => onGalleryImageChange(selectedGalleryImage.id, 'url', '')}
+                        onRequestClose={() => setSelectedGalleryImageId(null)}
+                        onSelect={(nextUrl) => onGalleryImageChange(selectedGalleryImage.id, 'url', nextUrl)}
+                        preferredOwnerKey={formState.slug}
+                        preferredOwnerName={formState.name}
+                        preferredOwnerType="property"
+                        showToggle={false}
+                        title="Media Library"
+                      />
+                    </div>
+                  ) : null}
+
+                  {galleryAddImagePickerOpen ? (
+                    <AdminMediaManager
+                      defaultOpen
+                      displayMode="modal"
+                      disabled={disabled}
+                      onRequestClose={() => setGalleryAddImagePickerOpen(false)}
+                      onSelect={(nextUrl, entry) => {
+                        onAddGalleryImage?.(nextUrl, entry)
+                        setGalleryAddImagePickerOpen(false)
+                      }}
+                      preferredOwnerKey={formState.slug}
+                      preferredOwnerName={formState.name}
+                      preferredOwnerType="property"
+                      showToggle={false}
+                      title="Add Gallery Image"
+                    />
+                  ) : null}
+
+                  {galleryFolderPickerOpen ? (
+                    <AdminMediaManager
+                      defaultOpen
+                      displayMode="modal"
+                      disabled={disabled}
+                      folderActionLabel="Add folder images"
+                      onRequestClose={() => setGalleryFolderPickerOpen(false)}
+                      onSelectFolderEntries={(entries) => onAddGalleryFolderImages?.(entries)}
+                      preferredOwnerKey={formState.slug}
+                      preferredOwnerName={formState.name}
+                      preferredOwnerType="property"
+                      showToggle={false}
+                      title="Add Folder Images to Gallery"
+                    />
+                  ) : null}
+                </div>
+              ) : (
+                <p className="admin-empty">
+                  {formState.galleryImages.length > 0
+                    ? `${formState.galleryImages.length} gallery image${formState.galleryImages.length === 1 ? '' : 's'} configured.`
+                    : 'Expand the editor to add gallery images.'}
+                </p>
+              )}
+            </div>
+          </EditSection>
+          </div>
+        ) : null}
       </div>
     </aside>
   )

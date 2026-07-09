@@ -128,8 +128,11 @@ export function HomePage() {
               buttonColorPath={['trust', 'action', 'backgroundColor']}
               className="home-trust-button"
               destination={page.trust.action.path}
+              destinationField="path"
               destinationLabel="Button Link"
               destinationPath={['trust', 'action', 'path']}
+              link={page.trust.action}
+              linkPath={['trust', 'action']}
               label={page.trust.action.label}
               labelLabel="Button Text"
               labelPath={['trust', 'action', 'label']}
@@ -211,6 +214,8 @@ export function HomePage() {
                   destinationLabel="Link URL"
                   destinationPath={['about', 'bodyLink', 'href']}
                   external
+                  link={page.about.bodyLink}
+                  linkPath={['about', 'bodyLink']}
                   label={page.about.bodyLink.label}
                   labelLabel="Link Text"
                   labelPath={['about', 'bodyLink', 'label']}

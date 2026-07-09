@@ -1,4 +1,4 @@
-import { ALLOWED_RICH_TEXT_FONT_SIZE_VALUES } from './richTextFormatting'
+import { normalizeRichTextFontSize } from './richTextFormatting'
 
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
 const ALLOWED_TAGS = new Set([
@@ -25,6 +25,7 @@ const ALLOWED_TAGS = new Set([
   'UL',
 ])
 const DROP_TAGS = new Set(['BASE', 'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'INPUT', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA'])
+const BLANK_LINE_PLACEHOLDER_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'])
 
 function repairSnapshotText(text = '') {
   return text
@@ -140,8 +141,10 @@ function sanitizeStyleAttribute(element) {
     const propertyValue = declaration.slice(separatorIndex + 1).trim().toLowerCase()
 
     if (propertyName === 'font-size') {
-      if (ALLOWED_RICH_TEXT_FONT_SIZE_VALUES.has(propertyValue)) {
-        safeDeclarations.push(`font-size: ${propertyValue}`)
+      const normalizedFontSize = normalizeRichTextFontSize(propertyValue)
+
+      if (normalizedFontSize) {
+        safeDeclarations.push(`font-size: ${normalizedFontSize}`)
       }
 
       return
@@ -174,6 +177,14 @@ function sanitizeStyleAttribute(element) {
   return `${Array.from(new Set(safeDeclarations)).join('; ')};`
 }
 
+const NBSP_CHARACTER = String.fromCharCode(160)
+
+function isNbspOnlyPlaceholderText(text) {
+  const normalizedText = String(text ?? '')
+
+  return normalizedText.length > 0 && normalizedText.includes(NBSP_CHARACTER) && normalizedText.replace(/\s/g, '').length === 0
+}
+
 function sanitizeHtmlTree(root) {
   Array.from(root.children).forEach((element) => {
     sanitizeHtmlTree(element)
@@ -188,6 +199,10 @@ function sanitizeHtmlTree(root) {
     if (!ALLOWED_TAGS.has(tagName)) {
       unwrapElement(element)
       return
+    }
+
+    if (BLANK_LINE_PLACEHOLDER_TAGS.has(tagName) && element.children.length === 0 && isNbspOnlyPlaceholderText(element.textContent)) {
+      element.textContent = ''
     }
 
     Array.from(element.attributes).forEach((attribute) => {

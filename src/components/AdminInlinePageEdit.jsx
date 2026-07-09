@@ -3,7 +3,8 @@ import { createPortal, flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
-import { richTextValueToInlineHtml } from '../lib/richTextValue'
+import { resolveLinkRenderConfig } from '../lib/linkRecords'
+import { getClipboardRichTextHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
   applyRichTextFontSize,
   captureCaretOffset,
@@ -15,8 +16,10 @@ import {
   readRichTextSelectionState,
 } from '../lib/richTextFormatting'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
+import { AdminLinkFields } from './AdminLinkFields'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
+import { RichTextFontSizeInput } from './RichTextFontSizeInput'
 import { RichTextValue } from './RichTextValue'
 
 const AdminMediaManager = lazy(() =>
@@ -33,6 +36,10 @@ const AdminRichTextEditor = lazy(() =>
 
 function pathToKey(path = []) {
   return path.map((segment) => String(segment)).join('.')
+}
+
+function getTerminalPathSegment(path = []) {
+  return Array.isArray(path) && path.length > 0 ? String(path[path.length - 1] ?? '').trim() : ''
 }
 
 function pathsAreEqual(leftPath = [], rightPath = []) {
@@ -563,6 +570,7 @@ function InlineTextFormattingToolbar({
       ) : null}
       <AdminRichTextMenu
         disabled={disabled}
+        footer={<RichTextFontSizeInput disabled={disabled} onApply={handleFontSizeChange} />}
         inline
         label="Size"
         onBeforeOpen={rememberSelection}
@@ -680,6 +688,23 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     onChange?.(nextValue)
   }, [onChange])
 
+  function syncEditableHtml(element) {
+    const normalizedValue = isEmptyHtmlValue(element?.innerHTML) ? '' : richTextValueToInlineHtml(element?.innerHTML ?? '')
+
+    if (element && element.innerHTML !== normalizedValue) {
+      const isFocused = document.activeElement === element
+      const caretOffsets = isFocused ? captureCaretOffset(element) : null
+
+      element.innerHTML = normalizedValue
+
+      if (isFocused) {
+        restoreCaretOffset(element, caretOffsets)
+      }
+    }
+
+    return normalizedValue
+  }
+
   useEffect(() => {
     if (typeof registerPublisher !== 'function') {
       return undefined
@@ -741,7 +766,19 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   }
 
   function handleInput(event) {
-    publishNextValue(event.currentTarget.innerHTML)
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
+  function handlePaste(event) {
+    const pastedHtml = getClipboardRichTextHtml(event.clipboardData, { inline: true })
+
+    if (!pastedHtml) {
+      return
+    }
+
+    event.preventDefault()
+    document.execCommand('insertHTML', false, pastedHtml)
+    publishNextValue(syncEditableHtml(event.currentTarget))
   }
 
   function handleKeyDown(event) {
@@ -756,7 +793,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   }
 
   function handleBlur(event) {
-    publishNextValue(event.currentTarget.innerHTML)
+    publishNextValue(syncEditableHtml(event.currentTarget))
   }
 
   return (
@@ -778,6 +815,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
       onMouseDown={handleMouseDown}
       onInput={active ? handleInput : undefined}
       onKeyDown={active ? handleKeyDown : undefined}
+      onPaste={active ? handlePaste : undefined}
     />
   )
 })
@@ -851,11 +889,14 @@ export function EditableLink({
   buttonColorPath,
   className = '',
   destination = '',
+  destinationField = '',
   destinationLabel = 'Link',
   destinationPath,
   external = false,
   label = '',
   labelLabel = 'Text',
+  link = null,
+  linkPath,
   labelPath,
   style,
   target = undefined,
@@ -867,10 +908,22 @@ export function EditableLink({
   const normalizedButtonColor = normalizeColorValue(buttonColor)
   const normalizedDestination = normalizeLinkValue(destination)
   const routeOptions = buildRouteOptions(routeInventory)
-  const routeOptionValues = new Set(routeOptions.map((option) => option.value))
-  const isExternalDestination = normalizedDestination ? isExternalLinkValue(normalizedDestination) : external
+  const resolvedDestinationField =
+    normalizeLinkValue(destinationField) || getTerminalPathSegment(destinationPath) || (allowRouteSelection ? 'path' : 'href')
+  const linkEditorEnabled = Boolean(destinationPath) && Array.isArray(linkPath) && link && typeof link === 'object'
+  const fallbackLinkRecord = {
+    [resolvedDestinationField]: normalizedDestination,
+    linkType: allowRouteSelection && !external ? 'internal' : external ? 'external' : undefined,
+    target,
+  }
+  const renderConfig = resolveLinkRenderConfig(linkEditorEnabled ? link : fallbackLinkRecord, {
+    defaultType: allowRouteSelection && !external ? 'internal' : external ? 'external' : 'external',
+    destinationField: resolvedDestinationField,
+  })
+  const isExternalDestination = renderConfig.isInternal ? false : Boolean(renderConfig.destination)
   const routeSelectionEnabled = Boolean(destinationPath) && allowRouteSelection && routeOptions.length > 0
   const externalUrlEnabled = Boolean(destinationPath) && allowExternalUrl
+  const routeOptionValues = new Set(routeOptions.map((option) => option.value))
   const usesRouteSelection = routeSelectionEnabled && !isExternalDestination
   const selectableRouteOptions =
     usesRouteSelection && normalizedDestination && !routeOptionValues.has(normalizedDestination)
@@ -879,25 +932,23 @@ export function EditableLink({
   const sharesDestinationPath = pathsAreEqual(textPath, destinationPath)
   const field = useEditableField(textPath, `${pathToKey(textPath ?? [])}:${pathToKey(destinationPath ?? [])}`)
   const isActive = field.isActive
-  const shouldRenderExternalLink = isExternalDestination
-  const shouldOpenExternalDocument = shouldRenderExternalLink && shouldOpenLinkInNewTab(normalizedDestination)
-  const resolvedTarget = shouldOpenExternalDocument ? target ?? '_blank' : undefined
+  const shouldRenderExternalLink = !renderConfig.isInternal
   const linkStyle = buttonColorPath && normalizedButtonColor ? { ...style, backgroundColor: normalizedButtonColor } : style
   const Component = field.isEnabled ? 'a' : shouldRenderExternalLink ? 'a' : Link
   const linkProps = field.isEnabled
     ? {
-        href: normalizedDestination || '#',
-        rel: resolvedTarget === '_blank' ? 'noreferrer noopener' : undefined,
-        target: resolvedTarget,
+        href: renderConfig.destination || '#',
+        rel: renderConfig.rel,
+        target: renderConfig.target,
       }
     : shouldRenderExternalLink
       ? {
-          href: normalizedDestination,
-          rel: resolvedTarget === '_blank' ? 'noreferrer noopener' : undefined,
-          target: resolvedTarget,
+          href: renderConfig.href,
+          rel: renderConfig.rel,
+          target: renderConfig.target,
         }
       : {
-          to: normalizedDestination,
+          to: renderConfig.to,
         }
 
   function handleDestinationModeChange(nextMode) {
@@ -957,39 +1008,51 @@ export function EditableLink({
         <InlinePopoverContent>
           <AdminRichTextEditor compact label={labelLabel} onChange={(nextValue) => field.updatePath(textPath, nextValue)} value={label ?? ''} />
           {destinationPath && !sharesDestinationPath ? (
-            <>
-              {routeSelectionEnabled && externalUrlEnabled ? (
-                <label className="admin-field">
-                  <span>Link Type</span>
-                  <select value={usesRouteSelection ? 'route' : 'external'} onChange={(event) => handleDestinationModeChange(event.target.value)}>
-                    <option value="route">Site Route</option>
-                    <option value="external">External URL</option>
-                  </select>
-                </label>
-              ) : null}
-              {usesRouteSelection ? (
-                <label className="admin-field">
-                  <span>{destinationLabel}</span>
-                  <select value={normalizedDestination} onChange={(event) => field.updatePath(destinationPath, event.target.value)}>
-                    {selectableRouteOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ) : (
-                <label className="admin-field">
-                  <span>{destinationLabel}</span>
-                  <input
-                    placeholder={externalUrlEnabled ? 'https://example.com or mailto:name@example.com' : ''}
-                    type="text"
-                    value={destination ?? ''}
-                    onChange={(event) => field.updatePath(destinationPath, event.target.value)}
-                  />
-                </label>
-              )}
-            </>
+            linkEditorEnabled ? (
+              <AdminLinkFields
+                defaultType={allowRouteSelection && !external ? 'internal' : external ? 'external' : 'external'}
+                destinationField={resolvedDestinationField}
+                destinationLabel={destinationLabel}
+                disabled={field.disabled}
+                link={link}
+                routeOptions={routeOptions}
+                onChange={(nextLink) => field.updatePath(linkPath, nextLink)}
+              />
+            ) : (
+              <>
+                {routeSelectionEnabled && externalUrlEnabled ? (
+                  <label className="admin-field">
+                    <span>Link Type</span>
+                    <select value={usesRouteSelection ? 'route' : 'external'} onChange={(event) => handleDestinationModeChange(event.target.value)}>
+                      <option value="route">Site Route</option>
+                      <option value="external">External URL</option>
+                    </select>
+                  </label>
+                ) : null}
+                {usesRouteSelection ? (
+                  <label className="admin-field">
+                    <span>{destinationLabel}</span>
+                    <select value={normalizedDestination} onChange={(event) => field.updatePath(destinationPath, event.target.value)}>
+                      {selectableRouteOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <label className="admin-field">
+                    <span>{destinationLabel}</span>
+                    <input
+                      placeholder={externalUrlEnabled ? 'https://example.com or mailto:name@example.com' : ''}
+                      type="text"
+                      value={destination ?? ''}
+                      onChange={(event) => field.updatePath(destinationPath, event.target.value)}
+                    />
+                  </label>
+                )}
+              </>
+            )
           ) : null}
           {buttonColorPath ? (
             <label className="admin-field">

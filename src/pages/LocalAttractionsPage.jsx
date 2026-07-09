@@ -204,6 +204,8 @@ export function LocalAttractionsPage() {
             destinationLabel="Map Button Link"
             destinationPath={['map', 'action', 'href']}
             external
+            link={page.map.action}
+            linkPath={['map', 'action']}
             label={page.map.action.label}
             labelLabel="Map Button Text"
             labelPath={['map', 'action', 'label']}

@@ -42,7 +42,7 @@ function ScheduleBlock({ title, columns, notes = [], pathPrefix }) {
   )
 }
 
-function RatesBlock({ heading, linkLabel, rows, footer, pathPrefix, url }) {
+function RatesBlock({ heading, link, linkLabel, rows, footer, pathPrefix, url }) {
   return (
     <section className="car-barge-rates">
       <EditableText as="h3" label="Rates Heading" path={[...pathPrefix, 'heading']} value={heading}>
@@ -77,9 +77,12 @@ function RatesBlock({ heading, linkLabel, rows, footer, pathPrefix, url }) {
 
           <EditableLink
             destination={url}
+            destinationField="url"
             destinationLabel="Rates Website URL"
             destinationPath={[...pathPrefix, 'url']}
             external
+            link={link}
+            linkPath={pathPrefix}
             label={linkLabel || 'Visit operator website'}
             labelLabel="Rates Website Link Text"
             labelPath={[...pathPrefix, 'linkLabel']}
@@ -148,6 +151,7 @@ function BargeOperatorSection({ operator, operatorIndex }) {
           <RatesBlock
             footer={operator.rates.footer}
             heading={operator.rates.heading}
+            link={operator.rates}
             linkLabel={operator.rates.linkLabel}
             pathPrefix={['operators', operatorIndex, 'rates']}
             rows={operator.rates.rows}
@@ -232,6 +236,8 @@ export function CarBargeInformationPage() {
                   destinationLabel="Reference Link"
                   destinationPath={['intro', 'referenceLink', 'href']}
                   external
+                  link={page.intro.referenceLink}
+                  linkPath={['intro', 'referenceLink']}
                   label={page.intro.referenceLink.label}
                   labelLabel="Reference Label"
                   labelPath={['intro', 'referenceLink', 'label']}

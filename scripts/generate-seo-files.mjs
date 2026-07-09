@@ -23,8 +23,31 @@ const rootDir = resolve(scriptDir, '..')
 const publicDir = resolve(rootDir, 'public')
 const distDir = resolve(rootDir, 'dist')
 
+const HTML_ENTITY_DECODE_MAP = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&apos;': "'",
+}
+
+function decodeBasicHtmlEntities(value) {
+  return String(value ?? '').replace(/&(?:nbsp|amp|lt|gt|quot|#39|apos);/gi, (match) => HTML_ENTITY_DECODE_MAP[match.toLowerCase()] ?? match)
+}
+
+function htmlToPlainText(value) {
+  return decodeBasicHtmlEntities(
+    String(value ?? '')
+      .replace(/<\/p>/gi, ' ')
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<[^>]+>/g, ' '),
+  )
+}
+
 function normalizeText(value) {
-  return String(value ?? '').replace(/\s+/g, ' ').trim()
+  return htmlToPlainText(value).replace(/\s+/g, ' ').trim()
 }
 
 function normalizePathname(pathname = '/') {

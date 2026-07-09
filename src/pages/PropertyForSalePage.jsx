@@ -82,6 +82,8 @@ export function PropertyForSalePage() {
                   destinationLabel="Website URL"
                   destinationPath={['details', 'contact', 'website', 'href']}
                   external
+                  link={page.details.contact.website}
+                  linkPath={['details', 'contact', 'website']}
                   label={page.details.contact.website.label}
                   labelLabel="Website Label"
                   labelPath={['details', 'contact', 'website', 'label']}

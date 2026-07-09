@@ -141,6 +141,8 @@ export function AdvertisePage() {
                       destinationLabel="Contact Link"
                       destinationPath={['contact', 'contactLines', index, 'href']}
                       external={!line.href.startsWith('/')}
+                      link={line}
+                      linkPath={['contact', 'contactLines', index]}
                       label={line.value}
                       labelLabel="Contact Value"
                       labelPath={['contact', 'contactLines', index, 'value']}

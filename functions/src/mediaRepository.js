@@ -120,11 +120,11 @@ function inferContentType(fileName, contentType) {
   }
 }
 
-function sanitizeFileName(fileName, contentType) {
+function sanitizeFileName(fileName, contentType, { forcedExtension = '' } = {}) {
   const rawBaseName = path.basename(normalizeString(fileName))
   const providedExtension = path.extname(rawBaseName).replace('.', '').toLowerCase()
   const fileStem = slugifySegment(path.basename(rawBaseName, path.extname(rawBaseName))) || 'image'
-  let extension = providedExtension
+  let extension = normalizeString(forcedExtension).replace(/^\./, '').toLowerCase() || providedExtension
 
   if (!extension) {
     switch (contentType) {
@@ -229,7 +229,7 @@ async function normalizeUploadAsset(fileName, contentType, buffer) {
     return {
       buffer: convertedBuffer,
       contentType: 'image/avif',
-      fileName: sanitizeFileName(normalizedFileName, 'image/avif'),
+      fileName: sanitizeFileName(normalizedFileName, 'image/avif', { forcedExtension: 'avif' }),
       height: dimensions.height,
       originalContentType: contentType,
       originalFileName: normalizedFileName,
@@ -333,6 +333,8 @@ async function uploadMediaAsset(draft, actor) {
   const contentType = normalizedUpload.contentType
   const sanitizedFileName = normalizedUpload.fileName
   const storageBuffer = normalizedUpload.buffer
+  const sourceHashSha256 = createHash('sha256').update(buffer).digest('hex')
+  const storageHashSha256 = createHash('sha256').update(storageBuffer).digest('hex')
 
   const bucket = getStorageBucket()
   const { fileName, storagePath } = await resolveUniqueStoragePath(bucket, folderPath, sanitizedFileName)
@@ -374,8 +376,10 @@ async function uploadMediaAsset(draft, actor) {
     ownerKey: normalizeString(draft?.ownerKey),
     ownerName: normalizeString(draft?.ownerName),
     ownerType: normalizeString(draft?.ownerType),
+    sourceHashSha256,
     sourceHost: 'admin-upload',
     storagePath,
+    storageHashSha256,
     title: normalizeString(draft?.title),
     updatedAt: getServerTimestamp(),
     updatedBy: actor.email || actor.uid || 'admin',

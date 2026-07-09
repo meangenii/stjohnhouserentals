@@ -68,6 +68,276 @@ function formatModifiedDate(value) {
   return date.toLocaleDateString()
 }
 
+function stripFileExtension(value) {
+  const normalizedValue = String(value ?? '').trim()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  const extensionIndex = normalizedValue.lastIndexOf('.')
+
+  if (extensionIndex <= 0) {
+    return normalizedValue
+  }
+
+  return normalizedValue.slice(0, extensionIndex)
+}
+
+function getMediaDisplayName(entryOrFileName) {
+  if (typeof entryOrFileName === 'string') {
+    return stripFileExtension(entryOrFileName)
+  }
+
+  return stripFileExtension(entryOrFileName?.fileName)
+}
+
+function slugifyFileNameSegment(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-')
+}
+
+function normalizeFileNameExtension(extension, contentType = '') {
+  const normalizedExtension = String(extension ?? '').trim().toLowerCase()
+
+  if (normalizedExtension === 'jpeg') {
+    return 'jpg'
+  }
+
+  if (normalizedExtension) {
+    return normalizedExtension
+  }
+
+  switch (String(contentType ?? '').trim().toLowerCase()) {
+    case 'image/jpeg':
+      return 'jpg'
+    case 'image/png':
+      return 'png'
+    case 'image/webp':
+      return 'webp'
+    case 'image/gif':
+      return 'gif'
+    case 'image/svg+xml':
+      return 'svg'
+    case 'image/avif':
+      return 'avif'
+    default:
+      return ''
+  }
+}
+
+function normalizeFileNameForDuplicateKey(fileName, contentType = '') {
+  const normalizedValue = String(fileName ?? '').trim()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  const extensionStart = normalizedValue.lastIndexOf('.')
+  const rawStem = extensionStart > 0 ? normalizedValue.slice(0, extensionStart) : normalizedValue
+  const rawExtension = extensionStart > 0 ? normalizedValue.slice(extensionStart + 1) : ''
+  const normalizedStem = slugifyFileNameSegment(rawStem) || 'image'
+  const normalizedExtension = normalizeFileNameExtension(rawExtension, contentType)
+
+  return normalizedExtension ? `${normalizedStem}.${normalizedExtension}` : normalizedStem
+}
+
+function getUploadDuplicateLookupKey(file) {
+  const normalizedFileName = normalizeFileNameForDuplicateKey(file?.name, file?.type)
+  const bytes = Number(file?.size ?? 0) || 0
+
+  return normalizedFileName && bytes > 0 ? `${normalizedFileName}::${bytes}` : ''
+}
+
+function getLibraryEntryDuplicateLookupKey(entry) {
+  const normalizedFileName = normalizeFileNameForDuplicateKey(entry?.originalFileName || entry?.fileName, entry?.contentType)
+  const bytes = Number(entry?.originalBytes ?? 0) || Number(entry?.bytes ?? 0) || 0
+
+  return normalizedFileName && bytes > 0 ? `${normalizedFileName}::${bytes}` : ''
+}
+
+function getLibraryEntryHashTokens(entry) {
+  return [...new Set([String(entry?.sourceHashSha256 ?? '').trim().toLowerCase(), String(entry?.storageHashSha256 ?? '').trim().toLowerCase()].filter(Boolean))]
+}
+
+async function computeUploadFileHash(file) {
+  if (!(file instanceof File)) {
+    return ''
+  }
+
+  const subtle = globalThis.crypto?.subtle
+
+  if (!subtle || typeof subtle.digest !== 'function') {
+    return ''
+  }
+
+  try {
+    const buffer = await file.arrayBuffer()
+    const digest = await subtle.digest('SHA-256', buffer)
+    return Array.from(new Uint8Array(digest))
+      .map((value) => value.toString(16).padStart(2, '0'))
+      .join('')
+  } catch {
+    return ''
+  }
+}
+
+function describeDuplicateLibraryMatch(matches = []) {
+  const firstMatch = matches[0]
+
+  if (!firstMatch) {
+    return 'an existing library image'
+  }
+
+  const fileLabel = String(firstMatch.originalFileName || firstMatch.fileName || 'image').trim()
+  const folderLabel = String(firstMatch.folderPath || 'media').trim() || 'media'
+  const additionalMatchCount = Math.max(matches.length - 1, 0)
+
+  if (additionalMatchCount === 0) {
+    return `${fileLabel} in ${folderLabel}`
+  }
+
+  return `${fileLabel} in ${folderLabel} and ${additionalMatchCount} more existing image${additionalMatchCount === 1 ? '' : 's'}`
+}
+
+function buildDuplicateUploadPrompt(duplicates = []) {
+  const duplicateCount = duplicates.length
+  const exactMatchCount = duplicates.filter((duplicate) => duplicate.matchKind === 'exact').length
+  const likelyMatchCount = duplicateCount - exactMatchCount
+  const previewLines = duplicates.slice(0, 4).map((duplicate) => {
+    const referenceLabel =
+      duplicate.scope === 'selection'
+        ? `${duplicate.referenceLabel || 'another selected image'} in this upload selection`
+        : describeDuplicateLibraryMatch(duplicate.matches)
+    const reasonLabel = duplicate.matchKind === 'exact' ? 'exact content match' : 'same file name and size'
+
+    return `- ${duplicate.label} matches ${referenceLabel} (${reasonLabel})`
+  })
+  const hiddenCount = Math.max(duplicateCount - previewLines.length, 0)
+
+  return [
+    `Detected ${duplicateCount} duplicate image${duplicateCount === 1 ? '' : 's'} in this upload selection.`,
+    exactMatchCount > 0 ? `${exactMatchCount} exact match${exactMatchCount === 1 ? '' : 'es'} found.` : '',
+    likelyMatchCount > 0 ? `${likelyMatchCount} same-name and size match${likelyMatchCount === 1 ? '' : 'es'} found.` : '',
+    ...previewLines,
+    hiddenCount > 0 ? `- ${hiddenCount} more duplicate image${hiddenCount === 1 ? '' : 's'} not shown` : '',
+    '',
+    'Click OK to continue uploading all selected images anyway.',
+    'Click Cancel to skip the duplicate files and upload only the rest.',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
+function buildSkippedDuplicateFeedback(skippedCount, { nothingUploaded = false } = {}) {
+  if (skippedCount <= 0) {
+    return ''
+  }
+
+  const message = `Skipped ${skippedCount} duplicate image${skippedCount === 1 ? '' : 's'}.`
+  return nothingUploaded ? `${message} Nothing new was uploaded.` : message
+}
+
+async function detectDuplicateUploads(files, entries = []) {
+  const libraryEntriesByHash = new Map()
+  const libraryEntriesByFileKey = new Map()
+
+  entries.forEach((entry) => {
+    getLibraryEntryHashTokens(entry).forEach((hashToken) => {
+      if (!libraryEntriesByHash.has(hashToken)) {
+        libraryEntriesByHash.set(hashToken, [])
+      }
+
+      libraryEntriesByHash.get(hashToken).push(entry)
+    })
+
+    const fileKey = getLibraryEntryDuplicateLookupKey(entry)
+
+    if (fileKey) {
+      if (!libraryEntriesByFileKey.has(fileKey)) {
+        libraryEntriesByFileKey.set(fileKey, [])
+      }
+
+      libraryEntriesByFileKey.get(fileKey).push(entry)
+    }
+  })
+
+  const seenSelectionByHash = new Map()
+  const seenSelectionByFileKey = new Map()
+  const duplicates = []
+  const uploadableFiles = []
+
+  for (const [fileIndex, file] of files.entries()) {
+    const label = getUploadFileLabel(file, fileIndex)
+    const fileHash = await computeUploadFileHash(file)
+    const fileKey = getUploadDuplicateLookupKey(file)
+    let duplicate = null
+
+    if (fileHash && seenSelectionByHash.has(fileHash)) {
+      duplicate = {
+        file,
+        fileIndex,
+        label,
+        matchKind: 'exact',
+        referenceLabel: seenSelectionByHash.get(fileHash).label,
+        scope: 'selection',
+      }
+    } else if (fileHash && libraryEntriesByHash.has(fileHash)) {
+      duplicate = {
+        file,
+        fileIndex,
+        label,
+        matchKind: 'exact',
+        matches: libraryEntriesByHash.get(fileHash),
+        scope: 'library',
+      }
+    } else if (fileKey && seenSelectionByFileKey.has(fileKey)) {
+      duplicate = {
+        file,
+        fileIndex,
+        label,
+        matchKind: 'file-key',
+        referenceLabel: seenSelectionByFileKey.get(fileKey).label,
+        scope: 'selection',
+      }
+    } else if (fileKey && libraryEntriesByFileKey.has(fileKey)) {
+      duplicate = {
+        file,
+        fileIndex,
+        label,
+        matchKind: 'file-key',
+        matches: libraryEntriesByFileKey.get(fileKey),
+        scope: 'library',
+      }
+    }
+
+    if (duplicate) {
+      duplicates.push(duplicate)
+    } else {
+      uploadableFiles.push(file)
+    }
+
+    if (fileHash && !seenSelectionByHash.has(fileHash)) {
+      seenSelectionByHash.set(fileHash, { fileIndex, label })
+    }
+
+    if (fileKey && !seenSelectionByFileKey.has(fileKey)) {
+      seenSelectionByFileKey.set(fileKey, { fileIndex, label })
+    }
+  }
+
+  return {
+    duplicates,
+    uploadableFiles,
+  }
+}
+
 function matchesPathOrDescendant(candidatePath, rootPath) {
   if (!rootPath) {
     return true
@@ -359,8 +629,9 @@ function isFileDragEvent(event) {
   return Array.from(event?.dataTransfer?.types ?? []).includes('Files')
 }
 
-function collectDraggedFiles(dataTransfer) {
-  return Array.from(dataTransfer?.files ?? []).filter((file) => file instanceof File)
+function collectDraggedFiles(fileSource) {
+  const candidateFiles = fileSource?.files ?? fileSource ?? []
+  return Array.from(candidateFiles).filter((file) => file instanceof File)
 }
 
 const MEDIA_SELECTION_DRAG_TYPE = 'application/x-genericcms-media-selection'
@@ -399,14 +670,20 @@ function getLibraryDragKind(event) {
 export function AdminMediaManager({
   currentUrl = '',
   defaultOpen = false,
+  displayMode = 'auto',
   disabled = false,
   onClear,
+  onRequestClose,
   onSelect,
+  onSelectFolderEntries,
+  folderActionLabel = 'Use folder images',
   preferredOwnerKey = '',
   preferredOwnerName = '',
   preferredOwnerType = '',
   showToggle = true,
+  showCurrentUrlActions = true,
   title = 'Media Library',
+  toggleButtonMode = 'default',
 }) {
   const fileInputRef = useRef(null)
   // Track nested dragenter/dragleave events so the upload highlight does not flicker across child elements.
@@ -445,7 +722,10 @@ export function AdminMediaManager({
     status: defaultOpen || !showToggle ? 'loading' : 'idle',
   })
   const isOpen = showToggle ? open : true
+  const shouldRenderAsModal = displayMode === 'modal' || (displayMode === 'auto' && Boolean(onSelect))
   const normalizedCurrentUrl = String(currentUrl ?? '').trim()
+  const normalizedTitle = String(title ?? '').trim()
+  const modalTitle = normalizedTitle || 'Media Library'
   const normalizedPreferredOwnerKey = normalizeAdminMediaSearchValue(preferredOwnerKey)
   const normalizedPreferredOwnerName = normalizeAdminMediaSearchValue(preferredOwnerName)
   const folderIndex = useMemo(
@@ -650,23 +930,28 @@ export function AdminMediaManager({
   )
   const allVisibleEntriesSelected = filteredEntries.length > 0 && visibleSelectedEntries.length === filteredEntries.length
   const canMoveSelectedToCurrentFolder = selectedEntries.length > 0 && selectedEntries.some((entry) => entry.folderPath !== selectedFolderPath)
+  const canUseCurrentFolderEntries = typeof onSelectFolderEntries === 'function' && filteredEntries.length > 0
 
   const effectiveSelectedEntryId = useMemo(() => {
     if (libraryState.status !== 'ready') {
       return ''
     }
 
+    const stillVisible = filteredEntries.find((entry) => entry.id === selectedEntryId)?.id ?? ''
     const selectedByUrl = normalizedCurrentUrl
       ? libraryState.entries.find((entry) => entry.managedUrl === normalizedCurrentUrl)?.id ?? ''
       : ''
-    const stillVisible = filteredEntries.find((entry) => entry.id === selectedEntryId)?.id ?? ''
-    return selectedByUrl || stillVisible || filteredEntries[0]?.id || ''
+
+    return stillVisible || selectedByUrl || filteredEntries[0]?.id || ''
   }, [filteredEntries, libraryState.entries, libraryState.status, normalizedCurrentUrl, selectedEntryId])
 
   const selectedEntry = useMemo(
     () => filteredEntries.find((entry) => entry.id === effectiveSelectedEntryId) ?? null,
     [effectiveSelectedEntryId, filteredEntries],
   )
+  const detailsDeleteUsesSelection = Boolean(selectedEntry?.id) && selectedEntryIdSet.has(selectedEntry.id) && selectedEntries.length > 0
+  const detailsDeleteLabel =
+    detailsDeleteUsesSelection && selectedEntries.length > 1 ? `Delete ${formatItemCountLabel(selectedEntries.length, 'selected image')}` : 'Delete image'
 
   function refreshLibrary(options = {}) {
     const nextFolderPath = options.nextFolderPath
@@ -711,6 +996,10 @@ export function AdminMediaManager({
       return nextIds.length === currentIds.length ? currentIds : nextIds
     })
   }, [libraryState.entries, libraryState.status])
+
+  useEffect(() => {
+    setSelectedEntryId('')
+  }, [normalizedCurrentUrl])
 
   function handleToggleOpen() {
     if (!showToggle) {
@@ -849,21 +1138,44 @@ export function AdminMediaManager({
       return
     }
 
+    setActionFeedback('Checking selected images for duplicates...')
+    setActionStatus('saving')
+
+    const duplicateCheck = await detectDuplicateUploads(files, libraryState.entries)
+    const duplicateCount = duplicateCheck.duplicates.length
+    let filesToUpload = files
+    let skippedDuplicateCount = 0
+
+    if (duplicateCount > 0) {
+      const shouldContinueUploadingDuplicates = window.confirm(buildDuplicateUploadPrompt(duplicateCheck.duplicates))
+
+      if (!shouldContinueUploadingDuplicates) {
+        filesToUpload = duplicateCheck.uploadableFiles
+        skippedDuplicateCount = duplicateCount
+
+        if (filesToUpload.length === 0) {
+          setActionFeedback(buildSkippedDuplicateFeedback(skippedDuplicateCount, { nothingUploaded: true }))
+          setActionStatus('warning')
+          return
+        }
+      }
+    }
+
     setActionFeedback('')
     setActionStatus('saving')
     setUploadProgress({
       active: true,
       completedCount: 0,
-      currentFileName: files[0]?.name ?? '',
+      currentFileName: filesToUpload[0]?.name ?? '',
       folderPath: targetFolderPath,
-      totalCount: files.length,
+      totalCount: filesToUpload.length,
     })
 
     try {
       const uploads = []
       const failures = []
 
-      for (const [fileIndex, file] of files.entries()) {
+      for (const [fileIndex, file] of filesToUpload.entries()) {
         setUploadProgress((currentProgress) => ({
           ...currentProgress,
           completedCount: fileIndex,
@@ -873,7 +1185,7 @@ export function AdminMediaManager({
           buildUploadProgressMessage({
             completedCount: fileIndex,
             currentFileName: file.name,
-            totalCount: files.length,
+            totalCount: filesToUpload.length,
           }),
         )
 
@@ -897,7 +1209,7 @@ export function AdminMediaManager({
 
       const firstUploadedMediaId = String(uploads[0]?.id ?? '').trim()
 
-      setActionFeedback(buildUploadBatchFeedback(files, uploads, failures))
+      setActionFeedback([buildUploadBatchFeedback(filesToUpload, uploads, failures), buildSkippedDuplicateFeedback(skippedDuplicateCount)].filter(Boolean).join(' '))
 
       if (uploads.length > 0) {
         setActionStatus(failures.length > 0 ? 'warning' : 'success')
@@ -1162,7 +1474,7 @@ export function AdminMediaManager({
       return
     }
 
-    const confirmationMessage = `Delete ${entry.fileName || 'this image'} from the media library? This removes the stored file.`
+    const confirmationMessage = `Delete ${getMediaDisplayName(entry) || 'this image'} from the media library? This removes the stored file.`
 
     if (!window.confirm(confirmationMessage)) {
       return
@@ -1178,7 +1490,7 @@ export function AdminMediaManager({
         onClear?.()
       }
 
-      setActionFeedback(`Deleted ${entry.fileName || 'the selected image'}.`)
+      setActionFeedback(`Deleted ${getMediaDisplayName(entry) || 'the selected image'}.`)
       setActionStatus('success')
       setSelectedEntryId('')
       setSelectedEntryIds((currentIds) => currentIds.filter((entryId) => entryId !== entry.id))
@@ -1342,34 +1654,92 @@ export function AdminMediaManager({
     onSelect(entry.managedUrl, getEntryWithDimensions(entry))
     setCopyStatus('')
 
+    if (showToggle || onRequestClose) {
+      handleCloseLibrary()
+    }
+  }
+
+  function handleUseCurrentFolderEntries() {
+    if (!canUseCurrentFolderEntries) {
+      return
+    }
+
+    const folderDetails =
+      currentFolder ??
+      (selectedFolderPath
+        ? {
+            itemCount: filteredEntries.length,
+            name: folderBreadcrumbs[folderBreadcrumbs.length - 1]?.label || selectedFolderPath,
+            path: selectedFolderPath,
+          }
+        : null)
+
+    onSelectFolderEntries(
+      filteredEntries.map((entry) => getEntryWithDimensions(entry)),
+      folderDetails,
+    )
+    setCopyStatus('')
+    handleCloseLibrary()
+  }
+
+  function handleCloseLibrary() {
+    if (uploadProgress.active) {
+      return
+    }
+
     if (showToggle) {
       setOpen(false)
     }
+
+    onRequestClose?.()
+  }
+
+  function handleDialogBackdropMouseDown(event) {
+    if (!shouldRenderAsModal || event.target !== event.currentTarget) {
+      return
+    }
+
+    handleCloseLibrary()
   }
 
   const actionBusy = disabled || actionStatus === 'saving'
   const libraryMutationBusy = actionBusy || libraryState.status !== 'ready'
+  const toggleButtonLabel = open
+    ? 'Close media library'
+    : normalizedCurrentUrl
+      ? 'Replace image from media library'
+      : 'Choose image from media library'
+  const iconToggle = toggleButtonMode === 'icon'
 
   return (
     <div className="admin-media-manager">
-      {showToggle || normalizedCurrentUrl ? (
+      {showToggle || (normalizedCurrentUrl && showCurrentUrlActions) ? (
         <div className="admin-inline-actions">
           {showToggle ? (
             <button
+              aria-label={toggleButtonLabel}
               aria-expanded={open}
-              className={`button-link ${onSelect ? 'button-link--secondary admin-media-picker-toggle' : 'button-link--ghost'} admin-action`}
+              className={`button-link ${onSelect ? 'button-link--secondary admin-media-picker-toggle' : 'button-link--ghost'} admin-action${
+                iconToggle ? ' admin-media-picker-toggle--icon' : ''
+              }`}
               disabled={disabled}
+              title={toggleButtonLabel}
               type="button"
               onClick={handleToggleOpen}
             >
-              {open
-                ? 'Close media library'
-                : normalizedCurrentUrl
-                  ? 'Replace image from media library'
-                  : 'Choose image from media library'}
+              {iconToggle ? (
+                <>
+                  <span aria-hidden="true" className="admin-media-picker-icon">
+                    ✎
+                  </span>
+                  <span className="visually-hidden">{toggleButtonLabel}</span>
+                </>
+              ) : (
+                toggleButtonLabel
+              )}
             </button>
           ) : null}
-          {normalizedCurrentUrl ? (
+          {normalizedCurrentUrl && showCurrentUrlActions ? (
             <>
               <a className="button-link button-link--ghost admin-action" href={normalizedCurrentUrl} rel="noreferrer" target="_blank">
                 Open image
@@ -1399,7 +1769,18 @@ export function AdminMediaManager({
       ) : null}
 
       {isOpen ? (
-        <section aria-busy={uploadProgress.active} className="admin-media-manager-panel">
+        <div
+          className={shouldRenderAsModal ? 'admin-media-manager-dialog-shell' : undefined}
+          role={shouldRenderAsModal ? 'presentation' : undefined}
+          onMouseDown={shouldRenderAsModal ? handleDialogBackdropMouseDown : undefined}
+        >
+        <section
+          aria-busy={uploadProgress.active}
+          aria-label={shouldRenderAsModal ? modalTitle : undefined}
+          aria-modal={shouldRenderAsModal ? 'true' : undefined}
+          className={`admin-media-manager-panel${shouldRenderAsModal ? ' admin-media-manager-panel--modal' : ''}`.trim()}
+          role={shouldRenderAsModal ? 'dialog' : undefined}
+        >
           {uploadProgress.active ? (
             <div className="admin-media-upload-modal-shell" role="presentation">
               <div
@@ -1419,44 +1800,28 @@ export function AdminMediaManager({
             </div>
           ) : null}
 
-          {title || libraryState.generatedAt ? (
+          {shouldRenderAsModal || normalizedTitle ? (
             <div className="admin-media-manager-header">
-              {title ? <h6>{title}</h6> : <span />}
-              {libraryState.generatedAt ? (
-                <span className="admin-media-manager-meta">Library updated {new Date(libraryState.generatedAt).toLocaleDateString()}</span>
+              <div className="admin-media-manager-heading">
+                {shouldRenderAsModal || normalizedTitle ? <h6>{modalTitle}</h6> : <span />}
+              </div>
+              {shouldRenderAsModal ? (
+                <button className="button-link button-link--ghost admin-action admin-media-manager-close" disabled={uploadProgress.active} type="button" onClick={handleCloseLibrary}>
+                  Close
+                </button>
               ) : null}
             </div>
           ) : null}
 
-          <div className="admin-media-manager-toolbar admin-media-manager-toolbar--explorer">
-            <div className="admin-inline-actions admin-media-toolbar-actions">
-              <button
-                className="button-link button-link--ghost admin-action"
-                disabled={libraryMutationBusy}
-                type="button"
-                onClick={() => setShowCreateFolderForm((currentValue) => !currentValue)}
-              >
-                {showCreateFolderForm ? 'Cancel folder' : 'New folder'}
-              </button>
-              <button
-                className="button-link button-link--ghost admin-action"
-                disabled={libraryMutationBusy}
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                Upload
-              </button>
-            </div>
-            <input
-              ref={fileInputRef}
-              accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
-              disabled={libraryMutationBusy}
-              hidden
-              multiple
-              type="file"
-              onChange={handleUploadSelection}
-            />
-          </div>
+          <input
+            ref={fileInputRef}
+            accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
+            disabled={libraryMutationBusy}
+            hidden
+            multiple
+            type="file"
+            onChange={handleUploadSelection}
+          />
 
           <button
             aria-disabled={libraryMutationBusy}
@@ -1478,29 +1843,6 @@ export function AdminMediaManager({
             </span>
           </button>
 
-          {showCreateFolderForm ? (
-            <form className="admin-media-create-folder" onSubmit={handleCreateFolderSubmit}>
-              <label className="admin-field admin-field--wide admin-media-field">
-                <span>Folder Name</span>
-                <input
-                  placeholder="Example: Beach House Gallery"
-                  value={newFolderName}
-                  onChange={(event) => setNewFolderName(event.target.value)}
-                />
-              </label>
-              <div className="admin-media-create-folder-actions">
-                <p className="admin-note admin-media-inline-note">
-                  Create in <strong>{effectiveFolderPathFilter || libraryState.browserRootPath || 'media'}</strong>
-                </p>
-                <div className="admin-inline-actions">
-                  <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="submit">
-                    Create folder
-                  </button>
-                </div>
-              </div>
-            </form>
-          ) : null}
-
           {libraryState.status === 'loading' ? <p className="admin-empty">Loading the media library...</p> : null}
           {libraryState.status === 'error' ? <p className="admin-empty">{libraryState.error}</p> : null}
 
@@ -1509,7 +1851,17 @@ export function AdminMediaManager({
               <div className="admin-media-explorer">
                 <aside className="admin-media-sidebar">
                   <div className="admin-media-sidebar-header">
-                    <strong>Folders</strong>
+                    <div className="admin-media-sidebar-header-row">
+                      <strong>Folders</strong>
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        disabled={libraryMutationBusy}
+                        type="button"
+                        onClick={() => setShowCreateFolderForm((currentValue) => !currentValue)}
+                      >
+                        {showCreateFolderForm ? 'Cancel folder' : 'New folder'}
+                      </button>
+                    </div>
                     <button
                       className={`admin-media-tree-button admin-media-tree-button--root${
                         !effectiveFolderPathFilter || effectiveFolderPathFilter === libraryState.browserRootPath ? ' admin-media-tree-button--active' : ''
@@ -1523,6 +1875,29 @@ export function AdminMediaManager({
                       </span>
                     </button>
                   </div>
+
+                  {showCreateFolderForm ? (
+                    <form className="admin-media-create-folder" onSubmit={handleCreateFolderSubmit}>
+                      <label className="admin-field admin-field--wide admin-media-field">
+                        <span>Folder Name</span>
+                        <input
+                          placeholder="Example: Beach House Gallery"
+                          value={newFolderName}
+                          onChange={(event) => setNewFolderName(event.target.value)}
+                        />
+                      </label>
+                      <div className="admin-media-create-folder-actions">
+                        <p className="admin-note admin-media-inline-note">
+                          Create in <strong>{effectiveFolderPathFilter || libraryState.browserRootPath || 'media'}</strong>
+                        </p>
+                        <div className="admin-inline-actions">
+                          <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="submit">
+                            Create folder
+                          </button>
+                        </div>
+                      </div>
+                    </form>
+                  ) : null}
 
                   <div className="admin-media-tree">
                     {buildFolderTree(
@@ -1578,6 +1953,11 @@ export function AdminMediaManager({
                         {currentFolder?.name ? ` | ${currentFolder.name}` : ''}
                         {libraryState.bucket ? ` | ${libraryState.bucket}` : ''}
                       </p>
+                      {canUseCurrentFolderEntries ? (
+                        <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleUseCurrentFolderEntries}>
+                          {folderActionLabel}
+                        </button>
+                      ) : null}
                       {selectedFolderPath ? (
                         <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedFolderPath)}>
                           Copy path
@@ -1700,7 +2080,7 @@ export function AdminMediaManager({
                             >
                               <td className="admin-media-list-select-cell">
                                 <input
-                                  aria-label={`Select ${entry.fileName || 'image'}`}
+                                  aria-label={`Select ${getMediaDisplayName(entry) || 'image'}`}
                                   checked={isBulkSelected}
                                   disabled={libraryMutationBusy}
                                   type="checkbox"
@@ -1712,13 +2092,13 @@ export function AdminMediaManager({
                               <td>
                                 <button className="admin-media-list-name admin-media-list-name--file" type="button" onClick={() => handleSelectEntry(entry)}>
                                   <img
-                                    alt={entry.fileName || entry.ownerName || 'Managed media item'}
+                                    alt={getMediaDisplayName(entry) || entry.ownerName || 'Managed media item'}
                                     className="admin-media-list-thumb"
                                     loading="lazy"
                                     onLoad={(event) => handlePreviewImageLoad(entry, event)}
                                     src={buildRemoteImageUrl(entry.managedUrl, { width: 120, height: 90, mode: 'fit' }) || entry.managedUrl}
                                   />
-                                  <span>{entry.fileName || 'Untitled image'}</span>
+                                  <span>{getMediaDisplayName(entry) || 'Untitled image'}</span>
                                 </button>
                               </td>
                               <td>{formatModifiedDate(entry.updatedAt)}</td>
@@ -1740,7 +2120,7 @@ export function AdminMediaManager({
                     <section className="admin-media-details">
                       <div className="admin-media-details-thumb">
                         <img
-                          alt={selectedEntry.fileName || selectedEntry.ownerName || 'Selected media item'}
+                          alt={getMediaDisplayName(selectedEntry) || selectedEntry.ownerName || 'Selected media item'}
                           loading="lazy"
                           onLoad={(event) => handlePreviewImageLoad(selectedEntry, event)}
                           src={buildRemoteImageUrl(selectedEntry.managedUrl, { width: 220, height: 160, mode: 'fit' }) || selectedEntry.managedUrl}
@@ -1748,7 +2128,7 @@ export function AdminMediaManager({
                       </div>
                       <div className="admin-media-details-copy">
                         <div className="admin-media-card-topline">
-                          <strong>{selectedEntry.fileName || 'Untitled image'}</strong>
+                          <strong>{getMediaDisplayName(selectedEntry) || 'Untitled image'}</strong>
                           {selectedEntry.managedUrl === normalizedCurrentUrl ? <span className="admin-chip">Selected</span> : null}
                         </div>
                         <p className="admin-media-details-meta">
@@ -1780,9 +2160,16 @@ export function AdminMediaManager({
                           className="button-link button-link--ghost admin-action"
                           disabled={libraryMutationBusy}
                           type="button"
-                          onClick={() => handleDeleteEntry(selectedEntry)}
+                          onClick={() => {
+                            if (detailsDeleteUsesSelection) {
+                              handleDeleteSelectedEntries()
+                              return
+                            }
+
+                            handleDeleteEntry(selectedEntry)
+                          }}
                         >
-                          Delete image
+                          {detailsDeleteLabel}
                         </button>
                       </div>
                     </section>
@@ -1792,6 +2179,7 @@ export function AdminMediaManager({
             </>
           ) : null}
         </section>
+        </div>
       ) : null}
     </div>
   )

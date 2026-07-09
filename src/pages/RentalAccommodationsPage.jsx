@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
+import { getAdminIdToken } from '../lib/adminAuth'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
+import { useAdminSession } from '../lib/useAdminSession'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 const AMENITY_FILTERS = [
@@ -29,9 +31,33 @@ const AMENITY_FILTERS = [
       return /\b(?:internet|wifi|wi-fi)\b/i.test(summaryText)
     },
   },
+  {
+    id: 'backup-power',
+    label: 'Backup Power',
+    matches(summaryText) {
+      return /\b(?:backup|generator)\b/i.test(summaryText)
+    },
+  },
 ]
 
+const AIR_CONDITIONING_FILTER_OPTIONS = [
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'whole-house', label: 'Whole House' },
+]
+
+const BEDROOM_AIR_CONDITIONING_PATTERN =
+  /\b(?:air[-\s]?condition(?:ed|ing)\s+bedrooms?|bedrooms?\s+(?:with\s+)?(?:air[-\s]?condition(?:ed|ing)|a\/c|ac)\b|(?:a\/c|ac)\s+bedrooms?)\b/i
+
+const WHOLE_HOUSE_AIR_CONDITIONING_PATTERN =
+  /\b(?:full\s+(?:air[-\s]?condition(?:ed|ing)|a\/c|ac)|whole\s+house\s+(?:air[-\s]?condition(?:ed|ing)|a\/c|ac)|air[-\s]?conditioning|air[-\s]?conditioned|a\/c|ac)\b/i
+
 function getShortDescriptionLines(value) {
+  return richTextValueToLines(value)
+    .map((line) => richTextValueToPlainText(line))
+    .filter(Boolean)
+}
+
+function getAmenityLines(value) {
   return richTextValueToLines(value)
     .map((line) => richTextValueToPlainText(line))
     .filter(Boolean)
@@ -70,15 +96,44 @@ function getLocationLabel(property) {
   return normalizeLocationLabel(fallbackLine)
 }
 
+function getAvailableBedroomCounts(property) {
+  const primaryBedrooms = Number(property?.bedrooms) || 0
+  const alternateBedroomCounts = Array.isArray(property?.alternateBedroomCounts) ? property.alternateBedroomCounts : []
+  const rawCounts =
+    Array.isArray(property?.availableBedroomCounts) && property.availableBedroomCounts.length > 0
+      ? property.availableBedroomCounts
+      : [primaryBedrooms, ...((property?.rentFewerRooms === true || alternateBedroomCounts.length > 0) ? alternateBedroomCounts : [])]
+
+  return Array.from(
+    new Set(rawCounts.map((value) => Number(value)).filter((value) => Number.isInteger(value) && value > 0)),
+  ).sort((left, right) => left - right)
+}
+
+function getAirConditioningType(lines = []) {
+  if (lines.some((line) => BEDROOM_AIR_CONDITIONING_PATTERN.test(line))) {
+    return 'bedroom'
+  }
+
+  if (lines.some((line) => WHOLE_HOUSE_AIR_CONDITIONING_PATTERN.test(line))) {
+    return 'whole-house'
+  }
+
+  return ''
+}
+
 function buildCardFromProperty(property) {
   const summaryLines = getShortDescriptionLines(property.shortDescription)
-  const summaryText = summaryLines.join(' ').replace(/\s+/g, ' ').trim()
+  const amenityLines = getAmenityLines(property.amenitiesHtml)
+  const searchableLines = [...summaryLines, ...amenityLines]
+  const summaryText = searchableLines.join(' ').replace(/\s+/g, ' ').trim()
   const locationLabel = getLocationLabel(property)
 
   return {
     name: property.name,
     path: property.path,
+    active: property.active !== false,
     bedrooms: property.bedrooms,
+    availableBedroomCounts: getAvailableBedroomCounts(property),
     imageUrl: getContentImageSrc(property.heroImage, { width: 640, height: 435 }),
     imageAlt: property.heroImage?.alt || property.name,
     summaryLines,
@@ -86,6 +141,7 @@ function buildCardFromProperty(property) {
     locationLabel,
     locationValue: locationLabel.toLowerCase(),
     amenityIds: AMENITY_FILTERS.filter((filter) => filter.matches(summaryText)).map((filter) => filter.id),
+    airConditioningType: getAirConditioningType(searchableLines),
   }
 }
 
@@ -112,6 +168,7 @@ function RentalAccommodationCard({ card }) {
       </Link>
 
       <div className="rental-accommodations-card-body">
+        {!card.active ? <span className="admin-chip admin-chip--warning rental-accommodations-card-badge">Hidden</span> : null}
         <h2>{card.name}</h2>
         <div aria-hidden="true" className="rental-accommodations-card-divider" />
 
@@ -146,11 +203,14 @@ function RentalAccommodationCard({ card }) {
 
 export function RentalAccommodationsPage() {
   const page = useStructuredPageContent('rentalAccommodations')
+  const { isAdmin } = useAdminSession()
   const [summaryState, setSummaryState] = useState({ status: 'loading', properties: [] })
   const [selectedRoomCount, setSelectedRoomCount] = useState(null)
   const [selectedAmenities, setSelectedAmenities] = useState([])
+  const [selectedAirConditioningType, setSelectedAirConditioningType] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('')
   const roomFilterId = 'rental-room-filter'
+  const airConditioningFilterId = 'rental-air-conditioning-filter'
   const locationFilterId = 'rental-location-filter'
   const visibleProperties = Array.isArray(summaryState.properties)
     ? summaryState.properties.filter(
@@ -165,9 +225,7 @@ export function RentalAccommodationsPage() {
   const locationOptionMap = new Map()
   const roomCountOptions = Array.from(
     new Set(
-      allCards
-        .map((card) => card.bedrooms)
-        .filter((bedroomCount) => Number.isInteger(bedroomCount) && bedroomCount > 0),
+      allCards.flatMap((card) => card.availableBedroomCounts).filter((bedroomCount) => Number.isInteger(bedroomCount) && bedroomCount > 0),
     ),
   ).sort((left, right) => left - right)
 
@@ -184,17 +242,21 @@ export function RentalAccommodationsPage() {
 
   const locationOptions = Array.from(locationOptionMap.values()).sort((left, right) => left.label.localeCompare(right.label))
   const selectedLocationLabel = locationOptions.find((option) => option.value === selectedLocation)?.label ?? ''
-  const hasActiveFilters = selectedRoomCount !== null || selectedAmenities.length > 0 || Boolean(selectedLocation)
+  const hasActiveFilters = selectedRoomCount !== null || selectedAmenities.length > 0 || Boolean(selectedAirConditioningType) || Boolean(selectedLocation)
   const filtersDisabled = summaryState.status !== 'ready' || allCards.length === 0
   let cards = allCards
 
   if (hasActiveFilters) {
     cards = allCards.filter((card) => {
-      if (selectedRoomCount !== null && card.bedrooms !== selectedRoomCount) {
+      if (selectedRoomCount !== null && !card.availableBedroomCounts.includes(selectedRoomCount)) {
         return false
       }
 
       if (selectedLocation && card.locationValue !== selectedLocation) {
+        return false
+      }
+
+      if (selectedAirConditioningType && card.airConditioningType !== selectedAirConditioningType) {
         return false
       }
 
@@ -205,22 +267,27 @@ export function RentalAccommodationsPage() {
   useEffect(() => {
     let cancelled = false
 
-    listPropertySummaries()
-      .then((properties) => {
+    async function loadSummaries() {
+      try {
+        const authToken = isAdmin ? await getAdminIdToken() : ''
+        const properties = await listPropertySummaries(authToken ? { authToken } : {})
+
         if (!cancelled) {
           setSummaryState({ status: 'ready', properties })
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) {
           setSummaryState({ status: 'error', properties: [] })
         }
-      })
+      }
+    }
+
+    loadSummaries()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isAdmin])
 
   if (!page) {
     return <PageLoadingState />
@@ -280,6 +347,25 @@ export function RentalAccommodationsPage() {
                       {roomCountOptions.map((roomCount) => (
                         <option key={roomCount} value={roomCount}>
                           {formatRoomFilterLabel(roomCount)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <label className="visually-hidden" htmlFor={airConditioningFilterId}>
+                    Filter rentals by air conditioning type
+                  </label>
+                  <div className="rental-accommodations-pill-select-shell rental-accommodations-pill-select-shell--air-conditioning">
+                    <select
+                      className="rental-accommodations-pill-select"
+                      disabled={filtersDisabled}
+                      id={airConditioningFilterId}
+                      value={selectedAirConditioningType}
+                      onChange={(event) => setSelectedAirConditioningType(event.target.value)}
+                    >
+                      <option value="">Air Conditioning</option>
+                      {AIR_CONDITIONING_FILTER_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
