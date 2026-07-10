@@ -18,6 +18,7 @@ functions/.env
 firebase-debug.log
 functions/node_modules
 functions/src/generated/siteContent.json
+backups/
 
 # Editor directories and files
 .vscode/*

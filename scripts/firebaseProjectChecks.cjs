@@ -61,6 +61,15 @@ function loadFirebaseWebEnv(rootDir = path.resolve(__dirname, '..')) {
   return parseEnvFile(path.join(rootDir, '.env'))
 }
 
+function loadFunctionsEnv(rootDir = path.resolve(__dirname, '..')) {
+  return parseEnvFile(path.join(rootDir, 'functions', '.env'))
+}
+
+function resolveFirestoreDatabaseId(rootDir = path.resolve(__dirname, '..')) {
+  const functionsEnv = loadFunctionsEnv(rootDir)
+  return String(functionsEnv.FIRESTORE_DATABASE_ID ?? '').trim() || '(default)'
+}
+
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options)
   const text = await response.text()
@@ -81,7 +90,7 @@ async function requestJson(url, options = {}) {
   }
 }
 
-async function checkFirestoreApi({ projectId, apiKey }) {
+async function checkFirestoreApi({ projectId, apiKey, databaseId = '(default)' }) {
   if (!projectId) {
     return {
       name: 'Cloud Firestore API',
@@ -100,7 +109,7 @@ async function checkFirestoreApi({ projectId, apiKey }) {
     }
   }
 
-  const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/__healthcheck?pageSize=1&key=${apiKey}`
+  const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/__healthcheck?pageSize=1&key=${apiKey}`
   const result = await requestJson(endpoint)
   const error = result.payload?.error ?? {}
   const details = Array.isArray(error.details) ? error.details : []
@@ -129,7 +138,7 @@ async function checkFirestoreApi({ projectId, apiKey }) {
     return {
       name: 'Cloud Firestore API',
       status: 'error',
-      summary: 'The default Firestore database has not been created yet.',
+      summary: `The Firestore database "${databaseId}" has not been created yet.`,
       details: ['Create the Firestore database in the Firebase console, then rerun the seed.'],
     }
   }
@@ -264,14 +273,16 @@ async function runFirebaseDoctor({ rootDir = path.resolve(__dirname, '..') } = {
   const env = loadFirebaseWebEnv(rootDir)
   const projectId = resolveProjectId(rootDir) || String(env.VITE_FIREBASE_PROJECT_ID ?? '').trim()
   const apiKey = String(env.VITE_FIREBASE_API_KEY ?? '').trim()
+  const databaseId = resolveFirestoreDatabaseId(rootDir)
   const checks = await Promise.all([
-    checkFirestoreApi({ projectId, apiKey }),
+    checkFirestoreApi({ projectId, apiKey, databaseId }),
     checkEmailPasswordAuth({ apiKey }),
     checkAdminSdkCredentials(),
   ])
 
   return {
     projectId,
+    databaseId,
     checks,
   }
 }
@@ -281,7 +292,11 @@ function hasBlockingFirebaseIssues(report) {
 }
 
 function formatFirebaseDoctorReport(report) {
-  const lines = [`Firebase project: ${report.projectId || '(missing)'}`, '']
+  const lines = [
+    `Firebase project: ${report.projectId || '(missing)'}`,
+    `Firestore database: ${report.databaseId || '(default)'}`,
+    '',
+  ]
 
   report.checks.forEach((check) => {
     lines.push(`${check.status.toUpperCase()}: ${check.name}`)
@@ -297,6 +312,8 @@ module.exports = {
   formatFirebaseDoctorReport,
   hasBlockingFirebaseIssues,
   loadFirebaseWebEnv,
+  loadFunctionsEnv,
+  resolveFirestoreDatabaseId,
   resolveProjectId,
   runFirebaseDoctor,
 }

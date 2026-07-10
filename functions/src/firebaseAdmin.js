@@ -2,7 +2,11 @@ const { getApps, initializeApp } = require('firebase-admin/app')
 const { getAuth } = require('firebase-admin/auth')
 const { FieldValue, getFirestore } = require('firebase-admin/firestore')
 const { getStorage } = require('firebase-admin/storage')
+const { AsyncLocalStorage } = require('node:async_hooks')
 const { primeApplicationDefaultCredentialsFromFirebaseCli } = require('./firebaseCliCredentialBootstrap')
+
+const DEFAULT_FIRESTORE_DATABASE_ID = '(default)'
+const runtimeContext = new AsyncLocalStorage()
 
 class HttpError extends Error {
   constructor(status, message, details = {}) {
@@ -28,8 +32,55 @@ function getAdminApp() {
   return getApps()[0] ?? initializeApp()
 }
 
-function getDb() {
-  return getFirestore(getAdminApp())
+function normalizeBoolean(value) {
+  return /^(1|true|yes|on)$/i.test(String(value ?? '').trim())
+}
+
+function isDefaultFirestoreDatabaseId(databaseId) {
+  return String(databaseId ?? '').trim() === '' || String(databaseId ?? '').trim() === DEFAULT_FIRESTORE_DATABASE_ID
+}
+
+function getFallbackFirestoreDatabaseId() {
+  const configuredId = String(process.env.FIRESTORE_DATABASE_ID ?? '').trim()
+  return configuredId || DEFAULT_FIRESTORE_DATABASE_ID
+}
+
+function getLiveFirestoreDatabaseId() {
+  const configuredId = String(process.env.FIRESTORE_LIVE_DATABASE_ID ?? '').trim()
+  return configuredId || DEFAULT_FIRESTORE_DATABASE_ID
+}
+
+function getStagingFirestoreDatabaseId() {
+  return String(process.env.FIRESTORE_STAGING_DATABASE_ID ?? '').trim()
+}
+
+function assertFirestoreDatabaseSelection(databaseId) {
+  if (normalizeBoolean(process.env.FIRESTORE_ENFORCE_NON_DEFAULT) && isDefaultFirestoreDatabaseId(databaseId)) {
+    throw new Error(
+      'FIRESTORE_ENFORCE_NON_DEFAULT=true requires FIRESTORE_DATABASE_ID to be set to a non-default Firestore database.',
+    )
+  }
+}
+
+function getRuntimeContext() {
+  return runtimeContext.getStore() ?? null
+}
+
+function getFirestoreDatabaseId() {
+  return getRuntimeContext()?.databaseId || getFallbackFirestoreDatabaseId()
+}
+
+function isStagingRuntime() {
+  return getRuntimeContext()?.mode === 'staging'
+}
+
+function runWithRuntimeContext(context, callback) {
+  return runtimeContext.run({ ...(getRuntimeContext() ?? {}), ...(context ?? {}) }, callback)
+}
+
+function getDb(databaseId = getFirestoreDatabaseId()) {
+  assertFirestoreDatabaseSelection(databaseId)
+  return getFirestore(getAdminApp(), databaseId)
 }
 
 function getStorageBucket(bucketName) {
@@ -104,7 +155,7 @@ function isFirestoreUnavailableError(error) {
   const code = String(error?.code ?? '')
 
   return (
-    /database\s+\(default\)\s+does\s+not\s+exist/i.test(message) ||
+    /database\s+(\(default\)|[a-z0-9-]+)\s+does\s+not\s+exist/i.test(message) ||
     /create the firestore database/i.test(message) ||
     /create.*cloud datastore or cloud firestore database/i.test(message) ||
     /cloud firestore api has not been used/i.test(message) ||
@@ -118,7 +169,13 @@ function isFirestoreUnavailableError(error) {
 
 exports.HttpError = HttpError
 exports.getDb = getDb
+exports.getFirestoreDatabaseId = getFirestoreDatabaseId
+exports.getLiveFirestoreDatabaseId = getLiveFirestoreDatabaseId
+exports.getStagingFirestoreDatabaseId = getStagingFirestoreDatabaseId
 exports.getStorageBucket = getStorageBucket
 exports.getServerTimestamp = getServerTimestamp
+exports.isDefaultFirestoreDatabaseId = isDefaultFirestoreDatabaseId
 exports.isFirestoreUnavailableError = isFirestoreUnavailableError
+exports.isStagingRuntime = isStagingRuntime
 exports.requireAdminUser = requireAdminUser
+exports.runWithRuntimeContext = runWithRuntimeContext

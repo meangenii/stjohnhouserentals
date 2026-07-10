@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
+import { AdminBackupManager } from '../components/AdminBackupManager'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas } from '../components/AdminPagePreview'
@@ -119,7 +120,7 @@ const DEFAULT_ADMIN_EDITOR_LOCATION = {
   charterMode: 'create',
   charterSlug: '',
 }
-const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'properties', 'charters', 'media', 'submissions'])
+const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'properties', 'charters', 'media', 'submissions', 'backups'])
 
 function normalizeAdminEditorTab(value = '') {
   const candidate = String(value ?? '').trim()
@@ -2205,6 +2206,11 @@ export function AdminPage() {
             label="Form Submissions"
             onClick={() => setActiveTab('submissions')}
           />
+          <AdminTabButton
+            active={activeTab === 'backups'}
+            label="Backups"
+            onClick={() => setActiveTab('backups')}
+          />
         </div>
       </section>
 
@@ -2624,6 +2630,12 @@ export function AdminPage() {
           ) : null}
 
           {activeTab === 'submissions' ? <AdminAdvertiseInquiriesPanel authUser={authState.user} /> : null}
+
+          {activeTab === 'backups' ? (
+            <section className="admin-panel">
+              <AdminBackupManager authUser={authState.user} />
+            </section>
+          ) : null}
         </div>
       </section>
     </article>

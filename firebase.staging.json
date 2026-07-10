@@ -1,0 +1,27 @@
+{
+  "hosting": {
+    "site": "st-john-house-rentals",
+    "public": "dist",
+    "cleanUrls": true,
+    "ignore": [
+      "firebase.json",
+      "firebase.staging.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "siteApiStaging",
+          "region": "us-central1",
+          "pinTag": true
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

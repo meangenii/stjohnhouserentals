@@ -7944,6 +7944,26 @@ button.admin-auth-badge {
   color: #135987;
 }
 
+.admin-route-tag--idle {
+  background: #eef8fd;
+  color: var(--brand-navy);
+}
+
+.admin-route-tag--saving {
+  background: #fff6df;
+  color: #7b5a00;
+}
+
+.admin-route-tag--error {
+  background: #fff0ee;
+  color: #a63c24;
+}
+
+.admin-route-tag--warning {
+  background: #fff7e8;
+  color: #8f5b00;
+}
+
 .admin-route-group {
   background: #f1f6fb;
   color: #526273;
@@ -7969,9 +7989,50 @@ button.admin-auth-badge {
   overflow-wrap: anywhere;
 }
 
+.admin-backup-grid,
+.admin-backup-job-list {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.admin-backup-jobs {
+  margin-top: 1.5rem;
+}
+
+.admin-backup-meta {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.admin-backup-meta div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-backup-meta dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-backup-meta dd {
+  margin: 0;
+  color: var(--brand-navy);
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 900px) {
   .admin-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-backup-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
   }
 
   .admin-layout {

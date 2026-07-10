@@ -1,6 +1,14 @@
 const { onRequest } = require('firebase-functions/v2/https')
 const { listAdvertiseInquiries, saveAdvertiseInquiry } = require('./advertiseInquiryRepository')
 const {
+  createManagedBackupExport,
+  createStagingClone,
+  deployStagingPreview,
+  getBackupOperationsStatus,
+  getBackupWorkspaceStatus,
+  switchPublicSiteTarget,
+} = require('./backupAdminRepository')
+const {
   getCharterBySlug,
   listAllCharters,
   listCharters,
@@ -9,7 +17,14 @@ const {
   saveCharterRecord,
   seedCharterRecords,
 } = require('./charterRepository')
-const { HttpError, requireAdminUser } = require('./firebaseAdmin')
+const {
+  HttpError,
+  getLiveFirestoreDatabaseId,
+  getStagingFirestoreDatabaseId,
+  isDefaultFirestoreDatabaseId,
+  requireAdminUser,
+  runWithRuntimeContext,
+} = require('./firebaseAdmin')
 const {
   deletePropertyRecord,
   getPropertyBySlug,
@@ -105,16 +120,20 @@ function sendError(response, error, path) {
   })
 }
 
-exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (request, response) => {
+async function handleSiteApiRequest(request, response, { serviceName, databaseId, mode }) {
   const path = normalizeRequestPath(request.path)
   response.set('Cache-Control', 'no-store')
+  response.set('X-Firestore-Database', databaseId)
+  response.set('X-Site-Api-Variant', mode)
 
   try {
     if (request.method === 'GET' && (path === '' || path === 'health')) {
       response.json({
-        service: 'siteApi',
+        service: serviceName,
         status: 'ok',
         phase: publicSiteConfig.phase,
+        databaseId,
+        mode,
         startedAt,
         checkedAt: new Date().toISOString(),
       })
@@ -126,6 +145,8 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
 
       response.json({
         ...publicSiteConfig,
+        apiVariant: mode,
+        databaseId,
         structuredPageCount: structuredPages.length,
         checkedAt: new Date().toISOString(),
       })
@@ -251,6 +272,74 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         inquiries: await listAdvertiseInquiries(),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/backups/status') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore-admin',
+        checkedAt: new Date().toISOString(),
+        ...(await getBackupWorkspaceStatus()),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/backups/export') {
+      const adminUser = await requireAdminUser(request)
+      const backup = await createManagedBackupExport(request.body ?? {}, adminUser)
+
+      response.status(202).json({
+        source: 'firestore-admin',
+        checkedAt: new Date().toISOString(),
+        ...backup,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/backups/clone') {
+      const adminUser = await requireAdminUser(request)
+      const clone = await createStagingClone(request.body ?? {}, adminUser)
+
+      response.status(202).json({
+        source: 'firestore-admin',
+        checkedAt: new Date().toISOString(),
+        ...clone,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/backups/staging-preview') {
+      const adminUser = await requireAdminUser(request)
+      const preview = await deployStagingPreview(adminUser)
+
+      response.json({
+        source: 'firebase-hosting',
+        checkedAt: new Date().toISOString(),
+        ...preview,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/backups/cutover') {
+      const adminUser = await requireAdminUser(request)
+      const cutover = await switchPublicSiteTarget(request.body ?? {}, adminUser)
+
+      response.json({
+        source: 'firebase-hosting',
+        checkedAt: new Date().toISOString(),
+        ...cutover,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/backups/operations/status') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore-admin',
+        checkedAt: new Date().toISOString(),
+        operations: await getBackupOperationsStatus(request.body ?? {}),
       })
       return
     }
@@ -606,4 +695,45 @@ exports.siteApi = onRequest({ region: 'us-central1', cors: true }, async (reques
   } catch (error) {
     sendError(response, error, request.path)
   }
+}
+
+function createSiteApiFunction({ serviceName, mode, resolveDatabaseId }) {
+  return onRequest({ region: 'us-central1', cors: true }, async (request, response) => {
+    let databaseId = ''
+
+    try {
+      databaseId = resolveDatabaseId()
+    } catch (error) {
+      sendError(response, error, request.path)
+      return
+    }
+
+    return runWithRuntimeContext({ databaseId, mode }, async () =>
+      handleSiteApiRequest(request, response, { serviceName, databaseId, mode }),
+    )
+  })
+}
+
+function resolveStagingDatabaseId() {
+  const stagingDatabaseId = getStagingFirestoreDatabaseId()
+
+  if (isDefaultFirestoreDatabaseId(stagingDatabaseId)) {
+    throw new Error(
+      'siteApiStaging requires FIRESTORE_STAGING_DATABASE_ID to be set to a non-default cloned Firestore database.',
+    )
+  }
+
+  return stagingDatabaseId
+}
+
+exports.siteApi = createSiteApiFunction({
+  serviceName: 'siteApi',
+  mode: 'live',
+  resolveDatabaseId: () => getLiveFirestoreDatabaseId(),
+})
+
+exports.siteApiStaging = createSiteApiFunction({
+  serviceName: 'siteApiStaging',
+  mode: 'staging',
+  resolveDatabaseId: resolveStagingDatabaseId,
 })

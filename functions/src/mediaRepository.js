@@ -1,7 +1,7 @@
 const { createHash, randomUUID } = require('node:crypto')
 const path = require('node:path')
 const sharp = require('sharp')
-const { HttpError, getDb, getServerTimestamp, getStorageBucket } = require('./firebaseAdmin')
+const { HttpError, getDb, getServerTimestamp, getStorageBucket, isStagingRuntime } = require('./firebaseAdmin')
 const mediaUploadConfig = require('./mediaUploadConfig.json')
 
 const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
@@ -401,6 +401,13 @@ async function uploadMediaAsset(draft, actor) {
 }
 
 async function deleteMediaAssets(mediaIds) {
+  if (isStagingRuntime()) {
+    throw new HttpError(
+      403,
+      'Media deletion is disabled on the staging API so preview testing cannot delete shared live storage assets.',
+    )
+  }
+
   const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : [mediaIds]).map((value) => normalizeString(value)).filter(Boolean))]
 
   if (!normalizedMediaIds.length) {
@@ -534,6 +541,13 @@ async function moveMediaAssets(mediaIds, folderPath, actor) {
 }
 
 async function deleteMediaFolder(folderPath, actor) {
+  if (isStagingRuntime()) {
+    throw new HttpError(
+      403,
+      'Folder deletion is disabled on the staging API so preview testing cannot delete shared live storage assets.',
+    )
+  }
+
   const normalizedFolderPath = sanitizeFolderPath(folderPath)
 
   if (normalizedFolderPath === 'media') {

@@ -1,6 +1,7 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { richTextLinesToHtml, richTextValueToInlineHtml, richTextValueToLines } from '../lib/richTextValue'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
@@ -86,19 +87,83 @@ function parseLines(value) {
     .filter(Boolean)
 }
 
-function parseParagraphs(value) {
-  return String(value ?? '')
-    .split(/\r?\n\s*\r?\n/)
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-}
-
 function linesToText(value) {
   return Array.isArray(value) ? value.map((entry) => String(entry ?? '')).join('\n') : ''
 }
 
-function paragraphsToText(value) {
-  return Array.isArray(value) ? value.map((entry) => String(entry ?? '')).join('\n\n') : ''
+function normalizeRichInlineValue(value) {
+  return richTextValueToInlineHtml(value).trim()
+}
+
+function normalizeRichInlineValues(values = []) {
+  return (Array.isArray(values) ? values : [])
+    .map((entry) => normalizeRichInlineValue(entry))
+    .filter(Boolean)
+}
+
+function parseRichLines(value) {
+  return richTextValueToLines(value)
+    .map((entry) => normalizeRichInlineValue(entry))
+    .filter(Boolean)
+}
+
+const RICH_PARAGRAPH_BLOCK_TAGS = new Set(['BLOCKQUOTE', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'P'])
+
+function parseRichParagraphs(value) {
+  const normalizedHtml = normalizeSiteHtml(value ?? '').trim()
+
+  if (!normalizedHtml) {
+    return []
+  }
+
+  if (typeof DOMParser === 'undefined') {
+    return normalizedHtml
+      .split(/<\/(?:blockquote|div|h[1-6]|li|p)>/i)
+      .map((entry) => normalizeRichInlineValue(entry))
+      .filter(Boolean)
+  }
+
+  const documentNode = new DOMParser().parseFromString(`<div>${normalizedHtml}</div>`, 'text/html')
+  const root = documentNode.body.firstElementChild
+
+  if (!root) {
+    return []
+  }
+
+  const paragraphs = []
+  const addParagraph = (sourceValue) => {
+    const normalizedParagraph = normalizeRichInlineValue(sourceValue)
+
+    if (normalizedParagraph) {
+      paragraphs.push(normalizedParagraph)
+    }
+  }
+
+  Array.from(root.childNodes).forEach((node) => {
+    if (node.nodeType === 3) {
+      addParagraph(node.textContent ?? '')
+      return
+    }
+
+    if (node.nodeType !== 1) {
+      return
+    }
+
+    const tagName = node.nodeName.toUpperCase()
+
+    if (tagName === 'BR') {
+      return
+    }
+
+    if (RICH_PARAGRAPH_BLOCK_TAGS.has(tagName)) {
+      addParagraph(node.innerHTML)
+      return
+    }
+
+    addParagraph(node.outerHTML ?? node.textContent ?? '')
+  })
+
+  return paragraphs
 }
 
 function resolveEditableImageSrc(image) {
@@ -141,6 +206,32 @@ function TextAreaField({ label, value, onChange, disabled, placeholder = '', row
   )
 }
 
+function RichTextField({
+  collapsedFontSizeBehavior = 'block',
+  disabled,
+  helperText = '',
+  label,
+  onChange,
+  placeholder = '',
+  value,
+  wide = true,
+}) {
+  return (
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        collapsedFontSizeBehavior={collapsedFontSizeBehavior}
+        compact
+        disabled={disabled}
+        helperText={helperText}
+        label={label}
+        onChange={(nextValue) => onChange(normalizeRichInlineValue(nextValue))}
+        placeholder={placeholder}
+        value={value ?? ''}
+      />
+    </div>
+  )
+}
+
 function LinesField({ label, value, onChange, disabled, placeholder = '', rows = 5, wide = true }) {
   return (
     <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
@@ -156,18 +247,55 @@ function LinesField({ label, value, onChange, disabled, placeholder = '', rows =
   )
 }
 
-function ParagraphsField({ label, value, onChange, disabled, placeholder = '', rows = 8, wide = true }) {
+function RichLinesField({
+  collapsedFontSizeBehavior = 'block',
+  disabled,
+  helperText = '',
+  label,
+  onChange,
+  placeholder = '',
+  value,
+  wide = true,
+}) {
   return (
-    <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <span>{label}</span>
-      <textarea
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        collapsedFontSizeBehavior={collapsedFontSizeBehavior}
+        compact
         disabled={disabled}
+        helperText={helperText}
+        label={label}
+        onChange={(nextValue) => onChange(parseRichLines(nextValue))}
         placeholder={placeholder}
-        rows={rows}
-        value={paragraphsToText(value)}
-        onChange={(event) => onChange(parseParagraphs(event.target.value))}
+        value={richTextLinesToHtml(normalizeRichInlineValues(value))}
       />
-    </label>
+    </div>
+  )
+}
+
+function RichParagraphsField({
+  collapsedFontSizeBehavior = 'block',
+  disabled,
+  helperText = '',
+  label,
+  onChange,
+  placeholder = '',
+  value,
+  wide = true,
+}) {
+  return (
+    <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
+      <AdminRichTextEditor
+        collapsedFontSizeBehavior={collapsedFontSizeBehavior}
+        compact
+        disabled={disabled}
+        helperText={helperText}
+        label={label}
+        onChange={(nextValue) => onChange(parseRichParagraphs(nextValue))}
+        placeholder={placeholder}
+        value={richTextLinesToHtml(normalizeRichInlineValues(value))}
+      />
+    </div>
   )
 }
 
@@ -365,14 +493,13 @@ function renderHomeEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the first banner visitors see on the homepage." title="Hero Banner">
-        <LinesField
+        <RichLinesField
           disabled={disabled}
           label="Heading Lines"
           onChange={(value) => setPath(['hero', 'titleLines'], value)}
-          rows={4}
           value={page.hero?.titleLines ?? []}
         />
-        <TextAreaField disabled={disabled} label="Lead Text" onChange={(value) => setPath(['hero', 'lead'], value)} rows={3} value={page.hero?.lead ?? ''} />
+        <RichTextField disabled={disabled} label="Lead Text" onChange={(value) => setPath(['hero', 'lead'], value)} value={page.hero?.lead ?? ''} />
         <Field wide>
           <ImageField
             disabled={disabled}
@@ -384,19 +511,18 @@ function renderHomeEditor(page, helpers) {
       </SectionCard>
 
       <SectionCard description="This headline sits above the bedroom directory on the homepage." title="Rental Directory Intro">
-        <TextAreaField
+        <RichTextField
           disabled={disabled}
           label="Section Heading"
           onChange={(value) => setPath(['directory', 'title'], value)}
-          rows={3}
           value={page.directory?.title ?? ''}
         />
       </SectionCard>
 
       <SectionCard description="This section explains why visitors should book through the site." title="Why Choose Us">
         <TextField disabled={disabled} label="Small Heading" onChange={(value) => setPath(['trust', 'eyebrow'], value)} value={page.trust?.eyebrow ?? ''} />
-        <TextAreaField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['trust', 'title'], value)} rows={3} value={page.trust?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Supporting Text" onChange={(value) => setPath(['trust', 'lead'], value)} rows={4} value={page.trust?.lead ?? ''} />
+        <RichTextField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['trust', 'title'], value)} value={page.trust?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Supporting Text" onChange={(value) => setPath(['trust', 'lead'], value)} value={page.trust?.lead ?? ''} />
         <Field wide>
           <LinkFields
             disabled={disabled}
@@ -417,7 +543,7 @@ function renderHomeEditor(page, helpers) {
       </SectionCard>
 
       <SectionCard description="These cards sit beside the homepage collage image." title="Discover Section">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['discover', 'title'], value)} rows={3} value={page.discover?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['discover', 'title'], value)} value={page.discover?.title ?? ''} />
         <Field wide>
           <ImageField
             disabled={disabled}
@@ -448,11 +574,10 @@ function renderHomeEditor(page, helpers) {
                   onChange={(value) => setPath(['discover', 'features', index, 'title'], value)}
                   value={feature?.title ?? ''}
                 />
-                <TextAreaField
+                <RichTextField
                   disabled={disabled}
                   label="Card Description"
                   onChange={(value) => setPath(['discover', 'features', index, 'body'], value)}
-                  rows={4}
                   value={feature?.body ?? ''}
                 />
               </ItemCard>
@@ -463,9 +588,9 @@ function renderHomeEditor(page, helpers) {
       </SectionCard>
 
       <SectionCard description="This block links the homepage to the broader brand story." title="About Section">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['about', 'title'], value)} rows={2} value={page.about?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Text Before Link" onChange={(value) => setPath(['about', 'bodyIntro'], value)} rows={4} value={page.about?.bodyIntro ?? ''} />
-        <TextAreaField disabled={disabled} label="Text After Link" onChange={(value) => setPath(['about', 'bodyOutro'], value)} rows={3} value={page.about?.bodyOutro ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['about', 'title'], value)} value={page.about?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Text Before Link" onChange={(value) => setPath(['about', 'bodyIntro'], value)} value={page.about?.bodyIntro ?? ''} />
+        <RichTextField disabled={disabled} label="Text After Link" onChange={(value) => setPath(['about', 'bodyOutro'], value)} value={page.about?.bodyOutro ?? ''} />
         <Field wide>
           <LinkFields
             disabled={disabled}
@@ -494,7 +619,7 @@ function renderAboutPageEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This image and headline lead the About page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <Field wide>
           <ImageField
             disabled={disabled}
@@ -507,14 +632,14 @@ function renderAboutPageEditor(page, helpers) {
 
       <SectionCard description="This is the main story block on the About page." title="Story Section">
         <TextField disabled={disabled} label="Small Heading" onChange={(value) => setPath(['story', 'kicker'], value)} value={page.story?.kicker ?? ''} />
-        <TextAreaField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['story', 'title'], value)} rows={3} value={page.story?.title ?? ''} />
-        <ParagraphsField
+        <RichTextField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['story', 'title'], value)} value={page.story?.title ?? ''} />
+        <RichParagraphsField
           disabled={disabled}
           label="Intro Paragraphs"
           onChange={(value) => setPath(['story', 'leadParagraphs'], value)}
           value={page.story?.leadParagraphs ?? []}
         />
-        <ParagraphsField
+        <RichParagraphsField
           disabled={disabled}
           label="Story Body Paragraphs"
           onChange={(value) => setPath(['story', 'bodyParagraphs'], value)}
@@ -532,8 +657,8 @@ function renderAboutPageEditor(page, helpers) {
 
       <SectionCard description="This finishes the About page with a second content block." title="Essentials Section">
         <TextField disabled={disabled} label="Small Heading" onChange={(value) => setPath(['essentials', 'kicker'], value)} value={page.essentials?.kicker ?? ''} />
-        <TextAreaField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['essentials', 'title'], value)} rows={3} value={page.essentials?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Lead Paragraph" onChange={(value) => setPath(['essentials', 'lead'], value)} rows={5} value={page.essentials?.lead ?? ''} />
+        <RichTextField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['essentials', 'title'], value)} value={page.essentials?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Lead Paragraph" onChange={(value) => setPath(['essentials', 'lead'], value)} value={page.essentials?.lead ?? ''} />
         <Field wide>
           <ImageField
             disabled={disabled}
@@ -554,13 +679,13 @@ function renderHouseRentalsEditor(page, helpers) {
     <>
       <SectionCard description="This opening copy introduces the private rental directory." title="Intro Section">
         <TextField disabled={disabled} label="Small Heading" onChange={(value) => setPath(['intro', 'eyebrow'], value)} value={page.intro?.eyebrow ?? ''} />
-        <TextAreaField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['intro', 'title'], value)} rows={3} value={page.intro?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Lead Paragraph" onChange={(value) => setPath(['intro', 'lead'], value)} rows={3} value={page.intro?.lead ?? ''} />
-        <ParagraphsField disabled={disabled} label="Body Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
+        <RichTextField disabled={disabled} label="Main Heading" onChange={(value) => setPath(['intro', 'title'], value)} value={page.intro?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Lead Paragraph" onChange={(value) => setPath(['intro', 'lead'], value)} value={page.intro?.lead ?? ''} />
+        <RichParagraphsField disabled={disabled} label="Body Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
       </SectionCard>
 
       <SectionCard description="These labels sit above the live property directory." title="Property Directory">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} rows={3} value={page.directory?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} value={page.directory?.title ?? ''} />
         <TextField disabled={disabled} label="Property Button Text" onChange={(value) => setPath(['directory', 'actionLabel'], value)} value={page.directory?.actionLabel ?? ''} />
       </SectionCard>
     </>
@@ -574,20 +699,20 @@ function renderAdvertiseEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the top image and heading on the Advertise page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="This text explains how advertising works and where inquiries should go." title="Page Copy">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['contact', 'title'], value)} rows={2} value={page.contact?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['contact', 'title'], value)} value={page.contact?.title ?? ''} />
         <TextField disabled={disabled} label="Subheading" onChange={(value) => setPath(['contact', 'subtitle'], value)} value={page.contact?.subtitle ?? ''} />
-        <ParagraphsField disabled={disabled} label="Body Paragraphs" onChange={(value) => setPath(['contact', 'bodyParagraphs'], value)} value={page.contact?.bodyParagraphs ?? []} />
-        <TextAreaField disabled={disabled} label="Booking Notice" onChange={(value) => setPath(['contact', 'bookingNotice'], value)} rows={3} value={page.contact?.bookingNotice ?? ''} />
-        <TextAreaField disabled={disabled} label="Booking Help Before Bold Text" onChange={(value) => setPath(['contact', 'bookingHelpParts', 'before'], value)} rows={3} value={page.contact?.bookingHelpParts?.before ?? ''} />
+        <RichParagraphsField disabled={disabled} label="Body Paragraphs" onChange={(value) => setPath(['contact', 'bodyParagraphs'], value)} value={page.contact?.bodyParagraphs ?? []} />
+        <RichTextField disabled={disabled} label="Booking Notice" onChange={(value) => setPath(['contact', 'bookingNotice'], value)} value={page.contact?.bookingNotice ?? ''} />
+        <RichTextField disabled={disabled} label="Booking Help Before Bold Text" onChange={(value) => setPath(['contact', 'bookingHelpParts', 'before'], value)} value={page.contact?.bookingHelpParts?.before ?? ''} />
         <TextField disabled={disabled} label="Booking Help Bold Text" onChange={(value) => setPath(['contact', 'bookingHelpParts', 'emphasis'], value)} value={page.contact?.bookingHelpParts?.emphasis ?? ''} />
-        <TextAreaField disabled={disabled} label="Booking Help After Bold Text" onChange={(value) => setPath(['contact', 'bookingHelpParts', 'after'], value)} rows={4} value={page.contact?.bookingHelpParts?.after ?? ''} />
+        <RichTextField disabled={disabled} label="Booking Help After Bold Text" onChange={(value) => setPath(['contact', 'bookingHelpParts', 'after'], value)} value={page.contact?.bookingHelpParts?.after ?? ''} />
         <TextField disabled={disabled} label="Contact Details Heading" onChange={(value) => setPath(['contact', 'contactTitle'], value)} value={page.contact?.contactTitle ?? ''} />
 
         <Field wide>
@@ -668,8 +793,8 @@ function renderLocalAttractionsEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the opening image and copy for the Local Attractions page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Tagline" onChange={(value) => setPath(['hero', 'tagline'], value)} rows={3} value={page.hero?.tagline ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Tagline" onChange={(value) => setPath(['hero', 'tagline'], value)} value={page.hero?.tagline ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
@@ -690,12 +815,12 @@ function renderLocalAttractionsEditor(page, helpers) {
             textLabel="Button Text"
           />
         </Field>
-        <TextAreaField disabled={disabled} label="Intro Heading" onChange={(value) => setPath(['intro', 'title'], value)} rows={3} value={page.intro?.title ?? ''} />
-        <ParagraphsField disabled={disabled} label="Intro Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
+        <RichTextField disabled={disabled} label="Intro Heading" onChange={(value) => setPath(['intro', 'title'], value)} value={page.intro?.title ?? ''} />
+        <RichParagraphsField disabled={disabled} label="Intro Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
       </SectionCard>
 
       <SectionCard description="These restaurant groups appear lower on the page." title="Dining Guide">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['dining', 'title'], value)} rows={3} value={page.dining?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['dining', 'title'], value)} value={page.dining?.title ?? ''} />
 
         <Field wide>
           <RepeatingSection
@@ -761,22 +886,22 @@ function renderPropertyForSaleEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the opening hero on the property for sale page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="This section introduces the real estate story and image." title="Story Section">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['story', 'title'], value)} rows={3} value={page.story?.title ?? ''} />
-        <ParagraphsField disabled={disabled} label="Story Paragraphs" onChange={(value) => setPath(['story', 'paragraphs'], value)} value={page.story?.paragraphs ?? []} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['story', 'title'], value)} value={page.story?.title ?? ''} />
+        <RichParagraphsField disabled={disabled} label="Story Paragraphs" onChange={(value) => setPath(['story', 'paragraphs'], value)} value={page.story?.paragraphs ?? []} />
         <Field wide>
           <ImageField disabled={disabled} image={page.story?.image} label="Story Image" onChange={(field, value) => setPath(['story', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="This band contains the closing sales copy and contact information." title="Details And Contact">
-        <ParagraphsField disabled={disabled} label="Details Paragraphs" onChange={(value) => setPath(['details', 'paragraphs'], value)} value={page.details?.paragraphs ?? []} />
+        <RichParagraphsField disabled={disabled} label="Details Paragraphs" onChange={(value) => setPath(['details', 'paragraphs'], value)} value={page.details?.paragraphs ?? []} />
         <Field wide>
           <ImageField disabled={disabled} image={page.details?.image} label="Details Image" onChange={(field, value) => setPath(['details', 'image', field], value)} />
         </Field>
@@ -803,14 +928,14 @@ function renderRentalAccommodationsEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the hero image and title above the rental directory." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="These labels control the directory heading, filter prompt, and empty states. The actual rental cards come from the Properties tab." title="Directory Copy">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} rows={3} value={page.directory?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} value={page.directory?.title ?? ''} />
         <TextField disabled={disabled} label="Filter Placeholder" onChange={(value) => setPath(['directory', 'filterPlaceholder'], value)} value={page.directory?.filterPlaceholder ?? ''} />
         <TextField disabled={disabled} label="Filter Button Text" onChange={(value) => setPath(['directory', 'filterActionLabel'], value)} value={page.directory?.filterActionLabel ?? ''} />
         <TextAreaField disabled={disabled} label="Empty State When No Rentals Match" onChange={(value) => setPath(['directory', 'emptyStateAll'], value)} rows={3} value={page.directory?.emptyStateAll ?? ''} />
@@ -827,7 +952,7 @@ function renderCarBargeEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This hero sits at the top of the car barge information page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
@@ -860,8 +985,8 @@ function renderCarBargeEditor(page, helpers) {
           />
         </Field>
 
-        <ParagraphsField disabled={disabled} label="Left Column Paragraphs" onChange={(value) => setPath(['intro', 'leftParagraphs'], value)} value={page.intro?.leftParagraphs ?? []} />
-        <ParagraphsField disabled={disabled} label="Right Column Paragraphs" onChange={(value) => setPath(['intro', 'rightParagraphs'], value)} value={page.intro?.rightParagraphs ?? []} />
+        <RichParagraphsField disabled={disabled} label="Left Column Paragraphs" onChange={(value) => setPath(['intro', 'leftParagraphs'], value)} value={page.intro?.leftParagraphs ?? []} />
+        <RichParagraphsField disabled={disabled} label="Right Column Paragraphs" onChange={(value) => setPath(['intro', 'rightParagraphs'], value)} value={page.intro?.rightParagraphs ?? []} />
         <Field wide>
           <LinkFields
             disabled={disabled}
@@ -940,7 +1065,7 @@ function renderCarBargeEditor(page, helpers) {
                             title={schedule?.title || `Schedule ${scheduleIndex + 1}`}
                           >
                             <TextField disabled={disabled} label="Schedule Heading" onChange={(value) => setPath(['operators', operatorIndex, 'schedules', scheduleIndex, 'title'], value)} value={schedule?.title ?? ''} wide />
-                            <LinesField disabled={disabled} label="Schedule Notes" onChange={(value) => setPath(['operators', operatorIndex, 'schedules', scheduleIndex, 'notes'], value)} rows={4} value={schedule?.notes ?? []} />
+                            <RichLinesField disabled={disabled} label="Schedule Notes" onChange={(value) => setPath(['operators', operatorIndex, 'schedules', scheduleIndex, 'notes'], value)} value={schedule?.notes ?? []} />
 
                             <Field wide>
                               <RepeatingSection
@@ -1007,11 +1132,10 @@ function renderCarBargeEditor(page, helpers) {
                           title={row?.label || `Rate Row ${rowIndex + 1}`}
                         >
                           <TextField disabled={disabled} label="Row Label" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'rows', rowIndex, 'label'], value)} value={row?.label ?? ''} />
-                          <LinesField
+                          <RichLinesField
                             disabled={disabled}
                             label="Row Values"
                             onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'rows', rowIndex, 'values'], value)}
-                            rows={4}
                             value={row?.values ?? []}
                           />
                         </ItemCard>
@@ -1019,7 +1143,7 @@ function renderCarBargeEditor(page, helpers) {
                       title="Rate Rows"
                     />
 
-                    <LinesField disabled={disabled} label="Rates Footer Lines" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'footer'], value)} rows={4} value={operator?.rates?.footer ?? []} />
+                    <RichLinesField disabled={disabled} label="Rates Footer Lines" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'footer'], value)} value={operator?.rates?.footer ?? []} />
                     <TextField disabled={disabled} label="Rates Website Link Text" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'linkLabel'], value)} value={operator?.rates?.linkLabel ?? ''} wide />
                     <TextField disabled={disabled} label="Rates Website URL" onChange={(value) => setPath(['operators', operatorIndex, 'rates', 'url'], value)} value={operator?.rates?.url ?? ''} wide />
                   </Field>
@@ -1075,16 +1199,16 @@ function renderPassengerFerryEditor(page, helpers) {
       </SectionCard>
 
       <SectionCard description="This is the main Red Hook ferry schedule block." title="Red Hook Ferry">
-        <LinesField disabled={disabled} label="Heading Lines" onChange={(value) => setPath(['redHook', 'titleLines'], value)} rows={6} value={page.redHook?.titleLines ?? []} />
+        <RichLinesField disabled={disabled} label="Heading Lines" onChange={(value) => setPath(['redHook', 'titleLines'], value)} value={page.redHook?.titleLines ?? []} />
         <LinesField disabled={disabled} label="Meta Lines" onChange={(value) => setPath(['redHook', 'meta'], value)} rows={5} value={page.redHook?.meta ?? []} />
         <Field wide>{renderDirectionList('redHook', redHookDirections)}</Field>
-        <TextAreaField disabled={disabled} label="Rates Heading" onChange={(value) => setPath(['redHook', 'rates', 'title'], value)} rows={2} value={page.redHook?.rates?.title ?? ''} />
-        <LinesField disabled={disabled} label="Rates Lines" onChange={(value) => setPath(['redHook', 'rates', 'lines'], value)} rows={8} value={page.redHook?.rates?.lines ?? []} />
+        <RichTextField disabled={disabled} label="Rates Heading" onChange={(value) => setPath(['redHook', 'rates', 'title'], value)} value={page.redHook?.rates?.title ?? ''} />
+        <RichLinesField disabled={disabled} label="Rates Lines" onChange={(value) => setPath(['redHook', 'rates', 'lines'], value)} value={page.redHook?.rates?.lines ?? []} />
       </SectionCard>
 
       <SectionCard description="This is the secondary Crown Bay ferry block." title="Crown Bay Ferry">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['crownBay', 'title'], value)} rows={2} value={page.crownBay?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Route Line" onChange={(value) => setPath(['crownBay', 'routeLine'], value)} rows={3} value={page.crownBay?.routeLine ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['crownBay', 'title'], value)} value={page.crownBay?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Route Line" onChange={(value) => setPath(['crownBay', 'routeLine'], value)} value={page.crownBay?.routeLine ?? ''} />
         <LinesField disabled={disabled} label="Meta Lines" onChange={(value) => setPath(['crownBay', 'meta'], value)} rows={6} value={page.crownBay?.meta ?? []} />
         <Field wide>{renderDirectionList('crownBay', crownBayDirections)}</Field>
       </SectionCard>
@@ -1099,16 +1223,16 @@ function renderCarRentalsEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the opening image and message on the car rentals page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Tagline" onChange={(value) => setPath(['hero', 'tagline'], value)} rows={3} value={page.hero?.tagline ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Tagline" onChange={(value) => setPath(['hero', 'tagline'], value)} value={page.hero?.tagline ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="These fields control the text and company directory below the hero." title="Car Rental Directory">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} rows={3} value={page.directory?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Intro Paragraph" onChange={(value) => setPath(['directory', 'introParagraph'], value)} rows={4} value={page.directory?.introParagraph ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['directory', 'title'], value)} value={page.directory?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Intro Paragraph" onChange={(value) => setPath(['directory', 'introParagraph'], value)} value={page.directory?.introParagraph ?? ''} />
         <Field wide>
           <ImageField
             disabled={disabled}
@@ -1148,9 +1272,9 @@ function renderCarRentalsEditor(page, helpers) {
       </SectionCard>
 
       <SectionCard description="These notes and the detail image appear below the company list." title="Travel Notes">
-        <TextAreaField disabled={disabled} label="Airport Rental Paragraph" onChange={(value) => setPath(['directory', 'airportParagraph'], value)} rows={4} value={page.directory?.airportParagraph ?? ''} />
+        <RichTextField disabled={disabled} label="Airport Rental Paragraph" onChange={(value) => setPath(['directory', 'airportParagraph'], value)} value={page.directory?.airportParagraph ?? ''} />
         <LinesField disabled={disabled} label="Budget Phone Numbers" onChange={(value) => setPath(['directory', 'budgetPhones'], value)} rows={4} value={page.directory?.budgetPhones ?? []} />
-        <TextAreaField disabled={disabled} label="Dependable Rental Paragraph" onChange={(value) => setPath(['directory', 'dependableParagraph'], value)} rows={4} value={page.directory?.dependableParagraph ?? ''} />
+        <RichTextField disabled={disabled} label="Dependable Rental Paragraph" onChange={(value) => setPath(['directory', 'dependableParagraph'], value)} value={page.directory?.dependableParagraph ?? ''} />
         <TextField disabled={disabled} label="Dependable Rental Phone" onChange={(value) => setPath(['directory', 'dependablePhone'], value)} value={page.directory?.dependablePhone ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.directory?.detailImage} label="Detail Image" onChange={(field, value) => setPath(['directory', 'detailImage', field], value)} />
@@ -1167,27 +1291,27 @@ function renderCharterBoatsEditor(page, helpers) {
   return (
     <>
       <SectionCard description="This is the large hero at the top of the charter boats page." title="Hero Banner">
-        <TextAreaField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} rows={3} value={page.hero?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Lead Text" onChange={(value) => setPath(['hero', 'lead'], value)} rows={4} value={page.hero?.lead ?? ''} />
+        <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Lead Text" onChange={(value) => setPath(['hero', 'lead'], value)} value={page.hero?.lead ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="This section sits above the live charter listing cards." title="Intro Section">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['intro', 'title'], value)} rows={3} value={page.intro?.title ?? ''} />
-        <TextAreaField disabled={disabled} label="Intro Paragraph" onChange={(value) => setPath(['intro', 'paragraph'], value)} rows={6} value={page.intro?.paragraph ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['intro', 'title'], value)} value={page.intro?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Intro Paragraph" onChange={(value) => setPath(['intro', 'paragraph'], value)} value={page.intro?.paragraph ?? ''} />
         <Field wide>
           <ImageField disabled={disabled} image={page.intro?.image} label="Intro Image" onChange={(field, value) => setPath(['intro', 'image', field], value)} />
         </Field>
       </SectionCard>
 
       <SectionCard description="The actual boat cards come from the Charters tab. This section only controls the heading above them." title="Live Charter Directory">
-        <TextAreaField disabled={disabled} label="Directory Heading" onChange={(value) => setPath(['directory', 'title'], value)} rows={3} value={page.directory?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Directory Heading" onChange={(value) => setPath(['directory', 'title'], value)} value={page.directory?.title ?? ''} />
       </SectionCard>
 
       <SectionCard description="These safety notes appear at the bottom of the page." title="Safety Section">
-        <TextAreaField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['safety', 'title'], value)} rows={3} value={page.safety?.title ?? ''} />
+        <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['safety', 'title'], value)} value={page.safety?.title ?? ''} />
         <Field wide>
           <RepeatingSection
             addLabel="Add Safety Note"
@@ -1207,7 +1331,7 @@ function renderCharterBoatsEditor(page, helpers) {
                 title={section?.label || `Safety Note ${sectionIndex + 1}`}
               >
                 <TextField disabled={disabled} label="Label" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'label'], value)} value={section?.label ?? ''} />
-                <TextAreaField disabled={disabled} label="Paragraph" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'paragraph'], value)} rows={4} value={section?.paragraph ?? ''} />
+                <RichTextField disabled={disabled} label="Paragraph" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'paragraph'], value)} value={section?.paragraph ?? ''} />
                 <TextField disabled={disabled} label="Link Text" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'linkLabel'], value)} value={section?.linkLabel ?? ''} wide />
                 <TextField disabled={disabled} label="Link URL" onChange={(value) => setPath(['safety', 'sections', sectionIndex, 'href'], value)} value={section?.href ?? ''} wide />
               </ItemCard>
