@@ -68,10 +68,10 @@ export function HomePage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image)
-  const trustImageUrl = getContentImageSrc(page.trust.image)
-  const discoverImageUrl = getContentImageSrc(page.discover.image)
-  const aboutImageUrl = getContentImageSrc(page.about.image)
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 900 })
+  const trustImageUrl = getContentImageSrc(page.trust.image, { width: 960, height: 720 })
+  const discoverImageUrl = getContentImageSrc(page.discover.image, { width: 960, height: 640 })
+  const aboutImageUrl = getContentImageSrc(page.about.image, { width: 960, height: 720 })
   const heroTitleLines = Array.isArray(page.hero?.titleLines)
     ? page.hero.titleLines.map((line) => String(line ?? '').trim()).filter(Boolean)
     : []

@@ -4,6 +4,7 @@ import { getPropertyContactActions } from '../lib/propertyContact'
 import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { PropertyAvailabilityCalendar } from './PropertyAvailabilityCalendar'
 import { PropertyContentSection } from './PropertyContentSection'
 import { RichTextValue } from './RichTextValue'
 
@@ -67,6 +68,16 @@ export function PropertyDetailView({ property }) {
         title={sectionConfigs.description.title}
       />
     ),
+    calendar: property.calendarUrl ? (
+      <PropertyContentSection
+        className="property-template-section--calendar"
+        key="calendar"
+        showHeader={sectionConfigs.calendar.showHeader}
+        title={sectionConfigs.calendar.title}
+      >
+        <PropertyAvailabilityCalendar propertySlug={property.slug} />
+      </PropertyContentSection>
+    ) : null,
     amenities: (
       <PropertyContentSection
         key="amenities"

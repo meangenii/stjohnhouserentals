@@ -20,9 +20,39 @@ async function readResponsePayload(response) {
   }
 }
 
+function shouldBypassBrowserCache(path, { authToken } = {}) {
+  if (authToken) {
+    return true
+  }
+
+  const pathname = String(path ?? '').split(/[?#]/, 1)[0] || '/'
+  const mutablePublicPaths = new Set([
+    '/site-config',
+    '/properties',
+    '/properties/catalog',
+    '/properties/summary',
+    '/properties/summaries',
+    '/charters',
+  ])
+
+  return (
+    pathname === '/health' ||
+    pathname.startsWith('/admin/') ||
+    pathname.startsWith('/content/') ||
+    pathname.startsWith('/properties/') ||
+    pathname.startsWith('/charters/') ||
+    mutablePublicPaths.has(pathname)
+  )
+}
+
 async function requestJson(path, { method = 'GET', body, headers, authToken } = {}) {
   const requestHeaders = new Headers(headers ?? {})
   const normalizedMethod = String(method ?? 'GET').trim().toUpperCase() || 'GET'
+  const requestInit = {
+    method: normalizedMethod,
+    headers: requestHeaders,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  }
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json')
@@ -32,12 +62,11 @@ async function requestJson(path, { method = 'GET', body, headers, authToken } = 
     requestHeaders.set('Authorization', `Bearer ${authToken}`)
   }
 
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    method: normalizedMethod,
-    headers: requestHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    cache: normalizedMethod === 'GET' ? 'no-store' : undefined,
-  })
+  if (normalizedMethod === 'GET' && shouldBypassBrowserCache(path, { authToken })) {
+    requestInit.cache = 'no-store'
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, requestInit)
 
   const payload = response.status === 204 ? null : await readResponsePayload(response)
 

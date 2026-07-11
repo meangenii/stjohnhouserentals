@@ -266,6 +266,7 @@ function normalizePropertyRecord(record) {
     templateVariant: normalizePropertyTemplateVariant(record.templateVariant),
     bedroomLabel: formatBedroomLabel(bedrooms),
     location: String(record.location ?? '').trim(),
+    calendarUrl: String(record.calendarUrl ?? '').trim(),
     descriptionHtml,
     amenitiesHtml: amenityGroups.length > 0 ? amenityGroupsToHtml(amenityGroups) : String(record.amenitiesHtml ?? '').trim(),
     amenityGroups,
@@ -566,6 +567,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     maxGuests: Number(draft?.maxGuests) || 0,
     shortDescription,
     location: String(draft?.location ?? '').trim(),
+    calendarUrl: String(draft?.calendarUrl ?? '').trim(),
     description: description,
     descriptionHtml:
       descriptionHtml || (description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim()),

@@ -117,6 +117,16 @@ export function richTextValueToPlainText(value) {
   return (documentNode.body.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 
+export function richTextValueToPlainTextLines(value, { preserveBlankLines = false } = {}) {
+  const lines = richTextValueToLines(value, { preserveBlankLines: true }).map((line) => richTextValueToPlainText(line))
+
+  return preserveBlankLines ? lines : lines.filter(Boolean)
+}
+
+export function richTextValueToPlainLineText(value, { preserveBlankLines = false } = {}) {
+  return richTextValueToPlainTextLines(value, { preserveBlankLines }).join('\n')
+}
+
 export function richTextValueToLines(value, { preserveBlankLines = false } = {}) {
   const sourceValue = String(value ?? '')
   const dropBlankLines = (lines) => (preserveBlankLines ? lines : lines.filter(Boolean))

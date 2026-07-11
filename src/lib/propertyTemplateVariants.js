@@ -6,6 +6,7 @@ export const PROPERTY_TEMPLATE_VARIANT_OPTIONS = propertyTemplateVariantManifest
 const SECTION_TITLES = {
   shortDescription: 'Short Description',
   description: 'Description',
+  calendar: 'Availability',
   amenities: 'Amenities',
   reviews: 'Reviews',
 }
@@ -13,30 +14,33 @@ const SECTION_TITLES = {
 const PROPERTY_TEMPLATE_VARIANT_CONFIGS = {
   'source-stack': {
     id: 'source-stack',
-    sectionOrder: ['shortDescription', 'description', 'amenities', 'reviews'],
+    sectionOrder: ['shortDescription', 'description', 'calendar', 'amenities', 'reviews'],
     sections: {
       shortDescription: { showHeader: false, title: SECTION_TITLES.shortDescription, renderWhenEmpty: false },
       description: { showHeader: false, title: SECTION_TITLES.description, renderWhenEmpty: false },
+      calendar: { showHeader: false, title: SECTION_TITLES.calendar, renderWhenEmpty: false },
       amenities: { showHeader: false, title: SECTION_TITLES.amenities, renderWhenEmpty: false },
       reviews: { showHeader: false, title: SECTION_TITLES.reviews, renderWhenEmpty: false },
     },
   },
   'supplemental-sections': {
     id: 'supplemental-sections',
-    sectionOrder: ['shortDescription', 'description', 'amenities', 'reviews'],
+    sectionOrder: ['shortDescription', 'description', 'calendar', 'amenities', 'reviews'],
     sections: {
       shortDescription: { showHeader: false, title: SECTION_TITLES.shortDescription, renderWhenEmpty: false },
       description: { showHeader: false, title: SECTION_TITLES.description, renderWhenEmpty: false },
+      calendar: { showHeader: true, title: SECTION_TITLES.calendar, renderWhenEmpty: false },
       amenities: { showHeader: true, title: SECTION_TITLES.amenities, renderWhenEmpty: false },
       reviews: { showHeader: true, title: SECTION_TITLES.reviews, renderWhenEmpty: false },
     },
   },
   'fully-sectioned': {
     id: 'fully-sectioned',
-    sectionOrder: ['shortDescription', 'description', 'amenities', 'reviews'],
+    sectionOrder: ['shortDescription', 'description', 'calendar', 'amenities', 'reviews'],
     sections: {
       shortDescription: { showHeader: true, title: SECTION_TITLES.shortDescription, renderWhenEmpty: true },
       description: { showHeader: true, title: SECTION_TITLES.description, renderWhenEmpty: true },
+      calendar: { showHeader: true, title: SECTION_TITLES.calendar, renderWhenEmpty: false },
       amenities: { showHeader: true, title: SECTION_TITLES.amenities, renderWhenEmpty: true },
       reviews: { showHeader: true, title: SECTION_TITLES.reviews, renderWhenEmpty: false },
     },

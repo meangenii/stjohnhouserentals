@@ -207,24 +207,6 @@ function normalizeLinkValue(value) {
   return String(value ?? '').trim()
 }
 
-function isExternalLinkValue(value) {
-  const normalizedValue = normalizeLinkValue(value)
-
-  if (!normalizedValue) {
-    return false
-  }
-
-  if (normalizedValue.startsWith('/')) {
-    return false
-  }
-
-  return /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i.test(normalizedValue)
-}
-
-function shouldOpenLinkInNewTab(value) {
-  return /^(?:https?:)?\/\//i.test(normalizeLinkValue(value))
-}
-
 function buildRouteOptionLabel(route, path, isAlias = false) {
   const label = String(route?.label ?? route?.navLabel ?? route?.title ?? route?.key ?? '').trim()
   const title = String(route?.title ?? '').trim()

@@ -10,9 +10,9 @@ export function AboutUsPage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image)
-  const storyImageUrl = getContentImageSrc(page.story.image)
-  const essentialsImageUrl = getContentImageSrc(page.essentials.image)
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
+  const storyImageUrl = getContentImageSrc(page.story.image, { width: 960, height: 720 })
+  const essentialsImageUrl = getContentImageSrc(page.essentials.image, { width: 960, height: 720 })
 
   return (
     <div className="about-page">

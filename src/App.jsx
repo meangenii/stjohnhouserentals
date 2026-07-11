@@ -2,36 +2,40 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
-import { AboutUsPage } from './pages/AboutUsPage'
-import { AdvertisePage } from './pages/AdvertisePage'
-import { ArtPage } from './pages/ArtPage'
-import { BlogPage } from './pages/BlogPage'
-import { CarBargeInformationPage } from './pages/CarBargeInformationPage'
-import { CharterBoatDetailPage } from './pages/CharterBoatDetailPage'
-import { CharterBoatsPage } from './pages/CharterBoatsPage'
-import { HomePage } from './pages/HomePage'
-import { JewelryPage } from './pages/JewelryPage'
-import { LinksPage } from './pages/LinksPage'
-import { LocalAttractionsPage } from './pages/LocalAttractionsPage'
-import { NotFoundPage } from './pages/NotFoundPage'
-import { PassengerFerryPage } from './pages/PassengerFerryPage'
-import { PropertyDetailPage } from './pages/PropertyDetailPage'
-import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage'
-import { PropertyForSalePage } from './pages/PropertyForSalePage'
-import { RentalAccommodationsPage } from './pages/RentalAccommodationsPage'
-import { StJohnBookPage } from './pages/StJohnBookPage'
-import { StJohnCarRentalsPage } from './pages/StJohnCarRentalsPage'
-import { TermsOfAgreementPage } from './pages/TermsOfAgreementPage'
 import { DEFAULT_SITE_DESCRIPTION, SITE_TITLE, useDocumentMeta } from './lib/documentMeta'
 import { trackPageView } from './lib/analytics'
 import { isApiBackedSiteContentSource, isRouteSiteContentPreloaded, preloadRouteSiteContent } from './lib/siteContentRepository'
 import { buildCanonicalUrl, getCanonicalPath, getStaticSeoMeta } from '../shared/seoMetadata.js'
 
-const AdminPage = lazy(() =>
-  import('./pages/AdminPage').then((module) => ({
-    default: module.AdminPage,
-  })),
-)
+function lazyPage(importPage, exportName) {
+  return lazy(() =>
+    importPage().then((module) => ({
+      default: module[exportName],
+    })),
+  )
+}
+
+const AboutUsPage = lazyPage(() => import('./pages/AboutUsPage'), 'AboutUsPage')
+const AdminPage = lazyPage(() => import('./pages/AdminPage'), 'AdminPage')
+const AdvertisePage = lazyPage(() => import('./pages/AdvertisePage'), 'AdvertisePage')
+const ArtPage = lazyPage(() => import('./pages/ArtPage'), 'ArtPage')
+const BlogPage = lazyPage(() => import('./pages/BlogPage'), 'BlogPage')
+const CarBargeInformationPage = lazyPage(() => import('./pages/CarBargeInformationPage'), 'CarBargeInformationPage')
+const CharterBoatDetailPage = lazyPage(() => import('./pages/CharterBoatDetailPage'), 'CharterBoatDetailPage')
+const CharterBoatsPage = lazyPage(() => import('./pages/CharterBoatsPage'), 'CharterBoatsPage')
+const HomePage = lazyPage(() => import('./pages/HomePage'), 'HomePage')
+const JewelryPage = lazyPage(() => import('./pages/JewelryPage'), 'JewelryPage')
+const LinksPage = lazyPage(() => import('./pages/LinksPage'), 'LinksPage')
+const LocalAttractionsPage = lazyPage(() => import('./pages/LocalAttractionsPage'), 'LocalAttractionsPage')
+const NotFoundPage = lazyPage(() => import('./pages/NotFoundPage'), 'NotFoundPage')
+const PassengerFerryPage = lazyPage(() => import('./pages/PassengerFerryPage'), 'PassengerFerryPage')
+const PrivacyPolicyPage = lazyPage(() => import('./pages/PrivacyPolicyPage'), 'PrivacyPolicyPage')
+const PropertyDetailPage = lazyPage(() => import('./pages/PropertyDetailPage'), 'PropertyDetailPage')
+const PropertyForSalePage = lazyPage(() => import('./pages/PropertyForSalePage'), 'PropertyForSalePage')
+const RentalAccommodationsPage = lazyPage(() => import('./pages/RentalAccommodationsPage'), 'RentalAccommodationsPage')
+const StJohnBookPage = lazyPage(() => import('./pages/StJohnBookPage'), 'StJohnBookPage')
+const StJohnCarRentalsPage = lazyPage(() => import('./pages/StJohnCarRentalsPage'), 'StJohnCarRentalsPage')
+const TermsOfAgreementPage = lazyPage(() => import('./pages/TermsOfAgreementPage'), 'TermsOfAgreementPage')
 
 function normalizeHashRoute() {
   if (typeof window === 'undefined') {

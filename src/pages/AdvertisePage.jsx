@@ -23,7 +23,7 @@ export function AdvertisePage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image)
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
   const contactEmail = siteShell.contact.primaryEmail
 
   async function handleSubmit(event) {

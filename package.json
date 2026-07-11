@@ -20,6 +20,7 @@
     "firebase:doctor": "node ./scripts/firebase-doctor.cjs",
     "lint": "eslint .",
     "lint:functions": "npm run content:generate && npm --prefix functions run lint",
+    "perf:audit": "node ./scripts/audit-performance.mjs",
     "media:migrate": "node ./scripts/migrate-legacy-media.mjs",
     "analyze:listings": "node ./scripts/analyze-rental-listing-patterns.mjs",
     "preview": "vite preview",

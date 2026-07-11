@@ -1,12 +1,21 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import {
-  ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR,
-  observeAdminFloatingStackOffset,
-  setAdminFloatingStackOffset,
-} from '../lib/adminFloatingLayout'
-import { richTextLinesToHtml, richTextValueToInlineHtml, richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
+  richTextLinesToHtml,
+  richTextValueToInlineHtml,
+  richTextValueToLines,
+  richTextValueToPlainText,
+} from '../lib/richTextValue'
+import {
+  AIR_CONDITIONING_OPTIONS,
+  buildPropertyShortDescription,
+  getCustomPropertyShortDescriptionValue,
+  getDerivedPropertyShortDescriptionLines,
+  readShortDescriptionFeatureState,
+  SHORT_DESCRIPTION_FEATURE_OPTIONS,
+} from '../lib/propertyShortDescription'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
+import { AdminShortDescriptionEditor } from './AdminShortDescriptionEditor'
 import { PropertyDetailView } from './PropertyDetailView'
 
 const PROPERTY_DESCRIPTION_SNIPPETS = [
@@ -154,6 +163,7 @@ export function AdminPropertyPreview({
   editable = false,
   formState = null,
   galleryEditorExpanded = false,
+  mode = 'edit',
   onAddAmenityGroup,
   onAddGalleryFolderImages,
   onAddGalleryImage,
@@ -169,7 +179,6 @@ export function AdminPropertyPreview({
   onToggleGalleryEditor,
   property,
 }) {
-  const [mode, setMode] = useState('edit')
   const [descriptionEditorExpanded, setDescriptionEditorExpanded] = useState(false)
   const [amenitiesEditorExpanded, setAmenitiesEditorExpanded] = useState(false)
   const [expandedAmenityGroupId, setExpandedAmenityGroupId] = useState(null)
@@ -177,9 +186,6 @@ export function AdminPropertyPreview({
   const [galleryAddImagePickerOpen, setGalleryAddImagePickerOpen] = useState(false)
   const [galleryFolderPickerOpen, setGalleryFolderPickerOpen] = useState(false)
   const [selectedGalleryImageId, setSelectedGalleryImageId] = useState(null)
-  const previewFrameRef = useRef(null)
-  const modeToggleShellRef = useRef(null)
-  const modeToggleRef = useRef(null)
   const galleryEditorId = useId()
   const descriptionEditorId = useId()
   const amenitiesEditorId = useId()
@@ -187,18 +193,15 @@ export function AdminPropertyPreview({
   const previousAmenityGroupIdsRef = useRef([])
   const amenityCardRefs = useRef(new Map())
   const pendingAmenityViewportRef = useRef(null)
-  const [modeToggleLayout, setModeToggleLayout] = useState(() => ({
-    floating: false,
-    height: 0,
-    left: 0,
-    width: 0,
-  }))
   const reducedBedroomOptions = getReducedBedroomOptions(formState?.bedrooms)
   const selectedAlternateBedroomCounts = Array.isArray(formState?.alternateBedroomCounts)
     ? formState.alternateBedroomCounts
         .map((value) => Number(value))
         .filter((value) => Number.isInteger(value) && value > 0)
     : []
+  const shortDescriptionFeatureState = readShortDescriptionFeatureState(formState?.shortDescription ?? '')
+  const shortDescriptionLockedLines = getDerivedPropertyShortDescriptionLines(formState ?? {}, formState?.shortDescription ?? '')
+  const shortDescriptionCustomValue = getCustomPropertyShortDescriptionValue(formState?.shortDescription ?? '')
 
   function toggleAlternateBedroomCount(bedroomCount, isChecked) {
     const nextCounts = isChecked
@@ -206,6 +209,41 @@ export function AdminPropertyPreview({
       : selectedAlternateBedroomCounts.filter((value) => value !== bedroomCount)
 
     onFieldChange('alternateBedroomCounts', nextCounts)
+  }
+
+  function updateShortDescriptionFeatureState(nextFeatureState) {
+    if (!formState) {
+      return
+    }
+
+    onFieldChange(
+      'shortDescription',
+      buildPropertyShortDescription(formState, {
+        customValue: shortDescriptionCustomValue,
+        featureState: nextFeatureState,
+      }),
+    )
+  }
+
+  function toggleShortDescriptionFeature(featureId, isChecked) {
+    updateShortDescriptionFeatureState({
+      ...shortDescriptionFeatureState,
+      [featureId]: isChecked,
+    })
+  }
+
+  function toggleAirConditioningFeature(isChecked) {
+    updateShortDescriptionFeatureState({
+      ...shortDescriptionFeatureState,
+      airConditioning: isChecked ? shortDescriptionFeatureState.airConditioning || 'whole-house' : '',
+    })
+  }
+
+  function changeAirConditioningType(nextValue) {
+    updateShortDescriptionFeatureState({
+      ...shortDescriptionFeatureState,
+      airConditioning: nextValue,
+    })
   }
 
   function handleToggleGalleryEditor() {
@@ -322,145 +360,19 @@ export function AdminPropertyPreview({
   const detailLine = [property?.bedroomLabel, property?.maxGuests ? `${property.maxGuests} guests` : '', property?.location]
     .filter(Boolean)
     .join(' | ')
-  const canToggleMode = editable && Boolean(formState)
-  const effectiveMode = canToggleMode ? mode : 'preview'
+  const hasEditableForm = editable && Boolean(formState)
+  const effectiveMode = hasEditableForm ? (mode === 'preview' ? 'preview' : 'edit') : 'preview'
   const amenityGroupCount = Array.isArray(formState?.amenityGroups) ? formState.amenityGroups.length : 0
-  const modeToggleFloating = canToggleMode && modeToggleLayout.floating
-  const modeToggleStyle = modeToggleFloating
-    ? {
-        left: `${modeToggleLayout.left}px`,
-        top: 'calc(var(--admin-floating-base-top, 1rem) + var(--admin-floating-save-stack-offset, 0px))',
-      }
-    : undefined
-
-  useLayoutEffect(() => {
-    if (!canToggleMode) {
-      setAdminFloatingStackOffset(ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, 0)
-
-      return () => {
-        setAdminFloatingStackOffset(ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, 0)
-      }
-    }
-
-    return observeAdminFloatingStackOffset(modeToggleRef.current, ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR)
-  }, [canToggleMode])
-
-  useLayoutEffect(() => {
-    if (!canToggleMode || typeof window === 'undefined') {
-      return undefined
-    }
-
-    let animationFrameId = 0
-
-    function updateModeToggleLayout() {
-      const previewFrame = previewFrameRef.current
-      const modeToggleShell = modeToggleShellRef.current
-      const modeToggle = modeToggleRef.current
-
-      if (!previewFrame || !modeToggleShell || !modeToggle) {
-        return
-      }
-
-      const previewFrameBounds = previewFrame.getBoundingClientRect()
-      const modeToggleShellBounds = modeToggleShell.getBoundingClientRect()
-      const modeToggleBounds = modeToggle.getBoundingClientRect()
-      const modeToggleHeight = modeToggle.offsetHeight
-      const margin = 14
-      const nextWidth = Math.min(Math.max(modeToggleBounds.width, modeToggleShellBounds.width), Math.max(0, window.innerWidth - margin * 2))
-      const maxLeft = Math.max(margin, window.innerWidth - nextWidth - margin)
-      const canFloatWithinPreview = previewFrameBounds.bottom - margin >= modeToggleHeight + margin
-      const previewFrameVisible =
-        previewFrameBounds.top <= window.innerHeight - margin && previewFrameBounds.bottom >= margin + modeToggleHeight
-      const shouldFloat = previewFrameVisible && canFloatWithinPreview
-
-      setModeToggleLayout((currentLayout) => {
-        const nextLayout = shouldFloat
-          ? {
-              floating: true,
-              height: modeToggleHeight,
-              left: Math.min(Math.max(margin, modeToggleShellBounds.left), maxLeft),
-              width: nextWidth,
-            }
-          : {
-              floating: false,
-              height: modeToggleHeight,
-              left: 0,
-              width: 0,
-            }
-
-        if (
-          currentLayout.floating === nextLayout.floating &&
-          currentLayout.height === nextLayout.height &&
-          currentLayout.left === nextLayout.left &&
-          currentLayout.width === nextLayout.width
-        ) {
-          return currentLayout
-        }
-
-        return nextLayout
-      })
-    }
-
-    function scheduleModeToggleLayoutUpdate() {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
-
-      animationFrameId = window.requestAnimationFrame(updateModeToggleLayout)
-    }
-
-    scheduleModeToggleLayoutUpdate()
-    window.addEventListener('resize', scheduleModeToggleLayoutUpdate)
-    window.addEventListener('scroll', scheduleModeToggleLayoutUpdate, true)
-
-    return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId)
-      }
-
-      window.removeEventListener('resize', scheduleModeToggleLayoutUpdate)
-      window.removeEventListener('scroll', scheduleModeToggleLayoutUpdate, true)
-    }
-  }, [canToggleMode])
 
   return (
     <aside className="admin-property-preview">
-      <div className="admin-property-preview-frame" ref={previewFrameRef}>
+      <div className="admin-property-preview-frame">
         <div className="admin-property-preview-summary">
           <div className="admin-property-preview-title">
             <h3>{property?.name || 'Untitled Property'}</h3>
             {detailLine ? <p>{detailLine}</p> : null}
             <p>{property?.active !== false ? 'Will be visible when published' : 'Will stay hidden when published'}</p>
           </div>
-
-          {canToggleMode ? (
-            <div
-              ref={modeToggleShellRef}
-              className={`admin-property-preview-mode-toggle-shell${
-                modeToggleFloating ? ' admin-property-preview-mode-toggle-shell--floating' : ''
-              }`.trim()}
-              style={modeToggleFloating ? { minHeight: `${modeToggleLayout.height}px`, width: `${modeToggleLayout.width}px` } : undefined}
-            >
-              <div ref={modeToggleRef} aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group" style={modeToggleStyle}>
-                <button
-                  aria-pressed={effectiveMode === 'edit'}
-                  className={`button-link admin-action ${effectiveMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                  type="button"
-                  onClick={() => setMode('edit')}
-                >
-                  Edit
-                </button>
-                <button
-                  aria-pressed={effectiveMode === 'preview'}
-                  className={`button-link admin-action ${effectiveMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                  type="button"
-                  onClick={() => setMode('preview')}
-                >
-                  Preview
-                </button>
-              </div>
-            </div>
-          ) : null}
         </div>
 
         {effectiveMode === 'preview' ? (
@@ -469,7 +381,7 @@ export function AdminPropertyPreview({
           </div>
         ) : null}
 
-        {canToggleMode && effectiveMode === 'edit' ? (
+        {hasEditableForm && effectiveMode === 'edit' ? (
           <div className="admin-property-preview-body">
             <EditSection title="Basic Info">
               <div className="admin-preview-field-grid admin-preview-field-grid--tight">
@@ -478,6 +390,9 @@ export function AdminPropertyPreview({
                 <PreviewInput disabled={disabled} label="Bathrooms" onChange={(value) => onFieldChange('bathrooms', value)} type="number" value={formState.bathrooms} />
                 <PreviewInput disabled={disabled} label="Max Guests" onChange={(value) => onFieldChange('maxGuests', value)} type="number" value={formState.maxGuests} />
                 <PreviewInput disabled={disabled} label="Location" onChange={(value) => onFieldChange('location', value)} value={formState.location} wide />
+                <PreviewInput disabled={disabled} label="Contact Name" onChange={(value) => onFieldChange('bookingContactName', value)} value={formState.bookingContactName} wide />
+                <PreviewInput disabled={disabled} label="Contact Email" onChange={(value) => onFieldChange('bookingEmail', value)} type="email" value={formState.bookingEmail} />
+                <PreviewInput disabled={disabled} label="Contact Phone" onChange={(value) => onFieldChange('bookingPhone', value)} type="tel" value={formState.bookingPhone} />
                 <label className="admin-field admin-field--wide">
                   <span>Reduced Bedroom Availability</span>
                   <div className="admin-preview-checkbox">
@@ -578,19 +493,69 @@ export function AdminPropertyPreview({
             ) : null}
           </EditSection>
 
-          <EditSection title="Short Description & Contact">
+          <EditSection title="Short Description">
             <div className="admin-preview-field-grid">
-              <PreviewRichText
+              <fieldset className="admin-field admin-field--wide admin-property-summary-features">
+                <legend>Summary Amenities</legend>
+                <div className="admin-property-summary-feature-grid">
+                  {SHORT_DESCRIPTION_FEATURE_OPTIONS.map((option) => (
+                    <label className="admin-checkbox-field" key={option.id}>
+                      <input
+                        checked={Boolean(shortDescriptionFeatureState[option.id])}
+                        disabled={disabled}
+                        onChange={(event) => toggleShortDescriptionFeature(option.id, event.target.checked)}
+                        type="checkbox"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                  <div className="admin-property-summary-air-conditioning">
+                    <label className="admin-checkbox-field">
+                      <input
+                        checked={Boolean(shortDescriptionFeatureState.airConditioning)}
+                        disabled={disabled}
+                        onChange={(event) => toggleAirConditioningFeature(event.target.checked)}
+                        type="checkbox"
+                      />
+                      <span>Air Conditioning</span>
+                    </label>
+                    {shortDescriptionFeatureState.airConditioning ? (
+                      <div className="admin-property-summary-air-options">
+                        {AIR_CONDITIONING_OPTIONS.map((option) => (
+                          <label className="admin-checkbox-field" key={option.value}>
+                            <input
+                              checked={shortDescriptionFeatureState.airConditioning === option.value}
+                              disabled={disabled}
+                              name="property-summary-air-conditioning"
+                              onChange={() => changeAirConditioningType(option.value)}
+                              type="radio"
+                              value={option.value}
+                            />
+                            <span>{option.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </fieldset>
+              <AdminShortDescriptionEditor
                 disabled={disabled}
                 label="Short Description"
-                onChange={(value) => onFieldChange('shortDescription', value)}
-                placeholder="Ocean views&#10;Private pool&#10;5-minute walk to beach"
-                value={formState.shortDescription}
+                lockedLines={shortDescriptionLockedLines}
+                onChange={(value) =>
+                  onFieldChange(
+                    'shortDescription',
+                    buildPropertyShortDescription(formState, {
+                      customValue: value,
+                      featureState: shortDescriptionFeatureState,
+                    }),
+                  )
+                }
+                placeholder="Add any extra short description lines here"
+                value={shortDescriptionCustomValue}
                 wide
               />
-              <PreviewInput disabled={disabled} label="Contact Name" onChange={(value) => onFieldChange('bookingContactName', value)} value={formState.bookingContactName} wide />
-              <PreviewInput disabled={disabled} label="Contact Email" onChange={(value) => onFieldChange('bookingEmail', value)} type="email" value={formState.bookingEmail} />
-              <PreviewInput disabled={disabled} label="Contact Phone" onChange={(value) => onFieldChange('bookingPhone', value)} type="tel" value={formState.bookingPhone} />
             </div>
           </EditSection>
 
@@ -626,6 +591,23 @@ export function AdminPropertyPreview({
                 {formState.descriptionHtml ? 'Description content saved.' : 'Expand the editor to add description, rate, or booking copy.'}
               </p>
             )}
+          </EditSection>
+
+          <EditSection title="Calendar">
+            <div className="admin-preview-field-grid">
+              <PreviewInput
+                disabled={disabled}
+                label="Calendar URL (.ics)"
+                onChange={(value) => onFieldChange('calendarUrl', value)}
+                type="url"
+                value={formState.calendarUrl}
+                wide
+              />
+              <p className="admin-note admin-field--wide">
+                Paste the property's iCal export link (VRBO, Streamline, Airbnb, etc.) to show a live availability calendar on the
+                property page. Leave blank to hide the calendar section.
+              </p>
+            </div>
           </EditSection>
 
           <EditSection

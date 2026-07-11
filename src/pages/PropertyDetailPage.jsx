@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'
 import { RichTextValue } from '../components/RichTextValue'
 import { getAdminIdToken } from '../lib/adminAuth'
@@ -331,6 +332,16 @@ export function PropertyDetailPage() {
         title={sectionConfigs.description.title}
       />
     ),
+    calendar: property.calendarUrl ? (
+      <PropertyContentSection
+        className="property-template-section--calendar"
+        key="calendar"
+        showHeader={sectionConfigs.calendar.showHeader}
+        title={sectionConfigs.calendar.title}
+      >
+        <PropertyAvailabilityCalendar propertySlug={property.slug} />
+      </PropertyContentSection>
+    ) : null,
     amenities: (
       <PropertyContentSection
         key="amenities"

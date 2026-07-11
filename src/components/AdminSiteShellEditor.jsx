@@ -139,39 +139,6 @@ function PlainTextField({ disabled, label, onChange, type = 'text', value, wide 
   )
 }
 
-function RouteField({ disabled, label, onChange, suggestions = [], value, wide = false }) {
-  const normalizedValue = String(value ?? '')
-  const normalizedSuggestions = Array.isArray(suggestions) ? suggestions.filter(Boolean) : []
-  const optionValues =
-    normalizedValue && !normalizedSuggestions.includes(normalizedValue)
-      ? [normalizedValue, ...normalizedSuggestions]
-      : normalizedSuggestions
-
-  return (
-    <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <span>{label}</span>
-      {optionValues.length ? (
-        <select disabled={disabled} value={normalizedValue} onChange={(event) => onChange(event.target.value)}>
-          {!normalizedValue ? <option value="">Select a route</option> : null}
-          {optionValues.map((routePath) => (
-            <option key={routePath} value={routePath}>
-              {routePath}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <input
-          disabled={disabled}
-          placeholder="/example-route"
-          type="text"
-          value={normalizedValue}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      )}
-    </label>
-  )
-}
-
 function RichTextField({ disabled, label, onChange, value, wide = true }) {
   return (
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>

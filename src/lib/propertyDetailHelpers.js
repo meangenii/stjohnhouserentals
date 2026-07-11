@@ -1,5 +1,5 @@
-import { richTextValueToLines } from './richTextValue'
+import { richTextValueToPlainTextLines } from './richTextValue'
 
 export function getShortDescriptionLines(property) {
-  return richTextValueToLines(property.shortDescription ?? '')
+  return richTextValueToPlainTextLines(property.shortDescription ?? '')
 }

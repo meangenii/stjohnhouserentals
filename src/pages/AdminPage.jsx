@@ -26,8 +26,9 @@ import {
   saveAdminProperty,
   setAdminPropertyActiveState,
 } from '../lib/propertyRepository'
+import { buildPropertyShortDescription, mergePropertyShortDescription } from '../lib/propertyShortDescription'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
-import { richTextValueToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
+import { richTextValueToHtml, richTextValueToInlineHtml, richTextValueToPlainLineText } from '../lib/richTextValue'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
@@ -419,7 +420,7 @@ function createGalleryAssets(galleryImages = []) {
 }
 
 function createEmptyFormState() {
-  return {
+  const nextFormState = {
     originalSlug: '',
     name: '',
     slug: '',
@@ -433,6 +434,7 @@ function createEmptyFormState() {
     location: 'St. John, USVI',
     price: '',
     shortDescription: '',
+    calendarUrl: '',
     descriptionHtml: '',
     existingAmenitiesHtml: '',
     existingReviewsHtml: '',
@@ -445,6 +447,11 @@ function createEmptyFormState() {
     galleryImages: [],
     amenityGroups: [createAmenityEditor()],
     reviewEntries: [createReviewEditor()],
+  }
+
+  return {
+    ...nextFormState,
+    shortDescription: buildPropertyShortDescription(nextFormState),
   }
 }
 
@@ -502,6 +509,7 @@ function createFormState(property) {
     location: repairSnapshotText(property.location ?? 'St. John, USVI'),
     price: repairSnapshotText(property.price ?? ''),
     shortDescription: repairSnapshotText(property.shortDescription ?? ''),
+    calendarUrl: repairSnapshotText(property.calendarUrl ?? ''),
     descriptionHtml: String(property.descriptionHtml ?? '').trim() || paragraphListToHtml(property.description ?? []),
     existingAmenitiesHtml: String(property.amenitiesHtml ?? ''),
     existingReviewsHtml: String(property.reviewsHtml ?? ''),
@@ -555,7 +563,8 @@ function buildPropertyDraft(formState) {
     maxGuests: Number(formState.maxGuests) || 0,
     location: repairSnapshotText(formState.location).trim(),
     price: repairSnapshotText(formState.price).trim(),
-    shortDescription: repairSnapshotText(formState.shortDescription).trim(),
+    shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
+    calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
     descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
     existingAmenitiesHtml: formState.existingAmenitiesHtml,
     existingReviewsHtml: formState.existingReviewsHtml,
@@ -647,7 +656,8 @@ function buildPropertyPreviewModel(formState) {
     maxGuests: Number(formState.maxGuests) || 0,
     location: repairSnapshotText(formState.location).trim(),
     price: repairSnapshotText(formState.price).trim(),
-    shortDescription: repairSnapshotText(formState.shortDescription).trim(),
+    shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
+    calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
     descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
     amenitiesHtml: amenityHtml || String(formState.existingAmenitiesHtml ?? '').trim(),
     reviewsHtml: reviewsHtml || String(formState.existingReviewsHtml ?? '').trim(),
@@ -850,6 +860,10 @@ export function AdminPage() {
     activeSlug: preferredPropertyMode === 'edit' ? preferredPropertySlug : '',
   }))
   const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
+  const [propertyPreviewViewState, setPropertyPreviewViewState] = useState(() => ({
+    key: '',
+    mode: 'edit',
+  }))
   const [feedback, setFeedback] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
   const [propertyPublication, setPropertyPublication] = useState(null)
@@ -910,6 +924,9 @@ export function AdminPage() {
   const charterDirty = jsonSnapshot(charterFormState) !== jsonSnapshot(savedCharterFormState)
   const siteShellDirty = jsonSnapshot(siteShellDraft) !== jsonSnapshot(siteShellWorkspaceState.shell)
   const pageDirty = jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft)
+  const propertyPreviewEditorKey = formState.originalSlug || 'new-property'
+  const propertyPreviewModeKey = `${activeTab === 'properties' ? 'properties' : 'hidden'}:${propertyPreviewEditorKey}`
+  const propertyPreviewMode = propertyPreviewViewState.key === propertyPreviewModeKey ? propertyPreviewViewState.mode : 'edit'
 
   useEffect(() => {
     persistAdminEditorLocation({
@@ -1423,16 +1440,27 @@ export function AdminPage() {
         }
       }
 
+      if (field === 'shortDescription') {
+        return {
+          ...currentState,
+          shortDescription: mergePropertyShortDescription(currentState, value),
+        }
+      }
+
       if (field === 'bedrooms') {
         const bedrooms = normalizeBedroomCount(value)
         const alternateBedroomCounts = normalizeAlternateBedroomCounts(currentState.alternateBedroomCounts, bedrooms)
         const rentFewerRooms = currentState.rentFewerRooms && bedrooms > 1
-
-        return {
+        const nextState = {
           ...currentState,
           bedrooms: value,
           rentFewerRooms,
           alternateBedroomCounts,
+        }
+
+        return {
+          ...nextState,
+          shortDescription: mergePropertyShortDescription(nextState, currentState.shortDescription),
         }
       }
 
@@ -1450,6 +1478,18 @@ export function AdminPage() {
         return {
           ...currentState,
           alternateBedroomCounts: normalizeAlternateBedroomCounts(value, currentState.bedrooms),
+        }
+      }
+
+      if (field === 'bathrooms' || field === 'maxGuests') {
+        const nextState = {
+          ...currentState,
+          [field]: value,
+        }
+
+        return {
+          ...nextState,
+          shortDescription: mergePropertyShortDescription(nextState, currentState.shortDescription),
         }
       }
 
@@ -1598,10 +1638,14 @@ export function AdminPage() {
     try {
       setSaveStatus('saving')
       const editorMode = editorState.mode
+      const formStateToPersist = {
+        ...nextFormState,
+        shortDescription: mergePropertyShortDescription(nextFormState, nextFormState.shortDescription),
+      }
       const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
       const savedProperty = await saveAdminProperty(
-        buildPropertyDraft(nextFormState),
-        editorMode === 'edit' ? nextFormState.originalSlug : '',
+        buildPropertyDraft(formStateToPersist),
+        editorMode === 'edit' ? formStateToPersist.originalSlug : '',
         requestOptions,
       )
       const properties = await listAllProperties(requestOptions)
@@ -2085,6 +2129,7 @@ export function AdminPage() {
   const propertyActionBusy = saveStatus === 'saving' || saveStatus === 'publishing'
   const propertyPublishVisible = propertyUsesFirebase && editorState.mode === 'edit' && propertyHasPendingPublication
   const propertyPublishEnabled = propertyPublishVisible && propertySaveEnabled && !propertyDirty && !propertyActionBusy
+  const propertyPreviewToggleVisible = Boolean(formState)
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
   const charterHasPendingPublication = hasPendingPublication(charterPublication)
@@ -2093,7 +2138,7 @@ export function AdminPage() {
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
   const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
   const showSiteShellPublishAction = siteShellHasPendingPublication && siteShellEditedSinceLoad && !siteShellDirty
-  const propertyFloatingSaveVisible = propertyDirty || propertyPublishVisible || propertyActionBusy
+  const propertyFloatingSaveVisible = propertyPreviewToggleVisible || propertyDirty || propertyPublishVisible || propertyActionBusy
 
   useLayoutEffect(() => {
     if (activeTab !== 'properties' || !propertyFloatingSaveVisible) {
@@ -2465,8 +2510,29 @@ export function AdminPage() {
                   </div>
 
                   <div className="admin-floating-save-shell">
-                    {(propertyDirty || propertyPublishVisible || propertyActionBusy) ? (
+                    {propertyFloatingSaveVisible ? (
                       <div className="admin-floating-save" ref={propertyFloatingSaveRef}>
+                        {propertyPreviewToggleVisible ? (
+                          <div aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group">
+                            <button
+                              aria-pressed={propertyPreviewMode === 'edit'}
+                              className={`button-link admin-action ${propertyPreviewMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                              type="button"
+                              onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'edit' })}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              aria-pressed={propertyPreviewMode === 'preview'}
+                              className={`button-link admin-action ${propertyPreviewMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                              type="button"
+                              onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'preview' })}
+                            >
+                              Preview
+                            </button>
+                          </div>
+                        ) : null}
+
                         {propertyDirty ? (
                           <button
                             className="button-link button-link--ghost admin-action"
@@ -2503,11 +2569,12 @@ export function AdminPage() {
                     ) : null}
 
                     <AdminPropertyPreview
-                      key={formState.originalSlug || 'new-property'}
+                      key={propertyPreviewEditorKey}
                       disabled={!propertySaveEnabled}
                       editable
                       formState={formState}
                       galleryEditorExpanded={galleryEditorExpanded}
+                      mode={propertyPreviewMode}
                       onAddAmenityGroup={addAmenityGroup}
                       onAddGalleryFolderImages={addGalleryImagesFromFolder}
                       onAddGalleryImage={addGalleryImage}

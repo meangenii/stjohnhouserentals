@@ -990,15 +990,22 @@ export function AdminMediaManager({
     }
 
     const validEntryIds = new Set(libraryState.entries.map((entry) => entry.id))
+    const timeoutId = window.setTimeout(() => {
+      setSelectedEntryIds((currentIds) => {
+        const nextIds = currentIds.filter((entryId) => validEntryIds.has(entryId))
+        return nextIds.length === currentIds.length ? currentIds : nextIds
+      })
+    }, 0)
 
-    setSelectedEntryIds((currentIds) => {
-      const nextIds = currentIds.filter((entryId) => validEntryIds.has(entryId))
-      return nextIds.length === currentIds.length ? currentIds : nextIds
-    })
+    return () => window.clearTimeout(timeoutId)
   }, [libraryState.entries, libraryState.status])
 
   useEffect(() => {
-    setSelectedEntryId('')
+    const timeoutId = window.setTimeout(() => {
+      setSelectedEntryId('')
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [normalizedCurrentUrl])
 
   function handleToggleOpen() {

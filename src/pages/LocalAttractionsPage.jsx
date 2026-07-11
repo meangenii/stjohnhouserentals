@@ -152,8 +152,8 @@ export function LocalAttractionsPage() {
     }))
     .filter((section) => selectedDiningArea === 'all' || String(section.sectionIndex) === selectedDiningArea)
     .filter((section) => section.restaurants.length > 0)
-  const heroImageUrl = getContentImageSrc(page.hero.image)
-  const mapImageUrl = getContentImageSrc(page.map.image)
+  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
+  const mapImageUrl = getContentImageSrc(page.map.image, { width: 1400, height: 900, mode: 'fit' })
   const mapActionUrl = String(page.map?.action?.href ?? '').trim() || mapImageUrl || '#'
   const diningResultCount = diningSections.reduce((total, section) => total + section.restaurants.length, 0)
   const totalRestaurantCount = page.dining.sections.reduce((total, section) => total + section.restaurants.length, 0)

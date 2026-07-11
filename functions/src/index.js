@@ -1,5 +1,6 @@
 const { onRequest } = require('firebase-functions/v2/https')
 const { listAdvertiseInquiries, saveAdvertiseInquiry } = require('./advertiseInquiryRepository')
+const { getIcsAvailability } = require('./calendarRepository')
 const {
   createManagedBackupExport,
   createStagingClone,
@@ -91,6 +92,13 @@ const publicSiteConfig = {
     '/charter-boat-rentals/:slug',
     '/admin',
   ],
+}
+
+const PUBLIC_AVAILABILITY_CACHE_CONTROL = 'public, max-age=300, s-maxage=300, stale-while-revalidate=1800'
+
+function sendAvailabilityJson(response, payload) {
+  response.set('Cache-Control', PUBLIC_AVAILABILITY_CACHE_CONTROL)
+  response.json(payload)
 }
 
 function normalizeRequestPath(pathname) {
@@ -226,6 +234,39 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       }
 
       response.json(property)
+      return
+    }
+
+    if (request.method === 'GET' && path === 'calendar/availability') {
+      const slug = String(request.query?.slug ?? '').trim()
+
+      if (!slug) {
+        response.status(400).json({
+          error: 'invalid-request',
+          message: 'A property slug is required to load calendar availability.',
+        })
+        return
+      }
+
+      const property = await getPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in siteApi',
+          slug,
+        })
+        return
+      }
+
+      const availability = await getIcsAvailability(property)
+
+      sendAvailabilityJson(response, {
+        source: 'ics',
+        checkedAt: new Date().toISOString(),
+        slug,
+        ...availability,
+      })
       return
     }
 
