@@ -21,6 +21,26 @@ export function PropertyDetailView({ property }) {
   const galleryImages = propertyGallery.length > 0 ? propertyGallery : property.heroImage ? [property.heroImage] : []
   const safeImageIndex = galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
+  const showPreviousGalleryImage = () => {
+    if (galleryImages.length <= 1) {
+      return
+    }
+
+    setActiveImageIndex((currentIndex) => {
+      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
+      return normalizedIndex === 0 ? galleryImages.length - 1 : normalizedIndex - 1
+    })
+  }
+  const showNextGalleryImage = () => {
+    if (galleryImages.length <= 1) {
+      return
+    }
+
+    setActiveImageIndex((currentIndex) => {
+      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
+      return normalizedIndex === galleryImages.length - 1 ? 0 : normalizedIndex + 1
+    })
+  }
   const bannerImageUrl = property.heroImage?.url
     ? buildRemoteImageUrl(property.heroImage, { width: 1600, height: 540 })
     : activeImage?.url
@@ -126,6 +146,27 @@ export function PropertyDetailView({ property }) {
                   loading="eager"
                   src={buildRemoteImageUrl(activeImage, { width: 1800, height: 1400, mode: 'fit' })}
                 />
+
+                {galleryImages.length > 1 ? (
+                  <>
+                    <button
+                      aria-label="Show previous property image"
+                      className="property-gallery-nav property-gallery-nav--previous"
+                      type="button"
+                      onClick={showPreviousGalleryImage}
+                    >
+                      <span aria-hidden="true">&lt;</span>
+                    </button>
+                    <button
+                      aria-label="Show next property image"
+                      className="property-gallery-nav property-gallery-nav--next"
+                      type="button"
+                      onClick={showNextGalleryImage}
+                    >
+                      <span aria-hidden="true">&gt;</span>
+                    </button>
+                  </>
+                ) : null}
               </div>
 
               {galleryImages.length > 1 ? (

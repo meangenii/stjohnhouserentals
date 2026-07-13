@@ -293,6 +293,26 @@ export function PropertyDetailPage() {
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
+  const showPreviousGalleryImage = () => {
+    if (galleryImages.length <= 1) {
+      return
+    }
+
+    setActiveImageIndex((currentIndex) => {
+      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
+      return normalizedIndex === 0 ? galleryImages.length - 1 : normalizedIndex - 1
+    })
+  }
+  const showNextGalleryImage = () => {
+    if (galleryImages.length <= 1) {
+      return
+    }
+
+    setActiveImageIndex((currentIndex) => {
+      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
+      return normalizedIndex === galleryImages.length - 1 ? 0 : normalizedIndex + 1
+    })
+  }
   const thumbnailRailClassName = [
     'property-gallery-thumbnails-shell',
     thumbnailRailState.canScroll ? 'property-gallery-thumbnails-shell--scrollable' : '',
@@ -411,6 +431,27 @@ export function PropertyDetailPage() {
                   loading="eager"
                   src={buildRemoteImageUrl(activeImage, { width: 1800, height: 1400, mode: 'fit' })}
                 />
+
+                {galleryImages.length > 1 ? (
+                  <>
+                    <button
+                      aria-label="Show previous property image"
+                      className="property-gallery-nav property-gallery-nav--previous"
+                      type="button"
+                      onClick={showPreviousGalleryImage}
+                    >
+                      <span aria-hidden="true">&lt;</span>
+                    </button>
+                    <button
+                      aria-label="Show next property image"
+                      className="property-gallery-nav property-gallery-nav--next"
+                      type="button"
+                      onClick={showNextGalleryImage}
+                    >
+                      <span aria-hidden="true">&gt;</span>
+                    </button>
+                  </>
+                ) : null}
               </div>
 
               {galleryImages.length > 1 ? (
