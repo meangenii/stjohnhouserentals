@@ -163,6 +163,7 @@ export function AdminPropertyPreview({
   editable = false,
   formState = null,
   galleryEditorExpanded = false,
+  locationOptions = [],
   mode = 'edit',
   onAddAmenityGroup,
   onAddGalleryFolderImages,
@@ -542,6 +543,8 @@ export function AdminPropertyPreview({
               <AdminShortDescriptionEditor
                 disabled={disabled}
                 label="Short Description"
+                locationOptions={locationOptions}
+                locationValue={formState.location}
                 lockedLines={shortDescriptionLockedLines}
                 onChange={(value) =>
                   onFieldChange(
@@ -552,6 +555,7 @@ export function AdminPropertyPreview({
                     }),
                   )
                 }
+                onLocationChange={(value) => onFieldChange('location', value)}
                 placeholder="Add any extra short description lines here"
                 value={shortDescriptionCustomValue}
                 wide

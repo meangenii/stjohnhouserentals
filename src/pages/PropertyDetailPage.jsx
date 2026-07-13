@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'
 import { RichTextValue } from '../components/RichTextValue'
@@ -32,6 +32,7 @@ function scrollToElementWithoutAnimation(element) {
 export function PropertyDetailPage() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAdmin } = useAdminSession()
   const [state, setState] = useState({ status: 'loading', slug })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -175,7 +176,7 @@ export function PropertyDetailPage() {
     }
   }, [isAdmin, slug])
 
-  function handleAdjacentPropertyNavigation(event, destination) {
+  function handleAdjacentPropertyNavigation(event, destination, navigationState) {
     if (!isUnmodifiedPrimaryClick(event) || routeTransitionPhaseRef.current !== 'idle') {
       return
     }
@@ -191,7 +192,7 @@ export function PropertyDetailPage() {
       : PROPERTY_CROSSFADE_NAVIGATION_DELAY_MS
 
     navigationTimerRef.current = window.setTimeout(() => {
-      navigate(destination)
+      navigate(destination, navigationState ? { state: navigationState } : undefined)
     }, transitionDelay)
   }
 
@@ -270,6 +271,21 @@ export function PropertyDetailPage() {
       </section>
     )
   }
+
+  const filteredPropertyOrder = Array.isArray(location.state?.filteredPropertyOrder)
+    ? location.state.filteredPropertyOrder
+    : null
+  const filteredPropertyIndex = filteredPropertyOrder
+    ? filteredPropertyOrder.findIndex((item) => item?.slug === property.slug)
+    : -1
+  const usesFilteredPropertyOrder = filteredPropertyIndex !== -1
+  const previousProperty = usesFilteredPropertyOrder
+    ? (filteredPropertyOrder[filteredPropertyIndex - 1] ?? null)
+    : property.previousProperty
+  const nextProperty = usesFilteredPropertyOrder
+    ? (filteredPropertyOrder[filteredPropertyIndex + 1] ?? null)
+    : property.nextProperty
+  const adjacentPropertyNavigationState = usesFilteredPropertyOrder ? { filteredPropertyOrder } : null
 
   const propertyGallery = Array.isArray(property.gallery) ? property.gallery.filter(Boolean) : []
   const templateVariant = getPropertyTemplateVariantConfig(property.templateVariant)
@@ -441,15 +457,18 @@ export function PropertyDetailPage() {
 
           {templateVariant.sectionOrder.map((sectionKey) => propertySections[sectionKey]).filter(Boolean)}
 
-          {property.previousProperty || property.nextProperty ? (
+          {previousProperty || nextProperty ? (
             <nav aria-label="Adjacent properties" className="property-adjacent-nav">
               <div className="property-adjacent-slot">
-                {property.previousProperty ? (
+                {previousProperty ? (
                   <Link
-                    aria-label={`Previous property: ${property.previousProperty.name}`}
+                    aria-label={`Previous property: ${previousProperty.name}`}
                     className="property-adjacent-link"
-                    onClick={(event) => handleAdjacentPropertyNavigation(event, property.previousProperty.path)}
-                    to={property.previousProperty.path}
+                    onClick={(event) =>
+                      handleAdjacentPropertyNavigation(event, previousProperty.path, adjacentPropertyNavigationState)
+                    }
+                    state={adjacentPropertyNavigationState ?? undefined}
+                    to={previousProperty.path}
                   >
                     previous item
                   </Link>
@@ -457,12 +476,15 @@ export function PropertyDetailPage() {
               </div>
 
               <div className="property-adjacent-slot property-adjacent-slot--end">
-                {property.nextProperty ? (
+                {nextProperty ? (
                   <Link
-                    aria-label={`Next property: ${property.nextProperty.name}`}
+                    aria-label={`Next property: ${nextProperty.name}`}
                     className="property-adjacent-link"
-                    onClick={(event) => handleAdjacentPropertyNavigation(event, property.nextProperty.path)}
-                    to={property.nextProperty.path}
+                    onClick={(event) =>
+                      handleAdjacentPropertyNavigation(event, nextProperty.path, adjacentPropertyNavigationState)
+                    }
+                    state={adjacentPropertyNavigationState ?? undefined}
+                    to={nextProperty.path}
                   >
                     next item
                   </Link>

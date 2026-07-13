@@ -4,6 +4,11 @@ import { EditableBackgroundSection, EditableText } from '../components/AdminInli
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getAdminIdToken } from '../lib/adminAuth'
 import { getContentImageSrc } from '../lib/contentAssets'
+import {
+  buildPropertyLocationOptions,
+  getPropertyLocationFilterLabel,
+  normalizePropertyLocationFilterValue,
+} from '../lib/propertyLocationFilters'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { useAdminSession } from '../lib/useAdminSession'
@@ -63,39 +68,6 @@ function getAmenityLines(value) {
     .filter(Boolean)
 }
 
-function normalizeLocationLabel(value) {
-  return String(value ?? '')
-    .replace(/\([^)]*\)/g, ' ')
-    .replace(/,.*/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function looksLikeLocationLine(value) {
-  const normalizedValue = String(value ?? '').trim()
-
-  if (!normalizedValue) {
-    return false
-  }
-
-  return !/\b(max|guests?|bed(?:room)?s?|baths?|pool|hot tub|internet|wifi|wi-fi|a\/c|air-conditioning|solar|battery|backup|washer|dryer|kid friendly|ocean view|air-conditioned|wireless|kitchen|living room|ceiling fans?|game room|outdoor kitchen|security system)\b/i.test(
-    normalizedValue,
-  )
-}
-
-function getLocationLabel(property) {
-  const normalizedLocation = normalizeLocationLabel(property.location)
-
-  if (normalizedLocation && looksLikeLocationLine(normalizedLocation)) {
-    return normalizedLocation
-  }
-
-  const summaryLines = getShortDescriptionLines(property.shortDescription)
-  const fallbackLine = [...summaryLines].reverse().find((line) => looksLikeLocationLine(line))
-
-  return normalizeLocationLabel(fallbackLine)
-}
-
 function getAvailableBedroomCounts(property) {
   const primaryBedrooms = Number(property?.bedrooms) || 0
   const alternateBedroomCounts = Array.isArray(property?.alternateBedroomCounts) ? property.alternateBedroomCounts : []
@@ -126,9 +98,10 @@ function buildCardFromProperty(property) {
   const amenityLines = getAmenityLines(property.amenitiesHtml)
   const searchableLines = [...summaryLines, ...amenityLines]
   const summaryText = searchableLines.join(' ').replace(/\s+/g, ' ').trim()
-  const locationLabel = getLocationLabel(property)
+  const locationLabel = getPropertyLocationFilterLabel(property)
 
   return {
+    slug: property.slug,
     name: property.name,
     path: property.path,
     active: property.active !== false,
@@ -139,7 +112,7 @@ function buildCardFromProperty(property) {
     summaryLines,
     summaryText,
     locationLabel,
-    locationValue: locationLabel.toLowerCase(),
+    locationValue: normalizePropertyLocationFilterValue(locationLabel),
     amenityIds: AMENITY_FILTERS.filter((filter) => filter.matches(summaryText)).map((filter) => filter.id),
     airConditioningType: getAirConditioningType(searchableLines),
   }
@@ -149,13 +122,19 @@ function formatRoomFilterLabel(roomCount) {
   return `${roomCount} Room${roomCount === 1 ? '' : 's'}`
 }
 
-function RentalAccommodationCard({ card }) {
+function RentalAccommodationCard({ card, filteredPropertyOrder }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const visibleSummaryLines = isExpanded ? card.summaryLines : card.summaryLines.slice(0, 3)
+  const navigationState = { filteredPropertyOrder }
 
   return (
     <article className="rental-accommodations-card">
-      <Link aria-label={card.name} className="rental-accommodations-card-media" to={card.path}>
+      <Link
+        aria-label={card.name}
+        className="rental-accommodations-card-media"
+        state={navigationState}
+        to={card.path}
+      >
         {card.imageUrl ? (
           <img
             alt={card.imageAlt || card.name}
@@ -193,7 +172,7 @@ function RentalAccommodationCard({ card }) {
           <div className="rental-accommodations-card-toggle-spacer" aria-hidden="true" />
         )}
 
-        <Link className="rental-accommodations-card-action" to={card.path}>
+        <Link className="rental-accommodations-card-action" state={navigationState} to={card.path}>
           Learn More
         </Link>
       </div>
@@ -222,25 +201,13 @@ export function RentalAccommodationsPage() {
       )
     : []
   const allCards = visibleProperties.map((property) => buildCardFromProperty(property))
-  const locationOptionMap = new Map()
   const roomCountOptions = Array.from(
     new Set(
       allCards.flatMap((card) => card.availableBedroomCounts).filter((bedroomCount) => Number.isInteger(bedroomCount) && bedroomCount > 0),
     ),
   ).sort((left, right) => left - right)
 
-  allCards.forEach((card) => {
-    if (!card.locationLabel || locationOptionMap.has(card.locationValue)) {
-      return
-    }
-
-    locationOptionMap.set(card.locationValue, {
-      label: card.locationLabel,
-      value: card.locationValue,
-    })
-  })
-
-  const locationOptions = Array.from(locationOptionMap.values()).sort((left, right) => left.label.localeCompare(right.label))
+  const locationOptions = buildPropertyLocationOptions(visibleProperties)
   const selectedLocationLabel = locationOptions.find((option) => option.value === selectedLocation)?.label ?? ''
   const hasActiveFilters = selectedRoomCount !== null || selectedAmenities.length > 0 || Boolean(selectedAirConditioningType) || Boolean(selectedLocation)
   const filtersDisabled = summaryState.status !== 'ready' || allCards.length === 0
@@ -263,6 +230,8 @@ export function RentalAccommodationsPage() {
       return selectedAmenities.every((amenityId) => card.amenityIds.includes(amenityId))
     })
   }
+
+  const filteredPropertyOrder = cards.map((card) => ({ slug: card.slug, name: card.name, path: card.path }))
 
   useEffect(() => {
     let cancelled = false
@@ -414,7 +383,7 @@ export function RentalAccommodationsPage() {
             cards.length ? (
               <div className="rental-accommodations-grid">
                 {cards.map((card) => (
-                  <RentalAccommodationCard card={card} key={card.path} />
+                  <RentalAccommodationCard card={card} filteredPropertyOrder={filteredPropertyOrder} key={card.path} />
                 ))}
               </div>
             ) : (

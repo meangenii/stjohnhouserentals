@@ -364,7 +364,8 @@ npm run deploy:firestore
 - Keep the generated rental and charter catalogs in `public/`
 - Capture the live site with `npm run snapshot:site` for parity checks and to refresh the local seed catalogs
 - Keep sanitized reference HTML in `reference/live-site/<date>/html/`
-- Keep public routes in `src/pages/`
+- Keep public routes for the fixed set of bespoke pages in `src/pages/`, one component per route
+- Admin-authored pages (block-page and rich-content-page content models) are the one exception: they're served by a single dynamic catch-all route in `src/App.jsx` through the shared renderers `src/components/BlockPage.jsx` and `src/components/ContentPage.jsx`, since the same renderer must serve both the public route and the `/admin` preview canvas for any number of admin-created pages
 - Keep backend endpoints in `functions/src/index.js`
 - Let `npm run content:generate` mirror the shared seed documents and public catalogs into `functions/src/generated/`
 - Use `/admin` as the structured Firebase-backed editing surface instead of editing content documents manually in the console

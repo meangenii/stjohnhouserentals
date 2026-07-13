@@ -40,6 +40,8 @@ function normalizeAdvertiseInquiryRecord(id, record = {}) {
     email: String(record.email ?? '').trim().toLowerCase(),
     subject: String(record.subject ?? '').trim(),
     message: String(record.message ?? '').trim(),
+    pageTitle: String(record.pageTitle ?? '').trim(),
+    pagePath: String(record.pagePath ?? '').trim(),
     spam: record.spam === true,
     createdAt: normalizeTimestampValue(record.createdAt),
     updatedAt: normalizeTimestampValue(record.updatedAt),
@@ -94,6 +96,9 @@ function normalizeAdvertiseInquiry(payload) {
   const subject = normalizeField(payload?.subject, { label: 'Subject', maxLength: 160, required: false })
   const message = normalizeMessage(payload?.message)
   const website = normalizeField(payload?.website, { label: 'Website', maxLength: 255, required: false })
+  const source = normalizeField(payload?.source, { label: 'Source', maxLength: 40, required: false }) || 'advertise'
+  const pageTitle = normalizeField(payload?.pageTitle, { label: 'Page title', maxLength: 160, required: false })
+  const pagePath = normalizeField(payload?.pagePath, { label: 'Page path', maxLength: 200, required: false })
 
   if (!EMAIL_PATTERN.test(email)) {
     throw new HttpError(400, 'Enter a valid email address.')
@@ -103,9 +108,12 @@ function normalizeAdvertiseInquiry(payload) {
     firstName,
     lastName,
     email,
-    subject: subject || `Advertising inquiry from ${firstName} ${lastName}`,
+    subject: subject || (pageTitle ? `New inquiry from ${pageTitle}` : `Advertising inquiry from ${firstName} ${lastName}`),
     message,
     website,
+    source,
+    pageTitle,
+    pagePath,
   }
 }
 
@@ -136,12 +144,13 @@ async function getInquiryRecipientEmail() {
 
 function buildEmailBody(inquiry, metadata) {
   return [
-    'New advertising inquiry',
+    inquiry.pageTitle ? `New inquiry from the "${inquiry.pageTitle}" page` : 'New advertising inquiry',
     '',
     `First name: ${inquiry.firstName}`,
     `Last name: ${inquiry.lastName}`,
     `Email: ${inquiry.email}`,
     `Subject: ${inquiry.subject}`,
+    ...(inquiry.pagePath ? [`Page: ${inquiry.pagePath}`] : []),
     '',
     'Message:',
     inquiry.message,
@@ -207,7 +216,7 @@ async function saveAdvertiseInquiry(payload, request) {
     const emailConfig = getEmailConfig()
 
     await inquiryRef.set({
-      type: 'advertise',
+      type: inquiry.source,
       status: 'received',
       ...inquiry,
       metadata,

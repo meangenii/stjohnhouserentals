@@ -63,6 +63,18 @@ function summarizeInquiry(inquiry) {
   return subject || 'No subject'
 }
 
+function formatInquirySource(inquiry) {
+  const pageTitle = String(inquiry?.pageTitle ?? '').trim()
+
+  if (pageTitle) {
+    return pageTitle
+  }
+
+  const type = String(inquiry?.type ?? '').trim()
+
+  return type === 'advertise' ? 'Advertise page' : 'Website'
+}
+
 function getMetadataLine(inquiry) {
   const parts = [inquiry?.metadata?.host, inquiry?.metadata?.origin].filter(Boolean)
   return parts.join(' | ')
@@ -183,7 +195,7 @@ export function AdminAdvertiseInquiriesPanel({ authUser }) {
       {workspaceState.message ? <p className="admin-empty">{workspaceState.message}</p> : null}
       {workspaceState.status === 'loading' && inquiries.length === 0 ? <p className="admin-empty">Loading form submissions...</p> : null}
       {workspaceState.status === 'ready' && inquiries.length === 0 ? (
-        <p className="admin-empty">No advertise form submissions have been saved yet.</p>
+        <p className="admin-empty">No form submissions have been saved yet.</p>
       ) : null}
 
       {inquiries.length > 0 ? (
@@ -202,6 +214,7 @@ export function AdminAdvertiseInquiriesPanel({ authUser }) {
                 </div>
                 <span>{inquiry.email || 'No email provided'}</span>
                 <span>{summarizeInquiry(inquiry)}</span>
+                <span className="admin-inquiry-source">{formatInquirySource(inquiry)}</span>
                 <time dateTime={inquiry.createdAt || undefined}>{formatInquiryDate(inquiry.createdAt)}</time>
               </button>
             ))}
@@ -233,6 +246,10 @@ export function AdminAdvertiseInquiriesPanel({ authUser }) {
                 <div className="admin-field">
                   <span className="eyebrow">Subject</span>
                   <p>{selectedInquiry.subject || 'No subject'}</p>
+                </div>
+                <div className="admin-field">
+                  <span className="eyebrow">Source</span>
+                  <p>{formatInquirySource(selectedInquiry)}</p>
                 </div>
                 <div className="admin-field">
                   <span className="eyebrow">Recipient</span>

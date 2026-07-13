@@ -935,6 +935,10 @@ export function formatPropertyRichHtml(
     transformPropertyReviews(root, documentNode)
   }
 
+  if (compactTail) {
+    transformPropertyRateSections(root, documentNode)
+  }
+
   if (!compactTail) {
     return root.innerHTML
   }

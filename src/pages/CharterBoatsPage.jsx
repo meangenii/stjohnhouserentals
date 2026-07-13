@@ -1,73 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { CharterBoatCard } from '../components/CharterBoatCard'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { listCharters } from '../lib/charterRepository'
 import { getContentImageSrc } from '../lib/contentAssets'
-import { richTextValueToPlainText } from '../lib/richTextValue'
 import { useStructuredPageContent } from '../lib/useSiteContent'
-
-function cleanText(value) {
-  return richTextValueToPlainText(value)
-}
-
-function truncateSummary(summary, limit = 138) {
-  const normalizedSummary = cleanText(summary)
-
-  if (normalizedSummary.length <= limit) {
-    return {
-      text: normalizedSummary,
-      isTruncated: false,
-    }
-  }
-
-  const truncatedText = normalizedSummary.slice(0, limit)
-  const breakpoint = truncatedText.lastIndexOf(' ')
-
-  return {
-    text: `${truncatedText.slice(0, breakpoint > 0 ? breakpoint : limit).trim()}...`,
-    isTruncated: true,
-  }
-}
-
-function CharterBoatCard({ charter }) {
-  const imageUrl = getContentImageSrc(charter.heroImage, { width: 760, height: 520 })
-  const summary = truncateSummary(charter.shortDescription)
-
-  return (
-    <article className="charter-boats-card">
-      <Link aria-label={charter.name} className="charter-boats-card-media" to={charter.path}>
-        {imageUrl ? (
-          <img
-            alt={charter.heroImage?.alt || charter.name}
-            className="charter-boats-card-image"
-            decoding="async"
-            loading="lazy"
-            src={imageUrl}
-          />
-        ) : null}
-      </Link>
-
-      <div className="charter-boats-card-body">
-        <h3>{charter.name}</h3>
-        <div aria-hidden="true" className="charter-boats-card-divider" />
-        <p>{summary.text}</p>
-
-        {summary.isTruncated ? (
-          <Link className="charter-boats-card-more" to={charter.path}>
-            Show More
-          </Link>
-        ) : (
-          <div aria-hidden="true" className="charter-boats-card-more-spacer" />
-        )}
-
-        <Link className="charter-boats-card-action" to={charter.path}>
-          Learn More
-        </Link>
-      </div>
-    </article>
-  )
-}
 
 export function CharterBoatsPage() {
   const page = useStructuredPageContent('charterBoats')

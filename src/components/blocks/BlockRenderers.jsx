@@ -1,0 +1,1268 @@
+import { useState } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
+import { BlockList, BlockStyleSettings } from '../BlockList'
+import { BlockStyleFrame } from '../BlockStyleFrame'
+import { CharterDirectorySection } from '../CharterDirectorySection'
+import { EditablePhoneText } from '../EditablePhoneText'
+import { PropertyDirectorySection } from '../PropertyDirectorySection'
+import { EditableBackgroundSection, EditableImage, EditableLink, EditableRichHtml, EditableText } from '../AdminInlinePageEdit'
+import { getContentImageSrc } from '../../lib/contentAssets'
+import { normalizeSiteHtml } from '../../lib/normalizeSiteHtml'
+import { submitPageInquiry } from '../../lib/pageInquiryApi'
+import { appendPathItem, removePathItem, usePageEditor } from '../../lib/usePageEditor'
+import { useSiteShellContent } from '../../lib/useSiteContent'
+
+function makeItemId() {
+  return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+export function RichTextBlockRenderer({ block, path }) {
+  const html = normalizeSiteHtml(block.html ?? '').trim()
+
+  return <EditableRichHtml className="block-rich-text" html={html} path={[...path, 'html']} title="Block Text" />
+}
+
+export function ImageBlockRenderer({ block, path }) {
+  const image = block.image ?? { kind: 'image' }
+  const imageUrl = getContentImageSrc(image, { width: 1200 })
+
+  return (
+    <figure className="block-image">
+      <EditableImage alt={image.alt || ''} className="block-image-photo" decoding="async" image={image} loading="lazy" path={[...path, 'image']} src={imageUrl} />
+      <EditableText as="figcaption" className="block-image-caption" label="Caption" multiline path={[...path, 'caption']} rows={2} value={block.caption ?? ''}>
+        {block.caption ?? ''}
+      </EditableText>
+    </figure>
+  )
+}
+
+export function ImageGalleryBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const images = Array.isArray(block.images) ? block.images : []
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+
+  function addImage() {
+    appendPathItem(pageEditor, [...path, 'images'], images, { kind: 'image', url: '', alt: '', title: '' })
+  }
+
+  function removeImage(index) {
+    removePathItem(pageEditor, [...path, 'images'], images, index)
+  }
+
+  return (
+    <section aria-label="Image gallery" className="block-image-gallery">
+      {images.map((image, index) => (
+        <figure className="block-image-gallery-item" key={index}>
+          <EditableImage
+            alt={image?.alt || ''}
+            className="block-image-gallery-image"
+            decoding="async"
+            image={image}
+            loading="lazy"
+            path={[...path, 'images', index]}
+            src={getContentImageSrc(image, { height: 720, width: 960 })}
+          />
+          {editable ? (
+            <button
+              className="button-link button-link--ghost block-image-gallery-remove"
+              data-admin-inline-editable="true"
+              type="button"
+              onClick={() => removeImage(index)}
+            >
+              Remove image
+            </button>
+          ) : null}
+        </figure>
+      ))}
+      {editable ? (
+        <button className="button-link button-link--ghost block-image-gallery-add" data-admin-inline-editable="true" type="button" onClick={addImage}>
+          Add image
+        </button>
+      ) : null}
+    </section>
+  )
+}
+
+export function CtaBandBlockRenderer({ block, path }) {
+  const action = block.action ?? {}
+
+  return (
+    <section className="block-cta-band">
+      <div className="block-cta-band-inner">
+        <EditableText as="h2" label="CTA Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+          {block.title ?? ''}
+        </EditableText>
+        <EditableText as="p" label="CTA Body" multiline path={[...path, 'body']} rows={4} value={block.body ?? ''}>
+          {block.body ?? ''}
+        </EditableText>
+        <EditableLink
+          allowExternalUrl
+          allowRouteSelection
+          buttonColor={action.backgroundColor}
+          buttonColorPath={[...path, 'action', 'backgroundColor']}
+          className="block-cta-band-button"
+          destination={action.path ?? ''}
+          destinationField="path"
+          destinationLabel="Button Link"
+          destinationPath={[...path, 'action', 'path']}
+          link={action}
+          linkPath={[...path, 'action']}
+          label={action.label ?? ''}
+          labelLabel="Button Text"
+          labelPath={[...path, 'action', 'label']}
+        />
+      </div>
+    </section>
+  )
+}
+
+const SPACER_SIZES = ['small', 'medium', 'large']
+
+export function SpacerBlockRenderer({ block }) {
+  const size = SPACER_SIZES.includes(block.size) ? block.size : 'medium'
+
+  return <div className={`block-spacer block-spacer--${size}`} />
+}
+
+export function SpacerBlockSettings({ block, path }) {
+  const pageEditor = usePageEditor()
+  const size = SPACER_SIZES.includes(block.size) ? block.size : 'medium'
+
+  function handleSizeChange(event) {
+    pageEditor?.updatePath([...path, 'size'], event.target.value)
+  }
+
+  return (
+    <label className="block-toolbar-setting">
+      <span>Size</span>
+      <select data-admin-inline-editable="true" value={size} onChange={handleSizeChange}>
+        <option value="small">Small</option>
+        <option value="medium">Medium</option>
+        <option value="large">Large</option>
+      </select>
+    </label>
+  )
+}
+
+export function HeroBannerBlockRenderer({ block, path }) {
+  const image = block.image ?? { kind: 'image' }
+  const heroImageUrl = getContentImageSrc(image, { height: 900, width: 1920 })
+  const action = block.action ?? {}
+
+  return (
+    <EditableBackgroundSection
+      as="section"
+      className="block-hero"
+      image={image}
+      path={[...path, 'image']}
+      style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
+    >
+      <div className="block-hero-inner">
+        <EditableText as="h1" label="Hero Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+          {block.title ?? ''}
+        </EditableText>
+        <EditableText as="p" label="Hero Lead" multiline path={[...path, 'lead']} rows={3} value={block.lead ?? ''}>
+          {block.lead ?? ''}
+        </EditableText>
+        <EditableLink
+          allowExternalUrl
+          allowRouteSelection
+          buttonColor={action.backgroundColor}
+          buttonColorPath={[...path, 'action', 'backgroundColor']}
+          className="block-hero-button"
+          destination={action.path ?? ''}
+          destinationField="path"
+          destinationLabel="Button Link"
+          destinationPath={[...path, 'action', 'path']}
+          link={action}
+          linkPath={[...path, 'action']}
+          label={action.label ?? ''}
+          labelLabel="Button Text"
+          labelPath={[...path, 'action', 'label']}
+        />
+      </div>
+    </EditableBackgroundSection>
+  )
+}
+
+export function ImageTextSplitBlockRenderer({ block, path }) {
+  const image = block.image ?? { kind: 'image' }
+  const imageUrl = getContentImageSrc(image, { height: 720, width: 960 })
+  const imagePosition = block.imagePosition === 'right' ? 'right' : 'left'
+  const action = block.action ?? {}
+
+  return (
+    <section className={`block-split block-split--image-${imagePosition}`}>
+      <div className="block-split-inner">
+        <div className="block-split-media">
+          <EditableImage
+            alt={image.alt || ''}
+            className="block-split-image"
+            decoding="async"
+            image={image}
+            loading="lazy"
+            path={[...path, 'image']}
+            src={imageUrl}
+          />
+        </div>
+        <div className="block-split-copy">
+          <EditableText as="p" className="block-split-kicker" label="Kicker" path={[...path, 'kicker']} value={block.kicker ?? ''}>
+            {block.kicker ?? ''}
+          </EditableText>
+          <EditableText as="h2" label="Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+            {block.title ?? ''}
+          </EditableText>
+          <EditableRichHtml className="block-split-body" html={normalizeSiteHtml(block.body ?? '').trim()} path={[...path, 'body']} title="Body Text" />
+          <EditableLink
+            allowExternalUrl
+            allowRouteSelection
+            className="block-split-link"
+            destination={action.path ?? ''}
+            destinationField="path"
+            destinationLabel="Link URL"
+            destinationPath={[...path, 'action', 'path']}
+            link={action}
+            linkPath={[...path, 'action']}
+            label={action.label ?? ''}
+            labelLabel="Link Text"
+            labelPath={[...path, 'action', 'label']}
+          />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function ImageTextSplitBlockSettings({ block, path }) {
+  const pageEditor = usePageEditor()
+  const imagePosition = block.imagePosition === 'right' ? 'right' : 'left'
+
+  function handlePositionChange(event) {
+    pageEditor?.updatePath([...path, 'imagePosition'], event.target.value)
+  }
+
+  return (
+    <label className="block-toolbar-setting">
+      <span>Image side</span>
+      <select data-admin-inline-editable="true" value={imagePosition} onChange={handlePositionChange}>
+        <option value="left">Left</option>
+        <option value="right">Right</option>
+      </select>
+    </label>
+  )
+}
+
+const FEATURE_ICON_KINDS = ['star', 'check', 'pin', 'tag']
+
+function BlockFeatureIcon({ kind }) {
+  if (kind === 'check') {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 48 48">
+        <path d="M10 25l9 9 19-19" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" />
+      </svg>
+    )
+  }
+
+  if (kind === 'pin') {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 48 48">
+        <path
+          d="M24 6c-7 0-12.5 5.5-12.5 12.5C11.5 28 24 42 24 42s12.5-14 12.5-23.5C36.5 11.5 31 6 24 6Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+        />
+        <circle cx="24" cy="18.5" fill="currentColor" r="4.5" />
+      </svg>
+    )
+  }
+
+  if (kind === 'tag') {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 48 48">
+        <path d="M8 8h16l16 16-16 16-16-16Z" fill="none" stroke="currentColor" strokeLinejoin="round" strokeWidth="2.5" />
+        <circle cx="16" cy="16" fill="currentColor" r="2.5" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 48 48">
+      <path
+        d="M24 6l4.9 10 11 1.6-8 7.8 1.9 11-9.8-5.2-9.8 5.2 1.9-11-8-7.8 11-1.6Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+      />
+    </svg>
+  )
+}
+
+export function FeatureGridBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const items = Array.isArray(block.items) ? block.items : []
+
+  function addItem() {
+    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), kind: 'star', title: 'New feature', body: '' })
+  }
+
+  function removeItem(index) {
+    removePathItem(pageEditor, [...path, 'items'], items, index)
+  }
+
+  return (
+    <section className="block-feature-grid">
+      <EditableText as="h2" label="Feature Grid Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+        {block.title ?? ''}
+      </EditableText>
+
+      <div className="block-feature-grid-items">
+        {items.map((item, index) => (
+          <article className="block-feature-grid-item" key={item.id ?? index}>
+            <div className="block-feature-grid-icon">
+              <BlockFeatureIcon kind={item.kind} />
+            </div>
+            {editable ? (
+              <select
+                className="block-feature-grid-icon-select"
+                data-admin-inline-editable="true"
+                value={item.kind}
+                onChange={(event) => pageEditor?.updatePath([...path, 'items', index, 'kind'], event.target.value)}
+              >
+                {FEATURE_ICON_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {kind}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            <EditableText as="h3" label={`Feature ${index + 1} Title`} path={[...path, 'items', index, 'title']} value={item.title ?? ''}>
+              {item.title ?? ''}
+            </EditableText>
+            <EditableText
+              as="p"
+              label={`Feature ${index + 1} Description`}
+              multiline
+              path={[...path, 'items', index, 'body']}
+              rows={4}
+              value={item.body ?? ''}
+            >
+              {item.body ?? ''}
+            </EditableText>
+            {editable ? (
+              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
+                Remove feature
+              </button>
+            ) : null}
+          </article>
+        ))}
+      </div>
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-feature-grid-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
+          Add feature
+        </button>
+      ) : null}
+    </section>
+  )
+}
+
+export function TestimonialsBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const items = Array.isArray(block.items) ? block.items : []
+
+  function addItem() {
+    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), author: '', quote: '' })
+  }
+
+  function removeItem(index) {
+    removePathItem(pageEditor, [...path, 'items'], items, index)
+  }
+
+  return (
+    <section className="block-testimonials">
+      <div className="block-testimonials-grid">
+        {items.map((item, index) => (
+          <figure className="block-testimonials-item" key={item.id ?? index}>
+            <EditableText
+              as="blockquote"
+              label={`Testimonial ${index + 1} Quote`}
+              multiline
+              path={[...path, 'items', index, 'quote']}
+              rows={4}
+              value={item.quote ?? ''}
+            >
+              {item.quote ?? ''}
+            </EditableText>
+            <EditableText as="figcaption" label={`Testimonial ${index + 1} Author`} path={[...path, 'items', index, 'author']} value={item.author ?? ''}>
+              {item.author ?? ''}
+            </EditableText>
+            {editable ? (
+              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
+                Remove testimonial
+              </button>
+            ) : null}
+          </figure>
+        ))}
+      </div>
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-testimonials-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
+          Add testimonial
+        </button>
+      ) : null}
+    </section>
+  )
+}
+
+function buildInquiryMailtoHref(contactEmail, { firstName, lastName, email, subject, message }) {
+  const composedBody = [`First name: ${firstName}`, `Last name: ${lastName}`, `Email: ${email}`, '', message].join('\n')
+
+  return `mailto:${contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(composedBody)}`
+}
+
+export function ContactFormBlockRenderer({ block, context = {}, path }) {
+  const page = context.page
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const siteShell = useSiteShellContent()
+  const contactEmail = siteShell?.contact?.primaryEmail ?? ''
+  const [submitStatus, setSubmitStatus] = useState('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+  const [manualSubmitHref, setManualSubmitHref] = useState('')
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+
+    if (editable) {
+      return
+    }
+
+    const form = event.currentTarget
+    const formData = new FormData(form)
+    const firstName = String(formData.get('firstName') ?? '').trim()
+    const lastName = String(formData.get('lastName') ?? '').trim()
+    const email = String(formData.get('email') ?? '').trim()
+    const message = String(formData.get('message') ?? '').trim()
+    const website = String(formData.get('website') ?? '').trim()
+    const subject = block.title || `New inquiry from ${page?.title || page?.navLabel || 'the website'}`
+
+    setSubmitStatus('submitting')
+    setSubmitMessage('')
+    setManualSubmitHref('')
+
+    try {
+      const result = await submitPageInquiry({
+        firstName,
+        lastName,
+        email,
+        message,
+        website,
+        subject,
+        pageTitle: page?.title || page?.navLabel || '',
+        pagePath: page?.path || '',
+      })
+
+      form.reset()
+
+      if (result?.inquiry?.accepted) {
+        setSubmitStatus('success')
+        setSubmitMessage('Thanks. Your message has been received.')
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage('We could not send your message right now.')
+      }
+    } catch (error) {
+      setSubmitStatus('error')
+      setSubmitMessage(error instanceof Error ? error.message : 'We could not send your message right now.')
+
+      if (contactEmail) {
+        setManualSubmitHref(buildInquiryMailtoHref(contactEmail, { firstName, lastName, email, subject, message }))
+      }
+    }
+  }
+
+  return (
+    <section className="block-contact-form">
+      <div className="block-contact-form-inner">
+        <EditableText as="h2" label="Form Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+          {block.title ?? ''}
+        </EditableText>
+        <EditableText as="p" label="Form Intro" multiline path={[...path, 'intro']} rows={4} value={block.intro ?? ''}>
+          {block.intro ?? ''}
+        </EditableText>
+
+        <form className="block-contact-form-fields" data-admin-inline-editable="true" onSubmit={handleSubmit}>
+          <label aria-hidden="true" className="block-contact-form-honeypot" htmlFor={`website-${block.id ?? page?.key ?? 'page'}`}>
+            <span>Website</span>
+            <input autoComplete="off" id={`website-${block.id ?? page?.key ?? 'page'}`} name="website" tabIndex={-1} type="text" />
+          </label>
+
+          <div className="block-contact-form-grid">
+            <label className="block-contact-form-field">
+              <span>First Name</span>
+              <input disabled={submitStatus === 'submitting'} name="firstName" required type="text" />
+            </label>
+            <label className="block-contact-form-field">
+              <span>Last Name</span>
+              <input disabled={submitStatus === 'submitting'} name="lastName" required type="text" />
+            </label>
+            <label className="block-contact-form-field block-contact-form-field--full">
+              <span>Email</span>
+              <input disabled={submitStatus === 'submitting'} name="email" required type="email" />
+            </label>
+            <label className="block-contact-form-field block-contact-form-field--full">
+              <span>Message</span>
+              <textarea disabled={submitStatus === 'submitting'} name="message" required rows={5} />
+            </label>
+          </div>
+
+          <button className="button-link button-link--primary block-contact-form-submit" disabled={editable || submitStatus === 'submitting'} type="submit">
+            {submitStatus === 'submitting' ? 'Sending...' : 'Send Message'}
+          </button>
+
+          {submitMessage ? (
+            <p aria-live="polite" className={`block-contact-form-feedback block-contact-form-feedback--${submitStatus === 'error' ? 'error' : 'success'}`}>
+              {submitMessage}
+            </p>
+          ) : null}
+
+          {manualSubmitHref ? (
+            <p aria-live="polite" className="block-contact-form-feedback">
+              If the website submission is unavailable, use the pre-filled fallback link:{' '}
+              <a href={manualSubmitHref}>Send your message</a>.
+            </p>
+          ) : null}
+        </form>
+      </div>
+    </section>
+  )
+}
+
+export function DirectoryEmbedBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const source = block.source === 'charters' ? 'charters' : 'properties'
+  const hasTitleText = Boolean(String(block.title ?? '').trim())
+
+  const titleNode =
+    pageEditor || hasTitleText ? (
+      <EditableText as="span" label="Directory Title" path={[...path, 'title']} value={block.title ?? ''}>
+        {block.title ?? ''}
+      </EditableText>
+    ) : null
+
+  return (
+    <div className="block-directory-embed">
+      {source === 'charters' ? <CharterDirectorySection title={titleNode} /> : <PropertyDirectorySection title={titleNode} />}
+    </div>
+  )
+}
+
+export function DirectoryEmbedBlockSettings({ block, path }) {
+  const pageEditor = usePageEditor()
+  const source = block.source === 'charters' ? 'charters' : 'properties'
+
+  function handleSourceChange(event) {
+    pageEditor?.updatePath([...path, 'source'], event.target.value)
+  }
+
+  return (
+    <label className="block-toolbar-setting">
+      <span>Source</span>
+      <select data-admin-inline-editable="true" value={source} onChange={handleSourceChange}>
+        <option value="properties">Rental Properties</option>
+        <option value="charters">Charter Boats</option>
+      </select>
+    </label>
+  )
+}
+
+const CONTACT_DETAIL_TYPES = ['text', 'phone', 'link']
+
+export function ContactDetailsBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const items = Array.isArray(block.items) ? block.items : []
+
+  function addItem() {
+    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), href: '', label: 'Label', type: 'text', value: '' })
+  }
+
+  function removeItem(index) {
+    removePathItem(pageEditor, [...path, 'items'], items, index)
+  }
+
+  function handleTypeChange(index, event) {
+    pageEditor?.updatePath([...path, 'items', index, 'type'], event.target.value)
+  }
+
+  return (
+    <div className="block-contact-details">
+      {items.map((item, index) => {
+        const ValueComponent = item.type === 'phone' ? EditablePhoneText : EditableText
+
+        return (
+          <div className="block-contact-details-row" key={item.id ?? index}>
+            <EditableText
+              as="span"
+              className="block-contact-details-label"
+              label={`Detail ${index + 1} Label`}
+              path={[...path, 'items', index, 'label']}
+              value={item.label ?? ''}
+            >
+              {item.label ?? ''}
+            </EditableText>
+            {item.type === 'link' ? (
+              <EditableLink
+                allowExternalUrl
+                className="block-contact-details-value"
+                destination={item.href ?? ''}
+                destinationField="href"
+                destinationLabel={`Detail ${index + 1} Link URL`}
+                destinationPath={[...path, 'items', index, 'href']}
+                external
+                link={item}
+                linkPath={[...path, 'items', index]}
+                label={item.value ?? ''}
+                labelLabel={`Detail ${index + 1} Link Text`}
+                labelPath={[...path, 'items', index, 'value']}
+              />
+            ) : (
+              <ValueComponent
+                as="span"
+                className="block-contact-details-value"
+                label={`Detail ${index + 1} Value`}
+                path={[...path, 'items', index, 'value']}
+                value={item.value ?? ''}
+              >
+                {item.value ?? ''}
+              </ValueComponent>
+            )}
+            {editable ? (
+              <>
+                <select data-admin-inline-editable="true" value={item.type ?? 'text'} onChange={(event) => handleTypeChange(index, event)}>
+                  {CONTACT_DETAIL_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+                <button data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
+                  Remove
+                </button>
+              </>
+            ) : null}
+          </div>
+        )
+      })}
+      {editable ? (
+        <button className="button-link button-link--ghost block-contact-details-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
+          Add detail
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
+export function ScheduleBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const columns = Array.isArray(block.columns) ? block.columns : []
+  const notes = Array.isArray(block.notes) ? block.notes : []
+
+  function addColumn() {
+    appendPathItem(pageEditor, [...path, 'columns'], columns, { id: makeItemId(), heading: 'New column', times: [] })
+  }
+
+  function removeColumn(columnIndex) {
+    removePathItem(pageEditor, [...path, 'columns'], columns, columnIndex)
+  }
+
+  function addTime(columnIndex) {
+    const times = Array.isArray(columns[columnIndex]?.times) ? columns[columnIndex].times : []
+    appendPathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, '')
+  }
+
+  function removeTime(columnIndex, timeIndex) {
+    const times = Array.isArray(columns[columnIndex]?.times) ? columns[columnIndex].times : []
+    removePathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, timeIndex)
+  }
+
+  function addNote() {
+    appendPathItem(pageEditor, [...path, 'notes'], notes, '')
+  }
+
+  function removeNote(noteIndex) {
+    removePathItem(pageEditor, [...path, 'notes'], notes, noteIndex)
+  }
+
+  return (
+    <section className="block-schedule">
+      <EditableText as="h3" label="Schedule Title" path={[...path, 'title']} value={block.title ?? ''}>
+        {block.title ?? ''}
+      </EditableText>
+
+      <div className="block-schedule-columns">
+        {columns.map((column, columnIndex) => (
+          <div className="block-schedule-column" key={column.id ?? columnIndex}>
+            <EditableText
+              as="h4"
+              label={`Column ${columnIndex + 1} Heading`}
+              path={[...path, 'columns', columnIndex, 'heading']}
+              value={column.heading ?? ''}
+            >
+              {column.heading ?? ''}
+            </EditableText>
+
+            <div className="block-schedule-time-list">
+              {(column.times ?? []).map((time, timeIndex) => (
+                <div className="block-schedule-time-row" key={timeIndex}>
+                  <EditableText
+                    as="span"
+                    label={`Column ${columnIndex + 1} Time ${timeIndex + 1}`}
+                    path={[...path, 'columns', columnIndex, 'times', timeIndex]}
+                    value={time}
+                  >
+                    {time}
+                  </EditableText>
+                  {editable ? (
+                    <button data-admin-inline-editable="true" type="button" onClick={() => removeTime(columnIndex, timeIndex)}>
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            {editable ? (
+              <div className="block-schedule-column-actions">
+                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addTime(columnIndex)}>
+                  Add time
+                </button>
+                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeColumn(columnIndex)}>
+                  Remove column
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-schedule-add-column" data-admin-inline-editable="true" type="button" onClick={addColumn}>
+          Add column
+        </button>
+      ) : null}
+
+      <div className="block-schedule-notes">
+        {notes.map((note, noteIndex) => (
+          <div className="block-schedule-note-row" key={noteIndex}>
+            <EditableText as="p" label={`Note ${noteIndex + 1}`} multiline path={[...path, 'notes', noteIndex]} rows={2} value={note}>
+              {note}
+            </EditableText>
+            {editable ? (
+              <button data-admin-inline-editable="true" type="button" onClick={() => removeNote(noteIndex)}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        ))}
+        {editable ? (
+          <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={addNote}>
+            Add note
+          </button>
+        ) : null}
+      </div>
+    </section>
+  )
+}
+
+export function RateTableBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const rows = Array.isArray(block.rows) ? block.rows : []
+  const footer = Array.isArray(block.footer) ? block.footer : []
+  const link = block.link ?? {}
+
+  function addRow() {
+    appendPathItem(pageEditor, [...path, 'rows'], rows, { id: makeItemId(), label: '', values: [''] })
+  }
+
+  function removeRow(rowIndex) {
+    removePathItem(pageEditor, [...path, 'rows'], rows, rowIndex)
+  }
+
+  function addValue(rowIndex) {
+    const values = Array.isArray(rows[rowIndex]?.values) ? rows[rowIndex].values : []
+    appendPathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, '')
+  }
+
+  function removeValue(rowIndex, valueIndex) {
+    const values = Array.isArray(rows[rowIndex]?.values) ? rows[rowIndex].values : []
+    removePathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, valueIndex)
+  }
+
+  function addFooterLine() {
+    appendPathItem(pageEditor, [...path, 'footer'], footer, '')
+  }
+
+  function removeFooterLine(footerIndex) {
+    removePathItem(pageEditor, [...path, 'footer'], footer, footerIndex)
+  }
+
+  return (
+    <section className="block-rate-table">
+      <EditableText as="h3" label="Rate Table Heading" path={[...path, 'heading']} value={block.heading ?? ''}>
+        {block.heading ?? ''}
+      </EditableText>
+
+      <div className="block-rate-table-rows">
+        {rows.map((row, rowIndex) => (
+          <div className="block-rate-table-row" key={row.id ?? rowIndex}>
+            <EditableText
+              as="span"
+              className="block-rate-table-label"
+              label={`Row ${rowIndex + 1} Label`}
+              path={[...path, 'rows', rowIndex, 'label']}
+              value={row.label ?? ''}
+            >
+              {row.label ?? ''}
+            </EditableText>
+
+            <div className="block-rate-table-values">
+              {(row.values ?? []).map((value, valueIndex) => (
+                <span className="block-rate-table-value" key={valueIndex}>
+                  <EditableText
+                    as="span"
+                    label={`Row ${rowIndex + 1} Value ${valueIndex + 1}`}
+                    path={[...path, 'rows', rowIndex, 'values', valueIndex]}
+                    value={value}
+                  >
+                    {value}
+                  </EditableText>
+                  {editable ? (
+                    <button data-admin-inline-editable="true" type="button" onClick={() => removeValue(rowIndex, valueIndex)}>
+                      Remove
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+              {editable ? (
+                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addValue(rowIndex)}>
+                  Add value
+                </button>
+              ) : null}
+            </div>
+
+            {editable ? (
+              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeRow(rowIndex)}>
+                Remove row
+              </button>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-rate-table-add-row" data-admin-inline-editable="true" type="button" onClick={addRow}>
+          Add rate row
+        </button>
+      ) : null}
+
+      <div className="block-rate-table-footer">
+        {footer.map((line, footerIndex) => (
+          <div className="block-rate-table-footer-row" key={footerIndex}>
+            <EditableText as="p" label={`Footer Line ${footerIndex + 1}`} multiline path={[...path, 'footer', footerIndex]} rows={2} value={line}>
+              {line}
+            </EditableText>
+            {editable ? (
+              <button data-admin-inline-editable="true" type="button" onClick={() => removeFooterLine(footerIndex)}>
+                Remove
+              </button>
+            ) : null}
+          </div>
+        ))}
+        {editable ? (
+          <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={addFooterLine}>
+            Add footer line
+          </button>
+        ) : null}
+      </div>
+
+      <EditableLink
+        allowExternalUrl
+        className="block-rate-table-link"
+        destination={link.path ?? ''}
+        destinationField="path"
+        destinationLabel="Link URL"
+        destinationPath={[...path, 'link', 'path']}
+        external
+        link={link}
+        linkPath={[...path, 'link']}
+        label={link.label ?? ''}
+        labelLabel="Link Text"
+        labelPath={[...path, 'link', 'label']}
+      />
+    </section>
+  )
+}
+
+export function GroupBlockRenderer({ block, context, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const items = Array.isArray(block.items) ? block.items : []
+  const [selectedCardId, setSelectedCardId] = useState('')
+  const nestedContext = { ...context, depth: (context?.depth ?? 0) + 1 }
+
+  function addCard() {
+    const newCard = { blocks: [], id: makeItemId(), image: { kind: 'image' }, title: 'New card' }
+    appendPathItem(pageEditor, [...path, 'items'], items, newCard)
+    setSelectedCardId(newCard.id)
+  }
+
+  function removeCard(index) {
+    if (!window.confirm('Remove this card and all of its content?')) {
+      return
+    }
+
+    removePathItem(pageEditor, [...path, 'items'], items, index)
+    setSelectedCardId('')
+  }
+
+  function moveCard(index, direction) {
+    const nextIndex = index + direction
+
+    if (nextIndex < 0 || nextIndex >= items.length) {
+      return
+    }
+
+    pageEditor?.updatePath([...path, 'items'], arrayMove(items, index, nextIndex))
+  }
+
+  return (
+    <section className="block-group">
+      {items.map((item, index) => {
+        const image = item.image ?? { kind: 'image' }
+        const imageUrl = getContentImageSrc(image, { height: 900, width: 640 })
+        const showMedia = editable || Boolean(imageUrl)
+        const cardId = item.id ?? String(index)
+        const isCardSelected = editable && selectedCardId === cardId
+
+        return (
+          <article
+            className={`block-group-card${editable ? ' block-group-card--editable' : ''}${isCardSelected ? ' block-group-card--selected' : ''}`}
+            key={item.id ?? index}
+            onClick={editable ? (event) => event.stopPropagation() : undefined}
+            onClickCapture={
+              editable
+                ? (event) => {
+                    const target = event.target instanceof Element ? event.target : null
+                    const nearestCard = target?.closest('.block-group-card')
+
+                    if (nearestCard === event.currentTarget) {
+                      setSelectedCardId(cardId)
+                    }
+                  }
+                : undefined
+            }
+          >
+            {isCardSelected ? (
+              <div className="block-group-card-toolbar">
+                <button
+                  className="button-link button-link--ghost"
+                  data-admin-inline-editable="true"
+                  disabled={index === 0}
+                  type="button"
+                  onClick={() => moveCard(index, -1)}
+                >
+                  Move card up
+                </button>
+                <button
+                  className="button-link button-link--ghost"
+                  data-admin-inline-editable="true"
+                  disabled={index === items.length - 1}
+                  type="button"
+                  onClick={() => moveCard(index, 1)}
+                >
+                  Move card down
+                </button>
+                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeCard(index)}>
+                  Remove card
+                </button>
+              </div>
+            ) : null}
+
+            {isCardSelected ? (
+              <div className="block-group-card-toolbar block-group-card-toolbar--style">
+                <span className="block-toolbar-style-label">Style</span>
+                <BlockStyleSettings block={item} path={[...path, 'items', index]} />
+              </div>
+            ) : null}
+
+            <BlockStyleFrame block={item}>
+              <div className={`block-group-card-grid${showMedia ? '' : ' block-group-card-grid--no-media'}`}>
+                {showMedia ? (
+                  <div className="block-group-card-media">
+                    <EditableImage
+                      alt={image.alt || ''}
+                      decoding="async"
+                      image={image}
+                      loading="lazy"
+                      path={[...path, 'items', index, 'image']}
+                      src={imageUrl}
+                    />
+                  </div>
+                ) : null}
+
+                <div className="block-group-card-content">
+                  <EditableText as="h2" label={`Card ${index + 1} Title`} path={[...path, 'items', index, 'title']} value={item.title ?? ''}>
+                    {item.title ?? ''}
+                  </EditableText>
+
+                  <BlockList
+                    blocks={Array.isArray(item.blocks) ? item.blocks : []}
+                    context={nestedContext}
+                    path={[...path, 'items', index, 'blocks']}
+                  />
+                </div>
+              </div>
+            </BlockStyleFrame>
+          </article>
+        )
+      })}
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-group-add" data-admin-inline-editable="true" type="button" onClick={addCard}>
+          Add card
+        </button>
+      ) : null}
+    </section>
+  )
+}
+
+const ROW_LAYOUT_PRESETS = [
+  { id: '1', label: '1 column', widths: [1] },
+  { id: '2-equal', label: '2 columns (equal)', widths: [1, 1] },
+  { id: '2-narrow-wide', label: '2 columns (1/3 + 2/3)', widths: [1, 2] },
+  { id: '2-wide-narrow', label: '2 columns (2/3 + 1/3)', widths: [2, 1] },
+  { id: '3-equal', label: '3 columns (equal)', widths: [1, 1, 1] },
+  { id: '4-equal', label: '4 columns (equal)', widths: [1, 1, 1, 1] },
+]
+
+function matchRowPresetId(columns) {
+  const widths = columns.map((column) => Number(column.width) || 1)
+  const match = ROW_LAYOUT_PRESETS.find(
+    (preset) => preset.widths.length === widths.length && preset.widths.every((width, index) => width === widths[index]),
+  )
+  return match?.id ?? ''
+}
+
+function RowColumn({ column, columnIndex, nestedContext, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const [styleOpen, setStyleOpen] = useState(false)
+  const columnPath = [...path, 'columns', columnIndex]
+  const columnWidth = Number(column.width) > 0 ? Number(column.width) : 1
+
+  return (
+    <div className="block-row-column" style={{ flexGrow: columnWidth }}>
+      {editable ? (
+        <div className="block-row-column-toolbar">
+          <span className="block-toolbar-style-label">Column {columnIndex + 1}</span>
+          <label className="block-toolbar-setting">
+            <span>Width ratio</span>
+            <input
+              data-admin-inline-editable="true"
+              max="10"
+              min="1"
+              step="0.5"
+              type="number"
+              value={columnWidth}
+              onChange={(event) => {
+                const nextWidth = Number(event.target.value)
+                pageEditor?.updatePath([...columnPath, 'width'], nextWidth > 0 ? nextWidth : 1)
+              }}
+            />
+          </label>
+          <button
+            className="button-link button-link--ghost"
+            data-admin-inline-editable="true"
+            type="button"
+            onClick={() => setStyleOpen((current) => !current)}
+          >
+            {styleOpen ? 'Hide style' : 'Style'}
+          </button>
+        </div>
+      ) : null}
+
+      {styleOpen ? (
+        <div className="block-row-column-toolbar block-row-column-toolbar--style">
+          <BlockStyleSettings block={column} path={columnPath} />
+        </div>
+      ) : null}
+
+      <BlockStyleFrame block={column}>
+        <BlockList
+          blocks={Array.isArray(column.blocks) ? column.blocks : []}
+          context={nestedContext}
+          emptyMessage="Empty column."
+          path={[...columnPath, 'blocks']}
+        />
+      </BlockStyleFrame>
+    </div>
+  )
+}
+
+export function RowBlockRenderer({ block, context, path }) {
+  const columns = Array.isArray(block.columns) ? block.columns : []
+  const nestedContext = { ...context, depth: (context?.depth ?? 0) + 1 }
+
+  return (
+    <div className="block-row">
+      {columns.map((column, columnIndex) => (
+        <RowColumn column={column} columnIndex={columnIndex} key={column.id ?? columnIndex} nestedContext={nestedContext} path={path} />
+      ))}
+    </div>
+  )
+}
+
+export function RowBlockSettings({ block, path }) {
+  const pageEditor = usePageEditor()
+  const columns = Array.isArray(block.columns) ? block.columns : []
+  const selectedPresetId = matchRowPresetId(columns)
+
+  function applyPreset(presetId) {
+    const preset = ROW_LAYOUT_PRESETS.find((entry) => entry.id === presetId)
+
+    if (!preset) {
+      return
+    }
+
+    const removedColumns = columns.slice(preset.widths.length)
+    const removedColumnsHaveContent = removedColumns.some((column) => Array.isArray(column.blocks) && column.blocks.length > 0)
+
+    if (removedColumnsHaveContent && !window.confirm('Reducing the column count will remove the content in the extra column(s). Continue?')) {
+      return
+    }
+
+    const nextColumns = preset.widths.map((width, index) => (columns[index] ? { ...columns[index], width } : { blocks: [], id: makeItemId(), width }))
+    pageEditor?.updatePath([...path, 'columns'], nextColumns)
+  }
+
+  return (
+    <label className="block-toolbar-setting">
+      <span>Layout</span>
+      <select data-admin-inline-editable="true" value={selectedPresetId} onChange={(event) => applyPreset(event.target.value)}>
+        <option disabled value="">
+          Custom
+        </option>
+        {ROW_LAYOUT_PRESETS.map((preset) => (
+          <option key={preset.id} value={preset.id}>
+            {preset.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+export function TwoColumnTextBlockRenderer({ block, path }) {
+  return (
+    <section className="block-two-column">
+      <EditableRichHtml className="block-two-column-side" html={normalizeSiteHtml(block.left ?? '').trim()} path={[...path, 'left']} title="Left Column" />
+      <EditableRichHtml className="block-two-column-side" html={normalizeSiteHtml(block.right ?? '').trim()} path={[...path, 'right']} title="Right Column" />
+    </section>
+  )
+}
+
+export function BusinessListBlockRenderer({ block, path }) {
+  const pageEditor = usePageEditor()
+  const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const items = Array.isArray(block.items) ? block.items : []
+
+  function addItem() {
+    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), name: 'Business name', phones: [''], website: '' })
+  }
+
+  function removeItem(index) {
+    removePathItem(pageEditor, [...path, 'items'], items, index)
+  }
+
+  function addPhone(itemIndex) {
+    const phones = Array.isArray(items[itemIndex]?.phones) ? items[itemIndex].phones : []
+    appendPathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, '')
+  }
+
+  function removePhone(itemIndex, phoneIndex) {
+    const phones = Array.isArray(items[itemIndex]?.phones) ? items[itemIndex].phones : []
+    removePathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, phoneIndex)
+  }
+
+  return (
+    <section className="block-business-list">
+      <EditableText as="h2" label="List Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+        {block.title ?? ''}
+      </EditableText>
+
+      <div className="block-business-list-items">
+        {items.map((item, index) => (
+          <div className="block-business-list-item" key={item.id ?? index}>
+            {item.website || editable ? (
+              <EditableLink
+                allowExternalUrl
+                className="block-business-list-name"
+                destination={item.website ?? ''}
+                destinationField="website"
+                destinationLabel="Website URL"
+                destinationPath={[...path, 'items', index, 'website']}
+                external
+                link={item}
+                linkPath={[...path, 'items', index]}
+                label={item.name ?? ''}
+                labelLabel="Business Name"
+                labelPath={[...path, 'items', index, 'name']}
+              />
+            ) : (
+              <EditableText as="span" className="block-business-list-name" label="Business Name" path={[...path, 'items', index, 'name']} value={item.name ?? ''}>
+                {item.name ?? ''}
+              </EditableText>
+            )}
+
+            <span className="block-business-list-phones">
+              {(item.phones ?? []).map((phone, phoneIndex) => (
+                <span className="block-business-list-phone" key={phoneIndex}>
+                  <EditablePhoneText label={`Phone ${phoneIndex + 1}`} path={[...path, 'items', index, 'phones', phoneIndex]} value={phone} />
+                  {editable ? (
+                    <button data-admin-inline-editable="true" type="button" onClick={() => removePhone(index, phoneIndex)}>
+                      Remove
+                    </button>
+                  ) : null}
+                </span>
+              ))}
+              {editable ? (
+                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addPhone(index)}>
+                  Add phone
+                </button>
+              ) : null}
+            </span>
+
+            {editable ? (
+              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
+                Remove business
+              </button>
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      {editable ? (
+        <button className="button-link button-link--ghost block-business-list-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
+          Add business
+        </button>
+      ) : null}
+    </section>
+  )
+}

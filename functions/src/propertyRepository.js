@@ -534,11 +534,11 @@ function amenityGroupsToHtml(groups) {
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${title}</h4>`)
+        lines.push(`<h4>${escapeHtml(title)}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -558,7 +558,7 @@ function reviewEntriesToHtml(entries) {
       }
 
       if (quote) {
-        lines.push(`<p>${quote}</p>`)
+        lines.push(`<p>${escapeHtml(quote)}</p>`)
       }
 
       return lines

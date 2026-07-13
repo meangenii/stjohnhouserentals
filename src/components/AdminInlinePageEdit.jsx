@@ -4,33 +4,27 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { resolveLinkRenderConfig } from '../lib/linkRecords'
-import { getClipboardRichTextHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
+import { getClipboardRichTextHtml, richTextValueToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
   applyRichTextFontSize,
   captureCaretOffset,
   captureRichTextSelectionRange,
   restoreCaretOffset,
   restoreRichTextSelectionRange,
-  RICH_TEXT_BLOCK_OPTIONS,
-  RICH_TEXT_FONT_SIZE_OPTIONS,
   readRichTextSelectionState,
 } from '../lib/richTextFormatting'
+import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
+import { useEditorStyleSettings } from '../lib/useEditorStyleSettings'
+import { usePageEditor } from '../lib/usePageEditor'
 import { AdminLinkFields } from './AdminLinkFields'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
 import { RichTextFontSizeInput } from './RichTextFontSizeInput'
-import { RichTextValue } from './RichTextValue'
 
 const AdminMediaManager = lazy(() =>
   import('./AdminMediaManager').then((module) => ({
     default: module.AdminMediaManager,
-  })),
-)
-
-const AdminRichTextEditor = lazy(() =>
-  import('./AdminRichTextEditor').then((module) => ({
-    default: module.AdminRichTextEditor,
   })),
 )
 
@@ -48,11 +42,6 @@ function pathsAreEqual(leftPath = [], rightPath = []) {
   }
 
   return leftPath.every((segment, index) => segment === rightPath[index])
-}
-
-function usePageEditor() {
-  const previewState = useContext(SiteContentPreviewContext)
-  return previewState?.pageEditor ?? null
 }
 
 function useRouteInventory() {
@@ -333,6 +322,9 @@ function InlineTextFormattingToolbar({
     underline: false,
   }))
   const [position, setPosition] = useState({ left: 8, top: 8 })
+  const editorStyleSettings = useEditorStyleSettings()
+  const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
+  const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
 
   useLayoutEffect(() => {
     if (!active || typeof window === 'undefined') {
@@ -546,7 +538,7 @@ function InlineTextFormattingToolbar({
           label="Tag"
           onBeforeOpen={rememberSelection}
           onSelect={handleBlockTagChange}
-          options={RICH_TEXT_BLOCK_OPTIONS}
+          options={blockStyleOptions}
           value={selectionState.blockTag}
         />
       ) : null}
@@ -557,7 +549,7 @@ function InlineTextFormattingToolbar({
         label="Size"
         onBeforeOpen={rememberSelection}
         onSelect={handleFontSizeChange}
-        options={RICH_TEXT_FONT_SIZE_OPTIONS}
+        options={fontSizeOptions}
         value={selectionState.fontSize}
       />
       <InlineToolbarButton active={selectionState.bold} disabled={disabled} onClick={() => applyCommand('bold')}>
@@ -594,6 +586,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   active = false,
   as: Component = 'span',
   className = '',
+  componentDisabled = undefined,
   disabled = false,
   label = 'Text',
   onActivate,
@@ -778,6 +771,219 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     publishNextValue(syncEditableHtml(event.currentTarget))
   }
 
+  const componentStateProps =
+    Component === 'button' && typeof componentDisabled === 'boolean' ? { disabled: componentDisabled } : {}
+
+  return (
+    <Component
+      ref={(node) => {
+        elementRef.current = node
+        assignRef(forwardedRef, node)
+      }}
+      {...rest}
+      {...componentStateProps}
+      className={className}
+      contentEditable={active && !disabled}
+      data-admin-inline-empty={isEmpty ? 'true' : undefined}
+      data-admin-inline-editing={active ? 'true' : undefined}
+      data-placeholder={isEmpty ? label : undefined}
+      dangerouslySetInnerHTML={active ? undefined : { __html: renderedValue }}
+      suppressContentEditableWarning
+      onBlur={active ? handleBlur : undefined}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onInput={active ? handleInput : undefined}
+      onKeyDown={active ? handleKeyDown : undefined}
+      onPaste={active ? handlePaste : undefined}
+    />
+  )
+})
+
+const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditableElement({
+  active = false,
+  as: Component = 'div',
+  className = '',
+  disabled = false,
+  label = 'Text',
+  onActivate,
+  onChange,
+  onClose,
+  onPassthroughClick,
+  registerPublisher,
+  value = '',
+  ...rest
+}, forwardedRef) {
+  const elementRef = useRef(null)
+  const activationModeRef = useRef('cursor-end')
+  const renderedValue = richTextValueToHtml(value)
+  const lastPublishedValueRef = useRef(renderedValue)
+  const [draftValue, setDraftValue] = useState(renderedValue)
+  const currentValue = active ? draftValue : renderedValue
+  const isEmpty = isEmptyHtmlValue(currentValue)
+
+  useEffect(() => {
+    const element = elementRef.current
+    const shouldSyncLocalDraft =
+      renderedValue !== lastPublishedValueRef.current || !active || document.activeElement !== element
+
+    if (!shouldSyncLocalDraft) {
+      return
+    }
+
+    lastPublishedValueRef.current = renderedValue
+    setDraftValue(renderedValue)
+  }, [active, renderedValue])
+
+  useLayoutEffect(() => {
+    const element = elementRef.current
+
+    if (!active || !element || element.innerHTML === renderedValue) {
+      return
+    }
+
+    const isFocused = document.activeElement === element
+    const caretOffsets = isFocused ? captureCaretOffset(element) : null
+
+    element.innerHTML = renderedValue
+
+    if (isFocused) {
+      restoreCaretOffset(element, caretOffsets)
+    }
+  }, [active, renderedValue])
+
+  useLayoutEffect(() => {
+    if (!active) {
+      return
+    }
+
+    const element = elementRef.current
+
+    if (!element) {
+      return
+    }
+
+    if (activationModeRef.current === 'preserve-selection') {
+      activationModeRef.current = 'cursor-end'
+      return
+    }
+
+    if (document.activeElement !== element) {
+      element.focus()
+      focusEditableElementAtEnd(element)
+    }
+  }, [active])
+
+  const publishNextValue = useCallback((nextValue) => {
+    lastPublishedValueRef.current = nextValue
+    setDraftValue(nextValue)
+    onChange?.(nextValue)
+  }, [onChange])
+
+  function syncEditableHtml(element) {
+    const normalizedValue = isEmptyHtmlValue(element?.innerHTML) ? '' : richTextValueToHtml(element?.innerHTML ?? '')
+
+    if (element && element.innerHTML !== normalizedValue) {
+      const isFocused = document.activeElement === element
+      const caretOffsets = isFocused ? captureCaretOffset(element) : null
+
+      element.innerHTML = normalizedValue
+
+      if (isFocused) {
+        restoreCaretOffset(element, caretOffsets)
+      }
+    }
+
+    return normalizedValue
+  }
+
+  useEffect(() => {
+    if (typeof registerPublisher !== 'function') {
+      return undefined
+    }
+
+    registerPublisher(publishNextValue)
+
+    return () => {
+      registerPublisher(null)
+    }
+  }, [publishNextValue, registerPublisher])
+
+  function handleClick(event) {
+    if (disabled) {
+      onPassthroughClick?.(event)
+      return
+    }
+
+    if (!active) {
+      event.preventDefault()
+      event.stopPropagation()
+      onActivate?.()
+      return
+    }
+
+    if (event.target instanceof Element && event.target.closest('a')) {
+      event.preventDefault()
+    }
+
+    event.stopPropagation()
+
+    if (document.activeElement !== elementRef.current) {
+      elementRef.current?.focus()
+
+      if (!hasSelectionInsideElement(elementRef.current)) {
+        focusEditableElementAtEnd(elementRef.current)
+      }
+    }
+  }
+
+  function handleMouseDown(event) {
+    if (disabled) {
+      return
+    }
+
+    if (!active) {
+      activationModeRef.current = 'preserve-selection'
+      event.stopPropagation()
+      flushSync(() => {
+        onActivate?.()
+      })
+      return
+    }
+
+    event.stopPropagation()
+  }
+
+  function handleInput(event) {
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
+  function handlePaste(event) {
+    const pastedHtml = getClipboardRichTextHtml(event.clipboardData)
+
+    if (!pastedHtml) {
+      return
+    }
+
+    event.preventDefault()
+    document.execCommand('insertHTML', false, pastedHtml)
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
+  function handleKeyDown(event) {
+    if (event.key !== 'Escape') {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    onClose?.()
+    event.currentTarget.blur()
+  }
+
+  function handleBlur(event) {
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
   return (
     <Component
       ref={(node) => {
@@ -917,6 +1123,7 @@ export function EditableLink({
   const shouldRenderExternalLink = !renderConfig.isInternal
   const linkStyle = buttonColorPath && normalizedButtonColor ? { ...style, backgroundColor: normalizedButtonColor } : style
   const Component = field.isEnabled ? 'a' : shouldRenderExternalLink ? 'a' : Link
+  const publishValueRef = useRef(null)
   const linkProps = field.isEnabled
     ? {
         href: renderConfig.destination || '#',
@@ -932,6 +1139,7 @@ export function EditableLink({
       : {
           to: renderConfig.to,
         }
+  const showInlineSettings = isActive && ((destinationPath && !sharesDestinationPath) || buttonColorPath)
 
   function handleDestinationModeChange(nextMode) {
     if (!destinationPath) {
@@ -949,46 +1157,53 @@ export function EditableLink({
     }
   }
 
-  function handleActivate(event) {
-    if (!field.isEnabled || field.disabled) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    field.activate()
-  }
-
-  function handleActivateMouseDown(event) {
-    if (!field.isEnabled || field.disabled) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    flushSync(() => {
-      field.activate()
-    })
-  }
-
   return (
     <>
-      <Component
+      <InlineTextEditableElement
         ref={anchorRef}
+        active={isActive}
+        as={Component}
         {...linkProps}
         {...rest}
         className={buildEditableClassName(className, field.isEnabled, isActive)}
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
-        onClick={handleActivate}
-        onMouseDown={handleActivateMouseDown}
+        disabled={!field.isEnabled || field.disabled}
+        label={labelLabel}
+        onActivate={field.activate}
+        onChange={(nextValue) => field.updatePath(textPath, nextValue)}
+        onClose={field.close}
+        registerPublisher={(publisher) => {
+          publishValueRef.current = typeof publisher === 'function' ? publisher : null
+        }}
         style={linkStyle}
-      >
-        <RichTextValue value={label} />
-      </Component>
+        value={label ?? ''}
+      />
 
-      <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={labelLabel}>
-        <InlinePopoverContent>
-          <AdminRichTextEditor compact label={labelLabel} onChange={(nextValue) => field.updatePath(textPath, nextValue)} value={label ?? ''} />
+      <InlineTextFormattingToolbar
+        active={isActive}
+        allowLinkFormatting={false}
+        anchorRef={anchorRef}
+        disabled={!field.isEnabled || field.disabled}
+        fixedBlockTag="span"
+        onClose={field.close}
+        onSync={(nextValue) => {
+          if (typeof publishValueRef.current === 'function') {
+            publishValueRef.current(nextValue)
+            return
+          }
+
+          field.updatePath(textPath, nextValue)
+        }}
+      />
+
+      {showInlineSettings ? (
+        <div
+          className="admin-inline-link-settings"
+          data-admin-inline-editable="true"
+          onClick={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <span className="admin-inline-link-settings-label">Link</span>
           {destinationPath && !sharesDestinationPath ? (
             linkEditorEnabled ? (
               <AdminLinkFields
@@ -1037,7 +1252,7 @@ export function EditableLink({
             )
           ) : null}
           {buttonColorPath ? (
-            <label className="admin-field">
+            <label className="admin-field admin-inline-link-color-field">
               <span>{buttonColorLabel}</span>
               <div className="admin-inline-background-color-row">
                 <input
@@ -1055,8 +1270,8 @@ export function EditableLink({
               </div>
             </label>
           ) : null}
-        </InlinePopoverContent>
-      </InlinePopover>
+        </div>
+      ) : null}
     </>
   )
 }
@@ -1071,53 +1286,50 @@ export function EditableButton({
   ...rest
 }) {
   const anchorRef = useRef(null)
+  const publishValueRef = useRef(null)
   const field = useEditableField(labelPath)
   const isActive = field.isActive
   const buttonDisabled = field.isEnabled ? field.disabled : disabled
 
-  function handleActivate(event) {
-    if (!field.isEnabled || field.disabled) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    field.activate()
-  }
-
-  function handleActivateMouseDown(event) {
-    if (!field.isEnabled || field.disabled) {
-      return
-    }
-
-    event.preventDefault()
-    event.stopPropagation()
-    flushSync(() => {
-      field.activate()
-    })
-  }
-
   return (
     <>
-      <button
+      <InlineTextEditableElement
         ref={anchorRef}
+        active={isActive}
+        as="button"
         {...rest}
         className={buildEditableClassName(className, field.isEnabled, isActive)}
+        componentDisabled={buttonDisabled}
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         aria-disabled={buttonDisabled ? 'true' : undefined}
-        disabled={buttonDisabled}
+        disabled={!field.isEnabled || field.disabled}
+        label={labelLabel}
+        onActivate={field.activate}
+        onChange={(nextValue) => field.updatePath(labelPath, nextValue)}
+        onClose={field.close}
+        registerPublisher={(publisher) => {
+          publishValueRef.current = typeof publisher === 'function' ? publisher : null
+        }}
         type={type}
-        onClick={handleActivate}
-        onMouseDown={handleActivateMouseDown}
-      >
-        <RichTextValue value={label} />
-      </button>
+        value={label ?? ''}
+      />
 
-      <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title={labelLabel}>
-        <InlinePopoverContent>
-          <AdminRichTextEditor compact label={labelLabel} onChange={(nextValue) => field.updatePath(labelPath, nextValue)} value={label ?? ''} />
-        </InlinePopoverContent>
-      </InlinePopover>
+      <InlineTextFormattingToolbar
+        active={isActive}
+        allowLinkFormatting={false}
+        anchorRef={anchorRef}
+        disabled={!field.isEnabled || field.disabled}
+        fixedBlockTag="span"
+        onClose={field.close}
+        onSync={(nextValue) => {
+          if (typeof publishValueRef.current === 'function') {
+            publishValueRef.current(nextValue)
+            return
+          }
+
+          field.updatePath(labelPath, nextValue)
+        }}
+      />
     </>
   )
 }
@@ -1412,48 +1624,57 @@ export function EditableBackgroundSection({
 }
 
 export function EditableRichHtml({ className = '', html = '', path, title = 'Body HTML' }) {
+  const anchorRef = useRef(null)
+  const publishValueRef = useRef(null)
   const field = useEditableField(path)
   const isActive = field.isActive
   const navigate = useNavigate()
 
-  function handleActivate(event) {
-    if (!field.isEnabled || field.disabled) {
-      const nextPath = findInternalNavigationTarget(event)
+  function handlePassthroughClick(event) {
+    const nextPath = findInternalNavigationTarget(event)
 
-      if (nextPath) {
-        event.preventDefault()
-        navigate(nextPath)
-      }
-
-      return
+    if (nextPath) {
+      event.preventDefault()
+      navigate(nextPath)
     }
-
-    event.preventDefault()
-    event.stopPropagation()
-    field.activate()
   }
 
   return (
     <>
-      <div
+      <InlineRichHtmlEditableElement
+        ref={anchorRef}
+        active={isActive}
+        as="div"
         className={buildEditableClassName(className, field.isEnabled, isActive)}
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
-        dangerouslySetInnerHTML={{ __html: html }}
-        onClick={handleActivate}
+        disabled={!field.isEnabled || field.disabled}
+        label={title}
+        onActivate={field.activate}
+        onChange={(nextValue) => field.updatePath(path, nextValue)}
+        onClose={field.close}
+        onPassthroughClick={handlePassthroughClick}
+        registerPublisher={(publisher) => {
+          publishValueRef.current = typeof publisher === 'function' ? publisher : null
+        }}
+        value={html}
       />
 
-      {isActive ? (
-        <div className="admin-inline-embedded-editor" data-admin-inline-editable={field.isEnabled ? 'true' : undefined}>
-          <InlinePopoverContent>
-            <AdminRichTextEditor label={title} onChange={(nextValue) => field.updatePath(path, nextValue)} value={html} />
-          </InlinePopoverContent>
-          <div className="admin-inline-embedded-editor-actions">
-            <button className="button-link button-link--ghost" type="button" onClick={field.close}>
-              Done
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <InlineTextFormattingToolbar
+        active={isActive}
+        allowBlockFormatting
+        allowLineBreaks
+        anchorRef={anchorRef}
+        disabled={!field.isEnabled || field.disabled}
+        onClose={field.close}
+        onSync={(nextValue) => {
+          if (typeof publishValueRef.current === 'function') {
+            publishValueRef.current(nextValue)
+            return
+          }
+
+          field.updatePath(path, richTextValueToHtml(nextValue))
+        }}
+      />
     </>
   )
 }

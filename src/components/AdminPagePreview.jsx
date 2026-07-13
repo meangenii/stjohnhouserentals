@@ -11,6 +11,7 @@ import { PropertyForSalePage } from '../pages/PropertyForSalePage'
 import { RentalAccommodationsPage } from '../pages/RentalAccommodationsPage'
 import { StJohnCarRentalsPage } from '../pages/StJohnCarRentalsPage'
 import { SiteFrame } from './SiteLayout'
+import { BlockPage } from './BlockPage'
 import { ContentPage } from './ContentPage'
 import { resolveContentAssets } from '../lib/contentAssets'
 import { createInlinePageEditorValue } from '../lib/inlinePageEditor'
@@ -32,6 +33,10 @@ const structuredPagePreviewComponents = {
 
 function renderPreviewBody(page, pageKey) {
   const PreviewComponent = structuredPagePreviewComponents[pageKey]
+
+  if (page.contentModel === 'block-page') {
+    return <BlockPage page={page} />
+  }
 
   if (page.contentModel === 'rich-content-page' || page.contentModel === 'legal-content-page' || !PreviewComponent) {
     return <ContentPage page={page} />
@@ -125,7 +130,7 @@ export function AdminPageEditorCanvas({
     }
 
     const editorChromeTarget = target.closest(
-      '[data-admin-inline-editable="true"], .admin-inline-popover, .admin-inline-format-toolbar, .admin-inline-link-settings, .admin-inline-embedded-editor',
+      '[data-admin-inline-editable="true"], .admin-inline-popover, .admin-inline-format-toolbar, .admin-inline-link-settings',
     )
 
     if (activeFieldId && !editorChromeTarget) {

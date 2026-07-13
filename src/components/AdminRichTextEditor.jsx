@@ -9,10 +9,10 @@ import {
   elementIntersectsRange,
   restoreCaretOffset,
   restoreRichTextSelectionRange,
-  RICH_TEXT_BLOCK_OPTIONS,
-  RICH_TEXT_FONT_SIZE_OPTIONS,
   readRichTextSelectionState,
 } from '../lib/richTextFormatting'
+import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
+import { useEditorStyleSettings } from '../lib/useEditorStyleSettings'
 import { AdminLinkFields } from './AdminLinkFields'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
 import { RichTextFontSizeInput } from './RichTextFontSizeInput'
@@ -73,6 +73,9 @@ export function AdminRichTextEditor({
     italic: false,
     underline: false,
   }))
+  const editorStyleSettings = useEditorStyleSettings()
+  const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
+  const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
   const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
   const renderedValue = richTextValueToHtml(value)
 
@@ -543,7 +546,7 @@ export function AdminRichTextEditor({
                 label="Tag"
                 onBeforeOpen={rememberSelection}
                 onSelect={handleBlockTagChange}
-                options={RICH_TEXT_BLOCK_OPTIONS}
+                options={blockStyleOptions}
                 value={selectionState.blockTag}
               />
               <AdminRichTextMenu
@@ -552,7 +555,7 @@ export function AdminRichTextEditor({
                 label="Size"
                 onBeforeOpen={rememberSelection}
                 onSelect={handleFontSizeChange}
-                options={RICH_TEXT_FONT_SIZE_OPTIONS}
+                options={fontSizeOptions}
                 value={selectionState.fontSize}
               />
               <ToolbarButton active={selectionState.bold} disabled={disabled} onClick={() => applyCommand('bold')}>

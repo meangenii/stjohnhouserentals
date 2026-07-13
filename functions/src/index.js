@@ -307,6 +307,17 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'POST' && path === 'contact/inquiry') {
+      const inquiry = await saveAdvertiseInquiry({ source: 'page', ...request.body }, request)
+
+      response.status(201).json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        inquiry,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/contact/advertise') {
       await requireAdminUser(request)
       response.json({

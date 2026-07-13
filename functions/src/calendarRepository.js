@@ -1,4 +1,6 @@
 const dns = require('node:dns/promises')
+const http = require('node:http')
+const https = require('node:https')
 const { HttpError } = require('./firebaseAdmin')
 
 const FETCH_TIMEOUT_MS = 10000
@@ -68,37 +70,19 @@ async function assertSafeIcsUrl(rawUrl) {
 }
 
 async function readLimitedText(response, maxBytes) {
-  const reader = typeof response.body?.getReader === 'function' ? response.body.getReader() : null
-
-  if (!reader) {
-    const text = await response.text()
-
-    if (Buffer.byteLength(text, 'utf8') > maxBytes) {
-      throw new HttpError(502, 'Calendar feed is too large.')
-    }
-
-    return text
-  }
-
   const decoder = new TextDecoder()
   const chunks = []
   let received = 0
 
-  for (;;) {
-    const { done, value } = await reader.read()
-
-    if (done) {
-      break
-    }
-
-    received += value.byteLength
+  for await (const chunk of response) {
+    received += chunk.length
 
     if (received > maxBytes) {
-      await reader.cancel().catch(() => {})
+      response.destroy()
       throw new HttpError(502, 'Calendar feed is too large.')
     }
 
-    chunks.push(decoder.decode(value, { stream: true }))
+    chunks.push(decoder.decode(chunk, { stream: true }))
   }
 
   chunks.push(decoder.decode())
@@ -106,28 +90,67 @@ async function readLimitedText(response, maxBytes) {
   return chunks.join('')
 }
 
+// Pins the DNS resolution used to open the actual connection to the same
+// lookup that enforces the private/reserved-address block, so a DNS-rebinding
+// host can't pass the safety check with one address and connect with another.
+function createPinnedLookup() {
+  return function pinnedLookup(hostname, options, callback) {
+    dns
+      .lookup(hostname, { all: true, verbatim: true })
+      .then((addresses) => {
+        if (addresses.length === 0 || addresses.some((address) => isPrivateOrReservedIp(address.address, address.family))) {
+          callback(new Error('Calendar URL resolves to a disallowed address.'))
+          return
+        }
+
+        if (options && options.all) {
+          callback(null, addresses)
+        } else {
+          callback(null, addresses[0].address, addresses[0].family)
+        }
+      })
+      .catch((error) => callback(error))
+  }
+}
+
+function requestOnce(url, signal) {
+  return new Promise((resolve, reject) => {
+    const transport = url.protocol === 'https:' ? https : http
+    const request = transport.request(
+      url,
+      {
+        method: 'GET',
+        signal,
+        lookup: createPinnedLookup(),
+        headers: { Accept: 'text/calendar, text/plain, */*' },
+      },
+      (response) => resolve(response),
+    )
+
+    request.on('error', reject)
+    request.end()
+  })
+}
+
 async function fetchIcsText(initialUrl) {
   let currentUrl = initialUrl
 
   for (let attempt = 0; attempt <= MAX_REDIRECTS; attempt += 1) {
-    await assertSafeIcsUrl(currentUrl)
+    const parsedUrl = await assertSafeIcsUrl(currentUrl)
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
     let response
 
     try {
-      response = await fetch(currentUrl, {
-        signal: controller.signal,
-        redirect: 'manual',
-        headers: { Accept: 'text/calendar, text/plain, */*' },
-      })
+      response = await requestOnce(parsedUrl, controller.signal)
     } finally {
       clearTimeout(timeout)
     }
 
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('location')
+    if (response.statusCode >= 300 && response.statusCode < 400) {
+      const location = response.headers.location
+      response.resume()
 
       if (!location) {
         throw new HttpError(502, 'Calendar URL redirected without a location.')
@@ -137,8 +160,9 @@ async function fetchIcsText(initialUrl) {
       continue
     }
 
-    if (!response.ok) {
-      throw new HttpError(502, `Calendar URL responded with status ${response.status}.`)
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      response.resume()
+      throw new HttpError(502, `Calendar URL responded with status ${response.statusCode}.`)
     }
 
     return readLimitedText(response, MAX_RESPONSE_BYTES)

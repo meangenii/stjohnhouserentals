@@ -7,7 +7,7 @@ function normalizeTypedFontSize(value) {
     return ''
   }
 
-  return /^\d+(?:\.\d+)?$/.test(trimmedValue) ? `${trimmedValue}px` : trimmedValue
+  return /^\d+(?:\.\d+)?$/.test(trimmedValue) ? `${trimmedValue}pt` : trimmedValue
 }
 
 export function RichTextFontSizeInput({ disabled = false, onApply }) {
@@ -31,7 +31,7 @@ export function RichTextFontSizeInput({ disabled = false, onApply }) {
       <input
         aria-label="Custom font size"
         disabled={disabled}
-        placeholder="e.g. 20px or 1.4rem"
+        placeholder="e.g. 12pt"
         type="text"
         value={draft}
         onChange={(event) => setDraft(event.target.value)}

@@ -4,11 +4,12 @@ import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquir
 import { AdminBackupManager } from '../components/AdminBackupManager'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
-import { AdminPageEditorCanvas } from '../components/AdminPagePreview'
+import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
 import { AdminMediaManager } from '../components/AdminMediaManager'
 import { AdminSiteShellEditor } from '../components/AdminSiteShellEditor'
+import { AdminStyleEditor } from '../components/AdminStyleEditor'
 import {
   isCharterEditingEnabled,
   isFirebaseCharterData,
@@ -26,6 +27,7 @@ import {
   saveAdminProperty,
   setAdminPropertyActiveState,
 } from '../lib/propertyRepository'
+import { buildPropertyLocationOptions } from '../lib/propertyLocationFilters'
 import { buildPropertyShortDescription, mergePropertyShortDescription } from '../lib/propertyShortDescription'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
 import { richTextValueToHtml, richTextValueToInlineHtml, richTextValueToPlainLineText } from '../lib/richTextValue'
@@ -36,6 +38,7 @@ import {
   isSiteContentEditingEnabled,
   publishAdminSiteShellContent,
   publishAdminStructuredPageContent,
+  resetAdminStructuredPageContent,
   saveAdminSiteShellContent,
   saveAdminStructuredPageContent,
 } from '../lib/siteContentRepository'
@@ -112,6 +115,54 @@ function isActualPublicRoutePath(path) {
   return Boolean(path) && path !== '/admin' && !path.includes('/:')
 }
 
+const RESERVED_PAGE_PATH_PREFIXES = ['/admin', '/rental-properties/', '/1bedroom/', '/charter-boat-rentals/']
+
+function isReservedPagePath(path) {
+  if (!path || path === '/') {
+    return true
+  }
+
+  return RESERVED_PAGE_PATH_PREFIXES.some((prefix) => {
+    const prefixWithoutSlash = prefix.replace(/\/$/, '')
+    return path === prefixWithoutSlash || path.startsWith(`${prefixWithoutSlash}/`)
+  })
+}
+
+function findPagePathConflict(path, { inventory = [], structuredPages = [] } = {}) {
+  if (isReservedPagePath(path)) {
+    return 'That URL is reserved by the site. Choose a different one.'
+  }
+
+  const takenPaths = new Set()
+
+  inventory.forEach((route) => {
+    normalizeAdminRoutePath(route?.path) && takenPaths.add(normalizeAdminRoutePath(route.path))
+    ;(route?.routeAliases ?? []).forEach((alias) => normalizeAdminRoutePath(alias) && takenPaths.add(normalizeAdminRoutePath(alias)))
+  })
+
+  structuredPages.forEach((page) => {
+    normalizeAdminRoutePath(page?.path) && takenPaths.add(normalizeAdminRoutePath(page.path))
+  })
+
+  return takenPaths.has(path) ? 'A page already uses that URL. Choose a different one.' : ''
+}
+
+function findPageKeyConflict(key, structuredPages = []) {
+  return structuredPages.some((page) => page.key === key) ? 'A page already uses that key. Choose a different title.' : ''
+}
+
+function buildNewPageDraft({ path, title }) {
+  return {
+    blocks: [],
+    contentModel: 'block-page',
+    group: 'custom',
+    metaDescription: '',
+    navLabel: title,
+    path,
+    title,
+  }
+}
+
 const ADMIN_EDITOR_LOCATION_STORAGE_KEY = 'genericcms.admin.editor-location'
 const DEFAULT_ADMIN_EDITOR_LOCATION = {
   tab: 'pages',
@@ -121,7 +172,7 @@ const DEFAULT_ADMIN_EDITOR_LOCATION = {
   charterMode: 'create',
   charterSlug: '',
 }
-const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'properties', 'charters', 'media', 'submissions', 'backups'])
+const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'styles', 'properties', 'charters', 'media', 'submissions', 'backups'])
 
 function normalizeAdminEditorTab(value = '') {
   const candidate = String(value ?? '').trim()
@@ -859,6 +910,7 @@ export function AdminPage() {
     mode: preferredPropertyMode,
     activeSlug: preferredPropertyMode === 'edit' ? preferredPropertySlug : '',
   }))
+  const propertyEditorSessionRef = useRef(0)
   const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
   const [propertyPreviewViewState, setPropertyPreviewViewState] = useState(() => ({
     key: '',
@@ -909,7 +961,12 @@ export function AdminPage() {
   const [pageFeedback, setPageFeedback] = useState('')
   const [pageSaveStatus, setPageSaveStatus] = useState('idle')
   const [pagePublication, setPagePublication] = useState(null)
+  const [newPageForm, setNewPageForm] = useState(null)
+  const [newPageStatus, setNewPageStatus] = useState('idle')
+  const [newPageError, setNewPageError] = useState('')
+  const [pageDeleteStatus, setPageDeleteStatus] = useState('idle')
   const [pagePreviewDevice, setPagePreviewDevice] = useState('desktop')
+  const [pagePreviewViewState, setPagePreviewViewState] = useState(() => ({ key: '', mode: 'edit' }))
   const propertyFloatingSaveRef = useRef(null)
 
   const siteContentEditingEnabled = isSiteContentEditingEnabled()
@@ -1399,6 +1456,7 @@ export function AdminPage() {
   }
 
   function openCreateForm() {
+    propertyEditorSessionRef.current += 1
     const nextFormState = createEmptyFormState()
     setEditorState({ mode: 'create', activeSlug: '' })
     setFormState(nextFormState)
@@ -1409,6 +1467,7 @@ export function AdminPage() {
   }
 
   function openEditForm(property) {
+    propertyEditorSessionRef.current += 1
     const nextFormState = createFormState(property)
     setEditorState({ mode: 'edit', activeSlug: property.slug })
     setFormState(nextFormState)
@@ -1416,6 +1475,14 @@ export function AdminPage() {
     setPropertyPublication(property.publication ?? null)
     setGalleryEditorExpanded(false)
     setFeedback('')
+  }
+
+  function confirmDiscardPropertyChangesIfNeeded() {
+    if (!propertyDirty) {
+      return true
+    }
+
+    return window.confirm('You have unsaved property edits. Switch properties and discard those changes?')
   }
 
   function updateFormState(field, value) {
@@ -1635,6 +1702,8 @@ export function AdminPage() {
   }
 
   async function persistPropertyForm(nextFormState, successMessage = '') {
+    const sessionAtStart = propertyEditorSessionRef.current
+
     try {
       setSaveStatus('saving')
       const editorMode = editorState.mode
@@ -1650,6 +1719,13 @@ export function AdminPage() {
       )
       const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
+
+      if (propertyEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different property draft; don't clobber it with this save's result.
+        setSaveStatus('idle')
+        return savedProperty
+      }
+
       const persistedFormState = createFormState(savedProperty)
       setEditorState({ mode: 'edit', activeSlug: savedProperty.slug })
       setFormState(persistedFormState)
@@ -1683,12 +1759,21 @@ export function AdminPage() {
   }
 
   async function handlePublishProperty() {
+    const sessionAtStart = propertyEditorSessionRef.current
+
     try {
       setSaveStatus('publishing')
       const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
       const publishedProperty = await publishAdminProperty(formState.originalSlug, requestOptions)
       const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
+
+      if (propertyEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different property draft; don't clobber it with this publish's result.
+        setSaveStatus('idle')
+        return
+      }
+
       const nextFormState = createFormState(publishedProperty)
       setEditorState({ mode: 'edit', activeSlug: publishedProperty.slug })
       setFormState(nextFormState)
@@ -1726,6 +1811,8 @@ export function AdminPage() {
       return
     }
 
+    const sessionAtStart = propertyEditorSessionRef.current
+
     try {
       setSaveStatus('saving')
       const requestOptions = await getAdminRequestOptions()
@@ -1747,9 +1834,16 @@ export function AdminPage() {
 
       const updatedProperty = await setAdminPropertyActiveState(currentFormState.originalSlug, nextActive, requestOptions)
       const properties = await listAllProperties(requestOptions)
+      setWorkspaceState({ status: 'ready', properties })
+
+      if (propertyEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different property draft; don't clobber it with this toggle's result.
+        setSaveStatus('idle')
+        return
+      }
+
       const nextFormState = createFormState(updatedProperty)
 
-      setWorkspaceState({ status: 'ready', properties })
       setEditorState({ mode: 'edit', activeSlug: updatedProperty.slug })
       setFormState(nextFormState)
       setSavedFormState(nextFormState)
@@ -1949,6 +2043,10 @@ export function AdminPage() {
   function handlePropertySelectionChange(event) {
     const selectedSlug = String(event.target.value ?? '').trim()
 
+    if (!confirmDiscardPropertyChangesIfNeeded()) {
+      return
+    }
+
     if (!selectedSlug) {
       openCreateForm()
       return
@@ -1959,6 +2057,14 @@ export function AdminPage() {
     if (selectedProperty) {
       openEditForm(selectedProperty)
     }
+  }
+
+  function handleNewPropertyClick() {
+    if (!confirmDiscardPropertyChangesIfNeeded()) {
+      return
+    }
+
+    openCreateForm()
   }
 
   function handleCharterSelectionChange(event) {
@@ -2000,14 +2106,12 @@ export function AdminPage() {
     await loadStructuredPageIntoEditor(pageKey)
   }
 
-  async function handleSiteShellSubmit(event) {
-    event.preventDefault()
+  function handleSiteShellDraftChange(updater) {
+    setSiteShellEditedSinceLoad(true)
+    setSiteShellDraft(updater)
+  }
 
-    if (!siteShellDirty && hasPendingPublication(siteShellPublication)) {
-      await handlePublishSiteShell()
-      return
-    }
-
+  async function saveSiteShellDraft() {
     try {
       setSiteShellSaveStatus('saving')
       const requestOptions = await getAdminRequestOptions()
@@ -2021,6 +2125,17 @@ export function AdminPage() {
       setSiteShellSaveStatus('error')
       setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to save the site shell.')
     }
+  }
+
+  async function handleSiteShellSubmit(event) {
+    event.preventDefault()
+
+    if (!siteShellDirty && hasPendingPublication(siteShellPublication)) {
+      await handlePublishSiteShell()
+      return
+    }
+
+    await saveSiteShellDraft()
   }
 
   async function handlePublishSiteShell() {
@@ -2115,7 +2230,121 @@ export function AdminPage() {
     setPageFeedback(`Restored the last saved draft for ${selectedStructuredPage?.navLabel || selectedStructuredPage?.key || 'this page'}.`)
   }
 
+  function openNewPageForm() {
+    setNewPageForm({ path: '', pathTouched: false, title: '' })
+    setNewPageError('')
+    setNewPageStatus('idle')
+  }
+
+  function closeNewPageForm() {
+    setNewPageForm(null)
+    setNewPageError('')
+    setNewPageStatus('idle')
+  }
+
+  function updateNewPageForm(field, value) {
+    setNewPageForm((currentForm) => {
+      if (!currentForm) {
+        return currentForm
+      }
+
+      if (field === 'title') {
+        const shouldRefreshPath = !currentForm.pathTouched
+        return {
+          ...currentForm,
+          title: value,
+          path: shouldRefreshPath ? `/${createRouteSlugCandidate(value)}` : currentForm.path,
+        }
+      }
+
+      if (field === 'path') {
+        const slug = createRouteSlugCandidate(value.replace(/^\//, ''))
+        return { ...currentForm, path: `/${slug}`, pathTouched: true }
+      }
+
+      return { ...currentForm, [field]: value }
+    })
+  }
+
+  async function handleCreatePage(event) {
+    event.preventDefault()
+
+    if (!newPageForm) {
+      return
+    }
+
+    const title = repairSnapshotText(newPageForm.title).trim()
+    const path = normalizeAdminRoutePath(newPageForm.path)
+    const key = createRouteSlugCandidate(title)
+
+    if (!title) {
+      setNewPageError('Enter a page title.')
+      return
+    }
+
+    if (!path || path === '/') {
+      setNewPageError('Enter a URL for the page.')
+      return
+    }
+
+    if (!key) {
+      setNewPageError('That title cannot be turned into a page key. Try adding letters or numbers.')
+      return
+    }
+
+    const keyConflict = findPageKeyConflict(key, structuredPages)
+
+    if (keyConflict) {
+      setNewPageError(keyConflict)
+      return
+    }
+
+    const pathConflict = findPagePathConflict(path, { inventory: pageWorkspaceState.inventory, structuredPages })
+
+    if (pathConflict) {
+      setNewPageError(pathConflict)
+      return
+    }
+
+    try {
+      setNewPageStatus('saving')
+      setNewPageError('')
+      const requestOptions = await getAdminRequestOptions()
+      await saveAdminStructuredPageContent(key, buildNewPageDraft({ path, title }), requestOptions)
+      await reloadStructuredPageWorkspace(key)
+      setNewPageStatus('idle')
+      setNewPageForm(null)
+      setPageFeedback(`Created "${title}". Add blocks below, then save and publish when ready.`)
+    } catch (error) {
+      setNewPageStatus('error')
+      setNewPageError(error instanceof Error ? error.message : 'Unable to create the page.')
+    }
+  }
+
+  async function handleDeleteStructuredPage() {
+    if (!selectedStructuredPage || selectedStructuredPage.contentModel !== 'block-page') {
+      return
+    }
+
+    if (!window.confirm(`Delete "${selectedStructuredPage.navLabel || selectedStructuredPage.key}"? This cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setPageDeleteStatus('saving')
+      const requestOptions = await getAdminRequestOptions()
+      await resetAdminStructuredPageContent(selectedStructuredPage.key, requestOptions)
+      await reloadStructuredPageWorkspace()
+      setPageDeleteStatus('idle')
+      setPageFeedback(`Deleted "${selectedStructuredPage.navLabel || selectedStructuredPage.key}".`)
+    } catch (error) {
+      setPageDeleteStatus('error')
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to delete the page.')
+    }
+  }
+
   const properties = workspaceState.properties ?? []
+  const propertyLocationOptions = buildPropertyLocationOptions(properties)
   const structuredPages = pageWorkspaceState.pages ?? []
   const siteShellRouteSuggestions = buildSiteShellRouteSuggestions({
     charters: charterWorkspaceState.charters,
@@ -2152,6 +2381,8 @@ export function AdminPage() {
     return observeAdminFloatingStackOffset(propertyFloatingSaveRef.current, ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR)
   }, [activeTab, propertyFloatingSaveVisible])
   const pageHasPendingPublication = hasPendingPublication(pagePublication)
+  const pagePreviewModeKey = `${activeTab === 'pages' ? 'pages' : 'hidden'}:${pageEditorState.activeKey}`
+  const pagePreviewMode = pagePreviewViewState.key === pagePreviewModeKey ? pagePreviewViewState.mode : 'edit'
   const authBadgeDetail = authState.user?.email ?? ''
   const showGoogleSignInButton = authState.status === 'signed-out'
   const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
@@ -2232,6 +2463,11 @@ export function AdminPage() {
             onClick={() => setActiveTab('pages')}
           />
           <AdminTabButton
+            active={activeTab === 'styles'}
+            label="Styles"
+            onClick={() => setActiveTab('styles')}
+          />
+          <AdminTabButton
             active={activeTab === 'properties'}
             label="Properties"
             onClick={() => setActiveTab('properties')}
@@ -2307,10 +2543,7 @@ export function AdminPage() {
                         <div>
                           <AdminSiteShellEditor
                             disabled={!siteContentDraftEditingEnabled}
-                            onChange={(updater) => {
-                              setSiteShellEditedSinceLoad(true)
-                              setSiteShellDraft(updater)
-                            }}
+                            onChange={handleSiteShellDraftChange}
                             routeInventory={pageWorkspaceState.inventory}
                             routeSuggestions={siteShellRouteSuggestions}
                             value={siteShellDraft}
@@ -2326,8 +2559,49 @@ export function AdminPage() {
 
           {activeTab === 'pages' ? (
             <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <div className="eyebrow">Pages</div>
+                  <h2>Pages</h2>
+                </div>
+                {siteContentEditingEnabled ? (
+                  <div className="admin-inline-actions">
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={openNewPageForm}>
+                      New page
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+
               {!siteContentEditingEnabled ? (
                 <p className="admin-note">Page editing is not available in the current content mode.</p>
+              ) : null}
+
+              {newPageForm ? (
+                <form className="admin-form admin-new-page-form" onSubmit={handleCreatePage}>
+                  {newPageError ? <p className="admin-feedback admin-feedback--error">{newPageError}</p> : null}
+                  <label className="admin-field">
+                    <span>Page Title</span>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newPageForm.title}
+                      onChange={(event) => updateNewPageForm('title', event.target.value)}
+                    />
+                  </label>
+                  <label className="admin-field">
+                    <span>URL Path</span>
+                    <input type="text" value={newPageForm.path} onChange={(event) => updateNewPageForm('path', event.target.value)} />
+                  </label>
+                  <div className="admin-inline-actions">
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={closeNewPageForm}>
+                      Cancel
+                    </button>
+                    <button className="button-link button-link--primary admin-action" disabled={newPageStatus === 'saving'} type="submit">
+                      {newPageStatus === 'saving' ? 'Creating...' : 'Create page'}
+                    </button>
+                  </div>
+                </form>
               ) : null}
 
               {pageWorkspaceState.status === 'error' ? <p className="admin-empty">{pageWorkspaceState.message}</p> : null}
@@ -2360,6 +2634,16 @@ export function AdminPage() {
                       >
                         Refresh
                       </button>
+                      {selectedStructuredPage.contentModel === 'block-page' ? (
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={pageDeleteStatus === 'saving'}
+                          type="button"
+                          onClick={handleDeleteStructuredPage}
+                        >
+                          {pageDeleteStatus === 'saving' ? 'Deleting...' : 'Delete page'}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -2389,33 +2673,105 @@ export function AdminPage() {
                     </div>
 
                     <div className="admin-floating-save-shell">
-                      <AdminFloatingSaveButton
-                        disabled={!siteContentSaveEnabled}
-                        label={pageHasPendingPublication ? 'Publish page changes' : 'Save page changes'}
-                        onReset={handleDiscardStructuredPageChanges}
-                        showReset={pageDirty}
-                        saveStatus={pageSaveStatus}
-                        visible={pageDirty || pageHasPendingPublication}
-                      />
+                      <div className="admin-floating-save">
+                        <div aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group">
+                          <button
+                            aria-pressed={pagePreviewMode === 'edit'}
+                            className={`button-link admin-action ${pagePreviewMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                            type="button"
+                            onClick={() => setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'edit' })}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            aria-pressed={pagePreviewMode === 'preview'}
+                            className={`button-link admin-action ${pagePreviewMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                            type="button"
+                            onClick={() => setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'preview' })}
+                          >
+                            Preview
+                          </button>
+                        </div>
 
-                      <AdminPageEditorCanvas
-                        device={pagePreviewDevice}
-                        disabled={!siteContentDraftEditingEnabled}
-                        onChange={(updater) =>
-                          setPageEditorState((current) => ({
-                            ...current,
-                            draft: typeof updater === 'function' ? updater(current.draft) : updater,
-                          }))
-                        }
-                        page={pageEditorState.draft}
-                        pageKey={pageEditorState.activeKey}
-                        routeInventory={pageWorkspaceState.inventory}
-                        siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                      />
+                        {pageDirty ? (
+                          <button
+                            className="button-link button-link--ghost admin-action"
+                            disabled={pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                            type="button"
+                            onClick={handleDiscardStructuredPageChanges}
+                          >
+                            Reset
+                          </button>
+                        ) : null}
+
+                        {pageDirty || pageHasPendingPublication ? (
+                          <button
+                            className="button-link button-link--primary admin-submit"
+                            disabled={!siteContentSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                            type="submit"
+                          >
+                            {pageSaveStatus === 'publishing'
+                              ? 'Publishing...'
+                              : pageSaveStatus === 'saving'
+                                ? 'Saving...'
+                                : pageHasPendingPublication
+                                  ? 'Publish page changes'
+                                  : 'Save page changes'}
+                          </button>
+                        ) : null}
+                      </div>
+
+                      {pagePreviewMode === 'preview' ? (
+                        <AdminPagePreview
+                          device={pagePreviewDevice}
+                          page={pageEditorState.draft}
+                          pageKey={pageEditorState.activeKey}
+                          routeInventory={pageWorkspaceState.inventory}
+                          siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                        />
+                      ) : (
+                        <AdminPageEditorCanvas
+                          device={pagePreviewDevice}
+                          disabled={!siteContentDraftEditingEnabled}
+                          onChange={(updater) =>
+                            setPageEditorState((current) => ({
+                              ...current,
+                              draft: typeof updater === 'function' ? updater(current.draft) : updater,
+                            }))
+                          }
+                          page={pageEditorState.draft}
+                          pageKey={pageEditorState.activeKey}
+                          routeInventory={pageWorkspaceState.inventory}
+                          siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                        />
+                      )}
                     </div>
                   </form>
                 ) : null}
               </div>
+            </section>
+          ) : null}
+
+          {activeTab === 'styles' ? (
+            <section className="admin-panel">
+              <div className="admin-panel-header">
+                <div>
+                  <h2>Appearance</h2>
+                </div>
+              </div>
+
+              <AdminStyleEditor
+                canPublishSiteShell={showSiteShellPublishAction}
+                disabled={!siteContentDraftEditingEnabled || siteShellWorkspaceState.status !== 'ready'}
+                feedback={siteShellFeedback}
+                publication={siteShellPublication}
+                saveStatus={siteShellSaveStatus}
+                siteShell={siteShellDraft}
+                siteShellDirty={siteShellDirty}
+                onPublishSiteShell={handlePublishSiteShell}
+                onSaveSiteShell={saveSiteShellDraft}
+                onSiteShellChange={handleSiteShellDraftChange}
+              />
             </section>
           ) : null}
 
@@ -2427,7 +2783,12 @@ export function AdminPage() {
                   <h2>Properties</h2>
                 </div>
                 <div className="admin-inline-actions">
-                  <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateForm}>
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={propertyActionBusy}
+                    type="button"
+                    onClick={handleNewPropertyClick}
+                  >
                     New property
                   </button>
                 </div>
@@ -2451,7 +2812,11 @@ export function AdminPage() {
                 <div className="admin-selector-row">
                   <label className="admin-field admin-selector-field">
                     <span>Property</span>
-                    <select value={editorState.mode === 'edit' ? editorState.activeSlug : ''} onChange={handlePropertySelectionChange}>
+                    <select
+                      disabled={propertyActionBusy}
+                      value={editorState.mode === 'edit' ? editorState.activeSlug : ''}
+                      onChange={handlePropertySelectionChange}
+                    >
                       <option disabled hidden value="">
                         {editorState.mode === 'create' ? 'New property draft' : 'Select a property'}
                       </option>
@@ -2574,6 +2939,7 @@ export function AdminPage() {
                       editable
                       formState={formState}
                       galleryEditorExpanded={galleryEditorExpanded}
+                      locationOptions={propertyLocationOptions}
                       mode={propertyPreviewMode}
                       onAddAmenityGroup={addAmenityGroup}
                       onAddGalleryFolderImages={addGalleryImagesFromFolder}

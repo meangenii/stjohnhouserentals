@@ -4,8 +4,16 @@ import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
 import { DEFAULT_SITE_DESCRIPTION, SITE_TITLE, useDocumentMeta } from './lib/documentMeta'
 import { trackPageView } from './lib/analytics'
-import { isApiBackedSiteContentSource, isRouteSiteContentPreloaded, preloadRouteSiteContent } from './lib/siteContentRepository'
+import {
+  isApiBackedSiteContentSource,
+  isRouteSiteContentPreloaded,
+  preloadRouteSiteContent,
+  resolvePageSummaryForPath,
+} from './lib/siteContentRepository'
+import { useStructuredPageContent } from './lib/useSiteContent'
 import { buildCanonicalUrl, getCanonicalPath, getStaticSeoMeta } from '../shared/seoMetadata.js'
+
+const DYNAMIC_PAGE_CONTENT_MODELS = new Set(['block-page', 'rich-content-page', 'legal-content-page'])
 
 function lazyPage(importPage, exportName) {
   return lazy(() =>
@@ -36,6 +44,8 @@ const RentalAccommodationsPage = lazyPage(() => import('./pages/RentalAccommodat
 const StJohnBookPage = lazyPage(() => import('./pages/StJohnBookPage'), 'StJohnBookPage')
 const StJohnCarRentalsPage = lazyPage(() => import('./pages/StJohnCarRentalsPage'), 'StJohnCarRentalsPage')
 const TermsOfAgreementPage = lazyPage(() => import('./pages/TermsOfAgreementPage'), 'TermsOfAgreementPage')
+const BlockPage = lazyPage(() => import('./components/BlockPage'), 'BlockPage')
+const ContentPage = lazyPage(() => import('./components/ContentPage'), 'ContentPage')
 
 function normalizeHashRoute() {
   if (typeof window === 'undefined') {
@@ -143,6 +153,12 @@ function getRouteTitle(pathname) {
     return 'Rental Property'
   }
 
+  const dynamicPageSummary = resolvePageSummaryForPath(pathname)
+
+  if (dynamicPageSummary && DYNAMIC_PAGE_CONTENT_MODELS.has(dynamicPageSummary.contentModel)) {
+    return dynamicPageSummary.title || dynamicPageSummary.label || 'Page'
+  }
+
   return 'Page Not Found'
 }
 
@@ -163,6 +179,31 @@ function getRouteSeoMeta(pathname) {
     canonicalUrl: buildCanonicalUrl(canonicalPath),
     robots: pathname.startsWith('/admin') || title === 'Page Not Found' ? 'noindex, nofollow' : 'index, follow',
   }
+}
+
+function DynamicStructuredPageContent({ contentModel, pageKey }) {
+  const page = useStructuredPageContent(pageKey)
+
+  if (!page) {
+    return <RouteLoadingFallback />
+  }
+
+  if (contentModel === 'block-page') {
+    return <BlockPage page={page} />
+  }
+
+  return <ContentPage page={page} />
+}
+
+function DynamicStructuredPageRoute() {
+  const location = useLocation()
+  const summary = resolvePageSummaryForPath(location.pathname)
+
+  if (!summary || !DYNAMIC_PAGE_CONTENT_MODELS.has(summary.contentModel)) {
+    return <NotFoundPage />
+  }
+
+  return <DynamicStructuredPageContent contentModel={summary.contentModel} pageKey={summary.key} />
 }
 
 function readHashTarget(hash) {
@@ -342,7 +383,7 @@ function AppRoutes() {
               <Route path="art" element={<ArtPage />} />
               <Route path="rental-properties/:slug" element={<PropertyDetailPage />} />
               <Route path="charter-boat-rentals/:slug" element={<CharterBoatDetailPage />} />
-              <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<DynamicStructuredPageRoute />} />
             </Route>
           </Routes>
         </Suspense>

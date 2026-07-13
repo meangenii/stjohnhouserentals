@@ -9,13 +9,14 @@ export const RICH_TEXT_BLOCK_OPTIONS = [
 ]
 
 const REM_TO_PX = 16
+const PX_TO_PT = 72 / 96
 const MIN_RICH_TEXT_FONT_SIZE_PX = 8
 const MAX_RICH_TEXT_FONT_SIZE_PX = 96
 const RICH_TEXT_FONT_SIZE_VALUE_PATTERN = /^(\d+(?:\.\d+)?)(px|rem|em|pt)$/
 
 function formatFontSizeOptionLabel(label, value) {
-  const px = Math.round(estimateFontSizePx(value))
-  return `${label} (${px}px)`
+  const pt = formatPointValue(estimateFontSizePt(value))
+  return `${label} (${pt}pt)`
 }
 
 function estimateFontSizePx(value) {
@@ -39,15 +40,24 @@ function estimateFontSizePx(value) {
   return numericValue * REM_TO_PX
 }
 
+function estimateFontSizePt(value) {
+  return estimateFontSizePx(value) * PX_TO_PT
+}
+
+function formatPointValue(value) {
+  const roundedValue = Math.round(value * 100) / 100
+  return Number.isInteger(roundedValue) ? String(roundedValue) : String(roundedValue).replace(/0+$/, '').replace(/\.$/, '')
+}
+
 export const RICH_TEXT_FONT_SIZE_OPTIONS = [
   { label: 'Default', value: 'default' },
-  { label: 'Small', value: '0.875rem' },
-  { label: 'Body', value: '1rem' },
-  { label: 'Large', value: '1.125rem' },
-  { label: 'XL', value: '1.25rem' },
-  { label: '2XL', value: '1.5rem' },
-  { label: '3XL', value: '1.875rem' },
-  { label: '4XL', value: '2.25rem' },
+  { label: 'Small', value: '10.5pt' },
+  { label: 'Body', value: '12pt' },
+  { label: 'Large', value: '13.5pt' },
+  { label: 'XL', value: '15pt' },
+  { label: '2XL', value: '18pt' },
+  { label: '3XL', value: '22.5pt' },
+  { label: '4XL', value: '27pt' },
 ].map((option) => ({
   ...option,
   label: option.value === 'default' ? option.label : formatFontSizeOptionLabel(option.label, option.value),
@@ -84,6 +94,16 @@ export function normalizeRichTextFontSize(value = '') {
   }
 
   return `${numericValue}${unit}`
+}
+
+export function normalizeRichTextFontSizeAsPoints(value = '') {
+  const normalizedValue = normalizeRichTextFontSize(value)
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  return `${formatPointValue(estimateFontSizePt(normalizedValue))}pt`
 }
 
 function getNodeOwnerElement(node) {

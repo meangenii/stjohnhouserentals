@@ -41,6 +41,7 @@ function shouldBypassBrowserCache(path, { authToken } = {}) {
     pathname.startsWith('/content/') ||
     pathname.startsWith('/properties/') ||
     pathname.startsWith('/charters/') ||
+    pathname.startsWith('/calendar/') ||
     mutablePublicPaths.has(pathname)
   )
 }

@@ -136,6 +136,13 @@ function resolveStructuredPageKeyForPath(pathname, pages = readStructuredPageSum
   return String(matchingPage?.key ?? '').trim()
 }
 
+export function resolvePageSummaryForPath(pathname) {
+  const pages = readStructuredPageSummaries()
+  const normalizedPath = normalizePathname(pathname)
+
+  return pages.find((page) => getStructuredPagePathCandidates(page).includes(normalizedPath)) ?? null
+}
+
 function getLiveStructuredPageCacheKey(key) {
   return `${siteContentSource}:${String(key ?? '').trim()}`
 }

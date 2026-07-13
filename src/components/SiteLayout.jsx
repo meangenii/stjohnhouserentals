@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { resolveLinkRenderConfig } from '../lib/linkRecords'
+import { getSiteThemeCssProperties, getSiteThemeRuleOverrideCssText } from '../lib/siteThemeSettings'
 import { useAdminSession } from '../lib/useAdminSession'
 import { useSiteShellContent } from '../lib/useSiteContent'
 import { RichTextValue } from './RichTextValue'
@@ -298,6 +299,8 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   const bookingCallouts = Array.isArray(utility.bookingCallouts) ? utility.bookingCallouts : []
   const isMobileMenuOpen = mobileMenuState.pathname === pathname && mobileMenuState.open
   const socialLinkConfig = resolveLinkRenderConfig(socialLink, { defaultType: 'external', destinationField: 'href' })
+  const themeStyle = getSiteThemeCssProperties(siteShell?.theme)
+  const themeRuleOverrideCss = getSiteThemeRuleOverrideCssText(siteShell?.theme)
 
   function setCurrentMobileMenuOpen(nextValue) {
     setMobileMenuState((currentState) => ({
@@ -342,7 +345,8 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   }, [isMobileMenuOpen])
 
   return (
-    <div className="site-shell">
+    <div className="site-shell" style={themeStyle}>
+      {themeRuleOverrideCss ? <style>{themeRuleOverrideCss}</style> : null}
       <header className="site-header">
         <div className="utility-bar">
           <div className="utility-inner">

@@ -23,11 +23,66 @@ function insertPlainText(value) {
   document.execCommand('insertText', false, value)
 }
 
+function getLocationOptionKey(value = '') {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeLocationOption(option = {}) {
+  const location = String(option.location ?? option.label ?? option.value ?? '').trim()
+  const label = String(option.label ?? option.location ?? option.value ?? '').trim()
+
+  if (!location || !label) {
+    return null
+  }
+
+  return {
+    label,
+    location,
+  }
+}
+
+function buildShortDescriptionLocationOptions(locationOptions = [], currentLocation = '') {
+  const options = []
+  const seenLocations = new Set()
+
+  locationOptions.forEach((option) => {
+    const normalizedOption = normalizeLocationOption(option)
+
+    if (!normalizedOption) {
+      return
+    }
+
+    const key = getLocationOptionKey(normalizedOption.location)
+
+    if (seenLocations.has(key)) {
+      return
+    }
+
+    seenLocations.add(key)
+    options.push(normalizedOption)
+  })
+
+  const normalizedCurrentLocation = String(currentLocation ?? '').trim()
+  const currentLocationKey = getLocationOptionKey(normalizedCurrentLocation)
+
+  if (normalizedCurrentLocation && !seenLocations.has(currentLocationKey)) {
+    options.push({
+      label: normalizedCurrentLocation,
+      location: normalizedCurrentLocation,
+    })
+  }
+
+  return options.sort((left, right) => left.label.localeCompare(right.label))
+}
+
 export function AdminShortDescriptionEditor({
   disabled = false,
   label,
+  locationOptions = [],
+  locationValue = '',
   lockedLines = [],
   onChange,
+  onLocationChange,
   placeholder = '',
   value = '',
   wide = true,
@@ -42,6 +97,9 @@ export function AdminShortDescriptionEditor({
     .map((line) => line.trim())
     .filter(Boolean)
   const displayLines = [...normalizedLockedLines, ...normalizedValueLines]
+  const normalizedLocationValue = String(locationValue ?? '').trim()
+  const availableLocationOptions = buildShortDescriptionLocationOptions(locationOptions, normalizedLocationValue)
+  const showLocationSelect = availableLocationOptions.length > 0 || normalizedLocationValue
 
   useLayoutEffect(() => {
     const editor = editorRef.current
@@ -138,6 +196,23 @@ export function AdminShortDescriptionEditor({
   return (
     <div className={`admin-field admin-field--short-description${wide ? ' admin-field--wide' : ''}`.trim()}>
       <span>{label}</span>
+      {showLocationSelect ? (
+        <label className="admin-short-description-location">
+          <span>Location</span>
+          <select
+            disabled={disabled || typeof onLocationChange !== 'function'}
+            value={normalizedLocationValue}
+            onChange={(event) => onLocationChange?.(event.target.value)}
+          >
+            <option value="">Select location</option>
+            {availableLocationOptions.map((option) => (
+              <option key={option.location} value={option.location}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       {displayLines.length > 0 ? (
         <div className="admin-short-description-derived" aria-readonly="true">
           {displayLines.map((line, index) => (

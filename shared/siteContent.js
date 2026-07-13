@@ -33,7 +33,8 @@ const primaryNavItems = [
     matchPaths: ['/map', '/boats', '/charter-boat-rentals'],
     children: [
       { label: 'Charter Boats', path: '/boats', matchPaths: ['/boats', '/charter-boat-rentals'] },
-      { label: 'Local Attractions', path: '/map', matchPaths: ['/map'] },
+      { label: 'Beaches', path: '/map#island-map' },
+      { label: 'Restaurants', path: '/map#dining-guide' },
     ],
   },
   { label: 'ADVERTISE', path: '/advertise', matchPaths: ['/advertise'] },

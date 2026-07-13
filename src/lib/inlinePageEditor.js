@@ -21,7 +21,8 @@ function updateValueAtPath(root, path, nextValue) {
     target = target[segment]
   }
 
-  target[path[path.length - 1]] = nextValue
+  const lastSegment = path[path.length - 1]
+  target[lastSegment] = typeof nextValue === 'function' ? nextValue(target[lastSegment]) : nextValue
   return nextRoot
 }
 
