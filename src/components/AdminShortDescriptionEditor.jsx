@@ -91,12 +91,14 @@ export function AdminShortDescriptionEditor({
   const normalizedLockedLines = Array.isArray(lockedLines)
     ? lockedLines.map((line) => normalizeShortDescriptionText(line, { preserveBlankLines: false })).filter(Boolean)
     : []
+  const locationLockedLines = normalizedLockedLines.filter((line) => /^Location:\s*/i.test(line))
+  const nonLocationLockedLines = normalizedLockedLines.filter((line) => !/^Location:\s*/i.test(line))
   const normalizedValue = normalizeShortDescriptionText(value)
   const normalizedValueLines = normalizedValue
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
-  const displayLines = [...normalizedLockedLines, ...normalizedValueLines]
+  const displayLines = [...nonLocationLockedLines, ...normalizedValueLines, ...locationLockedLines]
   const normalizedLocationValue = String(locationValue ?? '').trim()
   const availableLocationOptions = buildShortDescriptionLocationOptions(locationOptions, normalizedLocationValue)
   const showLocationSelect = availableLocationOptions.length > 0 || normalizedLocationValue

@@ -119,16 +119,19 @@ function formatPropertyShortDescriptionCountLine(value, singularLabel, pluralLab
   return `${formattedCount} ${label}`
 }
 
+function buildPropertyShortDescriptionLocationLine(formState = {}) {
+  const locationLabel = normalizePropertyLocationLabel(formState.location)
+  return locationLabel ? `Location: ${locationLabel}` : ''
+}
+
 export function buildRequiredPropertyShortDescriptionLines(formState = {}) {
   const guestCount = formatPropertyShortDescriptionCount(formState.maxGuests)
   const guestLabel = Number(guestCount) === 1 ? 'Guest' : 'Guests'
-  const locationLine = normalizePropertyLocationLabel(formState.location)
 
   return [
     `Max ${guestCount} ${guestLabel}`,
     formatPropertyShortDescriptionCountLine(formState.bedrooms, 'Bedroom', 'Bedrooms'),
     formatPropertyShortDescriptionCountLine(formState.bathrooms, 'Bath', 'Baths', { allowDecimal: true }),
-    locationLine,
   ].filter(Boolean)
 }
 
@@ -180,7 +183,7 @@ function getGeneratedPropertyLocationCandidates(formState = {}, generatedLocatio
 }
 
 function matchesGeneratedPropertyLocationLine(line = '', locationCandidates = []) {
-  const normalizedLine = normalizePropertyLocationLabel(line).toLowerCase()
+  const normalizedLine = normalizePropertyLocationLabel(String(line ?? '').replace(/^Location:\s*/i, '')).toLowerCase()
 
   return Boolean(normalizedLine) && locationCandidates.includes(normalizedLine)
 }
@@ -208,7 +211,8 @@ export function getDerivedPropertyShortDescriptionLines(formState = {}, value = 
   return [
     ...buildRequiredPropertyShortDescriptionLines(formState),
     ...buildPropertyShortDescriptionFeatureLines(readShortDescriptionFeatureState(value)),
-  ]
+    buildPropertyShortDescriptionLocationLine(formState),
+  ].filter(Boolean)
 }
 
 export function buildPropertyShortDescription(formState = {}, { customValue = '', featureState = {} } = {}) {
@@ -218,7 +222,10 @@ export function buildPropertyShortDescription(formState = {}, { customValue = ''
     ...buildRequiredPropertyShortDescriptionLines(formState),
     ...buildPropertyShortDescriptionFeatureLines(featureState),
     ...normalizedCustomLines,
-  ].join('\n')
+    buildPropertyShortDescriptionLocationLine(formState),
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 export function mergePropertyShortDescription(formState = {}, value = '', options = {}) {
