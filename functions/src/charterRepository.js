@@ -1,5 +1,12 @@
 const charterCatalog = require('./generated/liveCharterCatalog.json')
-const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const {
+  HttpError,
+  assertExpectedUpdatedAtMatches,
+  getDb,
+  getServerTimestamp,
+  isFirestoreUnavailableError,
+  toEpochMillis,
+} = require('./firebaseAdmin')
 const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const CHARTER_COLLECTION = 'cmsCharters'
@@ -92,9 +99,9 @@ function normalizeStoredCharterEnvelope(record, documentId = '') {
   return {
     draft: draftSource ? normalizeCharterRecord({ ...draftSource, id: draftSource.id ?? documentId }) : null,
     published: publishedSource ? normalizeCharterRecord({ ...publishedSource, id: publishedSource.id ?? documentId }) : null,
-    updatedAt: record?.updatedAt ?? null,
+    updatedAt: toEpochMillis(record?.updatedAt),
     updatedBy: String(record?.updatedBy ?? '').trim(),
-    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedAt: toEpochMillis(record?.publishedAt) ?? toEpochMillis(record?.updatedAt),
     publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
   }
 }
@@ -363,6 +370,12 @@ function assertUniqueCharterSlug(charterDocuments, nextSlug, previousDocumentId 
   }
 }
 
+function createCharterConflictError(documentData, documentId) {
+  return new HttpError(409, 'This charter was changed by someone else since you loaded it. Reload to see the latest version.', {
+    latest: buildCharterViewFromStoredRecord(documentData, documentId, { mode: 'admin' }),
+  })
+}
+
 exports.listCharters = async function listCharters() {
   const catalog = await getCanonicalCharterCatalog()
   return cloneData(catalog.charters.filter((charter) => charter.active !== false))
@@ -386,50 +399,66 @@ exports.getCharterBySlug = async function getCharterBySlug(slug) {
   return cloneData(charter)
 }
 
-exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug, adminUser) {
+exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug, adminUser, expectedUpdatedAt = null) {
   await syncSeedChartersToFirestore({ replace: false, actor: 'auto-seed' })
 
-  const charterDocuments = await readCharterCollectionRaw()
   const normalizedOriginalSlug = String(originalSlug ?? '').trim()
   const charter = buildCharterRecordFromAdminDraft(draft, normalizedOriginalSlug || draft?.slug)
-  const currentDocument = charterDocuments.find((document) => document.id === normalizedOriginalSlug)
-  const currentEnvelope = currentDocument ? normalizeStoredCharterEnvelope(currentDocument.data, currentDocument.id) : null
+  const db = getDb()
+  const collectionRef = db.collection(CHARTER_COLLECTION)
+  const nextDocId = await db.runTransaction(async (transaction) => {
+    const collectionSnapshot = await transaction.get(collectionRef)
+    const charterDocuments = collectionSnapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data(),
+    }))
+    const currentDocument = charterDocuments.find((document) => document.id === normalizedOriginalSlug)
+    const currentEnvelope = currentDocument ? normalizeStoredCharterEnvelope(currentDocument.data, currentDocument.id) : null
 
-  assertUniqueCharterSlug(charterDocuments, charter.slug, normalizedOriginalSlug)
+    if (currentDocument) {
+      assertExpectedUpdatedAtMatches(currentDocument.data.updatedAt, expectedUpdatedAt, () =>
+        createCharterConflictError(currentDocument.data, currentDocument.id),
+      )
+    }
 
-  const collectionRef = getDb().collection(CHARTER_COLLECTION)
-  const nextDocId = charter.slug
-  const previousDocId = normalizedOriginalSlug || charter.slug
-  const batch = getDb().batch()
+    assertUniqueCharterSlug(charterDocuments, charter.slug, normalizedOriginalSlug)
 
-  if (previousDocId !== nextDocId) {
-    batch.delete(collectionRef.doc(previousDocId))
-  }
+    const documentId = charter.slug
+    const previousDocId = normalizedOriginalSlug || charter.slug
 
-  batch.set(collectionRef.doc(nextDocId), {
-    draft: {
-      ...charter,
-      adminOriginalSlug: charter.slug,
-    },
-    published: currentEnvelope?.published
-      ? {
-          ...currentEnvelope.published,
-          adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
-        }
-      : null,
-    updatedBy: adminUser.email || adminUser.uid,
-    updatedAt: getServerTimestamp(),
-    publishedBy: currentEnvelope?.publishedBy || '',
-    publishedAt: currentEnvelope?.publishedAt || null,
+    if (previousDocId !== documentId) {
+      transaction.delete(collectionRef.doc(previousDocId))
+    }
+
+    const preservedPublishedAt = currentEnvelope?.published
+      ? currentDocument?.data?.publishedAt ?? currentDocument?.data?.updatedAt ?? null
+      : null
+
+    transaction.set(collectionRef.doc(documentId), {
+      draft: {
+        ...charter,
+        adminOriginalSlug: charter.slug,
+      },
+      published: currentEnvelope?.published
+        ? {
+            ...currentEnvelope.published,
+            adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
+          }
+        : null,
+      updatedBy: adminUser.email || adminUser.uid,
+      updatedAt: getServerTimestamp(),
+      publishedBy: currentEnvelope?.publishedBy || '',
+      publishedAt: preservedPublishedAt,
+    })
+
+    return documentId
   })
-
-  await batch.commit()
 
   const savedSnapshot = await collectionRef.doc(nextDocId).get()
   return cloneData(buildCharterViewFromStoredRecord(savedSnapshot.data(), nextDocId, { mode: 'admin' }))
 }
 
-exports.publishCharterRecord = async function publishCharterRecord(originalSlug, adminUser) {
+exports.publishCharterRecord = async function publishCharterRecord(originalSlug, adminUser, expectedUpdatedAt = null) {
   await syncSeedChartersToFirestore({ replace: false, actor: 'auto-seed' })
 
   const documentId = String(originalSlug ?? '').trim()
@@ -438,36 +467,48 @@ exports.publishCharterRecord = async function publishCharterRecord(originalSlug,
     throw new HttpError(400, 'Charter identifier is required to publish.')
   }
 
-  const charterDocuments = await readCharterCollectionRaw()
-  const currentDocument = charterDocuments.find((document) => document.id === documentId)
+  const db = getDb()
+  const collectionRef = db.collection(CHARTER_COLLECTION)
+  const docRef = collectionRef.doc(documentId)
 
-  if (!currentDocument) {
-    throw new HttpError(404, 'Charter draft not found.')
-  }
+  await db.runTransaction(async (transaction) => {
+    const [currentSnapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
+    const charterDocuments = collectionSnapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data(),
+    }))
 
-  const currentEnvelope = normalizeStoredCharterEnvelope(currentDocument.data, currentDocument.id)
+    if (!currentSnapshot.exists) {
+      throw new HttpError(404, 'Charter draft not found.')
+    }
 
-  if (!currentEnvelope.draft) {
-    throw new HttpError(400, 'Charter draft is missing and cannot be published.')
-  }
+    const currentData = currentSnapshot.data()
+    const currentEnvelope = normalizeStoredCharterEnvelope(currentData, currentSnapshot.id)
 
-  assertUniqueCharterSlug(charterDocuments, currentEnvelope.draft.slug, documentId)
+    assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+      createCharterConflictError(currentData, currentSnapshot.id),
+    )
 
-  const collectionRef = getDb().collection(CHARTER_COLLECTION)
+    if (!currentEnvelope.draft) {
+      throw new HttpError(400, 'Charter draft is missing and cannot be published.')
+    }
 
-  await collectionRef.doc(documentId).set({
-    draft: {
-      ...currentEnvelope.draft,
-      adminOriginalSlug: currentEnvelope.draft.slug,
-    },
-    published: {
-      ...currentEnvelope.draft,
-      adminOriginalSlug: currentEnvelope.draft.slug,
-    },
-    updatedBy: adminUser.email || adminUser.uid,
-    updatedAt: getServerTimestamp(),
-    publishedBy: adminUser.email || adminUser.uid,
-    publishedAt: getServerTimestamp(),
+    assertUniqueCharterSlug(charterDocuments, currentEnvelope.draft.slug, documentId)
+
+    transaction.set(docRef, {
+      draft: {
+        ...currentEnvelope.draft,
+        adminOriginalSlug: currentEnvelope.draft.slug,
+      },
+      published: {
+        ...currentEnvelope.draft,
+        adminOriginalSlug: currentEnvelope.draft.slug,
+      },
+      updatedBy: adminUser.email || adminUser.uid,
+      updatedAt: getServerTimestamp(),
+      publishedBy: adminUser.email || adminUser.uid,
+      publishedAt: getServerTimestamp(),
+    })
   })
 
   const savedSnapshot = await collectionRef.doc(documentId).get()

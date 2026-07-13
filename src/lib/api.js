@@ -46,13 +46,14 @@ function shouldBypassBrowserCache(path, { authToken } = {}) {
   )
 }
 
-async function requestJson(path, { method = 'GET', body, headers, authToken } = {}) {
+async function requestJson(path, { method = 'GET', body, headers, authToken, keepalive } = {}) {
   const requestHeaders = new Headers(headers ?? {})
   const normalizedMethod = String(method ?? 'GET').trim().toUpperCase() || 'GET'
   const requestInit = {
     method: normalizedMethod,
     headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
+    ...(keepalive ? { keepalive: true } : {}),
   }
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {

@@ -195,11 +195,10 @@ export function AdminShortDescriptionEditor({
 
   return (
     <div className={`admin-field admin-field--short-description${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <span>{label}</span>
       {showLocationSelect ? (
         <label className="admin-short-description-location">
-          <span>Location</span>
           <select
+            aria-label="Location"
             disabled={disabled || typeof onLocationChange !== 'function'}
             value={normalizedLocationValue}
             onChange={(event) => onLocationChange?.(event.target.value)}

@@ -202,7 +202,7 @@ export function AdminPropertyPreview({
     : []
   const shortDescriptionFeatureState = readShortDescriptionFeatureState(formState?.shortDescription ?? '')
   const shortDescriptionLockedLines = getDerivedPropertyShortDescriptionLines(formState ?? {}, formState?.shortDescription ?? '')
-  const shortDescriptionCustomValue = getCustomPropertyShortDescriptionValue(formState?.shortDescription ?? '')
+  const shortDescriptionCustomValue = getCustomPropertyShortDescriptionValue(formState?.shortDescription ?? '', formState ?? {})
 
   function toggleAlternateBedroomCount(bedroomCount, isChecked) {
     const nextCounts = isChecked

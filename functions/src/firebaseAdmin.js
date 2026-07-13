@@ -150,6 +150,55 @@ function getServerTimestamp() {
   return FieldValue.serverTimestamp()
 }
 
+function hasExpectedUpdatedAt(value) {
+  return value !== null && value !== undefined && value !== ''
+}
+
+function toEpochMillis(value) {
+  if (value && typeof value.toMillis === 'function') {
+    const millis = value.toMillis()
+    return Number.isFinite(millis) ? millis : null
+  }
+
+  if (value instanceof Date) {
+    const millis = value.getTime()
+    return Number.isFinite(millis) ? millis : null
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const millis = Number(value)
+    return Number.isFinite(millis) ? millis : null
+  }
+
+  if (value && typeof value === 'object') {
+    const seconds = value.seconds ?? value._seconds
+    const nanoseconds = value.nanoseconds ?? value._nanoseconds ?? 0
+
+    if (Number.isFinite(Number(seconds)) && Number.isFinite(Number(nanoseconds))) {
+      return Number(seconds) * 1000 + Math.floor(Number(nanoseconds) / 1000000)
+    }
+  }
+
+  return null
+}
+
+function assertExpectedUpdatedAtMatches(actualUpdatedAt, expectedUpdatedAt, createConflictError) {
+  if (!hasExpectedUpdatedAt(expectedUpdatedAt)) {
+    return
+  }
+
+  const actualMillis = toEpochMillis(actualUpdatedAt)
+  const expectedMillis = toEpochMillis(expectedUpdatedAt)
+
+  if (actualMillis === null || expectedMillis === null || Number(actualMillis) !== Number(expectedMillis)) {
+    throw createConflictError()
+  }
+}
+
 function isFirestoreUnavailableError(error) {
   const message = String(error?.message ?? '')
   const code = String(error?.code ?? '')
@@ -174,8 +223,11 @@ exports.getLiveFirestoreDatabaseId = getLiveFirestoreDatabaseId
 exports.getStagingFirestoreDatabaseId = getStagingFirestoreDatabaseId
 exports.getStorageBucket = getStorageBucket
 exports.getServerTimestamp = getServerTimestamp
+exports.hasExpectedUpdatedAt = hasExpectedUpdatedAt
 exports.isDefaultFirestoreDatabaseId = isDefaultFirestoreDatabaseId
 exports.isFirestoreUnavailableError = isFirestoreUnavailableError
 exports.isStagingRuntime = isStagingRuntime
 exports.requireAdminUser = requireAdminUser
 exports.runWithRuntimeContext = runWithRuntimeContext
+exports.assertExpectedUpdatedAtMatches = assertExpectedUpdatedAtMatches
+exports.toEpochMillis = toEpochMillis

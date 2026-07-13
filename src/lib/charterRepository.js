@@ -340,7 +340,11 @@ export async function saveAdminCharter(draft, originalSlug, options = {}) {
     throw new Error('Charter editing is only available when VITE_CHARTER_DATA_SOURCE=mock or firebase.')
   }
 
-  const payload = await postJson('/admin/charters', { draft, originalSlug }, options)
+  const payload = await postJson(
+    '/admin/charters',
+    { draft, originalSlug, expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   invalidateCharterCaches()
 
   return cloneData(normalizeCharterRecord(payload?.charter))
@@ -351,7 +355,11 @@ export async function publishAdminCharter(originalSlug, options = {}) {
     throw new Error('Charter publishing is only available when VITE_CHARTER_DATA_SOURCE=firebase.')
   }
 
-  const payload = await postJson('/admin/charters/publish', { originalSlug }, options)
+  const payload = await postJson(
+    '/admin/charters/publish',
+    { originalSlug, expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   invalidateCharterCaches()
 
   return cloneData(normalizeCharterRecord(payload?.charter))

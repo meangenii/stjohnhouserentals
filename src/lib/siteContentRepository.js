@@ -330,13 +330,21 @@ export async function fetchAdminStructuredPageDirectory(options = {}) {
 
 export async function saveAdminSiteShellContent(draft, options = {}) {
   requireLiveSiteContentEditing()
-  const payload = await postJson('/admin/content/site-shell', { draft: sanitizeDraftImages(draft) }, options)
+  const payload = await postJson(
+    '/admin/content/site-shell',
+    { draft: sanitizeDraftImages(draft), expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   return normalizeAdminSiteShellPayload(payload)
 }
 
 export async function publishAdminSiteShellContent(options = {}) {
   requireLiveSiteContentEditing()
-  const payload = await postJson('/admin/content/site-shell/publish', {}, options)
+  const payload = await postJson(
+    '/admin/content/site-shell/publish',
+    { expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   const normalized = normalizeAdminSiteShellPayload(payload)
 
   if (normalized.siteShell) {
@@ -360,14 +368,22 @@ export async function resetAdminSiteShellContent(options = {}) {
 export async function saveAdminStructuredPageContent(key, draft, options = {}) {
   requireLiveSiteContentEditing()
   const normalizedKey = String(key ?? '').trim()
-  const payload = await postJson(getAdminPagePath(normalizedKey), { draft: sanitizeDraftImages(draft) }, options)
+  const payload = await postJson(
+    getAdminPagePath(normalizedKey),
+    { draft: sanitizeDraftImages(draft), expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   return normalizeAdminStructuredPagePayload(payload)
 }
 
 export async function publishAdminStructuredPageContent(key, options = {}) {
   requireLiveSiteContentEditing()
   const normalizedKey = String(key ?? '').trim()
-  const payload = await postJson(`${getAdminPagePath(normalizedKey)}/publish`, {}, options)
+  const payload = await postJson(
+    `${getAdminPagePath(normalizedKey)}/publish`,
+    { expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
   const normalized = normalizeAdminStructuredPagePayload(payload)
 
   liveStructuredPageDirectoryCache = null

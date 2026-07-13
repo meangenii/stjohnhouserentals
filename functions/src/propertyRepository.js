@@ -1,5 +1,12 @@
 const propertyCatalog = require('./generated/livePropertyCatalog.json')
-const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const {
+  HttpError,
+  assertExpectedUpdatedAtMatches,
+  getDb,
+  getServerTimestamp,
+  isFirestoreUnavailableError,
+  toEpochMillis,
+} = require('./firebaseAdmin')
 const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const PROPERTY_COLLECTION = 'cmsProperties'
@@ -366,9 +373,9 @@ function normalizeStoredPropertyEnvelope(record, documentId = '') {
   return {
     draft: draftSource ? normalizePropertyRecord({ ...draftSource, id: draftSource.id ?? documentId }) : null,
     published: publishedSource ? normalizePropertyRecord({ ...publishedSource, id: publishedSource.id ?? documentId }) : null,
-    updatedAt: record?.updatedAt ?? null,
+    updatedAt: toEpochMillis(record?.updatedAt),
     updatedBy: String(record?.updatedBy ?? '').trim(),
-    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedAt: toEpochMillis(record?.publishedAt) ?? toEpochMillis(record?.updatedAt),
     publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
   }
 }
@@ -807,6 +814,12 @@ function assertUniquePropertySlug(propertyDocuments, nextSlug, previousDocumentI
   }
 }
 
+function createPropertyConflictError(documentData, documentId) {
+  return new HttpError(409, 'This property was changed by someone else since you loaded it. Reload to see the latest version.', {
+    latest: buildPropertyViewFromStoredRecord(documentData, documentId, { mode: 'admin' }),
+  })
+}
+
 exports.listBedroomGroups = async function listBedroomGroups() {
   const catalog = await getCanonicalPropertyCatalog()
   return cloneData(groupProperties(getPublishedProperties(catalog.propertySummaries)))
@@ -840,50 +853,66 @@ exports.getPropertyBySlug = async function getPropertyBySlug(slug) {
   return cloneData(attachAdjacentProperties(property, getPublishedProperties(catalog.properties)))
 }
 
-exports.savePropertyRecord = async function savePropertyRecord(draft, originalSlug, adminUser) {
+exports.savePropertyRecord = async function savePropertyRecord(draft, originalSlug, adminUser, expectedUpdatedAt = null) {
   await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
 
-  const propertyDocuments = await readPropertyCollectionRaw()
   const normalizedOriginalSlug = String(originalSlug ?? '').trim()
   const property = buildPropertyRecordFromAdminDraft(draft, normalizedOriginalSlug || draft?.slug)
-  const currentDocument = propertyDocuments.find((document) => document.id === normalizedOriginalSlug)
-  const currentEnvelope = currentDocument ? normalizeStoredPropertyEnvelope(currentDocument.data, currentDocument.id) : null
+  const db = getDb()
+  const collectionRef = db.collection(PROPERTY_COLLECTION)
+  const nextDocId = await db.runTransaction(async (transaction) => {
+    const collectionSnapshot = await transaction.get(collectionRef)
+    const propertyDocuments = collectionSnapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data(),
+    }))
+    const currentDocument = propertyDocuments.find((document) => document.id === normalizedOriginalSlug)
+    const currentEnvelope = currentDocument ? normalizeStoredPropertyEnvelope(currentDocument.data, currentDocument.id) : null
 
-  assertUniquePropertySlug(propertyDocuments, property.slug, normalizedOriginalSlug)
+    if (currentDocument) {
+      assertExpectedUpdatedAtMatches(currentDocument.data.updatedAt, expectedUpdatedAt, () =>
+        createPropertyConflictError(currentDocument.data, currentDocument.id),
+      )
+    }
 
-  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
-  const nextDocId = property.slug
-  const previousDocId = normalizedOriginalSlug || property.slug
-  const batch = getDb().batch()
+    assertUniquePropertySlug(propertyDocuments, property.slug, normalizedOriginalSlug)
 
-  if (previousDocId !== nextDocId) {
-    batch.delete(collectionRef.doc(previousDocId))
-  }
+    const documentId = property.slug
+    const previousDocId = normalizedOriginalSlug || property.slug
 
-  batch.set(collectionRef.doc(nextDocId), {
-    draft: {
-      ...property,
-      adminOriginalSlug: property.slug,
-    },
-    published: currentEnvelope?.published
-      ? {
-          ...currentEnvelope.published,
-          adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
-        }
-      : null,
-    updatedBy: adminUser.email || adminUser.uid,
-    updatedAt: getServerTimestamp(),
-    publishedBy: currentEnvelope?.publishedBy || '',
-    publishedAt: currentEnvelope?.publishedAt || null,
+    if (previousDocId !== documentId) {
+      transaction.delete(collectionRef.doc(previousDocId))
+    }
+
+    const preservedPublishedAt = currentEnvelope?.published
+      ? currentDocument?.data?.publishedAt ?? currentDocument?.data?.updatedAt ?? null
+      : null
+
+    transaction.set(collectionRef.doc(documentId), {
+      draft: {
+        ...property,
+        adminOriginalSlug: property.slug,
+      },
+      published: currentEnvelope?.published
+        ? {
+            ...currentEnvelope.published,
+            adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug,
+          }
+        : null,
+      updatedBy: adminUser.email || adminUser.uid,
+      updatedAt: getServerTimestamp(),
+      publishedBy: currentEnvelope?.publishedBy || '',
+      publishedAt: preservedPublishedAt,
+    })
+
+    return documentId
   })
-
-  await batch.commit()
 
   const savedSnapshot = await collectionRef.doc(nextDocId).get()
   return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), nextDocId, { mode: 'admin' }))
 }
 
-exports.publishPropertyRecord = async function publishPropertyRecord(originalSlug, adminUser) {
+exports.publishPropertyRecord = async function publishPropertyRecord(originalSlug, adminUser, expectedUpdatedAt = null) {
   await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
 
   const documentId = String(originalSlug ?? '').trim()
@@ -892,43 +921,55 @@ exports.publishPropertyRecord = async function publishPropertyRecord(originalSlu
     throw new HttpError(400, 'Property identifier is required to publish.')
   }
 
-  const propertyDocuments = await readPropertyCollectionRaw()
-  const currentDocument = propertyDocuments.find((document) => document.id === documentId)
+  const db = getDb()
+  const collectionRef = db.collection(PROPERTY_COLLECTION)
+  const docRef = collectionRef.doc(documentId)
 
-  if (!currentDocument) {
-    throw new HttpError(404, 'Property draft not found.')
-  }
+  await db.runTransaction(async (transaction) => {
+    const [currentSnapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
+    const propertyDocuments = collectionSnapshot.docs.map((document) => ({
+      id: document.id,
+      data: document.data(),
+    }))
 
-  const currentEnvelope = normalizeStoredPropertyEnvelope(currentDocument.data, currentDocument.id)
+    if (!currentSnapshot.exists) {
+      throw new HttpError(404, 'Property draft not found.')
+    }
 
-  if (!currentEnvelope.draft) {
-    throw new HttpError(400, 'Property draft is missing and cannot be published.')
-  }
+    const currentData = currentSnapshot.data()
+    const currentEnvelope = normalizeStoredPropertyEnvelope(currentData, currentSnapshot.id)
 
-  assertUniquePropertySlug(propertyDocuments, currentEnvelope.draft.slug, documentId)
+    assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+      createPropertyConflictError(currentData, currentSnapshot.id),
+    )
 
-  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
+    if (!currentEnvelope.draft) {
+      throw new HttpError(400, 'Property draft is missing and cannot be published.')
+    }
 
-  await collectionRef.doc(documentId).set({
-    draft: {
-      ...currentEnvelope.draft,
-      adminOriginalSlug: currentEnvelope.draft.slug,
-    },
-    published: {
-      ...currentEnvelope.draft,
-      adminOriginalSlug: currentEnvelope.draft.slug,
-    },
-    updatedBy: adminUser.email || adminUser.uid,
-    updatedAt: getServerTimestamp(),
-    publishedBy: adminUser.email || adminUser.uid,
-    publishedAt: getServerTimestamp(),
+    assertUniquePropertySlug(propertyDocuments, currentEnvelope.draft.slug, documentId)
+
+    transaction.set(docRef, {
+      draft: {
+        ...currentEnvelope.draft,
+        adminOriginalSlug: currentEnvelope.draft.slug,
+      },
+      published: {
+        ...currentEnvelope.draft,
+        adminOriginalSlug: currentEnvelope.draft.slug,
+      },
+      updatedBy: adminUser.email || adminUser.uid,
+      updatedAt: getServerTimestamp(),
+      publishedBy: adminUser.email || adminUser.uid,
+      publishedAt: getServerTimestamp(),
+    })
   })
 
   const savedSnapshot = await collectionRef.doc(documentId).get()
   return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
 }
 
-exports.setPropertyActiveState = async function setPropertyActiveState(originalSlug, active, adminUser) {
+exports.setPropertyActiveState = async function setPropertyActiveState(originalSlug, active, adminUser, expectedUpdatedAt = null) {
   await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
 
   const documentId = String(originalSlug ?? '').trim()
@@ -937,42 +978,52 @@ exports.setPropertyActiveState = async function setPropertyActiveState(originalS
     throw new HttpError(400, 'Property identifier is required to update visibility.')
   }
 
-  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
-  const snapshot = await collectionRef.doc(documentId).get()
+  const db = getDb()
+  const collectionRef = db.collection(PROPERTY_COLLECTION)
+  const docRef = collectionRef.doc(documentId)
 
-  if (!snapshot.exists) {
-    throw new HttpError(404, 'Property record not found.')
-  }
+  await db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(docRef)
 
-  const currentEnvelope = normalizeStoredPropertyEnvelope(snapshot.data(), documentId)
-  const nextActive = active !== false
-  const nextDraftSource = currentEnvelope.draft ?? currentEnvelope.published
+    if (!snapshot.exists) {
+      throw new HttpError(404, 'Property record not found.')
+    }
 
-  if (!nextDraftSource) {
-    throw new HttpError(400, 'Property draft is missing and cannot be updated.')
-  }
+    const currentData = snapshot.data()
+    const currentEnvelope = normalizeStoredPropertyEnvelope(currentData, documentId)
+    const nextActive = active !== false
+    const nextDraftSource = currentEnvelope.draft ?? currentEnvelope.published
 
-  const nextDraft = {
-    ...nextDraftSource,
-    active: nextActive,
-    adminOriginalSlug: nextDraftSource.adminOriginalSlug || nextDraftSource.slug || documentId,
-  }
+    assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+      createPropertyConflictError(currentData, documentId),
+    )
 
-  const nextPublished = currentEnvelope.published
-    ? {
-        ...currentEnvelope.published,
-        active: nextActive,
-        adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug || documentId,
-      }
-    : null
+    if (!nextDraftSource) {
+      throw new HttpError(400, 'Property draft is missing and cannot be updated.')
+    }
 
-  await collectionRef.doc(documentId).set({
-    draft: nextDraft,
-    published: nextPublished,
-    updatedBy: adminUser.email || adminUser.uid,
-    updatedAt: getServerTimestamp(),
-    publishedBy: nextPublished ? adminUser.email || adminUser.uid : currentEnvelope?.publishedBy || '',
-    publishedAt: nextPublished ? getServerTimestamp() : currentEnvelope?.publishedAt || null,
+    const nextDraft = {
+      ...nextDraftSource,
+      active: nextActive,
+      adminOriginalSlug: nextDraftSource.adminOriginalSlug || nextDraftSource.slug || documentId,
+    }
+
+    const nextPublished = currentEnvelope.published
+      ? {
+          ...currentEnvelope.published,
+          active: nextActive,
+          adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug || documentId,
+        }
+      : null
+
+    transaction.set(docRef, {
+      draft: nextDraft,
+      published: nextPublished,
+      updatedBy: adminUser.email || adminUser.uid,
+      updatedAt: getServerTimestamp(),
+      publishedBy: nextPublished ? adminUser.email || adminUser.uid : currentEnvelope?.publishedBy || '',
+      publishedAt: nextPublished ? getServerTimestamp() : null,
+    })
   })
 
   const savedSnapshot = await collectionRef.doc(documentId).get()

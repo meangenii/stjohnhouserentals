@@ -1,5 +1,13 @@
 const siteContent = require('./generated/siteContent.json')
-const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const {
+  HttpError,
+  assertExpectedUpdatedAtMatches,
+  getDb,
+  getServerTimestamp,
+  hasExpectedUpdatedAt,
+  isFirestoreUnavailableError,
+  toEpochMillis,
+} = require('./firebaseAdmin')
 const { assertStorageImagesInValue } = require('./imagePolicy')
 
 const SITE_CONTENT_COLLECTION = 'cmsSiteContent'
@@ -195,6 +203,50 @@ function normalizeStructuredPageDraft(key, draft) {
   return normalized
 }
 
+function normalizeRoutePath(value) {
+  const candidate = String(value ?? '').trim()
+
+  if (!candidate) {
+    return ''
+  }
+
+  const withoutOrigin = candidate.replace(/^[a-z]+:\/\/[^/]+/i, '')
+  const withoutQueryOrHash = withoutOrigin.split(/[?#]/, 1)[0] || '/'
+  const withLeadingSlash = withoutQueryOrHash.startsWith('/') ? withoutQueryOrHash : `/${withoutQueryOrHash}`
+
+  return withLeadingSlash !== '/' ? withLeadingSlash.replace(/\/+$/, '') || '/' : '/'
+}
+
+function collectStructuredPageRoutePaths(page = {}) {
+  return [page.path, ...(Array.isArray(page.routeAliases) ? page.routeAliases : [])]
+    .map((path) => normalizeRoutePath(path))
+    .filter(Boolean)
+}
+
+function assertUniqueStructuredPageRoutes(pageDocuments, nextPage) {
+  const nextKey = String(nextPage?.key ?? '').trim()
+  const nextPaths = new Set(collectStructuredPageRoutePaths(nextPage))
+
+  if (nextPaths.size === 0) {
+    return
+  }
+
+  const hasConflict = pageDocuments.some((document) => {
+    if (document.key === nextKey) {
+      return false
+    }
+
+    const envelope = normalizeStoredContentEnvelope(document.data)
+    const candidates = [envelope.draft, envelope.published].filter(Boolean)
+
+    return candidates.some((candidate) => collectStructuredPageRoutePaths(candidate).some((path) => nextPaths.has(path)))
+  })
+
+  if (hasConflict) {
+    throw createInvalidStructuredPageError('A structured page already uses that URL. Choose a different one.')
+  }
+}
+
 function hasPublicationEnvelope(record) {
   return (
     Boolean(record) &&
@@ -219,9 +271,9 @@ function normalizeStoredContentEnvelope(record) {
   return {
     draft: cloneStructuredContentValue(draftSource),
     published: cloneStructuredContentValue(publishedSource),
-    updatedAt: record?.updatedAt ?? null,
+    updatedAt: toEpochMillis(record?.updatedAt),
     updatedBy: String(record?.updatedBy ?? '').trim(),
-    publishedAt: record?.publishedAt ?? record?.updatedAt ?? null,
+    publishedAt: toEpochMillis(record?.publishedAt) ?? toEpochMillis(record?.updatedAt),
     publishedBy: String(record?.publishedBy ?? record?.updatedBy ?? '').trim(),
   }
 }
@@ -264,6 +316,18 @@ function buildStructuredPageAdminResponse(key, record) {
     page: normalizeStructuredPageView(key, envelope.draft),
     publication: buildPublicationState(envelope),
   }
+}
+
+function createSiteShellConflictError(documentData) {
+  return new HttpError(409, 'The site shell was changed by someone else since you loaded it. Reload to see the latest version.', {
+    latest: buildSiteShellAdminResponse(documentData),
+  })
+}
+
+function createStructuredPageConflictError(key, documentData) {
+  return new HttpError(409, 'This page was changed by someone else since you loaded it. Reload to see the latest version.', {
+    latest: buildStructuredPageAdminResponse(key, documentData),
+  })
 }
 
 function getStructuredPageView(key, record, mode = 'public') {
@@ -467,24 +531,41 @@ exports.getAdminSiteShellContent = async function getAdminSiteShellContent() {
   return cloneData(buildSiteShellAdminResponse(snapshot.data()))
 }
 
-exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor) {
+exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor, expectedUpdatedAt = null) {
   const normalized = normalizeSiteShellDraft(draft)
-  const snapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
-  const currentEnvelope = snapshot.exists ? normalizeStoredContentEnvelope(snapshot.data()) : normalizeStoredContentEnvelope({})
+  const db = getDb()
+  const docRef = db.collection(SITE_CONTENT_COLLECTION).doc(SITE_SHELL_DOCUMENT)
 
   try {
-    await getDb()
-      .collection(SITE_CONTENT_COLLECTION)
-      .doc(SITE_SHELL_DOCUMENT)
-      .set({
+    await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(docRef)
+      const currentData = snapshot.exists ? snapshot.data() : {}
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+
+      if (snapshot.exists) {
+        assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+          createSiteShellConflictError(currentData),
+        )
+      }
+
+      const preservedPublishedAt = currentEnvelope.published
+        ? currentData.publishedAt ?? currentData.updatedAt ?? null
+        : null
+
+      transaction.set(docRef, {
         draft: normalized,
         published: currentEnvelope.published,
         updatedBy: formatActor(actor),
         updatedAt: getServerTimestamp(),
         publishedBy: currentEnvelope.publishedBy || '',
-        publishedAt: currentEnvelope.publishedAt || null,
+        publishedAt: preservedPublishedAt,
       })
+    })
   } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
     }
@@ -496,21 +577,27 @@ exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor)
   return cloneData(buildSiteShellAdminResponse(savedSnapshot.data()))
 }
 
-exports.publishSiteShellContent = async function publishSiteShellContent(actor) {
-  const snapshot = await getSiteContentDocument(SITE_SHELL_DOCUMENT)
-
-  if (!snapshot.exists) {
-    throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
-  }
-
-  const currentEnvelope = normalizeStoredContentEnvelope(snapshot.data())
-  const normalized = normalizeSiteShellDraft(currentEnvelope.draft ?? currentEnvelope.published ?? {})
+exports.publishSiteShellContent = async function publishSiteShellContent(actor, expectedUpdatedAt = null) {
+  const db = getDb()
+  const docRef = db.collection(SITE_CONTENT_COLLECTION).doc(SITE_SHELL_DOCUMENT)
 
   try {
-    await getDb()
-      .collection(SITE_CONTENT_COLLECTION)
-      .doc(SITE_SHELL_DOCUMENT)
-      .set({
+    await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(docRef)
+
+      if (!snapshot.exists) {
+        throw createMissingSiteContentError(SITE_SHELL_DOCUMENT)
+      }
+
+      const currentData = snapshot.data()
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+      const normalized = normalizeSiteShellDraft(currentEnvelope.draft ?? currentEnvelope.published ?? {})
+
+      assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+        createSiteShellConflictError(currentData),
+      )
+
+      transaction.set(docRef, {
         draft: normalized,
         published: normalized,
         updatedBy: formatActor(actor),
@@ -518,7 +605,12 @@ exports.publishSiteShellContent = async function publishSiteShellContent(actor) 
         publishedBy: formatActor(actor),
         publishedAt: getServerTimestamp(),
       })
+    })
   } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
     }
@@ -577,24 +669,56 @@ exports.getAdminStructuredPageContent = async function getAdminStructuredPageCon
   return cloneData(buildStructuredPageAdminResponse(key, snapshot.data()))
 }
 
-exports.saveStructuredPageContent = async function saveStructuredPageContent(key, draft, actor) {
+exports.saveStructuredPageContent = async function saveStructuredPageContent(key, draft, actor, expectedUpdatedAt = null) {
   const normalized = normalizeStructuredPageDraft(String(key ?? '').trim(), draft)
-  const snapshot = await getStructuredPageDocument(normalized.key)
-  const currentEnvelope = snapshot.exists ? normalizeStoredContentEnvelope(snapshot.data()) : normalizeStoredContentEnvelope({})
+  const db = getDb()
+  const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const docRef = collectionRef.doc(normalized.key)
 
   try {
-    await getDb()
-      .collection(STRUCTURED_PAGE_COLLECTION)
-      .doc(normalized.key)
-      .set({
+    await db.runTransaction(async (transaction) => {
+      const [snapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
+      const pageDocuments = collectionSnapshot.docs.map((document) => ({
+        key: document.id,
+        data: document.data(),
+      }))
+      const currentData = snapshot.exists ? snapshot.data() : {}
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+
+      if (snapshot.exists) {
+        if (!hasExpectedUpdatedAt(expectedUpdatedAt)) {
+          throw new HttpError(
+            409,
+            'A structured page already uses that key. Reload the page list and choose a different title.',
+            { latest: buildStructuredPageAdminResponse(normalized.key, currentData) },
+          )
+        }
+
+        assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+          createStructuredPageConflictError(normalized.key, currentData),
+        )
+      }
+
+      assertUniqueStructuredPageRoutes(pageDocuments, normalized)
+
+      const preservedPublishedAt = currentEnvelope.published
+        ? currentData.publishedAt ?? currentData.updatedAt ?? null
+        : null
+
+      transaction.set(docRef, {
         draft: normalized,
         published: currentEnvelope.published,
         updatedBy: formatActor(actor),
         updatedAt: getServerTimestamp(),
         publishedBy: currentEnvelope.publishedBy || '',
-        publishedAt: currentEnvelope.publishedAt || null,
+        publishedAt: preservedPublishedAt,
       })
+    })
   } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
     }
@@ -606,27 +730,34 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
   return cloneData(buildStructuredPageAdminResponse(normalized.key, savedSnapshot.data()))
 }
 
-exports.publishStructuredPageContent = async function publishStructuredPageContent(key, actor) {
+exports.publishStructuredPageContent = async function publishStructuredPageContent(key, actor, expectedUpdatedAt = null) {
   const normalizedKey = String(key ?? '').trim()
 
   if (!normalizedKey) {
     throw createInvalidStructuredPageError('Structured page key is required.')
   }
 
-  const snapshot = await getStructuredPageDocument(normalizedKey)
-
-  if (!snapshot.exists) {
-    return null
-  }
-
-  const currentEnvelope = normalizeStoredContentEnvelope(snapshot.data())
-  const normalized = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? currentEnvelope.published ?? {})
+  const db = getDb()
+  const docRef = db.collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey)
+  let didPublish
 
   try {
-    await getDb()
-      .collection(STRUCTURED_PAGE_COLLECTION)
-      .doc(normalizedKey)
-      .set({
+    didPublish = await db.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(docRef)
+
+      if (!snapshot.exists) {
+        return false
+      }
+
+      const currentData = snapshot.data()
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+      const normalized = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? currentEnvelope.published ?? {})
+
+      assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+        createStructuredPageConflictError(normalizedKey, currentData),
+      )
+
+      transaction.set(docRef, {
         draft: normalized,
         published: normalized,
         updatedBy: formatActor(actor),
@@ -634,12 +765,23 @@ exports.publishStructuredPageContent = async function publishStructuredPageConte
         publishedBy: formatActor(actor),
         publishedAt: getServerTimestamp(),
       })
+
+      return true
+    })
   } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
     }
 
     throw error
+  }
+
+  if (!didPublish) {
+    return null
   }
 
   const savedSnapshot = await getStructuredPageDocument(normalizedKey)

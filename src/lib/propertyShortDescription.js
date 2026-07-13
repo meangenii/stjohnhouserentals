@@ -1,4 +1,5 @@
 import { richTextValueToPlainLineText, richTextValueToPlainTextLines } from './richTextValue'
+import { normalizePropertyLocationLabel } from './propertyLocationFilters'
 
 export const SHORT_DESCRIPTION_FEATURE_OPTIONS = [
   {
@@ -121,12 +122,14 @@ function formatPropertyShortDescriptionCountLine(value, singularLabel, pluralLab
 export function buildRequiredPropertyShortDescriptionLines(formState = {}) {
   const guestCount = formatPropertyShortDescriptionCount(formState.maxGuests)
   const guestLabel = Number(guestCount) === 1 ? 'Guest' : 'Guests'
+  const locationLine = normalizePropertyLocationLabel(formState.location)
 
   return [
     `Max ${guestCount} ${guestLabel}`,
     formatPropertyShortDescriptionCountLine(formState.bedrooms, 'Bedroom', 'Bedrooms'),
     formatPropertyShortDescriptionCountLine(formState.bathrooms, 'Bath', 'Baths', { allowDecimal: true }),
-  ]
+    locationLine,
+  ].filter(Boolean)
 }
 
 function isGeneratedGuestLine(value = '') {
@@ -169,13 +172,36 @@ function removeGeneratedPropertyStatLines(lines = []) {
   return remainingLines.filter((line) => !isGeneratedPropertyStatLine(line))
 }
 
-export function getCustomPropertyShortDescriptionLines(value = '') {
-  const nonGeneratedFeatureLines = getShortDescriptionFactLines(value).filter((line) => !matchesGeneratedPropertyFeatureLine(line))
-  return removeGeneratedPropertyStatLines(nonGeneratedFeatureLines)
+function getGeneratedPropertyLocationCandidates(formState = {}, generatedLocations = []) {
+  return [formState.location, ...generatedLocations]
+    .map((location) => normalizePropertyLocationLabel(location))
+    .map((location) => location.toLowerCase())
+    .filter(Boolean)
 }
 
-export function getCustomPropertyShortDescriptionValue(value = '') {
-  return getCustomPropertyShortDescriptionLines(value).join('\n')
+function matchesGeneratedPropertyLocationLine(line = '', locationCandidates = []) {
+  const normalizedLine = normalizePropertyLocationLabel(line).toLowerCase()
+
+  return Boolean(normalizedLine) && locationCandidates.includes(normalizedLine)
+}
+
+function removeGeneratedPropertyLocationLines(lines = [], formState = {}, { generatedLocations = [] } = {}) {
+  const locationCandidates = getGeneratedPropertyLocationCandidates(formState, generatedLocations)
+
+  if (locationCandidates.length === 0) {
+    return lines
+  }
+
+  return lines.filter((line) => !matchesGeneratedPropertyLocationLine(line, locationCandidates))
+}
+
+export function getCustomPropertyShortDescriptionLines(value = '', formState = {}, options = {}) {
+  const nonGeneratedFeatureLines = getShortDescriptionFactLines(value).filter((line) => !matchesGeneratedPropertyFeatureLine(line))
+  return removeGeneratedPropertyLocationLines(removeGeneratedPropertyStatLines(nonGeneratedFeatureLines), formState, options)
+}
+
+export function getCustomPropertyShortDescriptionValue(value = '', formState = {}, options = {}) {
+  return getCustomPropertyShortDescriptionLines(value, formState, options).join('\n')
 }
 
 export function getDerivedPropertyShortDescriptionLines(formState = {}, value = '') {
@@ -186,7 +212,7 @@ export function getDerivedPropertyShortDescriptionLines(formState = {}, value = 
 }
 
 export function buildPropertyShortDescription(formState = {}, { customValue = '', featureState = {} } = {}) {
-  const normalizedCustomLines = getCustomPropertyShortDescriptionLines(richTextValueToPlainLineText(customValue))
+  const normalizedCustomLines = getCustomPropertyShortDescriptionLines(richTextValueToPlainLineText(customValue), formState)
 
   return [
     ...buildRequiredPropertyShortDescriptionLines(formState),
@@ -195,9 +221,9 @@ export function buildPropertyShortDescription(formState = {}, { customValue = ''
   ].join('\n')
 }
 
-export function mergePropertyShortDescription(formState = {}, value = '') {
+export function mergePropertyShortDescription(formState = {}, value = '', options = {}) {
   return buildPropertyShortDescription(formState, {
-    customValue: getCustomPropertyShortDescriptionValue(value),
+    customValue: getCustomPropertyShortDescriptionValue(value, formState, options),
     featureState: readShortDescriptionFeatureState(value),
   })
 }

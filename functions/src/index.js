@@ -48,6 +48,7 @@ const {
   moveMediaAssets,
   uploadMediaAsset,
 } = require('./mediaRepository')
+const { acquireLock, getLockStatus, heartbeatLock, listLockStatuses, releaseLock } = require('./editLockRepository')
 const {
   getAdminSiteShellContent,
   getAdminStructuredPageContent,
@@ -402,6 +403,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         request.body?.draft ?? {},
         request.body?.originalSlug ?? '',
         adminUser,
+        request.body?.expectedUpdatedAt ?? null,
       )
 
       response.json({
@@ -414,7 +416,11 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/properties/publish') {
       const adminUser = await requireAdminUser(request)
-      const publishedProperty = await publishPropertyRecord(request.body?.originalSlug ?? '', adminUser)
+      const publishedProperty = await publishPropertyRecord(
+        request.body?.originalSlug ?? '',
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+      )
 
       response.json({
         source: 'firestore',
@@ -426,7 +432,12 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/properties/active') {
       const adminUser = await requireAdminUser(request)
-      const property = await setPropertyActiveState(request.body?.originalSlug ?? '', request.body?.active !== false, adminUser)
+      const property = await setPropertyActiveState(
+        request.body?.originalSlug ?? '',
+        request.body?.active !== false,
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+      )
 
       response.json({
         source: 'firestore',
@@ -475,6 +486,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         request.body?.draft ?? {},
         request.body?.originalSlug ?? '',
         adminUser,
+        request.body?.expectedUpdatedAt ?? null,
       )
 
       response.json({
@@ -487,7 +499,11 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/charters/publish') {
       const adminUser = await requireAdminUser(request)
-      const publishedCharter = await publishCharterRecord(request.body?.originalSlug ?? '', adminUser)
+      const publishedCharter = await publishCharterRecord(
+        request.body?.originalSlug ?? '',
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+      )
 
       response.json({
         source: 'firestore',
@@ -601,6 +617,66 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'GET' && path === 'admin/edit-locks') {
+      await requireAdminUser(request)
+      const status = await getLockStatus(request.query?.resourceType ?? '', request.query?.resourceId ?? '')
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...status,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/edit-locks/list') {
+      await requireAdminUser(request)
+      const locks = await listLockStatuses(request.query?.resourceType ?? '')
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        locks,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/edit-locks/acquire') {
+      const adminUser = await requireAdminUser(request)
+      const result = await acquireLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/edit-locks/heartbeat') {
+      const adminUser = await requireAdminUser(request)
+      const result = await heartbeatLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/edit-locks/release') {
+      const adminUser = await requireAdminUser(request)
+      const result = await releaseLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/content/site-shell') {
       await requireAdminUser(request)
       response.json({
@@ -613,7 +689,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/content/site-shell') {
       const adminUser = await requireAdminUser(request)
-      const siteShell = await saveSiteShellContent(request.body?.draft ?? {}, adminUser)
+      const siteShell = await saveSiteShellContent(request.body?.draft ?? {}, adminUser, request.body?.expectedUpdatedAt ?? null)
 
       response.json({
         source: 'firestore',
@@ -625,7 +701,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/content/site-shell/publish') {
       const adminUser = await requireAdminUser(request)
-      const siteShell = await publishSiteShellContent(adminUser)
+      const siteShell = await publishSiteShellContent(adminUser, request.body?.expectedUpdatedAt ?? null)
 
       response.json({
         source: 'firestore',
@@ -683,7 +759,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     if (request.method === 'POST' && path.startsWith('admin/content/pages/') && path.endsWith('/publish')) {
       const adminUser = await requireAdminUser(request)
       const pageKey = path.replace(/^admin\/content\/pages\//, '').replace(/\/publish$/, '')
-      const page = await publishStructuredPageContent(pageKey, adminUser)
+      const page = await publishStructuredPageContent(pageKey, adminUser, request.body?.expectedUpdatedAt ?? null)
 
       response.json({
         source: 'firestore',
@@ -696,7 +772,12 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     if (request.method === 'POST' && path.startsWith('admin/content/pages/')) {
       const adminUser = await requireAdminUser(request)
       const pageKey = path.replace(/^admin\/content\/pages\//, '')
-      const page = await saveStructuredPageContent(pageKey, request.body?.draft ?? {}, adminUser)
+      const page = await saveStructuredPageContent(
+        pageKey,
+        request.body?.draft ?? {},
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+      )
 
       response.json({
         source: 'firestore',

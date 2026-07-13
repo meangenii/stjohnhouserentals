@@ -17,7 +17,9 @@ import {
   publishAdminCharter,
   saveAdminCharter,
 } from '../lib/charterRepository'
+import { listEditLockStatuses } from '../lib/editLockRepository'
 import { isFirebaseConfigured } from '../lib/firebase'
+import { useEditLock } from '../lib/useEditLock'
 import {
   deleteAdminProperty,
   isFirebasePropertyData,
@@ -546,7 +548,7 @@ function createFormState(property) {
   const bedrooms = normalizeBedroomCount(property.bedrooms)
   const alternateBedroomCounts = normalizeAlternateBedroomCounts(property.alternateBedroomCounts, bedrooms)
 
-  return {
+  const nextFormState = {
     originalSlug: property.adminOriginalSlug ?? property.slug,
     name: repairSnapshotText(property.name ?? ''),
     slug: property.slug ?? '',
@@ -573,6 +575,11 @@ function createFormState(property) {
     galleryImages: createInitialGalleryImages(property),
     amenityGroups: createInitialAmenityGroups(property),
     reviewEntries: createInitialReviewEntries(property),
+  }
+
+  return {
+    ...nextFormState,
+    shortDescription: mergePropertyShortDescription(nextFormState, nextFormState.shortDescription),
   }
 }
 
@@ -919,6 +926,7 @@ export function AdminPage() {
   const [feedback, setFeedback] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
   const [propertyPublication, setPropertyPublication] = useState(null)
+  const [propertyConflict, setPropertyConflict] = useState(null)
   const propertyEditingEnabled = isPropertyEditingEnabled()
   const propertyUsesFirebase = isFirebasePropertyData()
 
@@ -932,6 +940,7 @@ export function AdminPage() {
   const [charterFeedback, setCharterFeedback] = useState('')
   const [charterSaveStatus, setCharterSaveStatus] = useState('idle')
   const [charterPublication, setCharterPublication] = useState(null)
+  const [charterConflict, setCharterConflict] = useState(null)
   const charterEditingEnabled = isCharterEditingEnabled()
   const charterUsesFirebase = isFirebaseCharterData()
 
@@ -945,6 +954,7 @@ export function AdminPage() {
   const [siteShellFeedback, setSiteShellFeedback] = useState('')
   const [siteShellSaveStatus, setSiteShellSaveStatus] = useState('idle')
   const [siteShellPublication, setSiteShellPublication] = useState(null)
+  const [siteShellConflict, setSiteShellConflict] = useState(null)
 
   const [pageWorkspaceState, setPageWorkspaceState] = useState(() => ({
     status: 'loading',
@@ -961,6 +971,7 @@ export function AdminPage() {
   const [pageFeedback, setPageFeedback] = useState('')
   const [pageSaveStatus, setPageSaveStatus] = useState('idle')
   const [pagePublication, setPagePublication] = useState(null)
+  const [pageConflict, setPageConflict] = useState(null)
   const [newPageForm, setNewPageForm] = useState(null)
   const [newPageStatus, setNewPageStatus] = useState('idle')
   const [newPageError, setNewPageError] = useState('')
@@ -977,6 +988,88 @@ export function AdminPage() {
   }))
   const [authFeedback, setAuthFeedback] = useState('')
   const [authFeedbackStatus, setAuthFeedbackStatus] = useState('idle')
+
+  const propertyLock = useEditLock({
+    resourceType: 'property',
+    resourceId: editorState.mode === 'edit' ? formState.originalSlug || null : null,
+    enabled: propertyUsesFirebase && Boolean(authState.user) && activeTab === 'properties',
+  })
+  const pageLock = useEditLock({
+    resourceType: 'structuredPage',
+    resourceId: pageEditorState.activeKey || null,
+    enabled: siteContentEditingEnabled && Boolean(authState.user) && activeTab === 'pages',
+  })
+  const siteShellLock = useEditLock({
+    resourceType: 'siteShell',
+    resourceId: 'site-shell',
+    enabled: siteContentEditingEnabled && Boolean(authState.user) && (activeTab === 'site-shell' || activeTab === 'styles'),
+  })
+  const charterLock = useEditLock({
+    resourceType: 'charter',
+    resourceId: charterEditorState.mode === 'edit' ? charterFormState.originalSlug || null : null,
+    enabled: charterUsesFirebase && Boolean(authState.user) && activeTab === 'charters',
+  })
+
+  const [activeEditLocks, setActiveEditLocks] = useState({})
+
+  useEffect(() => {
+    if (!authState.user) {
+      return undefined
+    }
+
+    let cancelled = false
+
+    async function pollLockStatuses() {
+      const requestOptions = await getAdminRequestOptions().catch(() => null)
+
+      if (cancelled || !requestOptions?.authToken) {
+        return
+      }
+
+      const resourceTypes = [
+        propertyUsesFirebase ? 'property' : null,
+        siteContentEditingEnabled ? 'structuredPage' : null,
+        charterUsesFirebase ? 'charter' : null,
+      ].filter(Boolean)
+
+      const results = await Promise.all(
+        resourceTypes.map((resourceType) =>
+          listEditLockStatuses(resourceType, requestOptions).catch(() => []),
+        ),
+      )
+
+      if (cancelled) {
+        return
+      }
+
+      const nextLocks = {}
+
+      results.flat().forEach((lock) => {
+        if (lock?.resourceType && lock?.resourceId) {
+          nextLocks[`${lock.resourceType}:${lock.resourceId}`] = lock.lockedByEmail || ''
+        }
+      })
+
+      setActiveEditLocks(nextLocks)
+    }
+
+    pollLockStatuses()
+    const intervalId = setInterval(pollLockStatuses, 10000)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalId)
+      setActiveEditLocks({})
+    }
+    // getAdminRequestOptions is a new function reference every render; adding it here would defeat the 10s polling interval.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authState.user, propertyUsesFirebase, siteContentEditingEnabled, charterUsesFirebase])
+
+  function lockBadgeSuffix(resourceType, resourceId) {
+    const lockedByEmail = activeEditLocks[`${resourceType}:${resourceId}`]
+    return lockedByEmail ? ` — editing: ${lockedByEmail}` : ''
+  }
+
   const propertyDirty = jsonSnapshot(formState) !== jsonSnapshot(savedFormState)
   const charterDirty = jsonSnapshot(charterFormState) !== jsonSnapshot(savedCharterFormState)
   const siteShellDirty = jsonSnapshot(siteShellDraft) !== jsonSnapshot(siteShellWorkspaceState.shell)
@@ -1548,6 +1641,20 @@ export function AdminPage() {
         }
       }
 
+      if (field === 'location') {
+        const nextState = {
+          ...currentState,
+          location: value,
+        }
+
+        return {
+          ...nextState,
+          shortDescription: mergePropertyShortDescription(nextState, currentState.shortDescription, {
+            generatedLocations: [currentState.location, value],
+          }),
+        }
+      }
+
       if (field === 'bathrooms' || field === 'maxGuests') {
         const nextState = {
           ...currentState,
@@ -1706,12 +1813,15 @@ export function AdminPage() {
 
     try {
       setSaveStatus('saving')
+      setPropertyConflict(null)
       const editorMode = editorState.mode
       const formStateToPersist = {
         ...nextFormState,
         shortDescription: mergePropertyShortDescription(nextFormState, nextFormState.shortDescription),
       }
-      const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
+      const requestOptions = propertyUsesFirebase
+        ? { ...(await getAdminRequestOptions()), expectedUpdatedAt: editorMode === 'edit' ? propertyPublication?.savedAt ?? null : null }
+        : {}
       const savedProperty = await saveAdminProperty(
         buildPropertyDraft(formStateToPersist),
         editorMode === 'edit' ? formStateToPersist.originalSlug : '',
@@ -1743,9 +1853,25 @@ export function AdminPage() {
       return savedProperty
     } catch (error) {
       setSaveStatus('error')
+
+      if (error?.status === 409 && error?.payload?.latest) {
+        setPropertyConflict(error.payload.latest)
+        setFeedback('Someone else saved changes to this property since you loaded it. Load the latest version to continue.')
+        return null
+      }
+
       setFeedback(error instanceof Error ? error.message : 'Unable to save property changes.')
       return null
     }
+  }
+
+  function handleLoadLatestProperty() {
+    if (!propertyConflict) {
+      return
+    }
+
+    openEditForm(propertyConflict)
+    setPropertyConflict(null)
   }
 
   async function handleSubmit(event) {
@@ -1763,7 +1889,10 @@ export function AdminPage() {
 
     try {
       setSaveStatus('publishing')
-      const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
+      setPropertyConflict(null)
+      const requestOptions = propertyUsesFirebase
+        ? { ...(await getAdminRequestOptions()), expectedUpdatedAt: propertyPublication?.savedAt ?? null }
+        : {}
       const publishedProperty = await publishAdminProperty(formState.originalSlug, requestOptions)
       const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
@@ -1783,6 +1912,13 @@ export function AdminPage() {
       setSaveStatus('idle')
     } catch (error) {
       setSaveStatus('error')
+
+      if (error?.status === 409 && error?.payload?.latest) {
+        setPropertyConflict(error.payload.latest)
+        setFeedback('Someone else saved changes to this property since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setFeedback(error instanceof Error ? error.message : 'Unable to publish property changes.')
     }
   }
@@ -1815,8 +1951,10 @@ export function AdminPage() {
 
     try {
       setSaveStatus('saving')
+      setPropertyConflict(null)
       const requestOptions = await getAdminRequestOptions()
       const hadUnsavedChanges = propertyDirty
+      let expectedUpdatedAt = propertyPublication?.savedAt ?? null
       let currentFormState = {
         ...formState,
         active: nextActive,
@@ -1826,13 +1964,17 @@ export function AdminPage() {
         const savedDraftProperty = await saveAdminProperty(
           buildPropertyDraft(currentFormState),
           currentFormState.originalSlug,
-          requestOptions,
+          { ...requestOptions, expectedUpdatedAt: propertyPublication?.savedAt ?? null },
         )
 
         currentFormState = createFormState(savedDraftProperty)
+        expectedUpdatedAt = savedDraftProperty?.publication?.savedAt ?? null
       }
 
-      const updatedProperty = await setAdminPropertyActiveState(currentFormState.originalSlug, nextActive, requestOptions)
+      const updatedProperty = await setAdminPropertyActiveState(currentFormState.originalSlug, nextActive, {
+        ...requestOptions,
+        expectedUpdatedAt,
+      })
       const properties = await listAllProperties(requestOptions)
       setWorkspaceState({ status: 'ready', properties })
 
@@ -1856,6 +1998,13 @@ export function AdminPage() {
       setSaveStatus('idle')
     } catch (error) {
       setSaveStatus('error')
+
+      if (error?.status === 409 && error?.payload?.latest) {
+        setPropertyConflict(error.payload.latest)
+        setFeedback('Someone else saved changes to this property since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setFeedback(error instanceof Error ? error.message : 'Unable to update property visibility.')
     }
   }
@@ -1955,7 +2104,13 @@ export function AdminPage() {
 
     try {
       setCharterSaveStatus('saving')
-      const requestOptions = charterUsesFirebase ? await getAdminRequestOptions() : {}
+      setCharterConflict(null)
+      const requestOptions = charterUsesFirebase
+        ? {
+            ...(await getAdminRequestOptions()),
+            expectedUpdatedAt: charterEditorState.mode === 'edit' ? charterPublication?.savedAt ?? null : null,
+          }
+        : {}
       const saved = await saveAdminCharter(
         buildCharterDraft(charterFormState),
         charterEditorState.mode === 'edit' ? charterFormState.originalSlug : '',
@@ -1978,14 +2133,33 @@ export function AdminPage() {
       setCharterSaveStatus('idle')
     } catch (error) {
       setCharterSaveStatus('error')
+
+      if (error?.status === 409 && error?.payload?.latest) {
+        setCharterConflict(error.payload.latest)
+        setCharterFeedback('Someone else saved changes to this charter since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setCharterFeedback(error instanceof Error ? error.message : 'Unable to save charter changes.')
     }
+  }
+
+  function handleLoadLatestCharter() {
+    if (!charterConflict) {
+      return
+    }
+
+    openEditCharterForm(charterConflict)
+    setCharterConflict(null)
   }
 
   async function handlePublishCharter() {
     try {
       setCharterSaveStatus('publishing')
-      const requestOptions = charterUsesFirebase ? await getAdminRequestOptions() : {}
+      setCharterConflict(null)
+      const requestOptions = charterUsesFirebase
+        ? { ...(await getAdminRequestOptions()), expectedUpdatedAt: charterPublication?.savedAt ?? null }
+        : {}
       const publishedCharter = await publishAdminCharter(charterFormState.originalSlug, requestOptions)
       const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
@@ -1998,6 +2172,13 @@ export function AdminPage() {
       setCharterSaveStatus('idle')
     } catch (error) {
       setCharterSaveStatus('error')
+
+      if (error?.status === 409 && error?.payload?.latest) {
+        setCharterConflict(error.payload.latest)
+        setCharterFeedback('Someone else saved changes to this charter since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setCharterFeedback(error instanceof Error ? error.message : 'Unable to publish charter changes.')
     }
   }
@@ -2114,7 +2295,8 @@ export function AdminPage() {
   async function saveSiteShellDraft() {
     try {
       setSiteShellSaveStatus('saving')
-      const requestOptions = await getAdminRequestOptions()
+      setSiteShellConflict(false)
+      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: siteShellPublication?.savedAt ?? null }
       const savedSiteShell = await saveAdminSiteShellContent(siteShellDraft ?? {}, requestOptions)
       setSiteShellWorkspaceState({ status: 'ready', shell: savedSiteShell.siteShell, message: '' })
       setSiteShellDraft(savedSiteShell.siteShell)
@@ -2123,8 +2305,20 @@ export function AdminPage() {
       setSiteShellSaveStatus('idle')
     } catch (error) {
       setSiteShellSaveStatus('error')
+
+      if (error?.status === 409) {
+        setSiteShellConflict(true)
+        setSiteShellFeedback('Someone else saved changes to the site shell since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to save the site shell.')
     }
+  }
+
+  async function handleLoadLatestSiteShell() {
+    await loadCurrentSiteShellIntoEditor()
+    setSiteShellConflict(false)
   }
 
   async function handleSiteShellSubmit(event) {
@@ -2141,7 +2335,8 @@ export function AdminPage() {
   async function handlePublishSiteShell() {
     try {
       setSiteShellSaveStatus('publishing')
-      const requestOptions = await getAdminRequestOptions()
+      setSiteShellConflict(false)
+      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: siteShellPublication?.savedAt ?? null }
       const publishedSiteShell = await publishAdminSiteShellContent(requestOptions)
       setSiteShellWorkspaceState({ status: 'ready', shell: publishedSiteShell.siteShell, message: '' })
       setSiteShellDraft(publishedSiteShell.siteShell)
@@ -2151,6 +2346,13 @@ export function AdminPage() {
       setSiteShellSaveStatus('idle')
     } catch (error) {
       setSiteShellSaveStatus('error')
+
+      if (error?.status === 409) {
+        setSiteShellConflict(true)
+        setSiteShellFeedback('Someone else saved changes to the site shell since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setSiteShellFeedback(error instanceof Error ? error.message : 'Unable to publish the site shell.')
     }
   }
@@ -2184,15 +2386,32 @@ export function AdminPage() {
 
     try {
       setPageSaveStatus('saving')
-      const requestOptions = await getAdminRequestOptions()
+      setPageConflict(false)
+      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
       const savedPage = await saveAdminStructuredPageContent(pageEditorState.activeKey, pageEditorState.draft ?? {}, requestOptions)
       await reloadStructuredPageWorkspace(savedPage?.page?.key ?? pageEditorState.activeKey)
       setPageFeedback(`Saved draft changes to ${savedPage?.page?.navLabel || savedPage?.page?.key || pageEditorState.activeKey}.`)
       setPageSaveStatus('idle')
     } catch (error) {
       setPageSaveStatus('error')
+
+      if (error?.status === 409) {
+        setPageConflict(true)
+        setPageFeedback('Someone else saved changes to this page since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setPageFeedback(error instanceof Error ? error.message : 'Unable to save the structured page.')
     }
+  }
+
+  async function handleLoadLatestStructuredPage() {
+    if (!pageEditorState.activeKey) {
+      return
+    }
+
+    await loadStructuredPageIntoEditor(pageEditorState.activeKey)
+    setPageConflict(false)
   }
 
   async function handlePublishStructuredPage() {
@@ -2202,13 +2421,21 @@ export function AdminPage() {
 
     try {
       setPageSaveStatus('publishing')
-      const requestOptions = await getAdminRequestOptions()
+      setPageConflict(false)
+      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
       const publishedPage = await publishAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
       await reloadStructuredPageWorkspace(publishedPage?.page?.key ?? pageEditorState.activeKey)
       setPageFeedback(`Published ${publishedPage?.page?.navLabel || publishedPage?.page?.key || pageEditorState.activeKey} live.`)
       setPageSaveStatus('idle')
     } catch (error) {
       setPageSaveStatus('error')
+
+      if (error?.status === 409) {
+        setPageConflict(true)
+        setPageFeedback('Someone else saved changes to this page since you loaded it. Load the latest version to continue.')
+        return
+      }
+
       setPageFeedback(error instanceof Error ? error.message : 'Unable to publish the structured page.')
     }
   }
@@ -2353,18 +2580,24 @@ export function AdminPage() {
   })
   const selectedStructuredPage =
     structuredPages.find((page) => page.key === pageEditorState.activeKey) ?? structuredPages[0] ?? null
-  const propertySaveEnabled = propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user))
+  const propertySaveEnabled =
+    propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user)) && !propertyLock.isBlocked
   const propertyHasPendingPublication = hasPendingPublication(propertyPublication)
   const propertyActionBusy = saveStatus === 'saving' || saveStatus === 'publishing'
   const propertyPublishVisible = propertyUsesFirebase && editorState.mode === 'edit' && propertyHasPendingPublication
   const propertyPublishEnabled = propertyPublishVisible && propertySaveEnabled && !propertyDirty && !propertyActionBusy
   const propertyPreviewToggleVisible = Boolean(formState)
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
-  const charterSaveEnabled = charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user))
+  const charterSaveEnabled =
+    charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user)) && !charterLock.isBlocked
   const charterHasPendingPublication = hasPendingPublication(charterPublication)
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
   const siteContentDraftEditingEnabled = siteContentEditingEnabled
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
+  const siteShellDraftEditingEnabled = siteContentDraftEditingEnabled && !siteShellLock.isBlocked
+  const siteShellSaveEnabled = siteContentSaveEnabled && !siteShellLock.isBlocked
+  const pageDraftEditingEnabled = siteContentDraftEditingEnabled && !pageLock.isBlocked
+  const pageSaveEnabled = siteContentSaveEnabled && !pageLock.isBlocked
   const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
   const showSiteShellPublishAction = siteShellHasPendingPublication && siteShellEditedSinceLoad && !siteShellDirty
   const propertyFloatingSaveVisible = propertyPreviewToggleVisible || propertyDirty || propertyPublishVisible || propertyActionBusy
@@ -2521,7 +2754,17 @@ export function AdminPage() {
                   <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(siteShellSaveStatus)}`}>{siteShellFeedback}</p>
                 ) : null}
 
-                {!siteContentSaveEnabled ? (
+                {siteShellConflict ? (
+                  <button className="button-link button-link--secondary admin-action" type="button" onClick={handleLoadLatestSiteShell}>
+                    Load latest version
+                  </button>
+                ) : null}
+
+                {siteShellLock.isBlocked ? (
+                  <p className="admin-feedback admin-feedback--warning">
+                    This is currently being edited by {siteShellLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
+                  </p>
+                ) : !siteShellSaveEnabled ? (
                   <p className="admin-note">You can edit the header and footer draft here, but you must sign in before saving drafts or publishing changes live.</p>
                 ) : null}
 
@@ -2531,7 +2774,7 @@ export function AdminPage() {
                   <form className="admin-form" onSubmit={handleSiteShellSubmit}>
                     <div className="admin-floating-save-shell">
                       <AdminFloatingSaveButton
-                        disabled={!siteContentSaveEnabled}
+                        disabled={!siteShellSaveEnabled}
                         label={showSiteShellPublishAction ? 'Publish shell changes' : 'Save shell changes'}
                         onReset={handleDiscardSiteShellChanges}
                         showReset={siteShellDirty}
@@ -2542,7 +2785,7 @@ export function AdminPage() {
                       <div className="admin-editor-workspace admin-editor-workspace--full-width">
                         <div>
                           <AdminSiteShellEditor
-                            disabled={!siteContentDraftEditingEnabled}
+                            disabled={!siteShellDraftEditingEnabled}
                             onChange={handleSiteShellDraftChange}
                             routeInventory={pageWorkspaceState.inventory}
                             routeSuggestions={siteShellRouteSuggestions}
@@ -2620,6 +2863,7 @@ export function AdminPage() {
                       {structuredPages.map((page) => (
                         <option key={page.key} value={page.key}>
                           {formatPageSelectorLabel(page)}
+                          {lockBadgeSuffix('structuredPage', page.key)}
                         </option>
                       ))}
                     </select>
@@ -2652,9 +2896,19 @@ export function AdminPage() {
               <div className="admin-editor admin-editor--page">
                 {pageFeedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(pageSaveStatus)}`}>{pageFeedback}</p> : null}
 
+                {pageConflict ? (
+                  <button className="button-link button-link--secondary admin-action" type="button" onClick={handleLoadLatestStructuredPage}>
+                    Load latest version
+                  </button>
+                ) : null}
+
                 {pageEditorState.status === 'loading' ? <p className="admin-empty">Loading structured page content...</p> : null}
 
-                {!siteContentSaveEnabled ? (
+                {pageLock.isBlocked ? (
+                  <p className="admin-feedback admin-feedback--warning">
+                    This page is currently being edited by {pageLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
+                  </p>
+                ) : !pageSaveEnabled ? (
                   <p className="admin-note">You can edit this page draft now, but you must sign in before saving drafts or publishing changes live.</p>
                 ) : null}
 
@@ -2707,7 +2961,7 @@ export function AdminPage() {
                         {pageDirty || pageHasPendingPublication ? (
                           <button
                             className="button-link button-link--primary admin-submit"
-                            disabled={!siteContentSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                            disabled={!pageSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
                             type="submit"
                           >
                             {pageSaveStatus === 'publishing'
@@ -2732,7 +2986,7 @@ export function AdminPage() {
                       ) : (
                         <AdminPageEditorCanvas
                           device={pagePreviewDevice}
-                          disabled={!siteContentDraftEditingEnabled}
+                          disabled={!pageDraftEditingEnabled}
                           onChange={(updater) =>
                             setPageEditorState((current) => ({
                               ...current,
@@ -2760,9 +3014,15 @@ export function AdminPage() {
                 </div>
               </div>
 
+              {siteShellLock.isBlocked ? (
+                <p className="admin-feedback admin-feedback--warning">
+                  This is currently being edited by {siteShellLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
+                </p>
+              ) : null}
+
               <AdminStyleEditor
                 canPublishSiteShell={showSiteShellPublishAction}
-                disabled={!siteContentDraftEditingEnabled || siteShellWorkspaceState.status !== 'ready'}
+                disabled={!siteShellDraftEditingEnabled || siteShellWorkspaceState.status !== 'ready'}
                 feedback={siteShellFeedback}
                 publication={siteShellPublication}
                 saveStatus={siteShellSaveStatus}
@@ -2823,6 +3083,7 @@ export function AdminPage() {
                       {properties.map((property) => (
                         <option key={property.slug} value={property.slug}>
                           {formatPropertySelectorLabel(property)}
+                          {lockBadgeSuffix('property', property.adminOriginalSlug || property.slug)}
                         </option>
                       ))}
                     </select>
@@ -2831,7 +3092,19 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor">
+                {propertyLock.isBlocked ? (
+                  <p className="admin-feedback admin-feedback--warning">
+                    This property is currently being edited by {propertyLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
+                  </p>
+                ) : null}
+
                 {feedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(saveStatus)}`}>{feedback}</p> : null}
+
+                {propertyConflict ? (
+                  <button className="button-link button-link--secondary admin-action" type="button" onClick={handleLoadLatestProperty}>
+                    Load latest version
+                  </button>
+                ) : null}
 
                 <form className="admin-form admin-form--flush" onSubmit={handleSubmit}>
                   <div className="admin-toolbar-row admin-toolbar-row--split">
@@ -2999,6 +3272,7 @@ export function AdminPage() {
                       {charterWorkspaceState.charters.map((charter) => (
                         <option key={charter.slug} value={charter.slug}>
                           {formatCharterSelectorLabel(charter)}
+                          {lockBadgeSuffix('charter', charter.adminOriginalSlug || charter.slug)}
                         </option>
                       ))}
                     </select>
@@ -3007,8 +3281,20 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor">
+                {charterLock.isBlocked ? (
+                  <p className="admin-feedback admin-feedback--warning">
+                    This charter is currently being edited by {charterLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
+                  </p>
+                ) : null}
+
                 {charterFeedback ? (
                   <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(charterSaveStatus)}`}>{charterFeedback}</p>
+                ) : null}
+
+                {charterConflict ? (
+                  <button className="button-link button-link--secondary admin-action" type="button" onClick={handleLoadLatestCharter}>
+                    Load latest version
+                  </button>
                 ) : null}
 
                 <form className="admin-form admin-form--flush" onSubmit={handleCharterSubmit}>
