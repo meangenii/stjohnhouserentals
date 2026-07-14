@@ -570,7 +570,7 @@ function normalizePropertyRecord(record) {
     descriptionHtml,
     amenitiesHtml: amenityGroups.length > 0 ? amenityGroupsToHtml(amenityGroups) : String(record.amenitiesHtml ?? '').trim(),
     amenityGroups,
-    reviewsHtml: reviewEntries.length > 0 ? reviewEntriesToHtml(reviewEntries) : String(record.reviewsHtml ?? '').trim(),
+    reviewsHtml: String(record.reviewsHtml ?? '').trim(),
     reviewEntries,
     booking: normalizePropertyBooking(record, externalLinks, descriptionHtml),
     heroImage,
