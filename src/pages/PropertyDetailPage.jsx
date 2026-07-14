@@ -129,6 +129,21 @@ export function PropertyDetailPage() {
   )
 
   useEffect(() => {
+    // The reveal effect above only clears the covering transition once the
+    // destination property finishes loading successfully. If it instead fails
+    // (network error, deleted/hidden property), loadedPropertyPath never becomes
+    // truthy and the covering overlay — plus adjacent-property navigation — would
+    // otherwise stay stuck forever.
+    if (routeTransitionPhaseRef.current !== 'covering' || (effectiveStatus !== 'not-found' && effectiveStatus !== 'error')) {
+      return
+    }
+
+    routeTransitionPhaseRef.current = 'idle'
+    pendingDestinationRef.current = ''
+    setRouteTransitionPhase('idle')
+  }, [effectiveStatus])
+
+  useEffect(() => {
     let cancelled = false
 
     async function loadProperty() {

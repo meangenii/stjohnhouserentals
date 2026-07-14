@@ -158,6 +158,20 @@ function sanitizeFileName(fileName, contentType, { forcedExtension = '' } = {}) 
   return `${fileStem}.${extension}`
 }
 
+function sanitizeSvgBuffer(buffer) {
+  let svgText = buffer.toString('utf8')
+
+  svgText = svgText
+    .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<foreignObject[\s\S]*?<\/foreignObject\s*>/gi, '')
+    .replace(/\son\w+\s*=\s*"(?:[^"\\]|\\.)*"/gi, '')
+    .replace(/\son\w+\s*=\s*'(?:[^'\\]|\\.)*'/gi, '')
+    .replace(/(\s(?:xlink:)?href\s*=\s*)"javascript:[^"]*"/gi, '$1""')
+    .replace(/(\s(?:xlink:)?href\s*=\s*)'javascript:[^']*'/gi, "$1''")
+
+  return Buffer.from(svgText, 'utf8')
+}
+
 function normalizeDimension(value) {
   const dimension = Number.parseInt(String(value ?? '').trim(), 10)
 
@@ -182,6 +196,21 @@ async function readImageDimensions(buffer) {
 
 async function normalizeUploadAsset(fileName, contentType, buffer) {
   const normalizedFileName = sanitizeFileName(fileName, contentType)
+
+  if (contentType === 'image/svg+xml') {
+    const sanitizedBuffer = sanitizeSvgBuffer(buffer)
+
+    return {
+      buffer: sanitizedBuffer,
+      contentType,
+      fileName: normalizedFileName,
+      height: null,
+      originalContentType: '',
+      originalFileName: '',
+      wasConvertedToAvif: false,
+      width: null,
+    }
+  }
 
   if (!AVIF_CONVERSION_CONTENT_TYPES.has(contentType)) {
     const dimensions = await readImageDimensions(buffer)
@@ -241,19 +270,35 @@ async function normalizeUploadAsset(fileName, contentType, buffer) {
   }
 }
 
-async function resolveUniqueStoragePath(bucket, folderPath, sanitizedFileName) {
+function isPreconditionFailedError(error) {
+  return Number(error?.code) === 412
+}
+
+// Saves under the first available candidate name, using a generation
+// precondition so the existence check and the write are atomic — two
+// concurrent uploads with the same file name can no longer race each other
+// into overwriting the same object.
+async function saveUniqueMediaFile(bucket, folderPath, sanitizedFileName, storageBuffer, saveOptions) {
   const extension = path.extname(sanitizedFileName)
   const stem = sanitizedFileName.slice(0, sanitizedFileName.length - extension.length)
 
   for (let index = 0; index < 100; index += 1) {
     const candidateName = index === 0 ? sanitizedFileName : `${stem}-${String(index + 1).padStart(2, '0')}${extension}`
     const storagePath = `${folderPath}/${candidateName}`
-    const [exists] = await bucket.file(storagePath).exists()
 
-    if (!exists) {
+    try {
+      await bucket.file(storagePath).save(storageBuffer, {
+        ...saveOptions,
+        preconditionOpts: { ifGenerationMatch: 0 },
+      })
+
       return {
         fileName: candidateName,
         storagePath,
+      }
+    } catch (error) {
+      if (!isPreconditionFailedError(error)) {
+        throw error
       }
     }
   }
@@ -337,15 +382,12 @@ async function uploadMediaAsset(draft, actor) {
   const storageHashSha256 = createHash('sha256').update(storageBuffer).digest('hex')
 
   const bucket = getStorageBucket()
-  const { fileName, storagePath } = await resolveUniqueStoragePath(bucket, folderPath, sanitizedFileName)
   const downloadToken = randomUUID()
-  const mediaId = createMediaDocumentId(storagePath)
-  const managedUrl = buildDownloadUrl(bucket.name, storagePath, downloadToken)
   const db = getDb()
 
   await ensureFolderRecords(folderPath, actor)
 
-  await bucket.file(storagePath).save(storageBuffer, {
+  const { fileName, storagePath } = await saveUniqueMediaFile(bucket, folderPath, sanitizedFileName, storageBuffer, {
     resumable: false,
     contentType,
     metadata: {
@@ -357,6 +399,8 @@ async function uploadMediaAsset(draft, actor) {
       },
     },
   })
+  const mediaId = createMediaDocumentId(storagePath)
+  const managedUrl = buildDownloadUrl(bucket.name, storagePath, downloadToken)
 
   const mediaRecord = {
     alt: normalizeString(draft?.alt),

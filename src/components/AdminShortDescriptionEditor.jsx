@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-import { captureCaretOffset, restoreCaretOffset } from '../lib/richTextFormatting'
+import { captureCaretOffset, placeCaretAtPoint, restoreCaretOffset } from '../lib/richTextFormatting'
 import { richTextValueToPlainLineText } from '../lib/richTextValue'
 
 const BLOCKED_FORMAT_SHORTCUTS = new Set(['b', 'i', 'u'])
@@ -182,7 +182,7 @@ export function AdminShortDescriptionEditor({
       return
     }
 
-    const droppedValue = event.dataTransfer?.getData('text/plain') || ''
+    const droppedValue = event.dataTransfer?.getData('text/plain') || event.dataTransfer?.getData('text/html') || ''
     const normalizedDrop = normalizeShortDescriptionText(droppedValue)
 
     if (!normalizedDrop) {
@@ -191,6 +191,11 @@ export function AdminShortDescriptionEditor({
     }
 
     event.preventDefault()
+
+    if (!placeCaretAtPoint(event.currentTarget, event.clientX, event.clientY)) {
+      return
+    }
+
     insertPlainText(normalizedDrop)
     syncValue({ cleanDom: true })
   }

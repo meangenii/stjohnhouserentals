@@ -1,17 +1,21 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR } from '../lib/adminFloatingLayout'
-import { resolveLinkRenderConfig } from '../lib/linkRecords'
+import { buildRouteOptions, resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getClipboardRichTextHtml, richTextValueToHtml } from '../lib/richTextValue'
 import {
   applyRichTextFontSize,
   captureCaretOffset,
   captureRichTextSelectionRange,
-  elementIntersectsRange,
+  insertLinkAtCollapsedSelection,
+  isTightenedBlockSelection,
+  placeCaretAtPoint,
   restoreCaretOffset,
   restoreRichTextSelectionRange,
   readRichTextSelectionState,
+  tightenOrUntightenSelectedLines,
 } from '../lib/richTextFormatting'
 import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
+import { SiteContentPreviewContext } from '../lib/siteContentPreview'
 import { useEditorStyleSettings } from '../lib/useEditorStyleSettings'
 import { AdminLinkFields } from './AdminLinkFields'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
@@ -37,6 +41,165 @@ function isEmptyHtmlValue(value = '') {
     .replace(/&nbsp;/gi, ' ')
     .replace(/<[^>]+>/g, '')
     .trim().length === 0
+}
+
+function ensureDefaultParagraphSeparator() {
+  try {
+    document.execCommand('defaultParagraphSeparator', false, 'p')
+  } catch {
+    // Browsers that do not support this command still fall back to their native Enter behavior.
+  }
+}
+
+function readEditorSelectionState(editor) {
+  return {
+    ...readRichTextSelectionState(editor, { defaultBlockTag: 'p' }),
+    tightenedLines: isTightenedBlockSelection(editor),
+  }
+}
+
+function normalizeSnippetMarkerText(value = '') {
+  return String(value ?? '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[^a-z0-9]+/gi, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function createRichTextContainer(html) {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const container = document.createElement('div')
+  container.innerHTML = richTextValueToHtml(html)
+  return container
+}
+
+function getFirstMeaningfulSnippetNode(container) {
+  return Array.from(container?.childNodes ?? []).find((node) => {
+    if (node.nodeType === 3) {
+      return Boolean(node.textContent?.trim())
+    }
+
+    return node.nodeType === 1 && Boolean(node.textContent?.trim())
+  })
+}
+
+function getSnippetSectionStartText(snippet) {
+  if (snippet?.sectionStart) {
+    return snippet.sectionStart
+  }
+
+  const snippetContainer = createRichTextContainer(snippet?.html)
+  const firstNode = getFirstMeaningfulSnippetNode(snippetContainer)
+  return firstNode?.textContent ?? snippet?.label ?? ''
+}
+
+function getSnippetSectionKey(snippet, index) {
+  return String(snippet?.sectionKey ?? snippet?.label ?? `snippet-${index}`).trim()
+}
+
+function getSectionSnippetItems(snippets = []) {
+  return snippets
+    .map((snippet, index) => ({
+      index,
+      key: getSnippetSectionKey(snippet, index),
+      marker: normalizeSnippetMarkerText(getSnippetSectionStartText(snippet)),
+      snippet,
+    }))
+    .filter((item) => item.snippet?.insertStrategy === 'section' && item.key && item.marker)
+}
+
+function snippetMarkerMatchesText(text, marker) {
+  const normalizedText = normalizeSnippetMarkerText(text)
+  return Boolean(
+    normalizedText &&
+      marker &&
+      (normalizedText === marker || normalizedText.startsWith(`${marker} `) || normalizedText.endsWith(` ${marker}`)),
+  )
+}
+
+function nodeMatchesSnippetMarker(node, marker) {
+  const emphasizedMarker = node?.querySelector?.('strong, b')?.textContent
+
+  if (snippetMarkerMatchesText(emphasizedMarker, marker)) {
+    return true
+  }
+
+  const nodeMarker = normalizeSnippetMarkerText(node?.textContent ?? '')
+  const isHeadingNode = /^H[1-6]$/i.test(node?.tagName ?? '')
+
+  return Boolean(nodeMarker && marker && (nodeMarker === marker || (isHeadingNode && nodeMarker.startsWith(`${marker} `))))
+}
+
+function findSnippetSectionStart(container, item) {
+  return Array.from(container?.children ?? []).find((child) => nodeMatchesSnippetMarker(child, item.marker)) ?? null
+}
+
+function appendSnippetHtml(sourceHtml, snippetHtml) {
+  const normalizedSourceHtml = richTextValueToHtml(sourceHtml).trim()
+  const normalizedSnippetHtml = richTextValueToHtml(snippetHtml).trim()
+
+  return [normalizedSourceHtml, normalizedSnippetHtml].filter(Boolean).join('\n')
+}
+
+function insertSectionSnippetHtml(sourceHtml, snippet, snippets) {
+  const snippetHtml = richTextValueToHtml(snippet?.html)
+
+  if (!snippetHtml) {
+    return richTextValueToHtml(sourceHtml)
+  }
+
+  const root = createRichTextContainer(sourceHtml)
+  const snippetRoot = createRichTextContainer(snippetHtml)
+
+  if (!root || !snippetRoot) {
+    return appendSnippetHtml(sourceHtml, snippetHtml)
+  }
+
+  const sectionItems = getSectionSnippetItems(snippets)
+  const currentKey = getSnippetSectionKey(snippet, -1)
+  const currentItem = sectionItems.find((item) => item.snippet === snippet || item.key === currentKey)
+
+  if (!currentItem) {
+    return appendSnippetHtml(root.innerHTML, snippetHtml)
+  }
+
+  if (findSnippetSectionStart(root, currentItem)) {
+    return richTextValueToHtml(root.innerHTML)
+  }
+
+  const followingMarkers = sectionItems.filter((item) => item.index > currentItem.index).map((item) => item.marker)
+  const followingSectionStart =
+    Array.from(root.children).find((child) => followingMarkers.some((marker) => nodeMatchesSnippetMarker(child, marker))) ?? null
+  const fragment = document.createDocumentFragment()
+
+  Array.from(snippetRoot.childNodes).forEach((child) => {
+    fragment.append(child)
+  })
+
+  if (followingSectionStart) {
+    root.insertBefore(fragment, followingSectionStart)
+  } else {
+    root.append(fragment)
+  }
+
+  return richTextValueToHtml(root.innerHTML)
+}
+
+function getInsertedLinkText(renderConfig) {
+  const destination = String(renderConfig?.destination || renderConfig?.href || renderConfig?.to || '').trim()
+
+  if (renderConfig?.type === 'email') {
+    return destination.replace(/^mailto:/i, '').split('?')[0] || destination
+  }
+
+  if (renderConfig?.type === 'phone') {
+    return destination.replace(/^tel:/i, '') || destination
+  }
+
+  return destination
 }
 
 export function AdminRichTextEditor({
@@ -71,13 +234,17 @@ export function AdminRichTextEditor({
     bold: false,
     fontSize: 'default',
     italic: false,
+    tightenedLines: false,
     underline: false,
   }))
   const editorStyleSettings = useEditorStyleSettings()
+  const previewState = useContext(SiteContentPreviewContext)
+  const routeOptions = buildRouteOptions(Array.isArray(previewState?.routeInventory) ? previewState.routeInventory : [])
   const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
   const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
   const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
   const renderedValue = richTextValueToHtml(value)
+  const lastPublishedHtmlRef = useRef(renderedValue)
 
   useLayoutEffect(() => {
     if (mode !== 'visual' || !editorRef.current) {
@@ -88,6 +255,11 @@ export function AdminRichTextEditor({
     const nextHtml = isEmptyHtmlValue(renderedValue) ? '' : renderedValue
 
     if (editor.innerHTML === nextHtml) {
+      lastPublishedHtmlRef.current = nextHtml
+      return
+    }
+
+    if (document.activeElement === editor && nextHtml === lastPublishedHtmlRef.current) {
       return
     }
 
@@ -99,6 +271,8 @@ export function AdminRichTextEditor({
     if (isFocused) {
       restoreCaretOffset(editor, caretOffsets)
     }
+
+    lastPublishedHtmlRef.current = nextHtml
   }, [mode, renderedValue])
 
   useEffect(() => {
@@ -117,12 +291,12 @@ export function AdminRichTextEditor({
 
       if (nextRange) {
         selectionRangeRef.current = nextRange
-        setSelectionState(readRichTextSelectionState(editor, { defaultBlockTag: 'p' }))
+        setSelectionState(readEditorSelectionState(editor))
         return
       }
 
       if (!preserveWhenMissing) {
-        setSelectionState(readRichTextSelectionState(editor, { defaultBlockTag: 'p' }))
+        setSelectionState(readEditorSelectionState(editor))
       }
     }
 
@@ -237,7 +411,7 @@ export function AdminRichTextEditor({
     }
   }, [mode, toolbarVisible])
 
-  function syncValue() {
+  function syncValue({ cleanDom = true } = {}) {
     const editor = editorRef.current
 
     if (!editor) {
@@ -247,7 +421,7 @@ export function AdminRichTextEditor({
     const normalizedHtml = (() => {
       const nextHtml = isEmptyHtmlValue(editor.innerHTML) ? '' : richTextValueToHtml(editor.innerHTML)
 
-      if (editor.innerHTML === nextHtml) {
+      if (!cleanDom || editor.innerHTML === nextHtml) {
         return nextHtml
       }
 
@@ -269,8 +443,9 @@ export function AdminRichTextEditor({
       selectionRangeRef.current = nextRange
     }
 
+    lastPublishedHtmlRef.current = normalizedHtml
     onChange(normalizedHtml)
-    setSelectionState(readRichTextSelectionState(editor, { defaultBlockTag: 'p' }))
+    setSelectionState(readEditorSelectionState(editor))
   }
 
   function rememberSelection() {
@@ -301,6 +476,21 @@ export function AdminRichTextEditor({
 
     document.execCommand(command, false, commandValue)
     syncValue()
+  }
+
+  function publishHtmlValue(nextHtml) {
+    const normalizedHtml = isEmptyHtmlValue(nextHtml) ? '' : richTextValueToHtml(nextHtml)
+
+    lastPublishedHtmlRef.current = normalizedHtml
+    onChange(normalizedHtml)
+
+    if (mode === 'visual' && editorRef.current && editorRef.current.innerHTML !== normalizedHtml) {
+      editorRef.current.innerHTML = normalizedHtml
+    }
+
+    if (mode === 'visual') {
+      setSelectionState(readEditorSelectionState(editorRef.current))
+    }
   }
 
   function handleBlockTagChange(nextValue) {
@@ -380,11 +570,20 @@ export function AdminRichTextEditor({
       return
     }
 
-    document.execCommand('createLink', false, href)
+    const existingAnchorElement = getSelectedAnchorElement()
+    const insertedAnchorElement = existingAnchorElement
+      ? null
+      : insertLinkAtCollapsedSelection(editorRef.current, href, getInsertedLinkText(renderConfig))
 
-    const anchorElement = getSelectedAnchorElement()
+    if (!insertedAnchorElement) {
+      document.execCommand('createLink', false, href)
+    }
+
+    const anchorElement = insertedAnchorElement || getSelectedAnchorElement()
 
     if (anchorElement) {
+      anchorElement.setAttribute('href', href)
+
       if (renderConfig.target) {
         anchorElement.setAttribute('target', renderConfig.target)
         anchorElement.setAttribute('rel', renderConfig.rel || 'noreferrer noopener')
@@ -415,36 +614,17 @@ export function AdminRichTextEditor({
       return
     }
 
-    const selection = typeof window !== 'undefined' ? window.getSelection() : null
-    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null
-
-    if (!range || range.collapsed) {
-      return
+    if (tightenOrUntightenSelectedLines(editor)) {
+      syncValue()
     }
-
-    const selectedBlocks = Array.from(editor.children).filter((child) => elementIntersectsRange(child, range))
-
-    if (selectedBlocks.length < 2) {
-      return
-    }
-
-    const anchorBlock = selectedBlocks[0]
-
-    selectedBlocks.slice(1).forEach((block) => {
-      anchorBlock.append(document.createElement('br'))
-
-      while (block.firstChild) {
-        anchorBlock.append(block.firstChild)
-      }
-
-      block.remove()
-    })
-
-    syncValue()
   }
 
   function handleCanvasKeyDown(event) {
     if (disabled || event.key !== 'Enter' || !event.shiftKey) {
+      if (!disabled && event.key === 'Enter') {
+        ensureDefaultParagraphSeparator()
+      }
+
       return
     }
 
@@ -453,8 +633,16 @@ export function AdminRichTextEditor({
     syncValue()
   }
 
-  function insertSnippet(html) {
+  function insertSnippet(snippet) {
+    const html = typeof snippet === 'string' ? snippet : snippet?.html
+
     if (disabled || !html) {
+      return
+    }
+
+    if (snippet?.insertStrategy === 'section') {
+      const sourceHtml = mode === 'visual' && editorRef.current ? editorRef.current.innerHTML : value
+      publishHtmlValue(insertSectionSnippetHtml(sourceHtml, snippet, snippets))
       return
     }
 
@@ -470,6 +658,7 @@ export function AdminRichTextEditor({
 
   function showToolbar() {
     if (!disabled) {
+      ensureDefaultParagraphSeparator()
       setToolbarVisible(true)
     }
   }
@@ -487,6 +676,27 @@ export function AdminRichTextEditor({
 
     event.preventDefault()
     document.execCommand('insertHTML', false, pastedHtml)
+    syncValue()
+  }
+
+  function handleDrop(event) {
+    if (disabled) {
+      return
+    }
+
+    const droppedHtml = getClipboardRichTextHtml(event.dataTransfer)
+
+    event.preventDefault()
+
+    if (!droppedHtml) {
+      return
+    }
+
+    if (!placeCaretAtPoint(editorRef.current, event.clientX, event.clientY)) {
+      return
+    }
+
+    document.execCommand('insertHTML', false, droppedHtml)
     syncValue()
   }
 
@@ -571,7 +781,7 @@ export function AdminRichTextEditor({
                 Line Break
               </ToolbarButton>
               <ToolbarButton disabled={disabled} onClick={tightenSelectedLines}>
-                Tighten Lines
+                {selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
               </ToolbarButton>
               <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertUnorderedList')}>
                 Bullets
@@ -591,7 +801,8 @@ export function AdminRichTextEditor({
           <p className="admin-note admin-rich-text-linebreak-hint">
             Press <strong>Enter</strong> for a new paragraph (adds spacing). Press <strong>Shift+Enter</strong> or click{' '}
             <strong>Line Break</strong> to start a new line without extra spacing. Select a few lines and click{' '}
-            <strong>Tighten Lines</strong> to remove extra spacing from text that already has it.
+            <strong>Tighten Lines</strong> to remove extra spacing. Select tightened text and click <strong>Untighten Lines</strong>{' '}
+            to restore paragraph spacing.
           </p>
 
           {linkEditorState ? (
@@ -603,6 +814,7 @@ export function AdminRichTextEditor({
                   destinationLabel="Link"
                   disabled={disabled}
                   link={linkEditorState.link}
+                  routeOptions={routeOptions}
                   onChange={(nextLink) => setLinkEditorState((currentState) => ({ ...currentState, link: nextLink }))}
                 />
                 <div className="admin-inline-actions">
@@ -627,7 +839,7 @@ export function AdminRichTextEditor({
               <span>Quick Insert</span>
               <div className="admin-inline-actions">
                 {snippets.map((snippet) => (
-                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet.html)}>
+                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet)}>
                     {snippet.label}
                   </ToolbarButton>
                 ))}
@@ -647,8 +859,9 @@ export function AdminRichTextEditor({
             data-placeholder={placeholder}
             suppressContentEditableWarning
             onBlur={syncValue}
+            onDrop={handleDrop}
             onFocus={showToolbar}
-            onInput={syncValue}
+            onInput={() => syncValue({ cleanDom: false })}
             onKeyDown={handleCanvasKeyDown}
             onPaste={handlePaste}
           />
@@ -660,7 +873,7 @@ export function AdminRichTextEditor({
               <span>Quick Insert</span>
               <div className="admin-inline-actions">
                 {snippets.map((snippet) => (
-                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet.html)}>
+                  <ToolbarButton disabled={disabled} key={snippet.label} onClick={() => insertSnippet(snippet)}>
                     {snippet.label}
                   </ToolbarButton>
                 ))}

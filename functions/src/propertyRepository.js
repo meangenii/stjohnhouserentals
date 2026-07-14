@@ -4,6 +4,7 @@ const {
   assertExpectedUpdatedAtMatches,
   getDb,
   getServerTimestamp,
+  hasExpectedUpdatedAt,
   isFirestoreUnavailableError,
   toEpochMillis,
 } = require('./firebaseAdmin')
@@ -24,6 +25,225 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
+}
+
+const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
+const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
+const ESCAPED_RICH_TEXT_TAG_PATTERN =
+  /&(?:lt|#60|#x3c);\s*\/?\s*(?:a|b|blockquote|br|div|em|h[1-6]|i|li|ol|p|span|strong|u|ul)\b/i
+const ALLOWED_INLINE_RICH_TEXT_TAGS = new Set(['a', 'b', 'br', 'em', 'i', 'span', 'strong', 'u'])
+const ALLOWED_BLOCK_RICH_TEXT_TAGS = new Set([
+  ...ALLOWED_INLINE_RICH_TEXT_TAGS,
+  'blockquote',
+  'div',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'li',
+  'ol',
+  'p',
+  'ul',
+])
+const HTML_ENTITY_DECODE_MAP = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&lt;': '<',
+  '&#60;': '<',
+  '&#x3c;': '<',
+  '&gt;': '>',
+  '&#62;': '>',
+  '&#x3e;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#x27;': "'",
+  '&apos;': "'",
+}
+
+function escapeRichTextText(value) {
+  return String(value ?? '')
+    .replace(/&(?!(?:[a-z]+|#\d+|#x[0-9a-f]+);)/gi, '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function decodeEscapedRichTextMarkup(value = '') {
+  const source = String(value ?? '')
+
+  if (!ESCAPED_RICH_TEXT_TAG_PATTERN.test(source)) {
+    return source
+  }
+
+  return source.replace(/&(?:nbsp|amp|lt|gt|quot|#39|#x27|#60|#x3c|#62|#x3e|apos);/gi, (match) => {
+    return HTML_ENTITY_DECODE_MAP[match.toLowerCase()] ?? match
+  })
+}
+
+function getHtmlAttributeValue(attributes = '', name = '') {
+  const match = String(attributes ?? '').match(new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, 'i'))
+  return decodeHtmlAttribute(match?.[1] ?? match?.[2] ?? match?.[3] ?? '').trim()
+}
+
+function normalizeSafeRichTextHref(value = '') {
+  const href = decodeHtmlAttribute(value).trim()
+
+  if (!href) {
+    return ''
+  }
+
+  if (href.startsWith('/') || href.startsWith('#') || href.startsWith('?') || href.startsWith('//')) {
+    return href
+  }
+
+  return /^(?:https?:|mailto:|tel:)/i.test(href) ? href : ''
+}
+
+function sanitizeRichTextStyle(value = '') {
+  return String(value ?? '')
+    .split(';')
+    .map((declaration) => {
+      const [rawName = '', ...rawValueParts] = declaration.split(':')
+      const name = rawName.trim().toLowerCase()
+      const rawValue = rawValueParts.join(':').trim()
+      const value = rawValue.replace(/\s+/g, ' ')
+
+      if (!name || !value) {
+        return ''
+      }
+
+      if (name === 'font-size' && /^\d+(?:\.\d+)?(?:px|pt|rem|em|%)$/i.test(value)) {
+        return `font-size: ${value}`
+      }
+
+      if (name === 'font-style' && /^(?:italic|normal)$/i.test(value)) {
+        return `font-style: ${value.toLowerCase()}`
+      }
+
+      if (name === 'font-weight' && /^(?:bold|bolder|normal|[1-9]00)$/i.test(value)) {
+        return `font-weight: ${value.toLowerCase()}`
+      }
+
+      if (name === 'text-decoration' && /^(?:underline|none)$/i.test(value)) {
+        return `text-decoration: ${value.toLowerCase()}`
+      }
+
+      return ''
+    })
+    .filter(Boolean)
+    .join('; ')
+}
+
+function sanitizeRichTextAttributes(tagName, attributes = '') {
+  const sanitizedAttributes = []
+
+  if (tagName === 'a') {
+    const href = normalizeSafeRichTextHref(getHtmlAttributeValue(attributes, 'href'))
+    const title = getHtmlAttributeValue(attributes, 'title')
+    const target = getHtmlAttributeValue(attributes, 'target')
+
+    if (href) {
+      sanitizedAttributes.push(`href="${escapeHtml(href)}"`)
+    }
+
+    if (title) {
+      sanitizedAttributes.push(`title="${escapeHtml(title)}"`)
+    }
+
+    if (target === '_blank') {
+      sanitizedAttributes.push('target="_blank"')
+      sanitizedAttributes.push('rel="noreferrer noopener"')
+    }
+  }
+
+  if (tagName === 'span') {
+    const style = sanitizeRichTextStyle(getHtmlAttributeValue(attributes, 'style'))
+
+    if (style) {
+      sanitizedAttributes.push(`style="${escapeHtml(style)}"`)
+    }
+  }
+
+  return sanitizedAttributes.length > 0 ? ` ${sanitizedAttributes.join(' ')}` : ''
+}
+
+function sanitizeRichTextTag(tagMarkup = '', allowedTags = ALLOWED_INLINE_RICH_TEXT_TAGS) {
+  const match = String(tagMarkup ?? '').match(/^<\s*(\/)?\s*([a-z][a-z0-9-]*)([^>]*)>$/i)
+
+  if (!match) {
+    return escapeRichTextText(tagMarkup)
+  }
+
+  const [, closingSlash = '', rawTagName = '', attributes = ''] = match
+  const tagName = rawTagName.toLowerCase()
+
+  if (!allowedTags.has(tagName)) {
+    // Not a tag we render as markup, but it may not be a real tag at all — e.g. plain
+    // review text like "<would recommend>" parses as a bogus "<w>" tag under this
+    // regex-based tokenizer. Escape it back to visible text instead of silently
+    // discarding it, so ordinary prose with stray angle brackets isn't data-lost.
+    return escapeRichTextText(tagMarkup)
+  }
+
+  if (closingSlash) {
+    return tagName === 'br' ? '' : `</${tagName}>`
+  }
+
+  if (tagName === 'br') {
+    return '<br />'
+  }
+
+  return `<${tagName}${sanitizeRichTextAttributes(tagName, attributes)}>`
+}
+
+function sanitizeRichTextHtml(value = '', { inline = false } = {}) {
+  const allowedTags = inline ? ALLOWED_INLINE_RICH_TEXT_TAGS : ALLOWED_BLOCK_RICH_TEXT_TAGS
+  const source = String(value ?? '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\s*(script|style|iframe|object|embed|form|input|select|textarea|button|link|meta|base)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+
+  return source
+    .split(/(<[^>]+>)/g)
+    .map((part) => (part.startsWith('<') && part.endsWith('>') ? sanitizeRichTextTag(part, allowedTags) : escapeRichTextText(part)))
+    .join('')
+    .trim()
+}
+
+function normalizeRichTextInlineValue(value = '') {
+  const source = decodeEscapedRichTextMarkup(String(value ?? '')).trim()
+
+  if (!source) {
+    return ''
+  }
+
+  if (!HTML_TAG_PATTERN.test(source)) {
+    return escapeRichTextText(source).replace(/\r?\n/g, '<br />')
+  }
+
+  const inlineSource = source
+    .replace(/<\/(?:blockquote|div|h[1-6]|li|p)>/gi, '<br />')
+    .replace(/<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)[^>]*>/gi, '')
+
+  return sanitizeRichTextHtml(inlineSource, { inline: true })
+}
+
+function normalizeRichTextBlockValue(value = '') {
+  const source = decodeEscapedRichTextMarkup(String(value ?? '')).trim()
+
+  if (!source) {
+    return ''
+  }
+
+  return HTML_TAG_PATTERN.test(source)
+    ? sanitizeRichTextHtml(source)
+    : escapeRichTextText(source).replace(/\r?\n\r?\n+/g, '<br /><br />').replace(/\r?\n/g, '<br />')
+}
+
+function normalizeAmenityRichValue(value = '') {
+  return normalizeRichTextInlineValue(value)
 }
 
 function formatBedroomLabel(bedrooms) {
@@ -249,8 +469,8 @@ function normalizeAmenityGroups(groups) {
   return Array.isArray(groups)
     ? groups
         .map((group) => ({
-          title: String(group?.title ?? '').trim(),
-          items: Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : [],
+          title: normalizeAmenityRichValue(group?.title ?? ''),
+          items: Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : [],
         }))
         .filter((group) => group.title || group.items.length)
     : []
@@ -321,7 +541,7 @@ function normalizePropertyRecord(record) {
   const reviewEntries = Array.isArray(record.reviewEntries)
     ? record.reviewEntries
         .map((entry) => ({
-          quote: String(entry?.quote ?? '').trim(),
+          quote: normalizeRichTextBlockValue(entry?.quote ?? ''),
           author: String(entry?.author ?? '').trim(),
         }))
         .filter((entry) => entry.quote || entry.author)
@@ -536,16 +756,16 @@ function paragraphListToHtml(values) {
 function amenityGroupsToHtml(groups) {
   return groups
     .flatMap((group) => {
-      const title = String(group?.title ?? '').trim()
-      const items = Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : []
+      const title = normalizeAmenityRichValue(group?.title ?? '')
+      const items = Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : []
       const lines = []
 
       if (title) {
-        lines.push(`<h4>${escapeHtml(title)}</h4>`)
+        lines.push(`<h4>${title}</h4>`)
       }
 
       if (items.length > 0) {
-        lines.push(`<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`)
+        lines.push(`<ul>${items.map((item) => `<li>${item}</li>`).join('')}</ul>`)
       }
 
       return lines
@@ -557,7 +777,7 @@ function reviewEntriesToHtml(entries) {
   return entries
     .flatMap((entry) => {
       const author = String(entry?.author ?? '').trim()
-      const quote = String(entry?.quote ?? '').trim()
+      const quote = normalizeRichTextBlockValue(entry?.quote ?? '')
       const lines = []
 
       if (author) {
@@ -565,7 +785,7 @@ function reviewEntriesToHtml(entries) {
       }
 
       if (quote) {
-        lines.push(`<p>${escapeHtml(quote)}</p>`)
+        lines.push(BLOCK_RICH_TEXT_PATTERN.test(quote) ? quote : `<p>${quote}</p>`)
       }
 
       return lines
@@ -590,14 +810,14 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     : []
   const amenityGroups = Array.isArray(draft?.amenityGroups)
     ? draft.amenityGroups.map((group) => ({
-        title: String(group?.title ?? '').trim(),
-        items: Array.isArray(group?.items) ? group.items.map((item) => String(item).trim()).filter(Boolean) : [],
+        title: normalizeAmenityRichValue(group?.title ?? ''),
+        items: Array.isArray(group?.items) ? group.items.map((item) => normalizeAmenityRichValue(item)).filter(Boolean) : [],
       }))
     : []
   const reviewEntries = Array.isArray(draft?.reviewEntries)
     ? draft.reviewEntries
         .map((entry) => ({
-          quote: String(entry?.quote ?? '').trim(),
+          quote: normalizeRichTextBlockValue(entry?.quote ?? ''),
           author: String(entry?.author ?? '').trim(),
         }))
         .filter((entry) => entry.quote || entry.author)
@@ -873,6 +1093,8 @@ exports.savePropertyRecord = async function savePropertyRecord(draft, originalSl
       assertExpectedUpdatedAtMatches(currentDocument.data.updatedAt, expectedUpdatedAt, () =>
         createPropertyConflictError(currentDocument.data, currentDocument.id),
       )
+    } else if (normalizedOriginalSlug && hasExpectedUpdatedAt(expectedUpdatedAt)) {
+      throw new HttpError(409, 'This property was deleted by someone else since you loaded it. Reload to see the latest changes.')
     }
 
     assertUniquePropertySlug(propertyDocuments, property.slug, normalizedOriginalSlug)

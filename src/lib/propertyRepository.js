@@ -8,6 +8,7 @@ import { isApiBackedSiteContentSource } from './siteContentRepository'
 const liveCatalogUrl = '/livePropertyCatalog.json'
 const MOCK_STORAGE_KEY = 'propertyCatalog'
 const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'firebase'
+const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 
 let localPropertyCatalogPromise = null
 let remotePropertyCatalogPromise = null
@@ -477,7 +478,8 @@ function reviewEntriesToHtml(entries) {
       }
 
       if (quote) {
-        lines.push(`<p>${richTextValueToHtml(quote)}</p>`)
+        const quoteHtml = richTextValueToHtml(quote)
+        lines.push(BLOCK_RICH_TEXT_PATTERN.test(quoteHtml) ? quoteHtml : `<p>${quoteHtml}</p>`)
       }
 
       return lines

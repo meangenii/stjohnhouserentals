@@ -58,8 +58,6 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
         return
       }
 
-      lastAuthToken = authToken
-
       try {
         await acquireEditLock(resourceType, resourceId, { authToken })
 
@@ -68,6 +66,9 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
           return
         }
 
+        // Only remember the token once the lock is actually held, so a failed or
+        // stale acquire can never trigger a release of a lock this client doesn't own.
+        lastAuthToken = authToken
         setState({ status: 'editing', lockedByEmail: '', lockedAt: null })
 
         heartbeatTimer = setInterval(async () => {
@@ -87,6 +88,9 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
 
             if (error?.status === 409) {
               clearInterval(heartbeatTimer)
+              // Another admin now owns the lock — forget our token so unmount/unload
+              // cleanup doesn't release the lock out from under them.
+              lastAuthToken = ''
               setState(lockStateFromError(error))
             }
           }

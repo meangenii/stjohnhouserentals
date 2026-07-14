@@ -22,7 +22,7 @@ let authEmulatorConnected = false
 
 export function isAdminEmail(email) {
   if (!adminAllowedEmails.length) {
-    return true
+    return false
   }
 
   return adminAllowedEmails.includes(String(email ?? '').toLowerCase())

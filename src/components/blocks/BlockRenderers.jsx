@@ -16,6 +16,24 @@ function makeItemId() {
   return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
+// Fields like a schedule column's times, a rate row's values, or a business's phone
+// numbers are plain string arrays with nothing to key list rows by — removing an
+// earlier row shifts every later row's index, and React reuses (and desyncs) whichever
+// editable text field used to live at that index. ids gives each string a stable
+// identity without changing the stored value shape: existing data with no id array
+// yet just falls back to index keys until the array is first edited, at which point
+// this backfills one id per existing item before the add/remove goes through, so ids
+// and values always stay aligned one-to-one from then on.
+function ensureAlignedIds(ids, length) {
+  const aligned = Array.isArray(ids) ? ids.slice(0, length) : []
+
+  while (aligned.length < length) {
+    aligned.push(makeItemId())
+  }
+
+  return aligned
+}
+
 export function RichTextBlockRenderer({ block, path }) {
   const html = normalizeSiteHtml(block.html ?? '').trim()
 
@@ -42,7 +60,7 @@ export function ImageGalleryBlockRenderer({ block, path }) {
   const editable = Boolean(pageEditor) && !pageEditor.disabled
 
   function addImage() {
-    appendPathItem(pageEditor, [...path, 'images'], images, { kind: 'image', url: '', alt: '', title: '' })
+    appendPathItem(pageEditor, [...path, 'images'], images, { id: makeItemId(), kind: 'image', url: '', alt: '', title: '' })
   }
 
   function removeImage(index) {
@@ -52,7 +70,7 @@ export function ImageGalleryBlockRenderer({ block, path }) {
   return (
     <section aria-label="Image gallery" className="block-image-gallery">
       {images.map((image, index) => (
-        <figure className="block-image-gallery-item" key={index}>
+        <figure className="block-image-gallery-item" key={image?.id ?? index}>
           <EditableImage
             alt={image?.alt || ''}
             className="block-image-gallery-image"
@@ -682,21 +700,31 @@ export function ScheduleBlockRenderer({ block, path }) {
   }
 
   function addTime(columnIndex) {
-    const times = Array.isArray(columns[columnIndex]?.times) ? columns[columnIndex].times : []
+    const column = columns[columnIndex]
+    const times = Array.isArray(column?.times) ? column.times : []
+    const timeIds = ensureAlignedIds(column?.timeIds, times.length)
     appendPathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, '')
+    appendPathItem(pageEditor, [...path, 'columns', columnIndex, 'timeIds'], timeIds, makeItemId())
   }
 
   function removeTime(columnIndex, timeIndex) {
-    const times = Array.isArray(columns[columnIndex]?.times) ? columns[columnIndex].times : []
+    const column = columns[columnIndex]
+    const times = Array.isArray(column?.times) ? column.times : []
+    const timeIds = ensureAlignedIds(column?.timeIds, times.length)
     removePathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, timeIndex)
+    removePathItem(pageEditor, [...path, 'columns', columnIndex, 'timeIds'], timeIds, timeIndex)
   }
 
   function addNote() {
+    const noteIds = ensureAlignedIds(block.noteIds, notes.length)
     appendPathItem(pageEditor, [...path, 'notes'], notes, '')
+    appendPathItem(pageEditor, [...path, 'noteIds'], noteIds, makeItemId())
   }
 
   function removeNote(noteIndex) {
+    const noteIds = ensureAlignedIds(block.noteIds, notes.length)
     removePathItem(pageEditor, [...path, 'notes'], notes, noteIndex)
+    removePathItem(pageEditor, [...path, 'noteIds'], noteIds, noteIndex)
   }
 
   return (
@@ -719,7 +747,7 @@ export function ScheduleBlockRenderer({ block, path }) {
 
             <div className="block-schedule-time-list">
               {(column.times ?? []).map((time, timeIndex) => (
-                <div className="block-schedule-time-row" key={timeIndex}>
+                <div className="block-schedule-time-row" key={column.timeIds?.[timeIndex] ?? timeIndex}>
                   <EditableText
                     as="span"
                     label={`Column ${columnIndex + 1} Time ${timeIndex + 1}`}
@@ -759,7 +787,7 @@ export function ScheduleBlockRenderer({ block, path }) {
 
       <div className="block-schedule-notes">
         {notes.map((note, noteIndex) => (
-          <div className="block-schedule-note-row" key={noteIndex}>
+          <div className="block-schedule-note-row" key={block.noteIds?.[noteIndex] ?? noteIndex}>
             <EditableText as="p" label={`Note ${noteIndex + 1}`} multiline path={[...path, 'notes', noteIndex]} rows={2} value={note}>
               {note}
             </EditableText>
@@ -788,7 +816,7 @@ export function RateTableBlockRenderer({ block, path }) {
   const link = block.link ?? {}
 
   function addRow() {
-    appendPathItem(pageEditor, [...path, 'rows'], rows, { id: makeItemId(), label: '', values: [''] })
+    appendPathItem(pageEditor, [...path, 'rows'], rows, { id: makeItemId(), label: '', values: [''], valueIds: [makeItemId()] })
   }
 
   function removeRow(rowIndex) {
@@ -796,21 +824,31 @@ export function RateTableBlockRenderer({ block, path }) {
   }
 
   function addValue(rowIndex) {
-    const values = Array.isArray(rows[rowIndex]?.values) ? rows[rowIndex].values : []
+    const row = rows[rowIndex]
+    const values = Array.isArray(row?.values) ? row.values : []
+    const valueIds = ensureAlignedIds(row?.valueIds, values.length)
     appendPathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, '')
+    appendPathItem(pageEditor, [...path, 'rows', rowIndex, 'valueIds'], valueIds, makeItemId())
   }
 
   function removeValue(rowIndex, valueIndex) {
-    const values = Array.isArray(rows[rowIndex]?.values) ? rows[rowIndex].values : []
+    const row = rows[rowIndex]
+    const values = Array.isArray(row?.values) ? row.values : []
+    const valueIds = ensureAlignedIds(row?.valueIds, values.length)
     removePathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, valueIndex)
+    removePathItem(pageEditor, [...path, 'rows', rowIndex, 'valueIds'], valueIds, valueIndex)
   }
 
   function addFooterLine() {
+    const footerIds = ensureAlignedIds(block.footerIds, footer.length)
     appendPathItem(pageEditor, [...path, 'footer'], footer, '')
+    appendPathItem(pageEditor, [...path, 'footerIds'], footerIds, makeItemId())
   }
 
   function removeFooterLine(footerIndex) {
+    const footerIds = ensureAlignedIds(block.footerIds, footer.length)
     removePathItem(pageEditor, [...path, 'footer'], footer, footerIndex)
+    removePathItem(pageEditor, [...path, 'footerIds'], footerIds, footerIndex)
   }
 
   return (
@@ -834,7 +872,7 @@ export function RateTableBlockRenderer({ block, path }) {
 
             <div className="block-rate-table-values">
               {(row.values ?? []).map((value, valueIndex) => (
-                <span className="block-rate-table-value" key={valueIndex}>
+                <span className="block-rate-table-value" key={row.valueIds?.[valueIndex] ?? valueIndex}>
                   <EditableText
                     as="span"
                     label={`Row ${rowIndex + 1} Value ${valueIndex + 1}`}
@@ -874,7 +912,7 @@ export function RateTableBlockRenderer({ block, path }) {
 
       <div className="block-rate-table-footer">
         {footer.map((line, footerIndex) => (
-          <div className="block-rate-table-footer-row" key={footerIndex}>
+          <div className="block-rate-table-footer-row" key={block.footerIds?.[footerIndex] ?? footerIndex}>
             <EditableText as="p" label={`Footer Line ${footerIndex + 1}`} multiline path={[...path, 'footer', footerIndex]} rows={2} value={line}>
               {line}
             </EditableText>
@@ -1184,7 +1222,13 @@ export function BusinessListBlockRenderer({ block, path }) {
   const items = Array.isArray(block.items) ? block.items : []
 
   function addItem() {
-    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), name: 'Business name', phones: [''], website: '' })
+    appendPathItem(pageEditor, [...path, 'items'], items, {
+      id: makeItemId(),
+      name: 'Business name',
+      phones: [''],
+      phoneIds: [makeItemId()],
+      website: '',
+    })
   }
 
   function removeItem(index) {
@@ -1192,13 +1236,19 @@ export function BusinessListBlockRenderer({ block, path }) {
   }
 
   function addPhone(itemIndex) {
-    const phones = Array.isArray(items[itemIndex]?.phones) ? items[itemIndex].phones : []
+    const item = items[itemIndex]
+    const phones = Array.isArray(item?.phones) ? item.phones : []
+    const phoneIds = ensureAlignedIds(item?.phoneIds, phones.length)
     appendPathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, '')
+    appendPathItem(pageEditor, [...path, 'items', itemIndex, 'phoneIds'], phoneIds, makeItemId())
   }
 
   function removePhone(itemIndex, phoneIndex) {
-    const phones = Array.isArray(items[itemIndex]?.phones) ? items[itemIndex].phones : []
+    const item = items[itemIndex]
+    const phones = Array.isArray(item?.phones) ? item.phones : []
+    const phoneIds = ensureAlignedIds(item?.phoneIds, phones.length)
     removePathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, phoneIndex)
+    removePathItem(pageEditor, [...path, 'items', itemIndex, 'phoneIds'], phoneIds, phoneIndex)
   }
 
   return (
@@ -1233,7 +1283,7 @@ export function BusinessListBlockRenderer({ block, path }) {
 
             <span className="block-business-list-phones">
               {(item.phones ?? []).map((phone, phoneIndex) => (
-                <span className="block-business-list-phone" key={phoneIndex}>
+                <span className="block-business-list-phone" key={item.phoneIds?.[phoneIndex] ?? phoneIndex}>
                   <EditablePhoneText label={`Phone ${phoneIndex + 1}`} path={[...path, 'items', index, 'phones', phoneIndex]} value={phone} />
                   {editable ? (
                     <button data-admin-inline-editable="true" type="button" onClick={() => removePhone(index, phoneIndex)}>

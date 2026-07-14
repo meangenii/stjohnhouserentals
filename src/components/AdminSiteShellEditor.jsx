@@ -78,8 +78,13 @@ function rebuildPrimaryNavMatchPaths(item) {
   item.matchPaths = currentPath ? [currentPath] : []
 }
 
+function makeNavItemId() {
+  return `nav-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
 function createPrimaryNavItem() {
   return {
+    id: makeNavItemId(),
     label: '',
     path: '',
     matchPaths: [],
@@ -89,6 +94,7 @@ function createPrimaryNavItem() {
 
 function createPrimaryNavChildItem() {
   return {
+    id: makeNavItemId(),
     label: '',
     path: '',
     matchPaths: [],
@@ -98,17 +104,19 @@ function createPrimaryNavChildItem() {
 function updatePrimaryNavCollections(root, updater) {
   const nextRoot = cloneValue(root)
 
-  ;['header', 'footer'].forEach((sectionKey) => {
-    if (!nextRoot?.[sectionKey]) {
-      return
-    }
+  // Only header.primaryNav is editable here (it's the only one NavEditor renders below).
+  // footer.primaryNav is a separate array on the live site (see SiteLayout.jsx) with no
+  // editor of its own — it must NOT be mirrored from header edits, or every header nav
+  // change silently overwrites whatever the footer nav actually contains.
+  if (!nextRoot?.header) {
+    return nextRoot
+  }
 
-    if (!Array.isArray(nextRoot[sectionKey].primaryNav)) {
-      nextRoot[sectionKey].primaryNav = []
-    }
+  if (!Array.isArray(nextRoot.header.primaryNav)) {
+    nextRoot.header.primaryNav = []
+  }
 
-    updater(nextRoot[sectionKey].primaryNav)
-  })
+  updater(nextRoot.header.primaryNav)
 
   return nextRoot
 }
@@ -290,7 +298,7 @@ function NavEditor({
           const itemName = richTextValueToPlainText(item.label ?? '').trim()
 
           return (
-            <article className="admin-content-item-card" key={`${item.path}-${itemIndex}`}>
+            <article className="admin-content-item-card" key={item.id ?? `nav-item-${itemIndex}`}>
               <div className="admin-content-item-header">
                 <div className="admin-collection-card-summary">
                   <strong>{itemName || `Menu item ${itemIndex + 1}`}</strong>
@@ -344,7 +352,7 @@ function NavEditor({
                         const childName = richTextValueToPlainText(child.label ?? '').trim()
 
                         return (
-                          <div className="admin-collection-card" key={`${child.path}-${childIndex}`}>
+                          <div className="admin-collection-card" key={child.id ?? `nav-child-${itemIndex}-${childIndex}`}>
                             <div className="admin-collection-card-header">
                               <div className="admin-collection-card-summary">
                                 <strong>{childName || `Submenu item ${childIndex + 1}`}</strong>
@@ -528,6 +536,43 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
     )
   }
 
+  function updateFooterLegalNav(updater) {
+    onChange((currentValue) => {
+      const nextRoot = cloneValue(currentValue)
+
+      if (!nextRoot.footer) {
+        nextRoot.footer = {}
+      }
+
+      if (!Array.isArray(nextRoot.footer.legalNav)) {
+        nextRoot.footer.legalNav = []
+      }
+
+      updater(nextRoot.footer.legalNav)
+      return nextRoot
+    })
+  }
+
+  function addFooterLegalNavItem() {
+    updateFooterLegalNav((legalNav) => {
+      legalNav.push({ id: makeNavItemId(), label: '', path: '' })
+    })
+  }
+
+  function removeFooterLegalNavItem(index) {
+    updateFooterLegalNav((legalNav) => {
+      if (index >= 0 && index < legalNav.length) {
+        legalNav.splice(index, 1)
+      }
+    })
+  }
+
+  function moveFooterLegalNavItem(index, direction) {
+    updateFooterLegalNav((legalNav) => {
+      moveArrayItem(legalNav, index, index + direction)
+    })
+  }
+
   return (
     <div className="admin-content-editor">
       <section className="admin-content-section">
@@ -618,6 +663,12 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
             <h4>Footer</h4>
             <p>Fine-tune the footer copy and the legal links shown below the main navigation.</p>
           </div>
+
+          <div className="admin-inline-actions">
+            <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={addFooterLegalNavItem}>
+              Add legal link
+            </button>
+          </div>
         </div>
 
         <div className="admin-content-grid">
@@ -626,10 +677,37 @@ export function AdminSiteShellEditor({ disabled = false, onChange, routeInventor
         </div>
 
         <div className="admin-content-list">
-          {(value.footer?.legalNav ?? []).map((item, index) => (
-            <article className="admin-content-item-card" key={`${item.path || item.href || index}`}>
+          {(value.footer?.legalNav ?? []).map((item, index, legalNav) => (
+            <article className="admin-content-item-card" key={item.id ?? `legal-nav-${index}`}>
               <div className="admin-content-item-header">
                 <h5>{item.path || item.href || `Legal Link ${index + 1}`}</h5>
+
+                <div className="admin-content-item-actions">
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={disabled || index === 0}
+                    type="button"
+                    onClick={() => moveFooterLegalNavItem(index, -1)}
+                  >
+                    Move up
+                  </button>
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={disabled || index === legalNav.length - 1}
+                    type="button"
+                    onClick={() => moveFooterLegalNavItem(index, 1)}
+                  >
+                    Move down
+                  </button>
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={disabled}
+                    type="button"
+                    onClick={() => removeFooterLegalNavItem(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
               <div className="admin-content-grid">
                 <RichTextField disabled={disabled} label="Legal Link Label" onChange={(nextValue) => setPath(['footer', 'legalNav', index, 'label'], nextValue)} value={item.label ?? ''} wide />

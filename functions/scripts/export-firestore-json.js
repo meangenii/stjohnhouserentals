@@ -30,7 +30,9 @@ function resolveProjectId() {
 
 function parseArgs(argv) {
   return argv.reduce((options, arg) => {
-    const [key, value] = arg.split('=')
+    const equalsIndex = arg.indexOf('=')
+    const key = equalsIndex === -1 ? arg : arg.slice(0, equalsIndex)
+    const value = equalsIndex === -1 ? undefined : arg.slice(equalsIndex + 1)
 
     if (key === '--out' && value) {
       return { ...options, outDir: value }

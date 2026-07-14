@@ -1,4 +1,4 @@
-import { normalizeSiteHtml } from './normalizeSiteHtml'
+import { decodeEscapedSiteHtml, normalizeSiteHtml } from './normalizeSiteHtml'
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
 const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
@@ -39,12 +39,16 @@ function blockInnerHtmlToLines(innerHtml = '') {
     .filter(Boolean)
 }
 
+function normalizeRichTextSource(value) {
+  return decodeEscapedSiteHtml(String(value ?? ''))
+}
+
 export function hasRichTextMarkup(value) {
-  return HTML_TAG_PATTERN.test(String(value ?? ''))
+  return HTML_TAG_PATTERN.test(normalizeRichTextSource(value))
 }
 
 export function richTextValueToHtml(value) {
-  const sourceValue = String(value ?? '')
+  const sourceValue = normalizeRichTextSource(value)
 
   if (!sourceValue.trim()) {
     return ''
@@ -54,7 +58,7 @@ export function richTextValueToHtml(value) {
 }
 
 export function richTextValueToInlineHtml(value) {
-  const sourceValue = String(value ?? '')
+  const sourceValue = normalizeRichTextSource(value)
 
   if (!sourceValue.trim()) {
     return ''
@@ -90,7 +94,7 @@ export function getClipboardRichTextHtml(clipboardData, { inline = false } = {})
 }
 
 export function richTextValueToPlainText(value) {
-  const sourceValue = String(value ?? '')
+  const sourceValue = normalizeRichTextSource(value)
 
   if (!sourceValue.trim()) {
     return ''
@@ -128,7 +132,7 @@ export function richTextValueToPlainLineText(value, { preserveBlankLines = false
 }
 
 export function richTextValueToLines(value, { preserveBlankLines = false } = {}) {
-  const sourceValue = String(value ?? '')
+  const sourceValue = normalizeRichTextSource(value)
   const dropBlankLines = (lines) => (preserveBlankLines ? lines : lines.filter(Boolean))
 
   if (!sourceValue.trim()) {

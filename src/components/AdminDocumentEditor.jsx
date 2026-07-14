@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { AdminMediaManager } from './AdminMediaManager'
@@ -22,6 +23,10 @@ function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
+function makeSessionItemId() {
+  return `doc-item-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
 function createEmptyLike(template) {
   if (Array.isArray(template)) {
     return template.length > 0 ? [createEmptyLike(template[0])] : []
@@ -40,6 +45,38 @@ function createEmptyLike(template) {
   }
 
   return ''
+}
+
+function getValueAtPath(root, path = []) {
+  return path.reduce((current, segment) => (current == null ? current : current[segment]), root)
+}
+
+function isPrimitiveArrayShape(entry) {
+  return entry.every((item) => item == null || ['string', 'number', 'boolean'].includes(typeof item))
+}
+
+function isAllStringsShape(entry) {
+  return entry.every((item) => typeof item === 'string')
+}
+
+// `entry.every(...)` is vacuously true for an empty array, so an array field would get
+// reclassified (object-array to plain string list, or numbers/booleans to strings) the
+// moment an admin removes its last item - losing its shape the instant they add content
+// back. When the live array is empty, fall back to how it looked in the document as it
+// was first loaded (captured once, unaffected by edits made during this session)
+// instead of guessing from nothing.
+function classifyArray(entry, path, originalValue, classify, fallback) {
+  if (entry.length > 0) {
+    return classify(entry)
+  }
+
+  const originalEntry = getValueAtPath(originalValue, path)
+
+  if (Array.isArray(originalEntry) && originalEntry.length > 0) {
+    return classify(originalEntry)
+  }
+
+  return fallback
 }
 
 function updateValueAtPath(root, path, nextValue) {
@@ -229,9 +266,36 @@ function ScalarField({ fieldKey, label, onChange, path, value, disabled }) {
           id={inputId}
           type={typeof value === 'number' ? 'number' : 'text'}
           value={value ?? ''}
-          onChange={(event) =>
-            onChange(path, typeof value === 'number' ? Number(event.target.value || 0) : event.target.value)
-          }
+          onChange={(event) => {
+            if (typeof value !== 'number') {
+              onChange(path, event.target.value)
+              return
+            }
+
+            // A number input reports "" for any not-yet-complete value (a lone "-",
+            // a trailing decimal point, ...), not just for a genuinely cleared field.
+            // Coercing that straight to 0 on every keystroke made it impossible to type
+            // a negative number or a decimal one digit at a time. Skip the update while
+            // incomplete and let onBlur below settle a truly-empty field back to 0.
+            const rawValue = event.target.value
+
+            if (rawValue === '') {
+              return
+            }
+
+            const parsedValue = Number(rawValue)
+
+            if (!Number.isFinite(parsedValue)) {
+              return
+            }
+
+            onChange(path, parsedValue)
+          }}
+          onBlur={(event) => {
+            if (typeof value === 'number' && event.target.value === '') {
+              onChange(path, 0)
+            }
+          }}
           disabled={disabled}
         />
       )}
@@ -268,12 +332,19 @@ function PrimitiveArrayEditor({
   onAddItem,
   onChange,
   onRemoveItem,
+  originalValue,
   path,
   value,
   disabled,
   allowStructureChanges,
 }) {
-  const allStrings = value.every((entry) => typeof entry === 'string')
+  // Session-local identity for each row so removing an earlier item doesn't shift a
+  // later, currently-focused item's key and drop the cursor out from under the admin.
+  // Kept as local UI state only (never written into the document) since this array has
+  // no natural id field and this editor works over arbitrary, unknown document shapes
+  // where adding a sibling field risks colliding with real content.
+  const [itemIds, setItemIds] = useState(() => value.map(() => makeSessionItemId()))
+  const allStrings = classifyArray(value, path, originalValue, isAllStringsShape, true)
 
   if (allStrings) {
     return <StringListField label={label} onChange={onChange} path={path} value={value} disabled={disabled} />
@@ -281,12 +352,22 @@ function PrimitiveArrayEditor({
 
   const sample = value[0] ?? ''
 
+  function handleAddItem() {
+    setItemIds((current) => [...current, makeSessionItemId()])
+    onAddItem(path, sample)
+  }
+
+  function handleRemoveItem(index) {
+    setItemIds((current) => current.filter((_, itemIndex) => itemIndex !== index))
+    onRemoveItem(path, index)
+  }
+
   return (
     <section className="admin-document-section">
       <div className="admin-document-header">
         <h4>{label}</h4>
         {allowStructureChanges ? (
-          <button className="button-link button-link--ghost admin-action" type="button" onClick={() => onAddItem(path, sample)} disabled={disabled}>
+          <button className="button-link button-link--ghost admin-action" type="button" onClick={handleAddItem} disabled={disabled}>
             Add item
           </button>
         ) : null}
@@ -296,7 +377,7 @@ function PrimitiveArrayEditor({
         {value.length === 0 ? <p className="admin-note">No content in this section yet.</p> : null}
 
         {value.map((entry, index) => (
-          <div className="admin-document-array-item" key={`${path.join('-')}-${index}`}>
+          <div className="admin-document-array-item" key={itemIds[index] ?? `${path.join('-')}-${index}`}>
             <ScalarField
               fieldKey={fieldKey}
               label={`${label} ${index + 1}`}
@@ -306,7 +387,7 @@ function PrimitiveArrayEditor({
               disabled={disabled}
             />
             {allowStructureChanges ? (
-              <button className="button-link button-link--ghost admin-action" type="button" onClick={() => onRemoveItem(path, index)} disabled={disabled}>
+              <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleRemoveItem(index)} disabled={disabled}>
                 Remove
               </button>
             ) : null}
@@ -347,7 +428,10 @@ function ObjectArrayEditor({
         {value.length === 0 ? <p className="admin-note">No content in this section yet.</p> : null}
 
         {value.map((entry, index) => (
-          <div className="admin-document-object-card" key={`${path.join('-')}-${index}`}>
+          <div
+            className="admin-document-object-card"
+            key={typeof entry?.id === 'string' && entry.id.trim() ? entry.id : `${path.join('-')}-${index}`}
+          >
             <div className="admin-document-header">
               <h4>{resolveArrayCardLabel(entry, label, index)}</h4>
               {allowStructureChanges ? (
@@ -377,6 +461,7 @@ function ObjectEditor({
   onAddItem,
   onChange,
   onRemoveItem,
+  originalValue,
   path,
   allowStructureChanges,
   presentation,
@@ -397,9 +482,7 @@ function ObjectEditor({
         const childLabel = humanizeKey(key, labelOverrides)
 
         if (Array.isArray(entry)) {
-          const primitiveArray = entry.every(
-            (item) => item == null || ['string', 'number', 'boolean'].includes(typeof item),
-          )
+          const primitiveArray = classifyArray(entry, childPath, originalValue, isPrimitiveArrayShape, true)
 
           return primitiveArray ? (
             <PrimitiveArrayEditor
@@ -409,6 +492,7 @@ function ObjectEditor({
               onAddItem={onAddItem}
               onChange={onChange}
               onRemoveItem={onRemoveItem}
+              originalValue={originalValue}
               path={childPath}
               value={entry}
               disabled={disabled}
@@ -490,6 +574,9 @@ export function AdminDocumentEditor({
 }) {
   const hiddenKeySet = new Set(hiddenKeys)
   const hiddenPathSet = new Set(hiddenPaths)
+  // Captured once on mount so an empty array can still be classified against how it
+  // looked when this document was first opened - see classifyArray.
+  const [originalValue] = useState(() => value)
 
   function handleChange(path, nextValue) {
     onChange((current) => updateValueAtPath(current, path, nextValue))
@@ -510,7 +597,7 @@ export function AdminDocumentEditor({
     const nextAllowStructureChanges = options.allowStructureChanges ?? allowStructureChanges
 
     if (Array.isArray(node)) {
-      const primitiveArray = node.every((item) => item == null || ['string', 'number', 'boolean'].includes(typeof item))
+      const primitiveArray = classifyArray(node, path, originalValue, isPrimitiveArrayShape, true)
 
       return primitiveArray ? (
         <PrimitiveArrayEditor
@@ -519,6 +606,7 @@ export function AdminDocumentEditor({
           onAddItem={handleAddArrayItem}
           onChange={handleChange}
           onRemoveItem={handleRemoveArrayItem}
+          originalValue={originalValue}
           path={path}
           value={node}
           disabled={disabled}
@@ -532,7 +620,6 @@ export function AdminDocumentEditor({
           hiddenPathSet={nextHiddenPathSet}
           label={label || 'Items'}
           labelOverrides={nextLabelOverrides}
-          allowStructureChanges={allowStructureChanges}
           onAddItem={handleAddArrayItem}
           onRemoveItem={handleRemoveArrayItem}
           path={path}
@@ -549,10 +636,11 @@ export function AdminDocumentEditor({
           hiddenKeySet={nextHiddenKeySet}
           hiddenPathSet={nextHiddenPathSet}
           labelOverrides={nextLabelOverrides}
-          allowStructureChanges={allowStructureChanges}
+          allowStructureChanges={nextAllowStructureChanges}
           onAddItem={handleAddArrayItem}
           onChange={handleChange}
           onRemoveItem={handleRemoveArrayItem}
+          originalValue={originalValue}
           path={path}
           presentation={presentation}
           renderNode={renderNode}

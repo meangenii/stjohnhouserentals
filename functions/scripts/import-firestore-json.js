@@ -51,7 +51,9 @@ function parseArgs(argv) {
       return { ...options, dryRun: true }
     }
 
-    const [key, value] = arg.split('=')
+    const equalsIndex = arg.indexOf('=')
+    const key = equalsIndex === -1 ? arg : arg.slice(0, equalsIndex)
+    const value = equalsIndex === -1 ? undefined : arg.slice(equalsIndex + 1)
 
     if (key === '--dir' && value) {
       return { ...options, dir: value }
@@ -97,13 +99,13 @@ function deserializeFirestoreValue(value) {
   return value
 }
 
-async function writeInBatches(db, collectionRef, documents) {
+async function writeInBatches(db, collectionRef, documents, { merge = false } = {}) {
   for (let offset = 0; offset < documents.length; offset += BATCH_WRITE_LIMIT) {
     const batch = db.batch()
     const chunk = documents.slice(offset, offset + BATCH_WRITE_LIMIT)
 
     for (const document of chunk) {
-      batch.set(collectionRef.doc(document.id), deserializeFirestoreValue(document.data))
+      batch.set(collectionRef.doc(document.id), deserializeFirestoreValue(document.data), merge ? { merge: true } : {})
     }
 
     await batch.commit()
@@ -177,7 +179,10 @@ async function applyCollectionImport(db, plan, { replace, force }) {
     )
   }
 
-  await writeInBatches(db, plan.collectionRef, plan.documents)
+  // Outside --replace, imports are meant to be additive/safe: merge fields from the
+  // backup into existing docs instead of overwriting them wholesale, so fields added
+  // to the live data after the backup was taken aren't silently destroyed.
+  await writeInBatches(db, plan.collectionRef, plan.documents, { merge: !replace })
 
   let deleted = 0
   let deleteSkipped = false

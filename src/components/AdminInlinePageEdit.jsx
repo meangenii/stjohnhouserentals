@@ -3,15 +3,19 @@ import { createPortal, flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
-import { resolveLinkRenderConfig } from '../lib/linkRecords'
+import { buildRouteOptions, resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getClipboardRichTextHtml, richTextValueToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
   applyRichTextFontSize,
   captureCaretOffset,
   captureRichTextSelectionRange,
+  insertLinkAtCollapsedSelection,
+  isTightenedBlockSelection,
+  placeCaretAtPoint,
   restoreCaretOffset,
   restoreRichTextSelectionRange,
   readRichTextSelectionState,
+  tightenOrUntightenSelectedLines,
 } from '../lib/richTextFormatting'
 import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
@@ -188,47 +192,34 @@ function isEmptyHtmlValue(value = '') {
     .trim().length === 0
 }
 
+function ensureDefaultParagraphSeparator() {
+  try {
+    document.execCommand('defaultParagraphSeparator', false, 'p')
+  } catch {
+    // Browsers that do not support this command still fall back to their native Enter behavior.
+  }
+}
+
+function getInsertedLinkText(renderConfig) {
+  const destination = String(renderConfig?.destination || renderConfig?.href || renderConfig?.to || '').trim()
+
+  if (renderConfig?.type === 'email') {
+    return destination.replace(/^mailto:/i, '').split('?')[0] || destination
+  }
+
+  if (renderConfig?.type === 'phone') {
+    return destination.replace(/^tel:/i, '') || destination
+  }
+
+  return destination
+}
+
 function normalizeColorValue(value) {
   return String(value ?? '').trim()
 }
 
 function normalizeLinkValue(value) {
   return String(value ?? '').trim()
-}
-
-function buildRouteOptionLabel(route, path, isAlias = false) {
-  const label = String(route?.label ?? route?.navLabel ?? route?.title ?? route?.key ?? '').trim()
-  const title = String(route?.title ?? '').trim()
-  const descriptor = isAlias ? 'Alias' : ''
-
-  return [label, title && title !== label ? title : '', descriptor, path].filter(Boolean).join(' | ') || path
-}
-
-function buildRouteOptions(routeInventory = []) {
-  const seenPaths = new Set()
-
-  return routeInventory.flatMap((route) => {
-    if (String(route?.group ?? '').trim() === 'internal') {
-      return []
-    }
-
-    const pathCandidates = [route?.path, ...(Array.isArray(route?.routeAliases) ? route.routeAliases : [])]
-
-    return pathCandidates.reduce((options, candidatePath, index) => {
-      const normalizedPath = normalizeLinkValue(candidatePath)
-
-      if (!normalizedPath || normalizedPath.includes(':') || seenPaths.has(normalizedPath)) {
-        return options
-      }
-
-      seenPaths.add(normalizedPath)
-      options.push({
-        label: buildRouteOptionLabel(route, normalizedPath, index > 0),
-        value: normalizedPath,
-      })
-      return options
-    }, [])
-  })
 }
 
 function expandHexColor(value) {
@@ -303,6 +294,7 @@ function assignRef(ref, value) {
 function InlineTextFormattingToolbar({
   active = false,
   allowBlockFormatting = false,
+  allowLineTightening = false,
   allowLinkFormatting = true,
   allowLineBreaks = false,
   anchorRef,
@@ -319,9 +311,13 @@ function InlineTextFormattingToolbar({
     bold: false,
     fontSize: 'default',
     italic: false,
+    tightenedLines: false,
     underline: false,
   }))
+  const [linkEditorState, setLinkEditorState] = useState(null)
   const [position, setPosition] = useState({ left: 8, top: 8 })
+  const routeInventory = useRouteInventory()
+  const routeOptions = buildRouteOptions(routeInventory)
   const editorStyleSettings = useEditorStyleSettings()
   const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
   const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
@@ -376,7 +372,18 @@ function InlineTextFormattingToolbar({
       window.removeEventListener('resize', scheduleUpdate)
       window.removeEventListener('scroll', scheduleUpdate, true)
     }
-  }, [active, anchorRef])
+  }, [active, anchorRef, linkEditorState])
+
+  const readSelectionState = useCallback(
+    (anchor) => ({
+      ...readRichTextSelectionState(anchor, {
+        defaultBlockTag: fixedBlockTag || 'p',
+        fixedBlockTag,
+      }),
+      tightenedLines: allowLineTightening ? isTightenedBlockSelection(anchor) : false,
+    }),
+    [allowLineTightening, fixedBlockTag],
+  )
 
   useEffect(() => {
     if (!active || typeof document === 'undefined') {
@@ -394,22 +401,12 @@ function InlineTextFormattingToolbar({
 
       if (nextRange) {
         selectionRangeRef.current = nextRange
-        setSelectionState(
-          readRichTextSelectionState(anchor, {
-            defaultBlockTag: fixedBlockTag || 'p',
-            fixedBlockTag,
-          }),
-        )
+        setSelectionState(readSelectionState(anchor))
         return
       }
 
       if (!preserveWhenMissing) {
-        setSelectionState(
-          readRichTextSelectionState(anchor, {
-            defaultBlockTag: fixedBlockTag || 'p',
-            fixedBlockTag,
-          }),
-        )
+        setSelectionState(readSelectionState(anchor))
       }
     }
 
@@ -419,7 +416,39 @@ function InlineTextFormattingToolbar({
     return () => {
       document.removeEventListener('selectionchange', updateSelectionState)
     }
-  }, [active, anchorRef, fixedBlockTag])
+  }, [active, anchorRef, readSelectionState])
+
+  useEffect(() => {
+    if (active || typeof window === 'undefined') {
+      return undefined
+    }
+
+    const animationFrameId = window.requestAnimationFrame(() => {
+      setLinkEditorState(null)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId)
+    }
+  }, [active])
+
+  useEffect(() => {
+    if (!active || !linkEditorState || typeof document === 'undefined') {
+      return undefined
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setLinkEditorState(null)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [active, linkEditorState])
 
   if (!active || typeof document === 'undefined') {
     return null
@@ -439,12 +468,7 @@ function InlineTextFormattingToolbar({
     }
 
     onSync?.(anchor.innerHTML)
-    setSelectionState(
-      readRichTextSelectionState(anchor, {
-        defaultBlockTag: fixedBlockTag || 'p',
-        fixedBlockTag,
-      }),
-    )
+    setSelectionState(readSelectionState(anchor))
   }
 
   function rememberSelection() {
@@ -485,18 +509,105 @@ function InlineTextFormattingToolbar({
     syncCurrentValue()
   }
 
-  function insertLink() {
+  function tightenSelectedLines() {
     if (disabled) {
       return
     }
 
-    const href = window.prompt('Enter a link URL')
+    const anchor = anchorRef?.current
+
+    if (!anchor || !focusAnchorSelection()) {
+      return
+    }
+
+    if (tightenOrUntightenSelectedLines(anchor)) {
+      syncCurrentValue()
+    }
+  }
+
+  function getSelectedAnchorElement() {
+    const anchor = anchorRef?.current
+    const selection = typeof window !== 'undefined' ? window.getSelection() : null
+
+    if (!anchor || !selection || selection.rangeCount === 0) {
+      return null
+    }
+
+    let node = selection.getRangeAt(0).commonAncestorContainer
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement
+    }
+
+    const anchorElement = node instanceof Element ? node.closest('a') : null
+    return anchorElement && anchor.contains(anchorElement) ? anchorElement : null
+  }
+
+  function openLinkEditor() {
+    if (disabled || !focusAnchorSelection()) {
+      return
+    }
+
+    const existingAnchor = getSelectedAnchorElement()
+
+    setLinkEditorState({
+      hasExistingLink: Boolean(existingAnchor),
+      link: existingAnchor
+        ? {
+            href: existingAnchor.getAttribute('href') || '',
+            openInNewTab: existingAnchor.getAttribute('target') === '_blank',
+          }
+        : {},
+    })
+  }
+
+  function applyLinkDraft() {
+    if (disabled || !linkEditorState || !focusAnchorSelection()) {
+      return
+    }
+
+    const renderConfig = resolveLinkRenderConfig(linkEditorState.link, { defaultType: 'external', destinationField: 'href' })
+    const href = renderConfig.destination
 
     if (!href) {
       return
     }
 
-    applyCommand('createLink', href)
+    const existingAnchorElement = getSelectedAnchorElement()
+    const insertedAnchorElement = existingAnchorElement
+      ? null
+      : insertLinkAtCollapsedSelection(anchorRef.current, href, getInsertedLinkText(renderConfig))
+
+    if (!insertedAnchorElement) {
+      document.execCommand('createLink', false, href)
+    }
+
+    const anchorElement = insertedAnchorElement || getSelectedAnchorElement()
+
+    if (anchorElement) {
+      anchorElement.setAttribute('href', href)
+
+      if (renderConfig.target) {
+        anchorElement.setAttribute('target', renderConfig.target)
+        anchorElement.setAttribute('rel', renderConfig.rel || 'noreferrer noopener')
+      } else {
+        anchorElement.removeAttribute('target')
+        anchorElement.removeAttribute('rel')
+      }
+    }
+
+    syncCurrentValue()
+    setLinkEditorState(null)
+  }
+
+  function removeLink() {
+    if (disabled || !focusAnchorSelection()) {
+      return
+    }
+
+    document.execCommand('unlink', false, null)
+    syncCurrentValue()
+    setLinkEditorState(null)
   }
 
   function handleFontSizeChange(nextValue) {
@@ -566,8 +677,13 @@ function InlineTextFormattingToolbar({
           Line Break
         </InlineToolbarButton>
       ) : null}
+      {allowLineTightening ? (
+        <InlineToolbarButton disabled={disabled} onClick={tightenSelectedLines}>
+          {selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
+        </InlineToolbarButton>
+      ) : null}
       {allowLinkFormatting ? (
-        <InlineToolbarButton disabled={disabled} onClick={insertLink}>
+        <InlineToolbarButton active={Boolean(linkEditorState)} disabled={disabled} onClick={openLinkEditor}>
           Link
         </InlineToolbarButton>
       ) : null}
@@ -577,6 +693,32 @@ function InlineTextFormattingToolbar({
       <InlineToolbarButton disabled={disabled} onClick={onClose}>
         Done
       </InlineToolbarButton>
+      {linkEditorState ? (
+        <div aria-label="Link" className="admin-inline-format-link-editor" role="dialog">
+          <AdminLinkFields
+            defaultType="external"
+            destinationField="href"
+            destinationLabel="Link"
+            disabled={disabled}
+            link={linkEditorState.link}
+            routeOptions={routeOptions}
+            onChange={(nextLink) => setLinkEditorState((currentState) => ({ ...currentState, link: nextLink }))}
+          />
+          <div className="admin-inline-actions">
+            <InlineToolbarButton disabled={disabled} onClick={applyLinkDraft}>
+              Apply link
+            </InlineToolbarButton>
+            {linkEditorState.hasExistingLink ? (
+              <InlineToolbarButton disabled={disabled} onClick={removeLink}>
+                Remove link
+              </InlineToolbarButton>
+            ) : null}
+            <InlineToolbarButton disabled={disabled} onClick={() => setLinkEditorState(null)}>
+              Cancel
+            </InlineToolbarButton>
+          </div>
+        </div>
+      ) : null}
     </div>,
     document.body,
   )
@@ -589,6 +731,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   componentDisabled = undefined,
   disabled = false,
   label = 'Text',
+  multiline = false,
   onActivate,
   onChange,
   onClose,
@@ -626,6 +769,11 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     }
 
     const isFocused = document.activeElement === element
+
+    if (isFocused && renderedValue === lastPublishedValueRef.current) {
+      return
+    }
+
     const caretOffsets = isFocused ? captureCaretOffset(element) : null
 
     element.innerHTML = renderedValue
@@ -663,10 +811,10 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     onChange?.(nextValue)
   }, [onChange])
 
-  function syncEditableHtml(element) {
+  function syncEditableHtml(element, { cleanDom = true } = {}) {
     const normalizedValue = isEmptyHtmlValue(element?.innerHTML) ? '' : richTextValueToInlineHtml(element?.innerHTML ?? '')
 
-    if (element && element.innerHTML !== normalizedValue) {
+    if (cleanDom && element && element.innerHTML !== normalizedValue) {
       const isFocused = document.activeElement === element
       const caretOffsets = isFocused ? captureCaretOffset(element) : null
 
@@ -741,7 +889,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
   }
 
   function handleInput(event) {
-    publishNextValue(syncEditableHtml(event.currentTarget))
+    publishNextValue(syncEditableHtml(event.currentTarget, { cleanDom: false }))
   }
 
   function handlePaste(event) {
@@ -756,7 +904,40 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     publishNextValue(syncEditableHtml(event.currentTarget))
   }
 
+  function handleDrop(event) {
+    const droppedHtml = getClipboardRichTextHtml(event.dataTransfer, { inline: true })
+
+    event.preventDefault()
+
+    if (!droppedHtml) {
+      return
+    }
+
+    if (!placeCaretAtPoint(event.currentTarget, event.clientX, event.clientY)) {
+      return
+    }
+
+    document.execCommand('insertHTML', false, droppedHtml)
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
   function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.isComposing) {
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (multiline) {
+        document.execCommand('insertHTML', false, '<br />')
+        publishNextValue(syncEditableHtml(event.currentTarget))
+      } else {
+        publishNextValue(syncEditableHtml(event.currentTarget))
+        onClose?.()
+        event.currentTarget.blur()
+      }
+
+      return
+    }
+
     if (event.key !== 'Escape') {
       return
     }
@@ -791,6 +972,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
       suppressContentEditableWarning
       onBlur={active ? handleBlur : undefined}
       onClick={handleClick}
+      onDrop={active ? handleDrop : undefined}
       onMouseDown={handleMouseDown}
       onInput={active ? handleInput : undefined}
       onKeyDown={active ? handleKeyDown : undefined}
@@ -842,6 +1024,11 @@ const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditable
     }
 
     const isFocused = document.activeElement === element
+
+    if (isFocused && renderedValue === lastPublishedValueRef.current) {
+      return
+    }
+
     const caretOffsets = isFocused ? captureCaretOffset(element) : null
 
     element.innerHTML = renderedValue
@@ -879,10 +1066,10 @@ const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditable
     onChange?.(nextValue)
   }, [onChange])
 
-  function syncEditableHtml(element) {
+  function syncEditableHtml(element, { cleanDom = true } = {}) {
     const normalizedValue = isEmptyHtmlValue(element?.innerHTML) ? '' : richTextValueToHtml(element?.innerHTML ?? '')
 
-    if (element && element.innerHTML !== normalizedValue) {
+    if (cleanDom && element && element.innerHTML !== normalizedValue) {
       const isFocused = document.activeElement === element
       const caretOffsets = isFocused ? captureCaretOffset(element) : null
 
@@ -954,7 +1141,7 @@ const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditable
   }
 
   function handleInput(event) {
-    publishNextValue(syncEditableHtml(event.currentTarget))
+    publishNextValue(syncEditableHtml(event.currentTarget, { cleanDom: false }))
   }
 
   function handlePaste(event) {
@@ -969,7 +1156,28 @@ const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditable
     publishNextValue(syncEditableHtml(event.currentTarget))
   }
 
+  function handleDrop(event) {
+    const droppedHtml = getClipboardRichTextHtml(event.dataTransfer)
+
+    event.preventDefault()
+
+    if (!droppedHtml) {
+      return
+    }
+
+    if (!placeCaretAtPoint(event.currentTarget, event.clientX, event.clientY)) {
+      return
+    }
+
+    document.execCommand('insertHTML', false, droppedHtml)
+    publishNextValue(syncEditableHtml(event.currentTarget))
+  }
+
   function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      ensureDefaultParagraphSeparator()
+    }
+
     if (event.key !== 'Escape') {
       return
     }
@@ -1000,6 +1208,7 @@ const InlineRichHtmlEditableElement = forwardRef(function InlineRichHtmlEditable
       suppressContentEditableWarning
       onBlur={active ? handleBlur : undefined}
       onClick={handleClick}
+      onDrop={active ? handleDrop : undefined}
       onMouseDown={handleMouseDown}
       onInput={active ? handleInput : undefined}
       onKeyDown={active ? handleKeyDown : undefined}
@@ -1025,7 +1234,6 @@ export function EditableText({
   const isActive = field.isActive
   const displayValue = value ?? (typeof children === 'string' ? children : '')
   const allowLinkFormatting = Component !== 'a'
-  void multiline
   void rows
 
   return (
@@ -1039,6 +1247,7 @@ export function EditableText({
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         disabled={!field.isEnabled || field.disabled}
         label={label}
+        multiline={multiline}
         onActivate={field.activate}
         onChange={(nextValue) => field.updatePath(path, nextValue)}
         onClose={field.close}
@@ -1057,12 +1266,14 @@ export function EditableText({
         fixedBlockTag={String(Component).toLowerCase()}
         onClose={field.close}
         onSync={(nextValue) => {
+          const normalizedValue = richTextValueToInlineHtml(nextValue)
+
           if (typeof publishValueRef.current === 'function') {
-            publishValueRef.current(nextValue)
+            publishValueRef.current(normalizedValue)
             return
           }
 
-          field.updatePath(path, nextValue)
+          field.updatePath(path, normalizedValue)
         }}
       />
     </>
@@ -1099,9 +1310,13 @@ export function EditableLink({
   const resolvedDestinationField =
     normalizeLinkValue(destinationField) || getTerminalPathSegment(destinationPath) || (allowRouteSelection ? 'path' : 'href')
   const linkEditorEnabled = Boolean(destinationPath) && Array.isArray(linkPath) && link && typeof link === 'object'
+  // No explicit linkType here: with only a bare destination string to work with (no
+  // separate "mode" field), the type must be auto-detected from the destination value
+  // itself via detectLinkType so switching between Site Route and External URL below
+  // actually changes which input is shown, instead of being pinned to whatever these
+  // props said on the very first render.
   const fallbackLinkRecord = {
     [resolvedDestinationField]: normalizedDestination,
-    linkType: allowRouteSelection && !external ? 'internal' : external ? 'external' : undefined,
     target,
   }
   const renderConfig = resolveLinkRenderConfig(linkEditorEnabled ? link : fallbackLinkRecord, {
@@ -1153,7 +1368,10 @@ export function EditableLink({
     }
 
     if (!isExternalDestination) {
-      field.updatePath(destinationPath, '')
+      // An empty destination falls back to defaultType (internal), which would
+      // immediately re-detect as a route and flip the UI straight back to the route
+      // select. Seed a scheme so detectLinkType classifies it as external right away.
+      field.updatePath(destinationPath, 'https://')
     }
   }
 
@@ -1187,12 +1405,14 @@ export function EditableLink({
         fixedBlockTag="span"
         onClose={field.close}
         onSync={(nextValue) => {
+          const normalizedValue = richTextValueToInlineHtml(nextValue)
+
           if (typeof publishValueRef.current === 'function') {
-            publishValueRef.current(nextValue)
+            publishValueRef.current(normalizedValue)
             return
           }
 
-          field.updatePath(textPath, nextValue)
+          field.updatePath(textPath, normalizedValue)
         }}
       />
 
@@ -1220,7 +1440,7 @@ export function EditableLink({
                 {routeSelectionEnabled && externalUrlEnabled ? (
                   <label className="admin-field">
                     <span>Link Type</span>
-                    <select value={usesRouteSelection ? 'route' : 'external'} onChange={(event) => handleDestinationModeChange(event.target.value)}>
+                    <select disabled={field.disabled} value={usesRouteSelection ? 'route' : 'external'} onChange={(event) => handleDestinationModeChange(event.target.value)}>
                       <option value="route">Site Route</option>
                       <option value="external">External URL</option>
                     </select>
@@ -1229,7 +1449,7 @@ export function EditableLink({
                 {usesRouteSelection ? (
                   <label className="admin-field">
                     <span>{destinationLabel}</span>
-                    <select value={normalizedDestination} onChange={(event) => field.updatePath(destinationPath, event.target.value)}>
+                    <select disabled={field.disabled} value={normalizedDestination} onChange={(event) => field.updatePath(destinationPath, event.target.value)}>
                       {selectableRouteOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -1241,6 +1461,7 @@ export function EditableLink({
                   <label className="admin-field">
                     <span>{destinationLabel}</span>
                     <input
+                      disabled={field.disabled}
                       placeholder={externalUrlEnabled ? 'https://example.com or mailto:name@example.com' : ''}
                       type="text"
                       value={destination ?? ''}
@@ -1257,11 +1478,13 @@ export function EditableLink({
               <div className="admin-inline-background-color-row">
                 <input
                   className="admin-inline-background-color-swatch"
+                  disabled={field.disabled}
                   type="color"
                   value={getColorInputValue(normalizedButtonColor, '#6da6dc')}
                   onChange={(event) => field.updatePath(buttonColorPath, event.target.value)}
                 />
                 <input
+                  disabled={field.disabled}
                   placeholder="#6da6dc"
                   type="text"
                   value={normalizedButtonColor}
@@ -1322,12 +1545,14 @@ export function EditableButton({
         fixedBlockTag="span"
         onClose={field.close}
         onSync={(nextValue) => {
+          const normalizedValue = richTextValueToInlineHtml(nextValue)
+
           if (typeof publishValueRef.current === 'function') {
-            publishValueRef.current(nextValue)
+            publishValueRef.current(normalizedValue)
             return
           }
 
-          field.updatePath(labelPath, nextValue)
+          field.updatePath(labelPath, normalizedValue)
         }}
       />
     </>
@@ -1364,6 +1589,11 @@ function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSiz
       url: nextUrl,
       alt: image?.alt || entry?.alt || '',
       title: 'title' in image || entry?.title ? image?.title || entry?.title || '' : undefined,
+      // A manual crop/size chosen for the previous image is very unlikely to fit a
+      // newly picked image's aspect ratio - reset it so the new image renders at its
+      // natural size instead of silently squeezing into the old dimensions.
+      height: null,
+      width: null,
       originalHeight: originalHeight || null,
       originalWidth: originalWidth || null,
     })
@@ -1381,16 +1611,16 @@ function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSiz
       />
       <label className="admin-field">
         <span>Manual Image URL</span>
-        <input type="text" value={image?.url ?? ''} onChange={(event) => field.updatePath([...path, 'url'], event.target.value)} />
+        <input disabled={field.disabled} type="text" value={image?.url ?? ''} onChange={(event) => field.updatePath([...path, 'url'], event.target.value)} />
       </label>
       <label className="admin-field">
         <span>Alt Text</span>
-        <input type="text" value={image?.alt ?? ''} onChange={(event) => field.updatePath([...path, 'alt'], event.target.value)} />
+        <input disabled={field.disabled} type="text" value={image?.alt ?? ''} onChange={(event) => field.updatePath([...path, 'alt'], event.target.value)} />
       </label>
       {'title' in image ? (
         <label className="admin-field">
           <span>Title</span>
-          <input type="text" value={image?.title ?? ''} onChange={(event) => field.updatePath([...path, 'title'], event.target.value)} />
+          <input disabled={field.disabled} type="text" value={image?.title ?? ''} onChange={(event) => field.updatePath([...path, 'title'], event.target.value)} />
         </label>
       ) : null}
       {showSizeControls ? <AdminImageSizeControls disabled={field.disabled} displaySize={displaySize} image={image} onChange={handleSizeChange} /> : null}
@@ -1408,11 +1638,13 @@ function BackgroundPopoverFields({ field, image = {}, path }) {
         <div className="admin-inline-background-color-row">
           <input
             className="admin-inline-background-color-swatch"
+            disabled={field.disabled}
             type="color"
             value={getColorInputValue(backgroundColor)}
             onChange={(event) => field.updatePath([...path, 'backgroundColor'], event.target.value)}
           />
           <input
+            disabled={field.disabled}
             placeholder="#0b2b5f or rgba(7, 33, 74, 0.45)"
             type="text"
             value={backgroundColor}
@@ -1663,16 +1895,19 @@ export function EditableRichHtml({ className = '', html = '', path, title = 'Bod
         active={isActive}
         allowBlockFormatting
         allowLineBreaks
+        allowLineTightening
         anchorRef={anchorRef}
         disabled={!field.isEnabled || field.disabled}
         onClose={field.close}
         onSync={(nextValue) => {
+          const normalizedValue = richTextValueToHtml(nextValue)
+
           if (typeof publishValueRef.current === 'function') {
-            publishValueRef.current(nextValue)
+            publishValueRef.current(normalizedValue)
             return
           }
 
-          field.updatePath(path, richTextValueToHtml(nextValue))
+          field.updatePath(path, normalizedValue)
         }}
       />
     </>

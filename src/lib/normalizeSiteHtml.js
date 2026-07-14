@@ -1,6 +1,7 @@
 import { normalizeRichTextFontSize } from './richTextFormatting'
 
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
+const EMPTY_PRUNABLE_INLINE_TAGS = new Set(['A', 'B', 'EM', 'I', 'SPAN', 'STRONG', 'U'])
 const ALLOWED_TAGS = new Set([
   'A',
   'B',
@@ -26,6 +27,22 @@ const ALLOWED_TAGS = new Set([
 ])
 const DROP_TAGS = new Set(['BASE', 'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'INPUT', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA'])
 const BLANK_LINE_PLACEHOLDER_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'])
+const ESCAPED_SITE_HTML_TAG_PATTERN =
+  /&(?:lt|#60|#x3c);\s*\/?\s*(?:a|b|blockquote|br|div|em|h[1-6]|hr|i|li|ol|p|span|strong|u|ul)\b/i
+const HTML_ENTITY_DECODE_MAP = {
+  '&nbsp;': ' ',
+  '&amp;': '&',
+  '&lt;': '<',
+  '&#60;': '<',
+  '&#x3c;': '<',
+  '&gt;': '>',
+  '&#62;': '>',
+  '&#x3e;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&#x27;': "'",
+  '&apos;': "'",
+}
 
 function repairSnapshotText(text = '') {
   return text
@@ -36,6 +53,18 @@ function repairSnapshotText(text = '') {
     .replaceAll('\u00e2\u20ac\u201d', '\u2014')
     .replaceAll('\u00c2\u00a0', ' ')
     .replaceAll('\u00c2', '')
+}
+
+export function decodeEscapedSiteHtml(value = '') {
+  const source = String(value ?? '')
+
+  if (!ESCAPED_SITE_HTML_TAG_PATTERN.test(source)) {
+    return source
+  }
+
+  return source.replace(/&(?:nbsp|amp|lt|gt|quot|#39|#x27|#60|#x3c|#62|#x3e|apos);/gi, (match) => {
+    return HTML_ENTITY_DECODE_MAP[match.toLowerCase()] ?? match
+  })
 }
 
 function normalizeLegacyPath(pathname) {
@@ -102,6 +131,35 @@ function normalizeHrefValue(href) {
 
 function isInternalSiteHref(href) {
   return href.startsWith('/') || href.startsWith('?') || href.startsWith('#')
+}
+
+function stripUnsafeHtmlFallback(html = '') {
+  return String(html ?? '')
+    .replace(/<\s*(script|style|iframe|object|embed|form|textarea|select)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(base|button|input|link|meta)\b[^>]*>/gi, '')
+}
+
+function stripComments(node) {
+  Array.from(node.childNodes).forEach((child) => {
+    if (child.nodeType === 8) {
+      child.remove()
+      return
+    }
+
+    if (child.nodeType === 1) {
+      stripComments(child)
+    }
+  })
+}
+
+function isPrunableEmptyInlineElement(element) {
+  const tagName = element.tagName.toUpperCase()
+
+  if (!EMPTY_PRUNABLE_INLINE_TAGS.has(tagName)) {
+    return false
+  }
+
+  return element.children.length === 0 && element.textContent.replace(/[ \t\r\n\f\v]/g, '').length === 0
 }
 
 function unwrapElement(element) {
@@ -253,18 +311,22 @@ function sanitizeHtmlTree(root) {
         element.removeAttribute('rel')
       }
     }
+
+    if (isPrunableEmptyInlineElement(element)) {
+      element.remove()
+    }
   })
 }
 
 export function normalizeSiteHtml(html) {
-  const sourceHtml = repairSnapshotText(typeof html === 'string' ? html : '')
+  const sourceHtml = decodeEscapedSiteHtml(repairSnapshotText(typeof html === 'string' ? html : ''))
 
   if (!sourceHtml.trim()) {
     return ''
   }
 
   if (typeof DOMParser === 'undefined') {
-    return sourceHtml.replace(/href="([^"]+)"/gi, (_, href) => {
+    return stripUnsafeHtmlFallback(sourceHtml).replace(/href="([^"]+)"/gi, (_, href) => {
       const safeHref = normalizeHrefValue(href)
       return safeHref ? `href="${safeHref}"` : ''
     })
@@ -276,6 +338,8 @@ export function normalizeSiteHtml(html) {
   if (!root) {
     return ''
   }
+
+  stripComments(root)
 
   sanitizeHtmlTree(root)
   return root.innerHTML.trim()

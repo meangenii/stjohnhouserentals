@@ -204,6 +204,148 @@ export function captureRichTextSelectionRange(root) {
   return range ? range.cloneRange() : null
 }
 
+export function getSelectedBlockElements(root, range) {
+  if (!root || !range) {
+    return []
+  }
+
+  const selectedBlocks = Array.from(root.children).filter((child) => elementIntersectsRange(child, range))
+
+  if (selectedBlocks.length > 0 || !range.collapsed) {
+    return selectedBlocks
+  }
+
+  const selectionBlock = getSelectionBlockElement(root)
+  return selectionBlock?.parentElement === root ? [selectionBlock] : []
+}
+
+export function blockHasLineBreak(block) {
+  return Boolean(block?.querySelector?.('br'))
+}
+
+function splitNodesAtLineBreaks(nodes) {
+  const groupedNodes = [[]]
+
+  Array.from(nodes).forEach((node) => {
+    if (node.nodeName === 'BR') {
+      groupedNodes.push([])
+      return
+    }
+
+    if (node.querySelector?.('br')) {
+      const childGroups = splitNodesAtLineBreaks(node.childNodes)
+
+      childGroups.forEach((childGroup, index) => {
+        if (index > 0) {
+          groupedNodes.push([])
+        }
+
+        if (childGroup.length === 0) {
+          return
+        }
+
+        const wrapper = node.cloneNode(false)
+        childGroup.forEach((childNode) => wrapper.append(childNode))
+        groupedNodes[groupedNodes.length - 1].push(wrapper)
+      })
+      return
+    }
+
+    groupedNodes[groupedNodes.length - 1].push(node.cloneNode(true))
+  })
+
+  return groupedNodes
+}
+
+function cloneBlockShell(block) {
+  const nextBlock = document.createElement(block.tagName.toLowerCase())
+
+  Array.from(block.attributes).forEach((attribute) => {
+    if (attribute.name !== 'id') {
+      nextBlock.setAttribute(attribute.name, attribute.value)
+    }
+  })
+
+  return nextBlock
+}
+
+export function splitBlockAtLineBreaks(block) {
+  if (!blockHasLineBreak(block)) {
+    return []
+  }
+
+  const groupedNodes = splitNodesAtLineBreaks(block.childNodes)
+  const fragment = document.createDocumentFragment()
+  const nextBlocks = groupedNodes.map((nodes) => {
+    const nextBlock = cloneBlockShell(block)
+
+    if (nodes.length > 0) {
+      nodes.forEach((node) => nextBlock.append(node))
+    } else {
+      nextBlock.append(document.createElement('br'))
+    }
+
+    fragment.append(nextBlock)
+    return nextBlock
+  })
+
+  block.replaceWith(fragment)
+  return nextBlocks
+}
+
+// Whether the current selection sits entirely inside a single block that already
+// contains manual line breaks - i.e. whether "Tighten Lines" would currently act as
+// "Untighten Lines". Works with both a real text selection and a plain collapsed
+// cursor placed inside the block, since untightening a single block doesn't need a
+// multi-character selection to know what to do.
+export function isTightenedBlockSelection(root) {
+  const range = captureRichTextSelectionRange(root)
+
+  if (!range) {
+    return false
+  }
+
+  const selectedBlocks = getSelectedBlockElements(root, range)
+  return selectedBlocks.length === 1 && blockHasLineBreak(selectedBlocks[0])
+}
+
+// Applies "Tighten Lines" (merge 2+ selected blocks into one, joined by <br>) or
+// "Untighten Lines" (split a single <br>-joined block back into separate blocks),
+// picking whichever applies to the current selection. Returns true if it changed
+// anything, so the caller knows whether to sync/publish the new value.
+export function tightenOrUntightenSelectedLines(root) {
+  const range = captureRichTextSelectionRange(root)
+
+  if (!range) {
+    return false
+  }
+
+  const selectedBlocks = getSelectedBlockElements(root, range)
+
+  if (selectedBlocks.length === 1 && blockHasLineBreak(selectedBlocks[0])) {
+    splitBlockAtLineBreaks(selectedBlocks[0])
+    return true
+  }
+
+  if (range.collapsed || selectedBlocks.length < 2) {
+    return false
+  }
+
+  const anchorBlock = selectedBlocks[0]
+
+  selectedBlocks.slice(1).forEach((block) => {
+    anchorBlock.append(document.createElement('br'))
+
+    while (block.firstChild) {
+      anchorBlock.append(block.firstChild)
+    }
+
+    block.remove()
+  })
+
+  return true
+}
+
 function collectTextOffset(root, target, targetOffset) {
   let consumed = 0
   let found = false
@@ -332,6 +474,83 @@ export function restoreRichTextSelectionRange(root, savedRange) {
   } catch {
     return false
   }
+}
+
+export function insertLinkAtCollapsedSelection(root, href, text = '') {
+  const normalizedHref = String(href ?? '').trim()
+  const normalizedText = String(text ?? '').trim() || normalizedHref
+  const range = getSelectionRangeInRoot(root)
+
+  if (!root || !normalizedHref || !range || !range.collapsed || typeof window === 'undefined') {
+    return null
+  }
+
+  const anchor = document.createElement('a')
+  anchor.setAttribute('href', normalizedHref)
+  anchor.textContent = normalizedText
+  range.insertNode(anchor)
+  range.setStartAfter(anchor)
+  range.collapse(true)
+
+  const selection = window.getSelection()
+
+  if (selection) {
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  return anchor
+}
+
+export function placeCaretAtPoint(root, clientX, clientY) {
+  if (!root || typeof document === 'undefined' || typeof window === 'undefined') {
+    return false
+  }
+
+  let range = null
+
+  if (typeof document.caretRangeFromPoint === 'function') {
+    range = document.caretRangeFromPoint(clientX, clientY)
+  } else if (typeof document.caretPositionFromPoint === 'function') {
+    const caretPosition = document.caretPositionFromPoint(clientX, clientY)
+
+    if (caretPosition?.offsetNode) {
+      range = document.createRange()
+      range.setStart(caretPosition.offsetNode, caretPosition.offset)
+      range.collapse(true)
+    }
+  }
+
+  if (!range || !isRangeWithinRoot(root, range)) {
+    const bounds = typeof root.getBoundingClientRect === 'function' ? root.getBoundingClientRect() : null
+    const pointIsInsideRoot =
+      bounds && clientX >= bounds.left && clientX <= bounds.right && clientY >= bounds.top && clientY <= bounds.bottom
+
+    if (pointIsInsideRoot) {
+      if (typeof root.focus === 'function') {
+        root.focus()
+      }
+
+      selectNodeContents(root)
+      return true
+    }
+
+    return false
+  }
+
+  const selection = window.getSelection()
+
+  if (!selection) {
+    return false
+  }
+
+  if (typeof root.focus === 'function') {
+    root.focus()
+  }
+
+  selection.removeAllRanges()
+  selection.addRange(range)
+  return true
 }
 
 function surroundRangeWithElement(range, wrapper) {

@@ -10,6 +10,10 @@ function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
+function makeStructuredItemId() {
+  return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
 function getValueAtPath(root, path = []) {
   return path.reduce((currentValue, segment) => currentValue?.[segment], root)
 }
@@ -563,7 +567,7 @@ function renderHomeEditor(page, helpers) {
                 canMoveDown={index < (page.discover?.features?.length ?? 0) - 1}
                 canMoveUp={index > 0}
                 disabled={disabled}
-                key={`discover-feature-${index}`}
+                key={feature?.id ?? `discover-feature-${index}`}
                 onMoveDown={() => moveItem(['discover', 'features'], index, 1)}
                 onMoveUp={() => moveItem(['discover', 'features'], index, -1)}
                 title={feature?.title || `Feature ${index + 1}`}
@@ -728,7 +732,7 @@ function renderAdvertiseEditor(page, helpers) {
                 canMoveDown={index < (page.contact?.contactLines?.length ?? 0) - 1}
                 canMoveUp={index > 0}
                 disabled={disabled}
-                key={`contact-line-${index}`}
+                key={line?.id ?? `contact-line-${index}`}
                 onMoveDown={() => helpers.moveItem(['contact', 'contactLines'], index, 1)}
                 onMoveUp={() => helpers.moveItem(['contact', 'contactLines'], index, -1)}
                 onRemove={() => helpers.removeItem(['contact', 'contactLines'], index)}
@@ -835,7 +839,7 @@ function renderLocalAttractionsEditor(page, helpers) {
                 canMoveDown={sectionIndex < diningSections.length - 1}
                 canMoveUp={sectionIndex > 0}
                 disabled={disabled}
-                key={`dining-section-${sectionIndex}`}
+                key={section?.id ?? `dining-section-${sectionIndex}`}
                 onMoveDown={() => helpers.moveItem(['dining', 'sections'], sectionIndex, 1)}
                 onMoveUp={() => helpers.moveItem(['dining', 'sections'], sectionIndex, -1)}
                 onRemove={() => helpers.removeItem(['dining', 'sections'], sectionIndex)}
@@ -855,7 +859,7 @@ function renderLocalAttractionsEditor(page, helpers) {
                         canMoveDown={restaurantIndex < (section?.restaurants?.length ?? 0) - 1}
                         canMoveUp={restaurantIndex > 0}
                         disabled={disabled}
-                        key={`restaurant-${sectionIndex}-${restaurantIndex}`}
+                        key={restaurant?.id ?? `restaurant-${sectionIndex}-${restaurantIndex}`}
                         onMoveDown={() => helpers.moveItem(['dining', 'sections', sectionIndex, 'restaurants'], restaurantIndex, 1)}
                         onMoveUp={() => helpers.moveItem(['dining', 'sections', sectionIndex, 'restaurants'], restaurantIndex, -1)}
                         onRemove={() => helpers.removeItem(['dining', 'sections', sectionIndex, 'restaurants'], restaurantIndex)}
@@ -971,7 +975,7 @@ function renderCarBargeEditor(page, helpers) {
                 canMoveDown={index < (page.intro?.portAuthorityFees?.length ?? 0) - 1}
                 canMoveUp={index > 0}
                 disabled={disabled}
-                key={`port-fee-${index}`}
+                key={fee?.id ?? `port-fee-${index}`}
                 onMoveDown={() => helpers.moveItem(['intro', 'portAuthorityFees'], index, 1)}
                 onMoveUp={() => helpers.moveItem(['intro', 'portAuthorityFees'], index, -1)}
                 onRemove={() => helpers.removeItem(['intro', 'portAuthorityFees'], index)}
@@ -1023,7 +1027,7 @@ function renderCarBargeEditor(page, helpers) {
                   canMoveDown={operatorIndex < operators.length - 1}
                   canMoveUp={operatorIndex > 0}
                   disabled={disabled}
-                  key={`barge-operator-${operatorIndex}`}
+                  key={operator?.id ?? `barge-operator-${operatorIndex}`}
                   onMoveDown={() => helpers.moveItem(['operators'], operatorIndex, 1)}
                   onMoveUp={() => helpers.moveItem(['operators'], operatorIndex, -1)}
                   onRemove={() => helpers.removeItem(['operators'], operatorIndex)}
@@ -1058,7 +1062,7 @@ function renderCarBargeEditor(page, helpers) {
                             canMoveDown={scheduleIndex < schedules.length - 1}
                             canMoveUp={scheduleIndex > 0}
                             disabled={disabled}
-                            key={`schedule-${operatorIndex}-${scheduleIndex}`}
+                            key={schedule?.id ?? `schedule-${operatorIndex}-${scheduleIndex}`}
                             onMoveDown={() => helpers.moveItem(['operators', operatorIndex, 'schedules'], scheduleIndex, 1)}
                             onMoveUp={() => helpers.moveItem(['operators', operatorIndex, 'schedules'], scheduleIndex, -1)}
                             onRemove={() => helpers.removeItem(['operators', operatorIndex, 'schedules'], scheduleIndex)}
@@ -1079,7 +1083,7 @@ function renderCarBargeEditor(page, helpers) {
                                     canMoveDown={columnIndex < columns.length - 1}
                                     canMoveUp={columnIndex > 0}
                                     disabled={disabled}
-                                    key={`schedule-column-${operatorIndex}-${scheduleIndex}-${columnIndex}`}
+                                    key={column?.id ?? `schedule-column-${operatorIndex}-${scheduleIndex}-${columnIndex}`}
                                     onMoveDown={() => helpers.moveItem(['operators', operatorIndex, 'schedules', scheduleIndex, 'columns'], columnIndex, 1)}
                                     onMoveUp={() => helpers.moveItem(['operators', operatorIndex, 'schedules', scheduleIndex, 'columns'], columnIndex, -1)}
                                     onRemove={() => helpers.removeItem(['operators', operatorIndex, 'schedules', scheduleIndex, 'columns'], columnIndex)}
@@ -1125,7 +1129,7 @@ function renderCarBargeEditor(page, helpers) {
                           canMoveDown={rowIndex < rateRows.length - 1}
                           canMoveUp={rowIndex > 0}
                           disabled={disabled}
-                          key={`rate-row-${operatorIndex}-${rowIndex}`}
+                          key={row?.id ?? `rate-row-${operatorIndex}-${rowIndex}`}
                           onMoveDown={() => helpers.moveItem(['operators', operatorIndex, 'rates', 'rows'], rowIndex, 1)}
                           onMoveUp={() => helpers.moveItem(['operators', operatorIndex, 'rates', 'rows'], rowIndex, -1)}
                           onRemove={() => helpers.removeItem(['operators', operatorIndex, 'rates', 'rows'], rowIndex)}
@@ -1176,7 +1180,7 @@ function renderPassengerFerryEditor(page, helpers) {
             canMoveDown={directionIndex < directions.length - 1}
             canMoveUp={directionIndex > 0}
             disabled={disabled}
-            key={`${sectionKey}-direction-${directionIndex}`}
+            key={direction?.id ?? `${sectionKey}-direction-${directionIndex}`}
             onMoveDown={() => helpers.moveItem([sectionKey, 'directions'], directionIndex, 1)}
             onMoveUp={() => helpers.moveItem([sectionKey, 'directions'], directionIndex, -1)}
             title={direction?.heading || `Direction ${directionIndex + 1}`}
@@ -1254,7 +1258,7 @@ function renderCarRentalsEditor(page, helpers) {
                 canMoveDown={companyIndex < companies.length - 1}
                 canMoveUp={companyIndex > 0}
                 disabled={disabled}
-                key={`car-company-${companyIndex}`}
+                key={company?.id ?? `car-company-${companyIndex}`}
                 onMoveDown={() => helpers.moveItem(['directory', 'companies'], companyIndex, 1)}
                 onMoveUp={() => helpers.moveItem(['directory', 'companies'], companyIndex, -1)}
                 onRemove={() => helpers.removeItem(['directory', 'companies'], companyIndex)}
@@ -1324,7 +1328,7 @@ function renderCharterBoatsEditor(page, helpers) {
                 canMoveDown={sectionIndex < safetySections.length - 1}
                 canMoveUp={sectionIndex > 0}
                 disabled={disabled}
-                key={`safety-note-${sectionIndex}`}
+                key={section?.id ?? `safety-note-${sectionIndex}`}
                 onMoveDown={() => helpers.moveItem(['safety', 'sections'], sectionIndex, 1)}
                 onMoveUp={() => helpers.moveItem(['safety', 'sections'], sectionIndex, -1)}
                 onRemove={() => helpers.removeItem(['safety', 'sections'], sectionIndex)}
@@ -1374,7 +1378,7 @@ function renderRichContentEditor(page, helpers) {
                 canMoveDown={imageIndex < imageGallery.length - 1}
                 canMoveUp={imageIndex > 0}
                 disabled={disabled}
-                key={`gallery-image-${imageIndex}`}
+                key={image?.id ?? `gallery-image-${imageIndex}`}
                 onMoveDown={() => helpers.moveItem(['imageGallery'], imageIndex, 1)}
                 onMoveUp={() => helpers.moveItem(['imageGallery'], imageIndex, -1)}
                 onRemove={() => helpers.removeItem(['imageGallery'], imageIndex)}
@@ -1446,7 +1450,11 @@ export function AdminStructuredPageEditor({ page, onChange, disabled = false }) 
       onChange((currentValue) => updateValueAtPath(currentValue, path, nextValue))
     },
     addItem(path, nextItem) {
-      onChange((currentValue) => addArrayItemAtPath(currentValue, path, nextItem))
+      // Every repeating-section item gets a stable id so list rows can be keyed by
+      // identity instead of array index — otherwise reordering/removing a row causes
+      // React to reuse a stateful editor (e.g. AdminRichTextEditor) across two
+      // different logical items, which can misattribute in-progress edits.
+      onChange((currentValue) => addArrayItemAtPath(currentValue, path, { id: makeStructuredItemId(), ...nextItem }))
     },
     removeItem(path, index) {
       onChange((currentValue) => removeArrayItemAtPath(currentValue, path, index))

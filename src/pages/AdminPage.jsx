@@ -118,6 +118,7 @@ function isActualPublicRoutePath(path) {
 }
 
 const RESERVED_PAGE_PATH_PREFIXES = ['/admin', '/rental-properties/', '/1bedroom/', '/charter-boat-rentals/']
+const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 
 function isReservedPagePath(path) {
   if (!path || path === '/') {
@@ -679,7 +680,8 @@ function reviewEntriesToHtml(entries = []) {
       }
 
       if (quote) {
-        lines.push(`<p>${richTextValueToHtml(quote)}</p>`)
+        const quoteHtml = richTextValueToHtml(quote)
+        lines.push(BLOCK_RICH_TEXT_PATTERN.test(quoteHtml) ? quoteHtml : `<p>${quoteHtml}</p>`)
       }
 
       return lines
@@ -918,7 +920,7 @@ export function AdminPage() {
     activeSlug: preferredPropertyMode === 'edit' ? preferredPropertySlug : '',
   }))
   const propertyEditorSessionRef = useRef(0)
-  const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
+  const pageEditorSessionRef = useRef(0)
   const [propertyPreviewViewState, setPropertyPreviewViewState] = useState(() => ({
     key: '',
     mode: 'edit',
@@ -930,6 +932,7 @@ export function AdminPage() {
   const propertyEditingEnabled = isPropertyEditingEnabled()
   const propertyUsesFirebase = isFirebasePropertyData()
 
+  const charterEditorSessionRef = useRef(0)
   const [charterWorkspaceState, setCharterWorkspaceState] = useState({ status: 'loading', charters: [] })
   const [charterFormState, setCharterFormState] = useState(initialCharterFormState)
   const [savedCharterFormState, setSavedCharterFormState] = useState(initialCharterFormState)
@@ -1129,7 +1132,6 @@ export function AdminPage() {
           setFormState(nextFormState)
           setSavedFormState(nextFormState)
           setPropertyPublication(null)
-          setGalleryEditorExpanded(false)
           return
         }
 
@@ -1142,7 +1144,6 @@ export function AdminPage() {
           setFormState(nextFormState)
           setSavedFormState(nextFormState)
           setPropertyPublication(preferredProperty.publication ?? null)
-          setGalleryEditorExpanded(false)
           return
         }
 
@@ -1151,7 +1152,6 @@ export function AdminPage() {
         setFormState(nextFormState)
         setSavedFormState(nextFormState)
         setPropertyPublication(null)
-        setGalleryEditorExpanded(false)
       } catch (error) {
         if (!cancelled) {
           setWorkspaceState({
@@ -1494,6 +1494,8 @@ export function AdminPage() {
       return
     }
 
+    pageEditorSessionRef.current += 1
+
     try {
       setPageEditorState((current) => ({ ...current, status: 'loading', activeKey: pageKey }))
       const requestOptions = await getAdminRequestOptions()
@@ -1515,7 +1517,7 @@ export function AdminPage() {
     }
   }
 
-  async function reloadStructuredPageWorkspace(preferredKey = '') {
+  async function reloadStructuredPageWorkspace(preferredKey = '', { sessionToken = null } = {}) {
     const requestOptions = await getAdminRequestOptions()
     const directory = await fetchAdminStructuredPageDirectory(requestOptions)
     const inventory = Array.isArray(directory?.inventory) ? directory.inventory : []
@@ -1529,6 +1531,13 @@ export function AdminPage() {
       message: '',
     })
 
+    // If the caller is applying the result of a save/publish for a specific editor
+    // session, and the admin has since switched to a different page, skip overwriting
+    // the now-active editor with this stale result.
+    if (sessionToken !== null && pageEditorSessionRef.current !== sessionToken) {
+      return null
+    }
+
     if (!nextKey) {
       setPageEditorState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
       setPagePublication(null)
@@ -1536,6 +1545,10 @@ export function AdminPage() {
     }
 
     const page = await fetchAdminStructuredPageContent(nextKey, requestOptions)
+
+    if (sessionToken !== null && pageEditorSessionRef.current !== sessionToken) {
+      return null
+    }
 
     setPageEditorState({
       status: 'ready',
@@ -1555,7 +1568,6 @@ export function AdminPage() {
     setFormState(nextFormState)
     setSavedFormState(nextFormState)
     setPropertyPublication(null)
-    setGalleryEditorExpanded(false)
     setFeedback('')
   }
 
@@ -1566,7 +1578,6 @@ export function AdminPage() {
     setFormState(nextFormState)
     setSavedFormState(nextFormState)
     setPropertyPublication(property.publication ?? null)
-    setGalleryEditorExpanded(false)
     setFeedback('')
   }
 
@@ -2028,7 +2039,6 @@ export function AdminPage() {
       const properties = await listAllProperties(requestOptions)
 
       setWorkspaceState({ status: 'ready', properties })
-      setGalleryEditorExpanded(false)
 
       if (properties.length > 0) {
         const nextFormState = createFormState(properties[0])
@@ -2072,7 +2082,16 @@ export function AdminPage() {
     setFeedback(editorState.mode === 'create' ? 'Cleared the unsaved property draft.' : 'Restored the last saved property draft.')
   }
 
+  function confirmDiscardCharterChangesIfNeeded() {
+    if (!charterDirty) {
+      return true
+    }
+
+    return window.confirm('You have unsaved charter edits. Switch charters and discard those changes?')
+  }
+
   function openCreateCharterForm() {
+    charterEditorSessionRef.current += 1
     const nextFormState = createEmptyCharterFormState()
     setCharterEditorState({ mode: 'create', activeSlug: '' })
     setCharterFormState(nextFormState)
@@ -2082,6 +2101,7 @@ export function AdminPage() {
   }
 
   function openEditCharterForm(charter) {
+    charterEditorSessionRef.current += 1
     const nextFormState = createCharterFormState(charter)
     setCharterEditorState({ mode: 'edit', activeSlug: charter.slug })
     setCharterFormState(nextFormState)
@@ -2102,6 +2122,8 @@ export function AdminPage() {
       return
     }
 
+    const sessionAtStart = charterEditorSessionRef.current
+
     try {
       setCharterSaveStatus('saving')
       setCharterConflict(null)
@@ -2118,6 +2140,13 @@ export function AdminPage() {
       )
       const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
+
+      if (charterEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different charter draft; don't clobber it with this save's result.
+        setCharterSaveStatus('idle')
+        return
+      }
+
       const nextFormState = createCharterFormState(saved)
       setCharterEditorState({ mode: 'edit', activeSlug: saved.slug })
       setCharterFormState(nextFormState)
@@ -2154,6 +2183,8 @@ export function AdminPage() {
   }
 
   async function handlePublishCharter() {
+    const sessionAtStart = charterEditorSessionRef.current
+
     try {
       setCharterSaveStatus('publishing')
       setCharterConflict(null)
@@ -2163,6 +2194,13 @@ export function AdminPage() {
       const publishedCharter = await publishAdminCharter(charterFormState.originalSlug, requestOptions)
       const charters = await listAllCharters(requestOptions)
       setCharterWorkspaceState({ status: 'ready', charters })
+
+      if (charterEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different charter draft; don't clobber it with this publish's result.
+        setCharterSaveStatus('idle')
+        return
+      }
+
       const nextFormState = createCharterFormState(publishedCharter)
       setCharterEditorState({ mode: 'edit', activeSlug: publishedCharter.slug })
       setCharterFormState(nextFormState)
@@ -2250,6 +2288,10 @@ export function AdminPage() {
 
   function handleCharterSelectionChange(event) {
     const selectedSlug = String(event.target.value ?? '').trim()
+
+    if (!confirmDiscardCharterChangesIfNeeded()) {
+      return
+    }
 
     if (!selectedSlug) {
       openCreateCharterForm()
@@ -2384,12 +2426,21 @@ export function AdminPage() {
       return
     }
 
+    const sessionAtStart = pageEditorSessionRef.current
+
     try {
       setPageSaveStatus('saving')
       setPageConflict(false)
       const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
       const savedPage = await saveAdminStructuredPageContent(pageEditorState.activeKey, pageEditorState.draft ?? {}, requestOptions)
-      await reloadStructuredPageWorkspace(savedPage?.page?.key ?? pageEditorState.activeKey)
+      await reloadStructuredPageWorkspace(savedPage?.page?.key ?? pageEditorState.activeKey, { sessionToken: sessionAtStart })
+
+      if (pageEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different page; don't clobber it with this save's result.
+        setPageSaveStatus('idle')
+        return
+      }
+
       setPageFeedback(`Saved draft changes to ${savedPage?.page?.navLabel || savedPage?.page?.key || pageEditorState.activeKey}.`)
       setPageSaveStatus('idle')
     } catch (error) {
@@ -2419,12 +2470,21 @@ export function AdminPage() {
       return
     }
 
+    const sessionAtStart = pageEditorSessionRef.current
+
     try {
       setPageSaveStatus('publishing')
       setPageConflict(false)
       const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
       const publishedPage = await publishAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
-      await reloadStructuredPageWorkspace(publishedPage?.page?.key ?? pageEditorState.activeKey)
+      await reloadStructuredPageWorkspace(publishedPage?.page?.key ?? pageEditorState.activeKey, { sessionToken: sessionAtStart })
+
+      if (pageEditorSessionRef.current !== sessionAtStart) {
+        // The editor has since switched to a different page; don't clobber it with this publish's result.
+        setPageSaveStatus('idle')
+        return
+      }
+
       setPageFeedback(`Published ${publishedPage?.page?.navLabel || publishedPage?.page?.key || pageEditorState.activeKey} live.`)
       setPageSaveStatus('idle')
     } catch (error) {
@@ -2590,6 +2650,7 @@ export function AdminPage() {
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled =
     charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user)) && !charterLock.isBlocked
+  const charterActionBusy = charterSaveStatus === 'saving' || charterSaveStatus === 'publishing'
   const charterHasPendingPublication = hasPendingPublication(charterPublication)
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
   const siteContentDraftEditingEnabled = siteContentEditingEnabled
@@ -3211,7 +3272,6 @@ export function AdminPage() {
                       disabled={!propertySaveEnabled}
                       editable
                       formState={formState}
-                      galleryEditorExpanded={galleryEditorExpanded}
                       locationOptions={propertyLocationOptions}
                       mode={propertyPreviewMode}
                       onAddAmenityGroup={addAmenityGroup}
@@ -3222,7 +3282,6 @@ export function AdminPage() {
                       onFieldChange={updateFormState}
                       onGalleryImageChange={updateGalleryImage}
                       onMoveGalleryImage={moveGalleryImage}
-                      onToggleGalleryEditor={() => setGalleryEditorExpanded((currentState) => !currentState)}
                       onRemoveAmenityGroup={removeAmenityGroup}
                       onRemoveGalleryImage={removeGalleryImage}
                       onRemoveReviewEntry={removeReviewEntry}
@@ -3267,7 +3326,11 @@ export function AdminPage() {
                 <div className="admin-selector-row">
                   <label className="admin-field admin-selector-field">
                     <span>Charter</span>
-                    <select value={charterEditorState.mode === 'edit' ? charterEditorState.activeSlug : ''} onChange={handleCharterSelectionChange}>
+                    <select
+                      disabled={charterActionBusy}
+                      value={charterEditorState.mode === 'edit' ? charterEditorState.activeSlug : ''}
+                      onChange={handleCharterSelectionChange}
+                    >
                       <option value="">Create a new charter</option>
                       {charterWorkspaceState.charters.map((charter) => (
                         <option key={charter.slug} value={charter.slug}>

@@ -57,7 +57,7 @@ export function normalizeInternalLinkDestination(value) {
     return candidate
   }
 
-  const withoutOrigin = candidate.replace(/^[a-z]+:\/\/[^/]+/i, '')
+  const withoutOrigin = candidate.replace(/^(?:[a-z][a-z\d+\-.]*:)?\/\/[^/]+/i, '')
   const [, rawPath = '', suffix = ''] = withoutOrigin.match(/^([^?#]*)(.*)$/) ?? []
 
   if (!rawPath && suffix) {
@@ -70,6 +70,8 @@ export function normalizeInternalLinkDestination(value) {
   return `${collapsedPath}${suffix}`
 }
 
+const ALLOWED_EXTERNAL_LINK_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
+
 export function normalizeExternalLinkDestination(value) {
   const candidate = trimValue(value)
 
@@ -77,8 +79,18 @@ export function normalizeExternalLinkDestination(value) {
     return ''
   }
 
-  if (/^(?:[a-z][a-z\d+\-.]*:|\/\/)/i.test(candidate) || candidate.startsWith('/') || candidate.startsWith('#') || candidate.startsWith('?')) {
+  if (candidate.startsWith('/') || candidate.startsWith('#') || candidate.startsWith('?')) {
     return candidate
+  }
+
+  if (candidate.startsWith('//')) {
+    return candidate
+  }
+
+  const schemeMatch = candidate.match(/^([a-z][a-z\d+\-.]*):/i)
+
+  if (schemeMatch) {
+    return ALLOWED_EXTERNAL_LINK_SCHEMES.has(schemeMatch[1].toLowerCase() + ':') ? candidate : ''
   }
 
   return `https://${candidate}`

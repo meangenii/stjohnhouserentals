@@ -697,6 +697,8 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
         assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
           createStructuredPageConflictError(normalized.key, currentData),
         )
+      } else if (hasExpectedUpdatedAt(expectedUpdatedAt)) {
+        throw new HttpError(409, 'This page was deleted by someone else since you loaded it. Reload to see the latest changes.')
       }
 
       assertUniqueStructuredPageRoutes(pageDocuments, normalized)

@@ -84,7 +84,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
                 <label className="admin-field admin-field--wide">
                   <span>Visibility</span>
                   <div className="admin-preview-checkbox">
-                    <input checked={formState.active} disabled={disabled} onChange={(event) => onFieldChange('active', event.target.checked)} type="checkbox" />
+                    <input checked={Boolean(formState.active)} disabled={disabled} onChange={(event) => onFieldChange('active', event.target.checked)} type="checkbox" />
                     <strong>Visible when published</strong>
                   </div>
                 </label>

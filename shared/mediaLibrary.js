@@ -162,27 +162,40 @@ export function rewriteValueWithMediaManifest(value, manifest = EMPTY_MEDIA_MANI
 }
 
 export function buildMediaManifest(items, metadata = {}) {
+  const itemsByLegacyKey = {}
+  const seenSourceUrlsByKey = {}
+
+  items
+    .filter((item) => item?.canonicalSourceUrl && item?.managedUrl)
+    .sort((left, right) => left.canonicalSourceUrl.localeCompare(right.canonicalSourceUrl))
+    .forEach((item) => {
+      const legacyKey = buildLegacyMediaKey(item.canonicalSourceUrl)
+
+      if (Object.prototype.hasOwnProperty.call(itemsByLegacyKey, legacyKey)) {
+        console.warn(
+          `buildMediaManifest: legacy key collision for "${legacyKey}" — ` +
+            `"${seenSourceUrlsByKey[legacyKey]}" is being overwritten by "${item.canonicalSourceUrl}". ` +
+            'Legacy references to the discarded source URL will resolve to the wrong image.',
+        )
+      }
+
+      seenSourceUrlsByKey[legacyKey] = item.canonicalSourceUrl
+      itemsByLegacyKey[legacyKey] = {
+        mediaId: normalizeString(item.id),
+        managedUrl: normalizeString(item.managedUrl),
+        storagePath: normalizeString(item.storagePath),
+        fileName: normalizeString(item.fileName),
+        ownerType: normalizeString(item.ownerType),
+        ownerKey: normalizeString(item.ownerKey),
+        ownerName: normalizeString(item.ownerName),
+      }
+    })
+
   return {
     generatedAt: metadata.generatedAt || new Date().toISOString(),
     projectId: normalizeString(metadata.projectId),
     bucket: normalizeString(metadata.bucket),
-    itemsByLegacyKey: Object.fromEntries(
-      items
-        .filter((item) => item?.canonicalSourceUrl && item?.managedUrl)
-        .sort((left, right) => left.canonicalSourceUrl.localeCompare(right.canonicalSourceUrl))
-        .map((item) => [
-          buildLegacyMediaKey(item.canonicalSourceUrl),
-          {
-            mediaId: normalizeString(item.id),
-            managedUrl: normalizeString(item.managedUrl),
-            storagePath: normalizeString(item.storagePath),
-            fileName: normalizeString(item.fileName),
-            ownerType: normalizeString(item.ownerType),
-            ownerKey: normalizeString(item.ownerKey),
-            ownerName: normalizeString(item.ownerName),
-          },
-        ]),
-    ),
+    itemsByLegacyKey,
   }
 }
 

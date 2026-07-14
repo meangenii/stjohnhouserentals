@@ -21,6 +21,9 @@ import { PropertyDetailView } from './PropertyDetailView'
 const PROPERTY_DESCRIPTION_SNIPPETS = [
   {
     label: 'Rates',
+    insertStrategy: 'section',
+    sectionKey: 'rates',
+    sectionStart: 'Weekly Rates',
     html: [
       '<p><strong>Property Weekly Rates</strong></p>',
       '<p><strong>High Season</strong></p>',
@@ -37,6 +40,9 @@ const PROPERTY_DESCRIPTION_SNIPPETS = [
   },
   {
     label: 'Booking',
+    insertStrategy: 'section',
+    sectionKey: 'booking',
+    sectionStart: 'Booking Contact:',
     html: [
       '<p><strong>Booking Contact:</strong></p>',
       '<p>Contact Name</p>',
@@ -47,6 +53,9 @@ const PROPERTY_DESCRIPTION_SNIPPETS = [
   },
   {
     label: 'Policy',
+    insertStrategy: 'section',
+    sectionKey: 'policy',
+    sectionStart: 'Rental and Cancellation Policy',
     html: [
       '<p><strong>Rental and Cancellation Policy</strong></p>',
       '<p>50% deposit is required at the time of booking.</p>',
@@ -162,7 +171,6 @@ export function AdminPropertyPreview({
   disabled = false,
   editable = false,
   formState = null,
-  galleryEditorExpanded = false,
   locationOptions = [],
   mode = 'edit',
   onAddAmenityGroup,
@@ -177,11 +185,13 @@ export function AdminPropertyPreview({
   onRemoveGalleryImage,
   onRemoveReviewEntry,
   onReviewEntryChange,
-  onToggleGalleryEditor,
   property,
 }) {
   const [descriptionEditorExpanded, setDescriptionEditorExpanded] = useState(false)
   const [amenitiesEditorExpanded, setAmenitiesEditorExpanded] = useState(false)
+  // Local like the two accordions above (not lifted to AdminPage) so it resets when
+  // this component remounts for a different property instead of leaking across records.
+  const [galleryEditorExpanded, setGalleryEditorExpanded] = useState(false)
   const [expandedAmenityGroupId, setExpandedAmenityGroupId] = useState(null)
   const [heroMediaEditorOpen, setHeroMediaEditorOpen] = useState(false)
   const [galleryAddImagePickerOpen, setGalleryAddImagePickerOpen] = useState(false)
@@ -254,7 +264,7 @@ export function AdminPropertyPreview({
       setSelectedGalleryImageId(null)
     }
 
-    onToggleGalleryEditor?.()
+    setGalleryEditorExpanded((currentState) => !currentState)
   }
 
   function registerAmenityCard(groupId, node) {
@@ -742,6 +752,7 @@ export function AdminPropertyPreview({
                   aria-controls={galleryEditorId}
                   aria-expanded={galleryEditorExpanded}
                   className="button-link button-link--ghost admin-action"
+                  disabled={disabled}
                   type="button"
                   onClick={handleToggleGalleryEditor}
                 >

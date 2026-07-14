@@ -102,7 +102,11 @@ function getAllowedAdminEmails() {
 }
 
 function isUsingAuthEmulator() {
-  return Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST)
+  // Require both signals so a stray FIREBASE_AUTH_EMULATOR_HOST left set in a
+  // deployed environment can't alone grant every signed-in user admin access.
+  // FUNCTIONS_EMULATOR is set automatically by the Firebase emulator runtime
+  // and is never present in deployed Cloud Functions.
+  return Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST) && normalizeBoolean(process.env.FUNCTIONS_EMULATOR)
 }
 
 async function requireAdminUser(request) {

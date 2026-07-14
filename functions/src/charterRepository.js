@@ -4,6 +4,7 @@ const {
   assertExpectedUpdatedAtMatches,
   getDb,
   getServerTimestamp,
+  hasExpectedUpdatedAt,
   isFirestoreUnavailableError,
   toEpochMillis,
 } = require('./firebaseAdmin')
@@ -178,6 +179,7 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
 
   assertStorageImagesInValue(draft, `Charter ${name || slug} image`)
 
+  const contentHtml = String(draft?.contentHtml ?? '').trim()
   const contentParagraphs = Array.isArray(draft?.contentParagraphs)
     ? draft.contentParagraphs.map((paragraph) => String(paragraph).trim()).filter(Boolean)
     : []
@@ -229,7 +231,7 @@ function buildCharterRecordFromAdminDraft(draft, originalSlug = '') {
     website,
     heroImage: normalizeImageAsset(draft?.heroImage),
     pageTitle: name,
-    contentHtml: paragraphListToHtml(contentParagraphs),
+    contentHtml: contentHtml || paragraphListToHtml(contentParagraphs),
     externalLinks,
   })
 }
@@ -341,7 +343,7 @@ async function getCanonicalCharterCatalogForMode(mode = 'public') {
   const charterDocuments = await readCharterCollectionRaw()
   const catalog = buildCharterCatalogFromStoredDocuments(charterDocuments, { mode })
 
-  if (catalog.charters.length === 0) {
+  if (catalog.charters.length === 0 && charterDocuments.length === 0 && mode !== 'admin') {
     throw new HttpError(
       503,
       'The Firestore charter catalog is empty. Seed the Firestore charter collection before serving live charter content.',
@@ -419,6 +421,8 @@ exports.saveCharterRecord = async function saveCharterRecord(draft, originalSlug
       assertExpectedUpdatedAtMatches(currentDocument.data.updatedAt, expectedUpdatedAt, () =>
         createCharterConflictError(currentDocument.data, currentDocument.id),
       )
+    } else if (normalizedOriginalSlug && hasExpectedUpdatedAt(expectedUpdatedAt)) {
+      throw new HttpError(409, 'This charter was deleted by someone else since you loaded it. Reload to see the latest changes.')
     }
 
     assertUniqueCharterSlug(charterDocuments, charter.slug, normalizedOriginalSlug)
