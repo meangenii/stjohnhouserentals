@@ -125,7 +125,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
                   preferredOwnerKey={formState.slug}
                   preferredOwnerName={formState.name}
                   preferredOwnerType="charter"
-                  title="Charter Hero Media"
+                  title=""
                 />
                 <div className="admin-preview-field-grid">
                   <PreviewInput disabled={disabled} label="Manual Hero Image URL" onChange={(value) => onFieldChange('heroImageUrl', value)} type="url" value={formState.heroImageUrl} wide />

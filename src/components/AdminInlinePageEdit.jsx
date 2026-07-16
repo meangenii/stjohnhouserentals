@@ -1559,7 +1559,7 @@ export function EditableButton({
   )
 }
 
-function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSizeControls = true, title = 'Image' }) {
+function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSizeControls = true }) {
   function handleSizeChange(nextSize) {
     const nextImage = {
       kind: image?.kind ?? 'image',
@@ -1607,7 +1607,7 @@ function ImagePopoverFields({ displaySize = {}, field, image = {}, path, showSiz
         onClear={() => field.updatePath([...path, 'url'], '')}
         onSelect={handleSelectImage}
         preferredOwnerType="page"
-        title={`${title} Media`}
+        title=""
       />
       <label className="admin-field">
         <span>Manual Image URL</span>
@@ -1652,7 +1652,7 @@ function BackgroundPopoverFields({ field, image = {}, path }) {
           />
         </div>
       </label>
-      <ImagePopoverFields field={field} image={image} path={path} showSizeControls={false} title="Background Image" />
+      <ImagePopoverFields field={field} image={image} path={path} showSizeControls={false} />
     </>
   )
 }
@@ -1780,7 +1780,7 @@ export function EditableImage({ alt = '', className = '', image = null, path, sr
 
       <InlinePopover active={isActive} anchorRef={anchorRef} onClose={field.close} title="Image">
         <InlinePopoverContent>
-          <ImagePopoverFields displaySize={displaySize} field={field} image={image} path={path} title="Image" />
+          <ImagePopoverFields displaySize={displaySize} field={field} image={image} path={path} />
         </InlinePopoverContent>
       </InlinePopover>
     </>

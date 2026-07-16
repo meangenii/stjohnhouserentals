@@ -3282,7 +3282,7 @@ img {
 }
 
 .property-banner {
-  width: min(100%, calc(100vw - 2rem));
+  width: 100%;
   min-height: var(--page-hero-height);
   margin: 0 auto;
   background-position: center;
@@ -3337,6 +3337,9 @@ img {
   grid-area: 1 / 1;
   width: 100%;
   height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
   object-fit: contain;
 }
 
@@ -3507,6 +3510,13 @@ img {
   margin-top: clamp(0.7rem, 1.2vw, 1rem);
 }
 
+.property-template-section + .property-template-section--rates,
+.property-template-section + .property-template-section--booking,
+.property-template-section + .property-template-section--policy,
+.property-template-section + .property-template-section--details {
+  margin-top: clamp(2rem, 3.2vw, 3rem);
+}
+
 .property-template-section-header {
   display: grid;
   gap: 0.24rem;
@@ -3653,7 +3663,15 @@ img {
 .admin-property-preview-rich-copy .property-rate-block {
   display: grid;
   gap: 1.8rem;
-  margin-top: 1.55rem;
+  margin-top: clamp(2.25rem, 3vw, 3rem);
+  padding-top: clamp(1.1rem, 1.8vw, 1.55rem);
+  border-top: 1px solid rgba(34, 105, 255, 0.18);
+}
+
+.property-template-section--rates .property-rich-copy .property-rate-block {
+  margin-top: 0.45rem;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .property-rich-copy .property-rate-group,
@@ -3718,6 +3736,36 @@ img {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 0.16em;
+}
+
+.property-rich-copy .property-rate-spacer,
+.admin-property-preview-rich-copy .property-rate-spacer {
+  min-height: 0.9rem;
+}
+
+.property-rich-copy table,
+.admin-property-preview-rich-copy table {
+  border-collapse: collapse;
+  margin: 1.55rem 0;
+  width: 100%;
+}
+
+.property-rich-copy th,
+.property-rich-copy td,
+.admin-property-preview-rich-copy th,
+.admin-property-preview-rich-copy td {
+  border: 1px solid var(--brand-navy, #1f2937);
+  color: var(--brand-navy);
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 1.05vw, 1.06rem);
+  line-height: 1.5;
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+}
+
+.property-rich-copy th,
+.admin-property-preview-rich-copy th {
+  font-weight: 700;
 }
 
 .property-rich-copy h2,
@@ -3868,6 +3916,63 @@ img {
   width: min(24rem, 100%);
   display: grid;
   gap: 0.75rem;
+}
+
+.property-availability-fallback {
+  width: min(32rem, 100%);
+  display: grid;
+  gap: 0.85rem;
+}
+
+.property-availability-fallback-title {
+  margin: 0;
+  color: var(--brand-navy);
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 1.05vw, 1.06rem);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.property-availability-contact-list {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0;
+}
+
+.property-availability-contact-list div {
+  display: grid;
+  grid-template-columns: minmax(5rem, max-content) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: baseline;
+}
+
+.property-availability-contact-list dt,
+.property-availability-contact-list dd {
+  margin: 0;
+  color: var(--brand-navy);
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+.property-availability-contact-list dt {
+  font-weight: 700;
+}
+
+.property-availability-contact-list a {
+  color: var(--brand-blue);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.property-contact-actions--availability {
+  margin-top: 0.1rem;
+}
+
+@media (max-width: 520px) {
+  .property-availability-contact-list div {
+    grid-template-columns: 1fr;
+    gap: 0.12rem;
+  }
 }
 
 .property-availability-calendar-header {
@@ -4787,7 +4892,6 @@ img {
   }
 
   .property-banner {
-    width: min(100%, calc(100vw - 3rem));
     min-height: clamp(18rem, 27vw, 31rem);
   }
 
@@ -5761,7 +5865,7 @@ button.admin-auth-badge {
 }
 
 .admin-field--inline {
-  grid-template-columns: minmax(5.2rem, 6.4rem) minmax(0, 1fr);
+  grid-template-columns: minmax(6.8rem, 9rem) minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
 }
@@ -5781,6 +5885,7 @@ button.admin-auth-badge {
 .admin-field--inline span {
   font-size: 0.74rem;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .admin-field--inline-top span {
@@ -6682,6 +6787,71 @@ button.admin-auth-badge {
   padding-block: 0.55rem;
 }
 
+.admin-property-description-editor {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-property-description-slot {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid #dbe7f0;
+  border-radius: 0.95rem;
+  background: #f8fbfe;
+}
+
+.admin-property-description-slot--main {
+  background: #ffffff;
+}
+
+.admin-property-description-rate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.admin-property-description-rate-mode {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(4rem, 1fr));
+  min-height: 2.15rem;
+  overflow: hidden;
+  border: 1px solid #c6d7e8;
+  border-radius: 0.55rem;
+  background: #ffffff;
+}
+
+.admin-property-description-rate-mode-button {
+  min-width: 0;
+  padding: 0.42rem 0.8rem;
+  border: 0;
+  border-right: 1px solid #c6d7e8;
+  background: transparent;
+  color: #315070;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.1;
+  cursor: pointer;
+}
+
+.admin-property-description-rate-mode-button:last-child {
+  border-right: 0;
+}
+
+.admin-property-description-rate-mode-button--active {
+  background: #173b79;
+  color: #ffffff;
+}
+
+.admin-property-description-rate-mode-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .admin-property-preview-bedroom-options {
   display: grid;
   gap: 0.75rem;
@@ -7172,12 +7342,30 @@ button.admin-auth-badge {
   gap: 0.75rem;
 }
 
+.admin-rich-text-header--actions-only {
+  justify-content: flex-end;
+}
+
 .admin-rich-text-header span {
+  min-width: 0;
   color: var(--brand-navy);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.admin-rich-text-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-left: auto;
+}
+
+.admin-rich-text-header-actions .admin-inline-actions {
+  gap: 0.55rem;
 }
 
 .admin-rich-text-toolbar {
@@ -9254,6 +9442,15 @@ button.admin-auth-badge {
 }
 
 @media (max-width: 899px) {
+  .admin-field--inline {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .admin-field--inline-top span {
+    padding-top: 0;
+  }
+
   .admin-floating-save {
     top: 0.8rem;
     right: 0.8rem;

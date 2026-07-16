@@ -22,11 +22,48 @@ const ALLOWED_TAGS = new Set([
   'P',
   'SPAN',
   'STRONG',
+  'TABLE',
+  'TBODY',
+  'TD',
+  'TH',
+  'THEAD',
+  'TR',
   'U',
   'UL',
 ])
 const DROP_TAGS = new Set(['BASE', 'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'INPUT', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA'])
 const BLANK_LINE_PLACEHOLDER_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'])
+const ALLOWED_CLASS_NAMES = new Set([
+  'property-description-section',
+  'property-description-section--booking',
+  'property-description-section--policy',
+  'property-description-section--rates',
+  'property-description-section--rates-table',
+  'property-compact-block',
+  'property-compact-group',
+  'property-compact-group--pair',
+  'property-compact-group--section',
+  'property-compact-group--single',
+  'property-compact-line',
+  'property-rate-block',
+  'property-rate-footer',
+  'property-rate-group',
+  'property-rate-line',
+  'property-rate-line--date',
+  'property-rate-line--fee',
+  'property-rate-line--heading',
+  'property-rate-line--minimum',
+  'property-rate-line--note',
+  'property-rate-line--price',
+  'property-rate-line--title',
+  'property-rate-spacer',
+  'property-rate-subgroup',
+  'property-review-body',
+  'property-review-entry',
+  'property-review-list',
+  'property-review-title',
+  'property-section-list',
+])
 const ESCAPED_SITE_HTML_TAG_PATTERN =
   /&(?:lt|#60|#x3c);\s*\/?\s*(?:a|b|blockquote|br|div|em|h[1-6]|hr|i|li|ol|p|span|strong|u|ul)\b/i
 const HTML_ENTITY_DECODE_MAP = {
@@ -235,6 +272,15 @@ function sanitizeStyleAttribute(element) {
   return `${Array.from(new Set(safeDeclarations)).join('; ')};`
 }
 
+function sanitizeClassAttribute(element) {
+  const safeClassNames = String(element.getAttribute('class') ?? '')
+    .split(/\s+/)
+    .map((className) => className.trim())
+    .filter((className) => ALLOWED_CLASS_NAMES.has(className))
+
+  return Array.from(new Set(safeClassNames)).join(' ')
+}
+
 const NBSP_CHARACTER = String.fromCharCode(160)
 
 function isNbspOnlyPlaceholderText(text) {
@@ -276,6 +322,18 @@ function sanitizeHtmlTree(root) {
 
         if (safeStyle) {
           element.setAttribute('style', safeStyle)
+        } else {
+          element.removeAttribute(attribute.name)
+        }
+
+        return
+      }
+
+      if (attributeName === 'class') {
+        const safeClass = sanitizeClassAttribute(element)
+
+        if (safeClass) {
+          element.setAttribute('class', safeClass)
         } else {
           element.removeAttribute(attribute.name)
         }

@@ -1,6 +1,7 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   richTextLinesToHtml,
+  richTextValueToHtml,
   richTextValueToInlineHtml,
   richTextValueToLines,
   richTextValueToPlainText,
@@ -18,13 +19,18 @@ import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminShortDescriptionEditor } from './AdminShortDescriptionEditor'
 import { PropertyDetailView } from './PropertyDetailView'
 
-const PROPERTY_DESCRIPTION_SNIPPETS = [
+const PROPERTY_DESCRIPTION_SECTION_ORDER = ['descriptionHtml', 'ratesHtml', 'ratesTableHtml', 'bookingHtml', 'policyHtml']
+const PROPERTY_DESCRIPTION_RATE_SECTION_KEYS = ['ratesHtml', 'ratesTableHtml']
+
+const PROPERTY_DESCRIPTION_RATE_SECTIONS = [
   {
-    label: 'Rates',
-    insertStrategy: 'section',
-    sectionKey: 'rates',
-    sectionStart: 'Weekly Rates',
-    html: [
+    key: 'ratesHtml',
+    modeLabel: 'Text',
+    editorLabel: 'Rates',
+    placement: 'After Main Description',
+    storageClassName: 'property-description-section--rates',
+    placeholder: 'Add seasonal rates, fees, and rate notes here.',
+    defaultHtml: [
       '<p><strong>Property Weekly Rates</strong></p>',
       '<p><strong>High Season</strong></p>',
       '<p><strong>January 3 - April 14</strong></p>',
@@ -39,11 +45,31 @@ const PROPERTY_DESCRIPTION_SNIPPETS = [
     ].join(''),
   },
   {
+    key: 'ratesTableHtml',
+    modeLabel: 'Table',
+    editorLabel: 'Rates Table',
+    placement: 'After Main Description',
+    storageClassName: 'property-description-section--rates-table',
+    placeholder: 'Edit table cells directly.',
+    defaultHtml: [
+      '<table><thead><tr><th>Starting</th><th>Ending</th><th>Daily Rate</th></tr></thead><tbody>',
+      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
+      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
+      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
+      '</tbody></table>',
+    ].join(''),
+  },
+]
+
+const PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS = [
+  {
+    key: 'bookingHtml',
     label: 'Booking',
-    insertStrategy: 'section',
-    sectionKey: 'booking',
-    sectionStart: 'Booking Contact:',
-    html: [
+    editorLabel: 'Booking Copy',
+    placement: 'After Rates',
+    storageClassName: 'property-description-section--booking',
+    placeholder: 'Add booking contact, VRBO links, phone numbers, and email links here.',
+    defaultHtml: [
       '<p><strong>Booking Contact:</strong></p>',
       '<p>Contact Name</p>',
       '<p>Company Name</p>',
@@ -52,11 +78,13 @@ const PROPERTY_DESCRIPTION_SNIPPETS = [
     ].join(''),
   },
   {
+    key: 'policyHtml',
     label: 'Policy',
-    insertStrategy: 'section',
-    sectionKey: 'policy',
-    sectionStart: 'Rental and Cancellation Policy',
-    html: [
+    editorLabel: 'Rental Policy',
+    placement: 'After Booking',
+    storageClassName: 'property-description-section--policy',
+    placeholder: 'Add rental and cancellation policy details here.',
+    defaultHtml: [
       '<p><strong>Rental and Cancellation Policy</strong></p>',
       '<p>50% deposit is required at the time of booking.</p>',
       '<p>Reservations within 60 days of arrival require 100% Booking Fees paid.</p>',
@@ -66,6 +94,13 @@ const PROPERTY_DESCRIPTION_SNIPPETS = [
     ].join(''),
   },
 ]
+
+const PROPERTY_DESCRIPTION_STORAGE_SECTIONS = [...PROPERTY_DESCRIPTION_RATE_SECTIONS, ...PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS]
+const PROPERTY_DESCRIPTION_STORAGE_SECTION_KEYS = PROPERTY_DESCRIPTION_STORAGE_SECTIONS.map((definition) => definition.key)
+
+const PROPERTY_DESCRIPTION_STORAGE_CLASS_TO_SECTION = new Map(
+  PROPERTY_DESCRIPTION_STORAGE_SECTIONS.map((definition) => [definition.storageClassName, definition.key]),
+)
 
 function PreviewField({ alignTop = false, children, inlineLabel = false, wide = false }) {
   return (
@@ -84,7 +119,7 @@ function PreviewField({ alignTop = false, children, inlineLabel = false, wide = 
   )
 }
 
-function PreviewInput({ disabled, inlineLabel = false, label, onChange, type = 'text', value, wide = false }) {
+function PreviewInput({ disabled, inlineLabel = true, label, onChange, type = 'text', value, wide = false }) {
   return (
     <PreviewField inlineLabel={inlineLabel} wide={wide}>
       <span>{label}</span>
@@ -167,6 +202,410 @@ function getReducedBedroomOptions(primaryBedrooms = 0) {
   return Array.from({ length: normalizedPrimaryBedrooms - 1 }, (_, index) => normalizedPrimaryBedrooms - index - 1)
 }
 
+function createPropertyDescriptionSections() {
+  return PROPERTY_DESCRIPTION_SECTION_ORDER.reduce((sections, sectionKey) => {
+    sections[sectionKey] = ''
+    return sections
+  }, {})
+}
+
+function getPropertyDescriptionElementText(element) {
+  return String(element?.textContent ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function hasPropertyDescriptionHtmlContent(value = '') {
+  const normalizedHtml = richTextValueToHtml(value).trim()
+
+  if (!normalizedHtml) {
+    return false
+  }
+
+  return /<table\b/i.test(normalizedHtml) || Boolean(richTextValueToPlainText(normalizedHtml))
+}
+
+function getActivePropertyRateSectionKey(enabledDescriptionSections = [], sections = {}) {
+  const explicitRateSectionKeys = Array.isArray(enabledDescriptionSections)
+    ? enabledDescriptionSections.filter((sectionKey) => PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey))
+    : []
+  const explicitRateSectionKey = explicitRateSectionKeys[explicitRateSectionKeys.length - 1] ?? ''
+  const hasTextRates = hasPropertyDescriptionHtmlContent(sections.ratesHtml)
+  const hasTableRates = hasPropertyDescriptionHtmlContent(sections.ratesTableHtml)
+
+  if (explicitRateSectionKey && hasPropertyDescriptionHtmlContent(sections[explicitRateSectionKey])) {
+    return explicitRateSectionKey
+  }
+
+  if (hasTextRates) {
+    return 'ratesHtml'
+  }
+
+  if (hasTableRates) {
+    return 'ratesTableHtml'
+  }
+
+  return explicitRateSectionKey || 'ratesHtml'
+}
+
+function getPropertyRateSectionDefinition(sectionKey) {
+  return PROPERTY_DESCRIPTION_RATE_SECTIONS.find((definition) => definition.key === sectionKey) ?? PROPERTY_DESCRIPTION_RATE_SECTIONS[0]
+}
+
+function normalizePropertyDescriptionRateSections(sections = {}, enabledDescriptionSections = []) {
+  const activeRateSectionKey = getActivePropertyRateSectionKey(enabledDescriptionSections, sections)
+
+  return {
+    ...sections,
+    ratesHtml: activeRateSectionKey === 'ratesHtml' ? String(sections.ratesHtml ?? '').trim() : '',
+    ratesTableHtml: activeRateSectionKey === 'ratesTableHtml' ? String(sections.ratesTableHtml ?? '').trim() : '',
+  }
+}
+
+function isPropertyRateTextStart(element, textContent) {
+  if (!textContent || element?.tagName === 'TABLE') {
+    return false
+  }
+
+  if (/(subject to change|hotel tax|booking contact|rental and cancellation policy|to book direct|please visit vrbo)/i.test(textContent)) {
+    return false
+  }
+
+  if (!/\brates?\b/i.test(textContent) || textContent.length > 120 || /[.?!]\s*$/.test(textContent)) {
+    return false
+  }
+
+  return (
+    /^H[1-6]$/i.test(element?.tagName ?? '') ||
+    Boolean(element?.querySelector?.('strong, b')) ||
+    /\b(?:weekly|nightly|daily|base)\s+rates?\b/i.test(textContent)
+  )
+}
+
+function isPropertyBookingStart(element, textContent) {
+  if (!textContent || element?.tagName === 'TABLE') {
+    return false
+  }
+
+  return /(booking contact|to book direct|please visit vrbo|to view more information, photos and reviews)/i.test(textContent)
+}
+
+function isPropertyPolicyStart(element, textContent) {
+  return Boolean(textContent && /rental and cancellation policy/i.test(textContent))
+}
+
+function getPropertyDescriptionSectionForNode(node, currentSection) {
+  if (node.nodeType !== 1) {
+    return currentSection
+  }
+
+  const element = node
+  const textContent = getPropertyDescriptionElementText(element)
+
+  if (element.tagName === 'TABLE') {
+    return 'ratesTableHtml'
+  }
+
+  if (isPropertyPolicyStart(element, textContent)) {
+    return 'policyHtml'
+  }
+
+  if (isPropertyBookingStart(element, textContent)) {
+    return 'bookingHtml'
+  }
+
+  if (isPropertyRateTextStart(element, textContent)) {
+    return 'ratesHtml'
+  }
+
+  return currentSection
+}
+
+function getExplicitPropertyDescriptionSectionForNode(node) {
+  if (node?.nodeType !== 1) {
+    return ''
+  }
+
+  return (
+    Array.from(node.classList ?? [])
+      .map((className) => PROPERTY_DESCRIPTION_STORAGE_CLASS_TO_SECTION.get(className))
+      .find(Boolean) ?? ''
+  )
+}
+
+function appendPropertyDescriptionNode(documentNode, sectionRoot, node) {
+  if (node.nodeType === 3) {
+    const textContent = String(node.textContent ?? '').trim()
+
+    if (!textContent) {
+      return
+    }
+
+    const paragraph = documentNode.createElement('p')
+    paragraph.textContent = textContent
+    sectionRoot.append(paragraph)
+    return
+  }
+
+  if (node.nodeType === 1) {
+    sectionRoot.append(node)
+  }
+}
+
+function appendPropertyDescriptionNodeContents(documentNode, sectionRoot, node) {
+  Array.from(node.childNodes).forEach((childNode) => {
+    appendPropertyDescriptionNode(documentNode, sectionRoot, childNode)
+  })
+}
+
+function splitPropertyDescriptionHtml(value = '') {
+  const normalizedHtml = richTextValueToHtml(value)
+  const sections = createPropertyDescriptionSections()
+
+  if (!normalizedHtml.trim() || typeof DOMParser === 'undefined') {
+    sections.descriptionHtml = normalizedHtml
+    return sections
+  }
+
+  const documentNode = new DOMParser().parseFromString(`<div>${normalizedHtml}</div>`, 'text/html')
+  const root = documentNode.body.firstElementChild
+
+  if (!root) {
+    sections.descriptionHtml = normalizedHtml
+    return sections
+  }
+
+  const sectionRoots = PROPERTY_DESCRIPTION_SECTION_ORDER.reduce((roots, sectionKey) => {
+    roots[sectionKey] = documentNode.createElement('div')
+    return roots
+  }, {})
+  let activeSection = 'descriptionHtml'
+
+  Array.from(root.childNodes).forEach((node) => {
+    const explicitSection = getExplicitPropertyDescriptionSectionForNode(node)
+
+    if (explicitSection) {
+      activeSection = explicitSection
+      appendPropertyDescriptionNodeContents(documentNode, sectionRoots[explicitSection], node)
+      return
+    }
+
+    activeSection = getPropertyDescriptionSectionForNode(node, activeSection)
+    appendPropertyDescriptionNode(documentNode, sectionRoots[activeSection], node)
+  })
+
+  PROPERTY_DESCRIPTION_SECTION_ORDER.forEach((sectionKey) => {
+    sections[sectionKey] = sectionRoots[sectionKey].innerHTML.trim()
+  })
+
+  return sections
+}
+
+function normalizeEnabledPropertyDescriptionSections(value, sections = {}) {
+  const contentSectionKeys = PROPERTY_DESCRIPTION_STORAGE_SECTION_KEYS.filter((sectionKey) => hasPropertyDescriptionHtmlContent(sections[sectionKey]))
+  const sourceKeys = Array.isArray(value) ? [...value, ...contentSectionKeys] : contentSectionKeys
+  const activeRateSectionKey = sourceKeys.some((sectionKey) => PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey))
+    ? getActivePropertyRateSectionKey(value, sections)
+    : ''
+  let hasAddedActiveRateSection = false
+
+  return Array.from(
+    new Set(
+      sourceKeys
+        .map((sectionKey) => {
+          if (!PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey)) {
+            return sectionKey
+          }
+
+          if (!activeRateSectionKey || hasAddedActiveRateSection) {
+            return ''
+          }
+
+          hasAddedActiveRateSection = true
+          return activeRateSectionKey
+        })
+        .filter((sectionKey) => PROPERTY_DESCRIPTION_STORAGE_SECTION_KEYS.includes(sectionKey)),
+    ),
+  )
+}
+
+function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
+  const editorState = useMemo(() => {
+    let nextSections
+
+    if (value && typeof value === 'object') {
+      nextSections = {
+        descriptionHtml: String(value.descriptionHtml ?? '').trim(),
+        ratesHtml: String(value.ratesHtml ?? '').trim(),
+        ratesTableHtml: String(value.ratesTableHtml ?? '').trim(),
+        bookingHtml: String(value.bookingHtml ?? '').trim(),
+        policyHtml: String(value.policyHtml ?? '').trim(),
+      }
+    } else {
+      nextSections = splitPropertyDescriptionHtml(value)
+    }
+
+    return {
+      sections: nextSections,
+      enabledDescriptionSections: normalizeEnabledPropertyDescriptionSections(value?.enabledDescriptionSections, nextSections),
+    }
+  }, [value])
+  const { enabledDescriptionSections, sections } = editorState
+  const activeRatesSectionKey = getActivePropertyRateSectionKey(enabledDescriptionSections, sections)
+  const activeRatesSection = getPropertyRateSectionDefinition(activeRatesSectionKey)
+  const hasRatesContent = PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.some((sectionKey) => hasPropertyDescriptionHtmlContent(sections[sectionKey]))
+
+  function emitSectionChange(nextSections, nextEnabledDescriptionSections = enabledDescriptionSections) {
+    const normalizedSections = normalizePropertyDescriptionRateSections(nextSections, nextEnabledDescriptionSections)
+
+    onChange({
+      ...normalizedSections,
+      enabledDescriptionSections: normalizeEnabledPropertyDescriptionSections(nextEnabledDescriptionSections, normalizedSections),
+    })
+  }
+
+  function updateSection(sectionKey, nextValue) {
+    const nextSections = {
+      ...sections,
+      [sectionKey]: nextValue,
+    }
+    const isRateSection = PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey)
+    const shouldEnableOptionalSection = PROPERTY_DESCRIPTION_STORAGE_SECTION_KEYS.includes(sectionKey)
+    const existingEnabledDescriptionSections = isRateSection
+      ? enabledDescriptionSections.filter((enabledSectionKey) => !PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(enabledSectionKey))
+      : enabledDescriptionSections
+
+    if (isRateSection) {
+      PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.filter((rateSectionKey) => rateSectionKey !== sectionKey).forEach((rateSectionKey) => {
+        nextSections[rateSectionKey] = ''
+      })
+    }
+
+    const nextEnabledDescriptionSections = shouldEnableOptionalSection
+      ? Array.from(new Set([...existingEnabledDescriptionSections, sectionKey]))
+      : existingEnabledDescriptionSections
+
+    emitSectionChange(nextSections, nextEnabledDescriptionSections)
+  }
+
+  function removeSection(definition) {
+    const nextSections = {
+      ...sections,
+      [definition.key]: '',
+    }
+    const nextEnabledDescriptionSections = enabledDescriptionSections.filter((sectionKey) => sectionKey !== definition.key)
+
+    emitSectionChange(nextSections, nextEnabledDescriptionSections)
+  }
+
+  function selectRatesMode(nextSectionKey) {
+    if (nextSectionKey === activeRatesSectionKey || !PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(nextSectionKey)) {
+      return
+    }
+
+    const nextSections = {
+      ...sections,
+      ratesHtml: nextSectionKey === 'ratesHtml' ? sections.ratesHtml : '',
+      ratesTableHtml: nextSectionKey === 'ratesTableHtml' ? sections.ratesTableHtml : '',
+    }
+    const nextEnabledDescriptionSections = [
+      ...enabledDescriptionSections.filter((sectionKey) => !PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey)),
+      nextSectionKey,
+    ]
+
+    emitSectionChange(nextSections, nextEnabledDescriptionSections)
+  }
+
+  function removeRatesSection() {
+    const nextSections = {
+      ...sections,
+      ratesHtml: '',
+      ratesTableHtml: '',
+    }
+    const nextEnabledDescriptionSections = enabledDescriptionSections.filter(
+      (sectionKey) => !PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey),
+    )
+
+    emitSectionChange(nextSections, nextEnabledDescriptionSections)
+  }
+
+  return (
+    <div className="admin-property-description-editor">
+      <div className="admin-property-description-slot admin-property-description-slot--main">
+        <AdminRichTextEditor
+          disabled={disabled}
+          label="Main Description"
+          onChange={(nextValue) => updateSection('descriptionHtml', nextValue)}
+          placeholder="Write the property description here."
+          value={sections.descriptionHtml}
+        />
+      </div>
+
+      <div className="admin-property-description-slot">
+        <AdminRichTextEditor
+          compact
+          disabled={disabled}
+          headerActions={
+            <div className="admin-property-description-rate-actions">
+              <div aria-label="Rates format" className="admin-property-description-rate-mode" role="group">
+                {PROPERTY_DESCRIPTION_RATE_SECTIONS.map((definition) => (
+                  <button
+                    aria-pressed={activeRatesSectionKey === definition.key}
+                    className={`admin-property-description-rate-mode-button${
+                      activeRatesSectionKey === definition.key ? ' admin-property-description-rate-mode-button--active' : ''
+                    }`}
+                    disabled={disabled}
+                    key={definition.key}
+                    onClick={() => selectRatesMode(definition.key)}
+                    type="button"
+                  >
+                    {definition.modeLabel}
+                  </button>
+                ))}
+              </div>
+              {hasRatesContent ? (
+                <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={removeRatesSection}>
+                  Remove Section
+                </button>
+              ) : null}
+            </div>
+          }
+          label={activeRatesSection.editorLabel}
+          onChange={(nextValue) => updateSection(activeRatesSectionKey, nextValue)}
+          placeholder={activeRatesSection.placeholder}
+          sourceRows={activeRatesSectionKey === 'ratesTableHtml' ? 10 : undefined}
+          value={sections[activeRatesSectionKey]}
+        />
+      </div>
+
+      {PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS.map((definition) => {
+        const hasContent = hasPropertyDescriptionHtmlContent(sections[definition.key])
+
+        return (
+          <div className="admin-property-description-slot" key={definition.key}>
+            <AdminRichTextEditor
+              compact
+              disabled={disabled}
+              headerActions={
+                hasContent ? (
+                  <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => removeSection(definition)}>
+                    Remove Section
+                  </button>
+                ) : null
+              }
+              label={definition.editorLabel}
+              onChange={(nextValue) => updateSection(definition.key, nextValue)}
+              placeholder={definition.placeholder}
+              sourceRows={definition.key === 'ratesTableHtml' ? 10 : undefined}
+              value={sections[definition.key]}
+            />
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export function AdminPropertyPreview({
   disabled = false,
   editable = false,
@@ -187,7 +626,6 @@ export function AdminPropertyPreview({
   onReviewEntryChange,
   property,
 }) {
-  const [descriptionEditorExpanded, setDescriptionEditorExpanded] = useState(false)
   const [amenitiesEditorExpanded, setAmenitiesEditorExpanded] = useState(false)
   // Local like the two accordions above (not lifted to AdminPage) so it resets when
   // this component remounts for a different property instead of leaking across records.
@@ -198,7 +636,6 @@ export function AdminPropertyPreview({
   const [galleryFolderPickerOpen, setGalleryFolderPickerOpen] = useState(false)
   const [selectedGalleryImageId, setSelectedGalleryImageId] = useState(null)
   const galleryEditorId = useId()
-  const descriptionEditorId = useId()
   const amenitiesEditorId = useId()
   const hasTrackedAmenityGroupsRef = useRef(false)
   const previousAmenityGroupIdsRef = useRef([])
@@ -573,38 +1010,19 @@ export function AdminPropertyPreview({
             </div>
           </EditSection>
 
-          <EditSection
-            actions={
-              <button
-                aria-controls={descriptionEditorId}
-                aria-expanded={descriptionEditorExpanded}
-                className="button-link button-link--ghost admin-action"
-                disabled={disabled}
-                type="button"
-                onClick={() => setDescriptionEditorExpanded((currentValue) => !currentValue)}
-              >
-                {descriptionEditorExpanded ? 'Hide editor' : 'Edit content'}
-              </button>
-            }
-            title="Description, Rates & Booking Copy"
-          >
-            {descriptionEditorExpanded ? (
-              <div id={descriptionEditorId}>
-                <AdminRichTextEditor
-                  disabled={disabled}
-                  helperText="Rates are optional. Use bold paragraph lines, line breaks, and the quick inserts below to build rate, booking, and policy layouts like the live property pages."
-                  label="Description, Rates, and Booking Copy"
-                  onChange={(value) => onFieldChange('descriptionHtml', value)}
-                  placeholder="Write the property description here. Rates, booking contact, and rental policy content can be added if needed."
-                  snippets={PROPERTY_DESCRIPTION_SNIPPETS}
-                  value={formState.descriptionHtml}
-                />
-              </div>
-            ) : (
-              <p className="admin-empty">
-                {formState.descriptionHtml ? 'Description content saved.' : 'Expand the editor to add description, rate, or booking copy.'}
-              </p>
-            )}
+          <EditSection title="Description, Rates & Booking Copy">
+            <AdminPropertyDescriptionEditor
+              disabled={disabled}
+              onChange={(nextSections) => onFieldChange(nextSections)}
+              value={{
+                descriptionHtml: formState.descriptionHtml,
+                ratesHtml: formState.ratesHtml,
+                ratesTableHtml: formState.ratesTableHtml,
+                bookingHtml: formState.bookingHtml,
+                policyHtml: formState.policyHtml,
+                enabledDescriptionSections: formState.enabledDescriptionSections,
+              }}
+            />
           </EditSection>
 
           <EditSection title="Calendar">
@@ -619,7 +1037,7 @@ export function AdminPropertyPreview({
               />
               <p className="admin-note admin-field--wide">
                 Paste the property's iCal export link (VRBO, Streamline, Airbnb, etc.) to show a live availability calendar on the
-                property page. Leave blank to hide the calendar section.
+                property page. Leave blank to show the contact-for-availability fallback.
               </p>
             </div>
           </EditSection>

@@ -36,7 +36,13 @@ function ToolbarButton({ active = false, children, disabled, onClick }) {
 }
 
 function isEmptyHtmlValue(value = '') {
-  return String(value ?? '')
+  const sourceHtml = String(value ?? '')
+
+  if (/<\s*table\b/i.test(sourceHtml)) {
+    return false
+  }
+
+  return sourceHtml
     .replace(/<br\s*\/?>/gi, '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/<[^>]+>/g, '')
@@ -206,9 +212,12 @@ export function AdminRichTextEditor({
   collapsedFontSizeBehavior = 'selection',
   compact = false,
   disabled = false,
+  headerActions = null,
   helperText = '',
+  hideLabel = false,
   label,
   onChange,
+  onSanitizedPaste = null,
   placeholder = 'Start typing the page content here.',
   snippets = [],
   sourceRows = undefined,
@@ -607,6 +616,50 @@ export function AdminRichTextEditor({
     closeLinkEditor()
   }
 
+  function getSelectedTableCell() {
+    const editor = editorRef.current
+
+    if (!editor || typeof window === 'undefined') {
+      return null
+    }
+
+    const selection = window.getSelection()
+
+    if (!selection || selection.rangeCount === 0) {
+      return null
+    }
+
+    let node = selection.getRangeAt(0).commonAncestorContainer
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement
+    }
+
+    const cell = node instanceof Element ? node.closest('td, th') : null
+    return cell && editor.contains(cell) ? cell : null
+  }
+
+  function addTableRow() {
+    if (disabled || !focusEditorSelection()) {
+      return
+    }
+
+    const cell = getSelectedTableCell()
+    const currentRow = cell?.closest('tr')
+
+    if (!currentRow) {
+      return
+    }
+
+    const newRow = currentRow.cloneNode(true)
+    Array.from(newRow.children).forEach((rowCell) => {
+      rowCell.innerHTML = '&nbsp;'
+    })
+
+    currentRow.after(newRow)
+    syncValue()
+  }
+
   function tightenSelectedLines() {
     const editor = editorRef.current
 
@@ -675,6 +728,11 @@ export function AdminRichTextEditor({
     }
 
     event.preventDefault()
+
+    if (onSanitizedPaste?.(pastedHtml) === true) {
+      return
+    }
+
     document.execCommand('insertHTML', false, pastedHtml)
     syncValue()
   }
@@ -692,12 +750,42 @@ export function AdminRichTextEditor({
       return
     }
 
+    if (onSanitizedPaste?.(droppedHtml) === true) {
+      return
+    }
+
     if (!placeCaretAtPoint(editorRef.current, event.clientX, event.clientY)) {
       return
     }
 
     document.execCommand('insertHTML', false, droppedHtml)
     syncValue()
+  }
+
+  function handleSourcePaste(event) {
+    if (disabled) {
+      return
+    }
+
+    const pastedHtml = getClipboardRichTextHtml(event.clipboardData)
+
+    if (!pastedHtml) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (onSanitizedPaste?.(pastedHtml) === true) {
+      return
+    }
+
+    const textarea = event.currentTarget
+    const currentValue = String(value ?? '')
+    const selectionStart = Number.isInteger(textarea.selectionStart) ? textarea.selectionStart : currentValue.length
+    const selectionEnd = Number.isInteger(textarea.selectionEnd) ? textarea.selectionEnd : selectionStart
+    const nextValue = `${currentValue.slice(0, selectionStart)}${pastedHtml}${currentValue.slice(selectionEnd)}`
+
+    onChange(nextValue)
   }
 
   function handleEditorShellBlur(event) {
@@ -731,15 +819,18 @@ export function AdminRichTextEditor({
       }`.trim()}
       onBlur={handleEditorShellBlur}
     >
-      <div className="admin-rich-text-header">
-        <span>{label}</span>
-        <div className="admin-inline-actions">
-          <ToolbarButton disabled={disabled || mode === 'visual'} onClick={() => setMode('visual')}>
-            Visual
-          </ToolbarButton>
-          <ToolbarButton disabled={disabled || mode === 'html'} onClick={() => setMode('html')}>
-            HTML
-          </ToolbarButton>
+      <div className={`admin-rich-text-header${hideLabel ? ' admin-rich-text-header--actions-only' : ''}`.trim()}>
+        {hideLabel ? null : <span>{label}</span>}
+        <div className="admin-rich-text-header-actions">
+          {headerActions}
+          <div className="admin-inline-actions">
+            <ToolbarButton disabled={disabled || mode === 'visual'} onClick={() => setMode('visual')}>
+              Visual
+            </ToolbarButton>
+            <ToolbarButton disabled={disabled || mode === 'html'} onClick={() => setMode('html')}>
+              HTML
+            </ToolbarButton>
+          </div>
         </div>
       </div>
 
@@ -788,6 +879,9 @@ export function AdminRichTextEditor({
               </ToolbarButton>
               <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertOrderedList')}>
                 Numbers
+              </ToolbarButton>
+              <ToolbarButton disabled={disabled} onClick={addTableRow}>
+                Add Table Row
               </ToolbarButton>
               <ToolbarButton active={Boolean(linkEditorState)} disabled={disabled} onClick={openLinkEditor}>
                 Link
@@ -891,6 +985,7 @@ export function AdminRichTextEditor({
               value={value ?? ''}
               onChange={(event) => onChange(event.target.value)}
               onFocus={showToolbar}
+              onPaste={handleSourcePaste}
             />
           </label>
         </>

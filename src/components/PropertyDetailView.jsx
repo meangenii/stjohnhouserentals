@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getPropertyContactActions } from '../lib/propertyContact'
+import { getPropertyContactActions, getPropertyContactInfo } from '../lib/propertyContact'
 import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { PropertyAvailabilityFallback } from './PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from './PropertyAvailabilityCalendar'
 import { PropertyContentSection } from './PropertyContentSection'
+import { PropertyDescriptionSections } from './PropertyDescriptionSections'
 import { RichTextValue } from './RichTextValue'
 
 export function PropertyDetailView({ property }) {
@@ -48,6 +50,8 @@ export function PropertyDetailView({ property }) {
       : ''
   const sectionConfigs = templateVariant.sections
   const contactActions = getPropertyContactActions(property)
+  const contactInfo = getPropertyContactInfo(property)
+  const availabilityFallback = <PropertyAvailabilityFallback contactActions={contactActions} contactInfo={contactInfo} />
   const propertySections = {
     shortDescription:
       shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
@@ -79,25 +83,32 @@ export function PropertyDetailView({ property }) {
         </PropertyContentSection>
       ) : null,
     description: (
-      <PropertyContentSection
+      <PropertyDescriptionSections
+        bookingHtml={property.bookingHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
         key="description"
-        compactTail
-        html={property.descriptionHtml}
-        renderWhenEmpty={sectionConfigs.description.renderWhenEmpty}
-        showHeader={sectionConfigs.description.showHeader}
-        title={sectionConfigs.description.title}
+        descriptionHtml={property.descriptionHtml}
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+        sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: property.calendarUrl ? (
+    calendar: (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"
         showHeader={sectionConfigs.calendar.showHeader}
         title={sectionConfigs.calendar.title}
       >
-        <PropertyAvailabilityCalendar propertySlug={property.slug} />
+        {property.calendarUrl ? (
+          <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
+        ) : (
+          availabilityFallback
+        )}
       </PropertyContentSection>
-    ) : null,
+    ),
     amenities: (
       <PropertyContentSection
         key="amenities"

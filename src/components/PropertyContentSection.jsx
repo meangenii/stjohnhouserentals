@@ -9,12 +9,13 @@ export function PropertyContentSection({
   className = '',
   compactTail = false,
   listSections = false,
+  rateSection = false,
   reviewEntries = false,
   renderWhenEmpty = false,
   showHeader = true,
 }) {
   const navigate = useNavigate()
-  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, reviewEntries })
+  const normalizedHtml = formatPropertyRichHtml(html, { compactTail, listSections, rateSection, reviewEntries })
   const hasHtml = Boolean(normalizedHtml.trim())
   const hasChildren = Boolean(children)
   const shouldRender = renderWhenEmpty || hasHtml || hasChildren

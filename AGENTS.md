@@ -39,6 +39,7 @@ The long-term product is a focused CMS for content-driven rental sites. The shor
 3. Keep functions small and public-safe; anything privileged should be designed for auth from the start.
 4. Avoid a freeform page builder in code. The future CMS should use structured sections and controlled block types.
 5. Maintain responsive behavior on desktop and mobile with no dark-mode requirement unless asked.
+6. Never directly save, edit, restore, seed, import, export, or otherwise mutate CMS/property/Firestore/live data unless the user explicitly authorizes that exact data operation in the current turn. Data inspection for debugging must stay read-only; recovery guidance should be given as steps or text for the user to apply through the admin UI.
 
 ## Definition Of Done For Phase One
 

@@ -28,6 +28,7 @@ const {
 } = require('./firebaseAdmin')
 const {
   deletePropertyRecord,
+  getAdminPropertyBySlug,
   getPropertyBySlug,
   listAllProperties,
   listBedroomGroups,
@@ -104,12 +105,13 @@ function sendAvailabilityJson(response, payload) {
 
 function normalizeRequestPath(pathname) {
   const normalizedPath = String(pathname ?? '').replace(/^\/+/, '')
+  const apiPrefixes = new Set(['api', 'siteApi', 'siteApiStaging'])
 
-  if (normalizedPath === 'api') {
+  if (apiPrefixes.has(normalizedPath)) {
     return ''
   }
 
-  return normalizedPath.replace(/^api\/+/, '')
+  return normalizedPath.replace(/^(?:api|siteApi|siteApiStaging)\/+/, '')
 }
 
 function sendError(response, error, path) {
@@ -465,6 +467,28 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         properties: await listAllProperties(),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path.startsWith('admin/properties/')) {
+      await requireAdminUser(request)
+      const slug = decodeURIComponent(path.replace(/^admin\/properties\//, ''))
+      const property = await getAdminPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in admin catalog',
+          slug,
+        })
+        return
+      }
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property,
       })
       return
     }

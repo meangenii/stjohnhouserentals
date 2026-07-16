@@ -21,8 +21,9 @@ const PROPERTY_BOOKING_DETAIL_PATTERNS = [
   /holiday rates/i,
   /^po box\b/i,
 ]
-const PROPERTY_POLICY_HEADING_PATTERNS = [/rental and cancellation policy/i]
+const PROPERTY_POLICY_HEADING_PATTERNS = [/rental and cancellation policy/i, /rental policy/i, /cancellation policy/i, /terms and conditions/i]
 const REVIEW_TITLE_WRAPPER_TAGS = new Set(['A', 'B', 'EM', 'I', 'SPAN', 'STRONG'])
+const LOOSE_INLINE_NODE_TAGS = new Set(['A', 'B', 'BR', 'EM', 'I', 'SPAN', 'STRONG', 'U'])
 const RATE_TITLE_LINE_PATTERN = /\brates?\b/i
 const RATE_TITLE_LINE_EXCLUSIONS = [
   /rates are based/i,
@@ -31,7 +32,13 @@ const RATE_TITLE_LINE_EXCLUSIONS = [
   /rental and cancellation policy/i,
   /booking contact/i,
 ]
-const RATE_SECTION_END_PATTERNS = [/booking contact/i, /rental and cancellation policy/i]
+const RATE_SECTION_END_PATTERNS = [
+  /booking contact/i,
+  /rental and cancellation policy/i,
+  /to book direct/i,
+  /please visit vrbo/i,
+  /to view more information, photos and reviews/i,
+]
 const RATE_PRIMARY_HEADING_PATTERNS = [
   /season/i,
   /^summer(?:\/fall)?$/i,
@@ -57,6 +64,12 @@ const RATE_HEADING_WORD_PATTERNS = [
 ]
 const RATE_DATE_LINE_PATTERN =
   /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|aug|sept|oct|nov|dec)\b/i
+const EXPLICIT_PROPERTY_SECTION_CLASS_TO_KEY = new Map([
+  ['property-description-section--rates', 'rates'],
+  ['property-description-section--rates-table', 'rates'],
+  ['property-description-section--booking', 'booking'],
+  ['property-description-section--policy', 'policy'],
+])
 
 function createCompactLine(documentNode, element) {
   const line = documentNode.createElement('div')
@@ -91,6 +104,48 @@ function getMeaningfulChildNodes(node) {
 
     return childNode.nodeType === 1
   })
+}
+
+function isLooseInlineRootNode(node) {
+  if (node.nodeType === 3) {
+    return Boolean(node.textContent.trim())
+  }
+
+  return node.nodeType === 1 && LOOSE_INLINE_NODE_TAGS.has(node.tagName)
+}
+
+function wrapLooseInlineRootContent(root, documentNode) {
+  const childNodes = Array.from(root.childNodes)
+  let currentRun = []
+
+  const flushRun = (beforeNode = null) => {
+    if (!currentRun.length) {
+      return
+    }
+
+    const paragraph = documentNode.createElement('p')
+    currentRun.forEach((node) => {
+      paragraph.append(node)
+    })
+    root.insertBefore(paragraph, beforeNode)
+    currentRun = []
+  }
+
+  childNodes.forEach((node) => {
+    if (isLooseInlineRootNode(node)) {
+      currentRun.push(node)
+      return
+    }
+
+    if (node.nodeType === 3 && !node.textContent.trim()) {
+      node.remove()
+      return
+    }
+
+    flushRun(node)
+  })
+
+  flushRun()
 }
 
 function isVrboIntroLine(textContent) {
@@ -370,16 +425,38 @@ function transformPropertySectionLists(root, documentNode) {
 function extractLineNodesFromElement(element, documentNode) {
   const lines = []
   let line = documentNode.createElement('div')
+  let sawBreak = false
+  let lastPushedWasBlank = false
+
+  const createBlankLine = () => {
+    const blankLine = documentNode.createElement('div')
+    blankLine.dataset.blankLine = 'true'
+    blankLine.append(documentNode.createElement('br'))
+    return blankLine
+  }
+
+  const pushLine = () => {
+    if (line.childNodes.length > 0) {
+      lines.push(line)
+      lastPushedWasBlank = false
+      line = documentNode.createElement('div')
+      return
+    }
+
+    if (lines.length > 0 && !lastPushedWasBlank) {
+      lines.push(createBlankLine())
+      lastPushedWasBlank = true
+    }
+
+    line = documentNode.createElement('div')
+  }
 
   while (element.firstChild) {
     const childNode = element.firstChild
 
     if (childNode.nodeType === 1 && childNode.tagName === 'BR') {
-      if (line.childNodes.length > 0) {
-        lines.push(line)
-      }
-
-      line = documentNode.createElement('div')
+      sawBreak = true
+      pushLine()
       childNode.remove()
       continue
     }
@@ -389,6 +466,8 @@ function extractLineNodesFromElement(element, documentNode) {
 
   if (line.childNodes.length > 0) {
     lines.push(line)
+  } else if (sawBreak && lines.length === 0) {
+    lines.push(createBlankLine())
   }
 
   return lines
@@ -547,7 +626,27 @@ function wrapPropertyParagraphRunsAsLists(root, documentNode) {
   flushRun()
 }
 
-function transformPropertyRateSections(root, documentNode) {
+function isCollectableRateLineElement(element, { force = false } = {}) {
+  if (!element) {
+    return false
+  }
+
+  if (!force) {
+    return /^P$/i.test(element.tagName)
+  }
+
+  if (element.classList?.contains('property-rate-block') || element.tagName === 'TABLE') {
+    return false
+  }
+
+  return isMeaningfulPropertyElement(element)
+}
+
+function transformPropertyRateSections(root, documentNode, { force = false } = {}) {
+  if (root.querySelector('.property-rate-block')) {
+    return
+  }
+
   const elements = Array.from(root.children)
   let startIndex = -1
   let startLineIndex = -1
@@ -556,7 +655,12 @@ function transformPropertyRateSections(root, documentNode) {
   for (let index = 0; index < elements.length; index += 1) {
     const element = elements[index]
 
-    if (!element || !/^P$/i.test(element.tagName)) {
+    if (startIndex !== -1 && element?.tagName === 'TABLE') {
+      endIndex = index
+      break
+    }
+
+    if (!isCollectableRateLineElement(element)) {
       continue
     }
 
@@ -564,7 +668,10 @@ function transformPropertyRateSections(root, documentNode) {
     const lineTexts = lineNodes.map((lineNode) => getElementTextContent(lineNode)).filter(Boolean)
 
     if (startIndex === -1) {
-      const rateTitleLineIndex = lineTexts.findIndex((textContent) => isRateTitleLine(textContent))
+      const rateTitleLineIndex = lineNodes.findIndex((lineNode) => {
+        const textContent = getElementTextContent(lineNode)
+        return Boolean(textContent) && isRateTitleLine(textContent)
+      })
 
       if (rateTitleLineIndex !== -1) {
         startIndex = index
@@ -580,6 +687,19 @@ function transformPropertyRateSections(root, documentNode) {
     }
   }
 
+  if (startIndex === -1 && force) {
+    startIndex = elements.findIndex((element) => isCollectableRateLineElement(element, { force: true }))
+    startLineIndex = 0
+
+    if (startIndex !== -1) {
+      const tableIndex = elements.findIndex((element, index) => index > startIndex && element?.tagName === 'TABLE')
+
+      if (tableIndex !== -1) {
+        endIndex = tableIndex
+      }
+    }
+  }
+
   if (startIndex === -1) {
     return
   }
@@ -590,7 +710,7 @@ function transformPropertyRateSections(root, documentNode) {
   for (let index = startIndex; index < endIndex; index += 1) {
     const element = elements[index]
 
-    if (!element || !/^P$/i.test(element.tagName)) {
+    if (!isCollectableRateLineElement(element, { force })) {
       continue
     }
 
@@ -604,14 +724,12 @@ function transformPropertyRateSections(root, documentNode) {
 
     relevantLines.forEach((lineNode) => {
       const textContent = getElementTextContent(lineNode)
-
-      if (!textContent) {
-        return
-      }
+      const isBlankLine = lineNode.dataset.blankLine === 'true' || !textContent
 
       collectedLines.push({
         lineNode,
         textContent,
+        isBlankLine,
         isEmphasized: Boolean(lineNode.querySelector('strong, b')),
       })
     })
@@ -669,7 +787,15 @@ function transformPropertyRateSections(root, documentNode) {
     return footerGroup
   }
 
-  collectedLines.forEach(({ lineNode, textContent, isEmphasized }) => {
+  collectedLines.forEach(({ lineNode, textContent, isBlankLine, isEmphasized }) => {
+    if (isBlankLine) {
+      const spacer = documentNode.createElement('div')
+      spacer.className = 'property-rate-spacer'
+      const target = currentSubgroup || currentGroup || rateBlock
+      target.append(spacer)
+      return
+    }
+
     if (isRatePrimaryHeadingLine(textContent) || (isRateHeadingLine(textContent, isEmphasized) && (!currentGroup || currentGroup.dataset.kind !== 'holiday'))) {
       currentGroup = documentNode.createElement('div')
       currentGroup.className = 'property-rate-group'
@@ -773,6 +899,10 @@ function isRateElement(element, textContent) {
     return true
   }
 
+  if (element?.tagName === 'TABLE') {
+    return true
+  }
+
   if (!textContent) {
     return false
   }
@@ -807,6 +937,20 @@ function createSectionRoot(documentNode) {
   }
 }
 
+function getExplicitPropertySectionKey(element) {
+  return (
+    Array.from(element?.classList ?? [])
+      .map((className) => EXPLICIT_PROPERTY_SECTION_CLASS_TO_KEY.get(className))
+      .find(Boolean) ?? ''
+  )
+}
+
+function appendElementContentsToSection(element, sectionRoot) {
+  while (element.firstChild) {
+    sectionRoot.append(element.firstChild)
+  }
+}
+
 export function extractPropertyTemplateSections(html) {
   const normalizedHtml = normalizeSiteHtml(html)
 
@@ -834,6 +978,7 @@ export function extractPropertyTemplateSections(html) {
     }
   }
 
+  wrapLooseInlineRootContent(root, documentNode)
   transformPropertyRateSections(root, documentNode)
 
   const sections = createSectionRoot(documentNode)
@@ -841,6 +986,14 @@ export function extractPropertyTemplateSections(html) {
 
   Array.from(root.children).forEach((element) => {
     if (!isMeaningfulPropertyElement(element)) {
+      return
+    }
+
+    const explicitSection = getExplicitPropertySectionKey(element)
+
+    if (explicitSection) {
+      activeSection = explicitSection
+      appendElementContentsToSection(element, sections[explicitSection])
       return
     }
 
@@ -903,12 +1056,12 @@ export function extractPropertyTemplateSections(html) {
 
 export function formatPropertyRichHtml(
   html,
-  { compactTail = false, listSections = false, reviewEntries = false, mergeLeadInLinkParagraphs = true } = {},
+  { compactTail = false, listSections = false, rateSection = false, reviewEntries = false, mergeLeadInLinkParagraphs = true } = {},
 ) {
   const normalizedHtml = normalizeSiteHtml(html)
 
   if (
-    (!compactTail && !listSections && !reviewEntries && !mergeLeadInLinkParagraphs) ||
+    (!compactTail && !listSections && !rateSection && !reviewEntries && !mergeLeadInLinkParagraphs) ||
     !normalizedHtml.trim() ||
     typeof DOMParser === 'undefined'
   ) {
@@ -923,6 +1076,8 @@ export function formatPropertyRichHtml(
     return normalizedHtml
   }
 
+  wrapLooseInlineRootContent(root, documentNode)
+
   if (mergeLeadInLinkParagraphs) {
     mergePropertyLeadInLinkParagraphs(root, documentNode)
   }
@@ -935,7 +1090,7 @@ export function formatPropertyRichHtml(
     transformPropertyReviews(root, documentNode)
   }
 
-  if (compactTail) {
+  if (compactTail || rateSection) {
     transformPropertyRateSections(root, documentNode)
   }
 

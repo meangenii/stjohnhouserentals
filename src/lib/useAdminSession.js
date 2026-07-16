@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 
-function scheduleAdminSessionLoad(callback) {
+function scheduleAdminSessionLoad(callback, { immediate = false } = {}) {
   if (typeof window === 'undefined') {
     return () => {}
   }
 
-  if (window.location.pathname.startsWith('/admin')) {
+  if (immediate || window.location.pathname.startsWith('/admin')) {
     callback()
     return () => {}
   }
@@ -19,8 +19,8 @@ function scheduleAdminSessionLoad(callback) {
   return () => window.clearTimeout(timeoutId)
 }
 
-export function useAdminSession() {
-  const [user, setUser] = useState(null)
+export function useAdminSession({ immediate = false } = {}) {
+  const [sessionState, setSessionState] = useState({ status: 'loading', user: null })
 
   useEffect(() => {
     let cancelled = false
@@ -29,28 +29,38 @@ export function useAdminSession() {
     const cancelScheduledLoad = scheduleAdminSessionLoad(() => {
       Promise.all([import('./adminAuth'), import('./firebase')])
         .then(([adminAuth, firebase]) => {
-          if (cancelled || !firebase.isFirebaseConfigured()) {
+          if (cancelled) {
+            return
+          }
+
+          if (!firebase.isFirebaseConfigured()) {
+            setSessionState({ status: 'ready', user: null })
             return
           }
 
           unsubscribe = adminAuth.observeAdminUser((nextUser) => {
             if (!cancelled) {
-              setUser(nextUser)
+              setSessionState({ status: 'ready', user: nextUser })
             }
           })
         })
-        .catch(() => {})
-    })
+        .catch(() => {
+          if (!cancelled) {
+            setSessionState({ status: 'ready', user: null })
+          }
+        })
+    }, { immediate })
 
     return () => {
       cancelled = true
       cancelScheduledLoad()
       unsubscribe()
     }
-  }, [])
+  }, [immediate])
 
   return {
-    isAdmin: Boolean(user),
-    user,
+    isAdmin: Boolean(sessionState.user),
+    status: sessionState.status,
+    user: sessionState.user,
   }
 }

@@ -350,7 +350,7 @@ function mergeImageFallback(fallbackImage, image) {
   }
 }
 
-function ImageField({ label, image, disabled, onChange }) {
+function ImageField({ hideLabel = false, label, image, disabled, onChange }) {
   const previewSrc = resolveEditableImageSrc(image)
 
   function handleSizeChange(nextSize) {
@@ -390,9 +390,11 @@ function ImageField({ label, image, disabled, onChange }) {
 
   return (
     <section className="admin-content-media-field">
-      <div className="admin-content-media-header">
-        <h5>{label}</h5>
-      </div>
+      {hideLabel ? null : (
+        <div className="admin-content-media-header">
+          <h5>{label}</h5>
+        </div>
+      )}
 
       <AdminMediaManager
         currentUrl={image?.url ?? ''}
@@ -400,7 +402,7 @@ function ImageField({ label, image, disabled, onChange }) {
         onClear={() => onChange('url', '')}
         onSelect={handleSelectImage}
         preferredOwnerType="page"
-        title={`${label} Media`}
+        title=""
       />
 
       <div className="admin-content-grid">
@@ -800,7 +802,7 @@ function renderLocalAttractionsEditor(page, helpers) {
         <RichTextField disabled={disabled} label="Heading" onChange={(value) => setPath(['hero', 'title'], value)} value={page.hero?.title ?? ''} />
         <RichTextField disabled={disabled} label="Tagline" onChange={(value) => setPath(['hero', 'tagline'], value)} value={page.hero?.tagline ?? ''} />
         <Field wide>
-          <ImageField disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
+          <ImageField hideLabel disabled={disabled} image={page.hero?.image} label="Hero Image" onChange={(field, value) => setPath(['hero', 'image', field], value)} />
         </Field>
       </SectionCard>
 

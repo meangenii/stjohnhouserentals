@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { PropertyAvailabilityFallback } from '../components/PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'
+import { PropertyDescriptionSections } from '../components/PropertyDescriptionSections'
 import { RichTextValue } from '../components/RichTextValue'
 import { getAdminIdToken } from '../lib/adminAuth'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
-import { getPropertyContactActions } from '../lib/propertyContact'
+import { getPropertyContactActions, getPropertyContactInfo } from '../lib/propertyContact'
 import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
@@ -33,7 +35,7 @@ export function PropertyDetailPage() {
   const { slug = '' } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAdmin } = useAdminSession()
+  const { isAdmin, status: adminSessionStatus } = useAdminSession({ immediate: true })
   const [state, setState] = useState({ status: 'loading', slug })
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   const [thumbnailRailState, setThumbnailRailState] = useState({
@@ -147,7 +149,36 @@ export function PropertyDetailPage() {
     let cancelled = false
 
     async function loadProperty() {
+      if (adminSessionStatus === 'loading') {
+        setState({ status: 'loading', slug })
+        return
+      }
+
       try {
+        let adminLoadError = null
+
+        if (isAdmin) {
+          const authToken = await getAdminIdToken()
+
+          if (authToken) {
+            try {
+              const adminProperty = await getPropertyBySlug(slug, { authToken })
+
+              if (cancelled) {
+                return
+              }
+
+              if (adminProperty) {
+                setActiveImageIndex(0)
+                setState({ status: 'ready', property: adminProperty, slug })
+                return
+              }
+            } catch (error) {
+              adminLoadError = error
+            }
+          }
+        }
+
         const property = await getPropertyBySlug(slug)
 
         if (cancelled) {
@@ -160,19 +191,8 @@ export function PropertyDetailPage() {
           return
         }
 
-        if (isAdmin) {
-          const authToken = await getAdminIdToken()
-          const adminProperty = authToken ? await getPropertyBySlug(slug, { authToken }) : null
-
-          if (cancelled) {
-            return
-          }
-
-          if (adminProperty) {
-            setActiveImageIndex(0)
-            setState({ status: 'ready', property: adminProperty, slug })
-            return
-          }
+        if (adminLoadError) {
+          throw adminLoadError
         }
 
         setState({ status: 'not-found', slug })
@@ -189,7 +209,7 @@ export function PropertyDetailPage() {
     return () => {
       cancelled = true
     }
-  }, [isAdmin, slug])
+  }, [adminSessionStatus, isAdmin, slug])
 
   function handleAdjacentPropertyNavigation(event, destination, navigationState) {
     if (!isUnmodifiedPrimaryClick(event) || routeTransitionPhaseRef.current !== 'idle') {
@@ -343,6 +363,8 @@ export function PropertyDetailPage() {
       : ''
   const sectionConfigs = templateVariant.sections
   const contactActions = getPropertyContactActions(property)
+  const contactInfo = getPropertyContactInfo(property)
+  const availabilityFallback = <PropertyAvailabilityFallback contactActions={contactActions} contactInfo={contactInfo} />
   const propertySections = {
     shortDescription:
       shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
@@ -374,25 +396,32 @@ export function PropertyDetailPage() {
         </PropertyContentSection>
       ) : null,
     description: (
-      <PropertyContentSection
+      <PropertyDescriptionSections
+        bookingHtml={property.bookingHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
         key="description"
-        compactTail
-        html={property.descriptionHtml}
-        renderWhenEmpty={sectionConfigs.description.renderWhenEmpty}
-        showHeader={sectionConfigs.description.showHeader}
-        title={sectionConfigs.description.title}
+        descriptionHtml={property.descriptionHtml}
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+        sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: property.calendarUrl ? (
+    calendar: (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"
         showHeader={sectionConfigs.calendar.showHeader}
         title={sectionConfigs.calendar.title}
       >
-        <PropertyAvailabilityCalendar propertySlug={property.slug} />
+        {property.calendarUrl ? (
+          <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
+        ) : (
+          availabilityFallback
+        )}
       </PropertyContentSection>
-    ) : null,
+    ),
     amenities: (
       <PropertyContentSection
         key="amenities"

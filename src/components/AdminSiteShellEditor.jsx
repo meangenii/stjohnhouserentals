@@ -203,7 +203,7 @@ function ImageField({ disabled, image, onAltChange, onOriginalSizeChange, onSize
         onSelect={handleSelectImage}
         preferredOwnerName={title}
         preferredOwnerType="site-shell"
-        title={`${title} Media`}
+        title=""
       />
 
       <div className="admin-content-grid">

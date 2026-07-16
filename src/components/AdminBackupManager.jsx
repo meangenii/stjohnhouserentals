@@ -474,8 +474,7 @@ export function AdminBackupManager({ authUser = null }) {
     <div className="admin-editor">
       <div className="admin-panel-header">
         <div>
-          <div className="eyebrow">Backups</div>
-          <h2>Backup workspace</h2>
+          <h2>Backup & Staging</h2>
         </div>
         <div className="admin-inline-actions">
           <button className="button-link button-link--ghost admin-action" type="button" onClick={loadWorkspace} disabled={actionState !== 'idle'}>

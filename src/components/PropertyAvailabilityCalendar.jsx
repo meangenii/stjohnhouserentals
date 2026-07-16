@@ -16,7 +16,7 @@ function isDateBusy(isoDate, busyRanges) {
   return busyRanges.some((range) => isoDate >= range.start && isoDate < range.end)
 }
 
-export function PropertyAvailabilityCalendar({ propertySlug }) {
+export function PropertyAvailabilityCalendar({ fallback = null, propertySlug }) {
   const today = useMemo(() => {
     const now = new Date()
     return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
@@ -79,7 +79,7 @@ export function PropertyAvailabilityCalendar({ propertySlug }) {
   }, [cursor, today])
 
   if (status === 'error') {
-    return <p className="property-availability-calendar-status">Availability calendar is temporarily unavailable.</p>
+    return fallback || <p className="property-availability-calendar-status">Availability calendar is temporarily unavailable.</p>
   }
 
   return (

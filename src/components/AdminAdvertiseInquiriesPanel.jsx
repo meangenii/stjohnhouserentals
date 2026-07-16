@@ -181,8 +181,7 @@ export function AdminAdvertiseInquiriesPanel({ authUser }) {
     <section className="admin-panel">
       <div className="admin-panel-header">
         <div>
-          <div className="eyebrow">Contact Forms</div>
-          <h2>Form Submissions</h2>
+          <h2>Submission Inbox</h2>
         </div>
         <div className="admin-inline-actions">
           <span className="admin-chip">{`${inquiries.length} submission${inquiries.length === 1 ? '' : 's'}`}</span>

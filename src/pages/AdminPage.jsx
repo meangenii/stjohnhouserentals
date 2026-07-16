@@ -45,6 +45,9 @@ import {
   saveAdminStructuredPageContent,
 } from '../lib/siteContentRepository'
 
+const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
+const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
+
 function makeToken() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
@@ -490,6 +493,11 @@ function createEmptyFormState() {
     shortDescription: '',
     calendarUrl: '',
     descriptionHtml: '',
+    ratesHtml: '',
+    ratesTableHtml: '',
+    bookingHtml: '',
+    policyHtml: '',
+    enabledDescriptionSections: [],
     existingAmenitiesHtml: '',
     existingReviewsHtml: '',
     heroImageUrl: '',
@@ -507,6 +515,101 @@ function createEmptyFormState() {
     ...nextFormState,
     shortDescription: buildPropertyShortDescription(nextFormState),
   }
+}
+
+function createDescriptionSectionFormState(property = {}) {
+  const descriptionHtml = String(property.descriptionHtml ?? '').trim() || paragraphListToHtml(property.description ?? [])
+  const rawSections = {
+    descriptionHtml,
+    ratesHtml: String(property.ratesHtml ?? '').trim(),
+    ratesTableHtml: String(property.ratesTableHtml ?? '').trim(),
+    bookingHtml: String(property.bookingHtml ?? '').trim(),
+    policyHtml: String(property.policyHtml ?? '').trim(),
+  }
+  const sections = {
+    ...rawSections,
+    ...normalizeRateDescriptionSections(rawSections, property.enabledDescriptionSections),
+  }
+
+  return {
+    ...sections,
+    enabledDescriptionSections: normalizeEnabledDescriptionSections(property.enabledDescriptionSections, sections),
+  }
+}
+
+function getActiveRateDescriptionSectionKey(value, sections = {}) {
+  const explicitRateSectionKeys = Array.isArray(value)
+    ? value.filter((sectionKey) => PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey))
+    : []
+  const explicitRateSectionKey = explicitRateSectionKeys[explicitRateSectionKeys.length - 1] ?? ''
+  const hasTextRates = Boolean(String(sections?.ratesHtml ?? '').trim())
+  const hasTableRates = Boolean(String(sections?.ratesTableHtml ?? '').trim())
+
+  if (explicitRateSectionKey && String(sections?.[explicitRateSectionKey] ?? '').trim()) {
+    return explicitRateSectionKey
+  }
+
+  if (hasTextRates) {
+    return 'ratesHtml'
+  }
+
+  if (hasTableRates) {
+    return 'ratesTableHtml'
+  }
+
+  return explicitRateSectionKey || ''
+}
+
+function normalizeRateDescriptionSections(sections = {}, enabledDescriptionSections = []) {
+  const activeRateSectionKey = getActiveRateDescriptionSectionKey(enabledDescriptionSections, sections)
+
+  return {
+    ratesHtml: activeRateSectionKey === 'ratesHtml' ? String(sections?.ratesHtml ?? '').trim() : '',
+    ratesTableHtml: activeRateSectionKey === 'ratesTableHtml' ? String(sections?.ratesTableHtml ?? '').trim() : '',
+  }
+}
+
+function normalizeDescriptionSectionFields(source = {}) {
+  const sections = {
+    descriptionHtml: String(source.descriptionHtml ?? '').trim(),
+    ratesHtml: String(source.ratesHtml ?? '').trim(),
+    ratesTableHtml: String(source.ratesTableHtml ?? '').trim(),
+    bookingHtml: String(source.bookingHtml ?? '').trim(),
+    policyHtml: String(source.policyHtml ?? '').trim(),
+  }
+
+  return {
+    ...sections,
+    ...normalizeRateDescriptionSections(sections, source.enabledDescriptionSections),
+  }
+}
+
+function normalizeEnabledDescriptionSections(value, sections = {}) {
+  const contentSectionKeys = PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES.filter((sectionKey) => String(sections?.[sectionKey] ?? '').trim())
+  const sourceKeys = Array.isArray(value) ? [...value, ...contentSectionKeys] : contentSectionKeys
+  const activeRateSectionKey = sourceKeys.some((sectionKey) => PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey))
+    ? getActiveRateDescriptionSectionKey(value, sections)
+    : ''
+  let hasAddedActiveRateSection = false
+
+  return Array.from(
+    new Set(
+      sourceKeys
+        .map((sectionKey) => {
+          if (!PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey)) {
+            return sectionKey
+          }
+
+          if (!activeRateSectionKey || hasAddedActiveRateSection) {
+            return ''
+          }
+
+          hasAddedActiveRateSection = true
+          return activeRateSectionKey
+        })
+        .filter((sectionKey) => PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey)),
+    ),
+  )
 }
 
 function createInitialAmenityGroups(property = {}) {
@@ -548,6 +651,7 @@ function createInitialGalleryImages(property = {}) {
 function createFormState(property) {
   const bedrooms = normalizeBedroomCount(property.bedrooms)
   const alternateBedroomCounts = normalizeAlternateBedroomCounts(property.alternateBedroomCounts, bedrooms)
+  const descriptionSections = createDescriptionSectionFormState(property)
 
   const nextFormState = {
     originalSlug: property.adminOriginalSlug ?? property.slug,
@@ -564,7 +668,12 @@ function createFormState(property) {
     price: repairSnapshotText(property.price ?? ''),
     shortDescription: repairSnapshotText(property.shortDescription ?? ''),
     calendarUrl: repairSnapshotText(property.calendarUrl ?? ''),
-    descriptionHtml: String(property.descriptionHtml ?? '').trim() || paragraphListToHtml(property.description ?? []),
+    descriptionHtml: descriptionSections.descriptionHtml,
+    ratesHtml: descriptionSections.ratesHtml,
+    ratesTableHtml: descriptionSections.ratesTableHtml,
+    bookingHtml: descriptionSections.bookingHtml,
+    policyHtml: descriptionSections.policyHtml,
+    enabledDescriptionSections: descriptionSections.enabledDescriptionSections,
     existingAmenitiesHtml: String(property.amenitiesHtml ?? ''),
     existingReviewsHtml: String(property.reviewsHtml ?? ''),
     heroImageUrl: property.heroImage?.url ?? '',
@@ -587,6 +696,7 @@ function createFormState(property) {
 function buildPropertyDraft(formState) {
   const bedrooms = normalizeBedroomCount(formState.bedrooms)
   const alternateBedroomCounts = normalizeAlternateBedroomCounts(formState.alternateBedroomCounts, bedrooms)
+  const descriptionSections = normalizeDescriptionSectionFields(formState)
 
   const amenityGroups = formState.amenityGroups
     .map((group) => ({
@@ -624,7 +734,13 @@ function buildPropertyDraft(formState) {
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
     calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
-    descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
+    hasStructuredDescriptionSections: true,
+    descriptionHtml: descriptionSections.descriptionHtml,
+    ratesHtml: descriptionSections.ratesHtml,
+    ratesTableHtml: descriptionSections.ratesTableHtml,
+    bookingHtml: descriptionSections.bookingHtml,
+    policyHtml: descriptionSections.policyHtml,
+    enabledDescriptionSections: normalizeEnabledDescriptionSections(formState.enabledDescriptionSections, descriptionSections),
     existingAmenitiesHtml: formState.existingAmenitiesHtml,
     existingReviewsHtml: formState.existingReviewsHtml,
     amenityGroups,
@@ -702,6 +818,7 @@ function buildPropertyPreviewModel(formState) {
   const reviewsHtml = reviewEntriesToHtml(formState.reviewEntries)
   const bedrooms = normalizeBedroomCount(formState.bedrooms)
   const alternateBedroomCounts = normalizeAlternateBedroomCounts(formState.alternateBedroomCounts, bedrooms)
+  const descriptionSections = normalizeDescriptionSectionFields(formState)
 
   return {
     slug: repairSnapshotText(formState.slug).trim(),
@@ -718,7 +835,13 @@ function buildPropertyPreviewModel(formState) {
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
     calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
-    descriptionHtml: String(formState.descriptionHtml ?? '').trim(),
+    hasStructuredDescriptionSections: true,
+    descriptionHtml: descriptionSections.descriptionHtml,
+    ratesHtml: descriptionSections.ratesHtml,
+    ratesTableHtml: descriptionSections.ratesTableHtml,
+    bookingHtml: descriptionSections.bookingHtml,
+    policyHtml: descriptionSections.policyHtml,
+    enabledDescriptionSections: normalizeEnabledDescriptionSections(formState.enabledDescriptionSections, descriptionSections),
     amenitiesHtml: amenityHtml || String(formState.existingAmenitiesHtml ?? '').trim(),
     reviewsHtml: reviewsHtml || String(formState.existingReviewsHtml ?? '').trim(),
     heroImage,
@@ -1591,6 +1714,13 @@ export function AdminPage() {
 
   function updateFormState(field, value) {
     setFormState((currentState) => {
+      if (field && typeof field === 'object' && !Array.isArray(field)) {
+        return {
+          ...currentState,
+          ...field,
+        }
+      }
+
       if (field === 'slug') {
         return {
           ...currentState,
@@ -2795,7 +2925,7 @@ export function AdminPage() {
             <section className="admin-panel">
               <div className="admin-panel-header">
                 <div>
-                  <h2>Header & Footer</h2>
+                  <h2>Site Shell</h2>
                 </div>
                 <div className="admin-inline-actions">
                   <button className="button-link button-link--ghost admin-action" type="button" onClick={handleReloadSiteShell}>
@@ -2865,8 +2995,7 @@ export function AdminPage() {
             <section className="admin-panel">
               <div className="admin-panel-header">
                 <div>
-                  <div className="eyebrow">Pages</div>
-                  <h2>Pages</h2>
+                  <h2>Page Editor</h2>
                 </div>
                 {siteContentEditingEnabled ? (
                   <div className="admin-inline-actions">
@@ -3100,8 +3229,7 @@ export function AdminPage() {
             <section className="admin-panel">
               <div className="admin-panel-header">
                 <div>
-                  <div className="eyebrow">Properties</div>
-                  <h2>Properties</h2>
+                  <h2>Property Editor</h2>
                 </div>
                 <div className="admin-inline-actions">
                   <button
@@ -3298,8 +3426,7 @@ export function AdminPage() {
             <section className="admin-panel">
               <div className="admin-panel-header">
                 <div>
-                  <div className="eyebrow">Charter Boats</div>
-                  <h2>Charters</h2>
+                  <h2>Charter Editor</h2>
                 </div>
                 <div className="admin-inline-actions">
                   <button className="button-link button-link--ghost admin-action" type="button" onClick={openCreateCharterForm}>

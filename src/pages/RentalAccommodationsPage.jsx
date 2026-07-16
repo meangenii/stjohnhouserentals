@@ -182,7 +182,7 @@ function RentalAccommodationCard({ card, filteredPropertyOrder }) {
 
 export function RentalAccommodationsPage() {
   const page = useStructuredPageContent('rentalAccommodations')
-  const { isAdmin } = useAdminSession()
+  const { isAdmin, status: adminSessionStatus } = useAdminSession({ immediate: true })
   const [summaryState, setSummaryState] = useState({ status: 'loading', properties: [] })
   const [selectedRoomCount, setSelectedRoomCount] = useState(null)
   const [selectedAmenities, setSelectedAmenities] = useState([])
@@ -237,6 +237,11 @@ export function RentalAccommodationsPage() {
     let cancelled = false
 
     async function loadSummaries() {
+      if (adminSessionStatus === 'loading') {
+        setSummaryState({ status: 'loading', properties: [] })
+        return
+      }
+
       try {
         const authToken = isAdmin ? await getAdminIdToken() : ''
         const properties = await listPropertySummaries(authToken ? { authToken } : {})
@@ -256,7 +261,7 @@ export function RentalAccommodationsPage() {
     return () => {
       cancelled = true
     }
-  }, [isAdmin])
+  }, [adminSessionStatus, isAdmin])
 
   if (!page) {
     return <PageLoadingState />

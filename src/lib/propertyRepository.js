@@ -9,6 +9,8 @@ const liveCatalogUrl = '/livePropertyCatalog.json'
 const MOCK_STORAGE_KEY = 'propertyCatalog'
 const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'firebase'
 const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
+const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
+const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
 
 let localPropertyCatalogPromise = null
 let remotePropertyCatalogPromise = null
@@ -27,6 +29,66 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
+}
+
+function normalizeEnabledDescriptionSections(value, record = {}) {
+  const contentSectionKeys = PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES.filter((sectionKey) => String(record?.[sectionKey] ?? '').trim())
+  const sourceKeys = Array.isArray(value) ? [...value, ...contentSectionKeys] : contentSectionKeys
+  const activeRateSectionKey = sourceKeys.some((sectionKey) => PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey))
+    ? getActiveRateDescriptionSectionKey(value, record)
+    : ''
+  let hasAddedActiveRateSection = false
+
+  return Array.from(
+    new Set(
+      sourceKeys
+        .map((sectionKey) => {
+          if (!PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey)) {
+            return sectionKey
+          }
+
+          if (!activeRateSectionKey || hasAddedActiveRateSection) {
+            return ''
+          }
+
+          hasAddedActiveRateSection = true
+          return activeRateSectionKey
+        })
+        .filter((sectionKey) => PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey)),
+    ),
+  )
+}
+
+function getActiveRateDescriptionSectionKey(value, record = {}) {
+  const explicitRateSectionKeys = Array.isArray(value)
+    ? value.filter((sectionKey) => PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES.includes(sectionKey))
+    : []
+  const explicitRateSectionKey = explicitRateSectionKeys[explicitRateSectionKeys.length - 1] ?? ''
+  const hasTextRates = Boolean(String(record?.ratesHtml ?? '').trim())
+  const hasTableRates = Boolean(String(record?.ratesTableHtml ?? '').trim())
+
+  if (explicitRateSectionKey && String(record?.[explicitRateSectionKey] ?? '').trim()) {
+    return explicitRateSectionKey
+  }
+
+  if (hasTextRates) {
+    return 'ratesHtml'
+  }
+
+  if (hasTableRates) {
+    return 'ratesTableHtml'
+  }
+
+  return explicitRateSectionKey || ''
+}
+
+function normalizeRateDescriptionSections(record = {}, enabledDescriptionSections = []) {
+  const activeRateSectionKey = getActiveRateDescriptionSectionKey(enabledDescriptionSections, record)
+
+  return {
+    ratesHtml: activeRateSectionKey === 'ratesHtml' ? String(record?.ratesHtml ?? '').trim() : '',
+    ratesTableHtml: activeRateSectionKey === 'ratesTableHtml' ? String(record?.ratesTableHtml ?? '').trim() : '',
+  }
 }
 
 function formatBedroomLabel(bedrooms) {
@@ -242,6 +304,28 @@ function normalizePropertyRecord(record) {
   const heroImage = normalizeImageAsset(record.heroImage) ?? gallery[0] ?? null
   const legacyLines = getLegacyPropertyLines(record)
   const descriptionHtml = String(record.descriptionHtml ?? '').trim()
+  const rateSections = normalizeRateDescriptionSections(
+    {
+      ratesHtml: String(record.ratesHtml ?? '').trim(),
+      ratesTableHtml: String(record.ratesTableHtml ?? '').trim(),
+    },
+    record.enabledDescriptionSections,
+  )
+  const { ratesHtml, ratesTableHtml } = rateSections
+  const bookingHtml = String(record.bookingHtml ?? '').trim()
+  const policyHtml = String(record.policyHtml ?? '').trim()
+  const enabledDescriptionSections = normalizeEnabledDescriptionSections(record.enabledDescriptionSections, {
+    ratesHtml,
+    ratesTableHtml,
+    bookingHtml,
+    policyHtml,
+  })
+  const hasStructuredDescriptionSections =
+    record.hasStructuredDescriptionSections === true ||
+    Array.isArray(record.enabledDescriptionSections) ||
+    ['ratesHtml', 'ratesTableHtml', 'bookingHtml', 'policyHtml'].some((fieldName) =>
+      Object.prototype.hasOwnProperty.call(record, fieldName),
+    )
   const externalLinks = normalizeExternalLinks(record.externalLinks)
   const amenityGroups = normalizeAmenityGroups(record.amenityGroups)
   const bedrooms = Number(record.bedrooms) || 0
@@ -269,11 +353,17 @@ function normalizePropertyRecord(record) {
     location: String(record.location ?? '').trim(),
     calendarUrl: String(record.calendarUrl ?? '').trim(),
     descriptionHtml,
+    hasStructuredDescriptionSections,
+    enabledDescriptionSections,
+    ratesHtml,
+    ratesTableHtml,
+    bookingHtml,
+    policyHtml,
     amenitiesHtml: amenityGroups.length > 0 ? amenityGroupsToHtml(amenityGroups) : String(record.amenitiesHtml ?? '').trim(),
     amenityGroups,
     reviewsHtml: String(record.reviewsHtml ?? '').trim(),
     reviewEntries: Array.isArray(record.reviewEntries) ? record.reviewEntries : [],
-    booking: normalizePropertyBooking(record, externalLinks, descriptionHtml),
+    booking: normalizePropertyBooking(record, externalLinks, [descriptionHtml, bookingHtml].filter(Boolean).join('\n')),
     heroImage,
     gallery,
     externalLinks,
@@ -497,6 +587,22 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
 
   const shortDescription = normalizePropertyShortDescription(draft?.shortDescription, getLegacyPropertyLines(draft))
   const descriptionHtml = String(draft?.descriptionHtml ?? '').trim()
+  const rateSections = normalizeRateDescriptionSections(
+    {
+      ratesHtml: String(draft?.ratesHtml ?? '').trim(),
+      ratesTableHtml: String(draft?.ratesTableHtml ?? '').trim(),
+    },
+    draft?.enabledDescriptionSections,
+  )
+  const { ratesHtml, ratesTableHtml } = rateSections
+  const bookingHtml = String(draft?.bookingHtml ?? '').trim()
+  const policyHtml = String(draft?.policyHtml ?? '').trim()
+  const enabledDescriptionSections = normalizeEnabledDescriptionSections(draft?.enabledDescriptionSections, {
+    ratesHtml,
+    ratesTableHtml,
+    bookingHtml,
+    policyHtml,
+  })
   const description = Array.isArray(draft?.description)
     ? draft.description.map((paragraph) => String(paragraph).trim()).filter(Boolean)
     : []
@@ -570,9 +676,15 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     shortDescription,
     location: String(draft?.location ?? '').trim(),
     calendarUrl: String(draft?.calendarUrl ?? '').trim(),
+    hasStructuredDescriptionSections: true,
+    enabledDescriptionSections,
     description: description,
     descriptionHtml:
       descriptionHtml || (description.length > 0 ? paragraphListToHtml(description) : String(draft?.existingDescriptionHtml ?? '').trim()),
+    ratesHtml,
+    ratesTableHtml,
+    bookingHtml,
+    policyHtml,
     amenityGroups,
     amenitiesHtml:
       String(draft?.amenitiesHtml ?? '').trim() ||
@@ -692,6 +804,24 @@ async function loadAdminRemoteCatalog(options = {}) {
   return getJson('/admin/properties/catalog', options).then((payload) => buildCatalogFromPayload(payload))
 }
 
+async function loadAdminRemoteProperty(slug, options = {}) {
+  const normalizedSlug = String(slug ?? '').trim()
+
+  if (!normalizedSlug) {
+    return null
+  }
+
+  return getJson(`/admin/properties/${encodeURIComponent(normalizedSlug)}`, options)
+    .then((payload) => normalizePropertyRecord(payload?.property ?? payload))
+    .catch((error) => {
+      if (error?.status === 404) {
+        return loadAdminRemoteCatalog(options).then((catalog) => findPropertyInCatalog(catalog, normalizedSlug) ?? null)
+      }
+
+      throw error
+    })
+}
+
 function summarizeProperty(property) {
   const summary = {
     id: property.id,
@@ -777,14 +907,8 @@ export async function listPropertySummaries(options = {}) {
 
 export async function getPropertyBySlug(slug, options = {}) {
   if ((isFirebasePropertyData() || isApiPropertyData()) && options.authToken) {
-    const adminCatalog = await loadAdminRemoteCatalog(options)
-    const property = findPropertyInCatalog(adminCatalog, slug)
-
-    if (!property) {
-      return null
-    }
-
-    return cloneData(attachAdjacentProperties(property, adminCatalog.properties))
+    const property = await loadAdminRemoteProperty(slug, options)
+    return property ? cloneData(property) : null
   }
 
   const catalog = await loadCatalog()
