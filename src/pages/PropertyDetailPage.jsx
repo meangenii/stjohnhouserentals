@@ -12,6 +12,7 @@ import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyBySlug } from '../lib/propertyRepository'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
+import { usePropertyGalleryNavigation } from '../lib/usePropertyGalleryNavigation'
 import { useAdminSession } from '../lib/useAdminSession'
 import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
 
@@ -56,6 +57,11 @@ export function PropertyDetailPage() {
   const property = effectiveStatus === 'ready' ? state.property : null
   const loadedPropertyPath = property?.path ?? ''
   const shortDescriptionLines = property ? getShortDescriptionLines(property) : []
+  const galleryImageCount = property
+    ? (Array.isArray(property.gallery) ? property.gallery.filter(Boolean).length : 0) || (property.heroImage ? 1 : 0)
+    : 0
+  const { galleryPointerHandlers, showNextGalleryImage, showPreviousGalleryImage } =
+    usePropertyGalleryNavigation(galleryImageCount, setActiveImageIndex)
   const documentTitle =
     effectiveStatus === 'not-found'
       ? 'Property Not Found'
@@ -328,26 +334,6 @@ export function PropertyDetailPage() {
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
-  const showPreviousGalleryImage = () => {
-    if (galleryImages.length <= 1) {
-      return
-    }
-
-    setActiveImageIndex((currentIndex) => {
-      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
-      return normalizedIndex === 0 ? galleryImages.length - 1 : normalizedIndex - 1
-    })
-  }
-  const showNextGalleryImage = () => {
-    if (galleryImages.length <= 1) {
-      return
-    }
-
-    setActiveImageIndex((currentIndex) => {
-      const normalizedIndex = Math.min(Math.max(currentIndex, 0), galleryImages.length - 1)
-      return normalizedIndex === galleryImages.length - 1 ? 0 : normalizedIndex + 1
-    })
-  }
   const thumbnailRailClassName = [
     'property-gallery-thumbnails-shell',
     thumbnailRailState.canScroll ? 'property-gallery-thumbnails-shell--scrollable' : '',
@@ -467,11 +453,12 @@ export function PropertyDetailPage() {
 
           {activeImage ? (
             <section className="property-gallery">
-              <div className="property-gallery-stage">
+              <div className="property-gallery-stage" {...galleryPointerHandlers}>
                 <img
                   alt={activeImage.alt || `${property.name} main view`}
                   className="property-gallery-image"
                   decoding="async"
+                  draggable="false"
                   loading="eager"
                   src={buildRemoteImageUrl(activeImage, { width: 1800, height: 1400, mode: 'fit' })}
                 />
