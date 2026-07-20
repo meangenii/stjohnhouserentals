@@ -4,89 +4,141 @@ import { PageLoadingState } from '../components/PageLoadingState'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
-function ScheduleBlock({ title, columns, notes = [], pathPrefix }) {
+function asArray(value) {
+  return Array.isArray(value) ? value : []
+}
+
+function asObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+function asText(value) {
+  return value == null ? '' : String(value)
+}
+
+function ScheduleBlock({ title, columns, notes = [], pathPrefix = [] }) {
+  const scheduleTitle = asText(title)
+  const scheduleColumns = asArray(columns)
+  const scheduleNotes = asArray(notes)
+
   return (
     <section className="car-barge-schedule-block">
-      <EditableText as="h3" label={`${title} Schedule Title`} path={[...pathPrefix, 'title']} value={title}>
-        {title}
+      <EditableText as="h3" label={`${scheduleTitle} Schedule Title`} path={[...pathPrefix, 'title']} value={scheduleTitle}>
+        {scheduleTitle}
       </EditableText>
 
       <div className="car-barge-schedule-columns">
-        {columns.map((column, columnIndex) => (
-          <div className="car-barge-schedule-column" key={columnIndex}>
-            <EditableText as="h4" label={`${column.heading} Heading`} path={[...pathPrefix, 'columns', columnIndex, 'heading']} value={column.heading}>
-              {column.heading}
-            </EditableText>
+        {scheduleColumns.map((column, columnIndex) => {
+          const columnRecord = asObject(column)
+          const columnHeading = asText(columnRecord.heading)
+          const columnTimes = asArray(columnRecord.times)
 
-            <div className="car-barge-time-list">
-              {column.times.map((time, timeIndex) => (
-                <EditableText as="p" key={timeIndex} label={`${column.heading} Time ${timeIndex + 1}`} path={[...pathPrefix, 'columns', columnIndex, 'times', timeIndex]} value={time}>
-                  {time}
-                </EditableText>
-              ))}
+          return (
+            <div className="car-barge-schedule-column" key={columnIndex}>
+              <EditableText as="h4" label={`${columnHeading} Heading`} path={[...pathPrefix, 'columns', columnIndex, 'heading']} value={columnHeading}>
+                {columnHeading}
+              </EditableText>
+
+              <div className="car-barge-time-list">
+                {columnTimes.map((time, timeIndex) => {
+                  const timeText = asText(time)
+
+                  return (
+                    <EditableText as="p" key={timeIndex} label={`${columnHeading} Time ${timeIndex + 1}`} path={[...pathPrefix, 'columns', columnIndex, 'times', timeIndex]} value={timeText}>
+                      {timeText}
+                    </EditableText>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      {notes.length ? (
+      {scheduleNotes.length ? (
         <div className="car-barge-schedule-notes">
-          {notes.map((note, noteIndex) => (
-            <EditableText as="p" key={noteIndex} label={`${title} Note ${noteIndex + 1}`} path={[...pathPrefix, 'notes', noteIndex]} value={note}>
-              {note}
-            </EditableText>
-          ))}
+          {scheduleNotes.map((note, noteIndex) => {
+            const noteText = asText(note)
+
+            return (
+              <EditableText as="p" key={noteIndex} label={`${scheduleTitle} Note ${noteIndex + 1}`} path={[...pathPrefix, 'notes', noteIndex]} value={noteText}>
+                {noteText}
+              </EditableText>
+            )
+          })}
         </div>
       ) : null}
     </section>
   )
 }
 
-function RatesBlock({ heading, link, linkLabel, rows, footer, pathPrefix, url }) {
+function RatesBlock({ heading, link, linkLabel, rows, footer, pathPrefix = [], url }) {
+  const ratesHeading = asText(heading)
+  const rateRows = asArray(rows)
+  const rateFooter = asArray(footer)
+  const ratesUrl = asText(url)
+  const ratesLinkLabel = asText(linkLabel) || 'Visit operator website'
+
   return (
     <section className="car-barge-rates">
-      <EditableText as="h3" label="Rates Heading" path={[...pathPrefix, 'heading']} value={heading}>
-        {heading}
+      <EditableText as="h3" label="Rates Heading" path={[...pathPrefix, 'heading']} value={ratesHeading}>
+        {ratesHeading}
       </EditableText>
 
       <div className="car-barge-rates-copy">
-        {rows.map((row, index) => (
-          <div className={`car-barge-rates-row${row.label ? '' : ' is-values-only'}`} key={index}>
-            {row.label ? (
-              <EditableText as="span" className="car-barge-rates-row-label" label={`Rate Row ${index + 1} Label`} path={[...pathPrefix, 'rows', index, 'label']} value={row.label}>
-                {row.label}
-              </EditableText>
-            ) : null}
+        {rateRows.map((row, index) => {
+          const rowRecord = asObject(row)
+          const rowLabel = asText(rowRecord.label)
+          const rowValues = asArray(rowRecord.values)
 
-            <div className="car-barge-rates-row-values">
-              {row.values.map((value, valueIndex) => (
-                <EditableText as="span" key={valueIndex} label={`Rate Row ${index + 1} Value ${valueIndex + 1}`} path={[...pathPrefix, 'rows', index, 'values', valueIndex]} value={value}>
-                  {value}
+          return (
+            <div className={`car-barge-rates-row${rowLabel ? '' : ' is-values-only'}`} key={index}>
+              {rowLabel ? (
+                <EditableText as="span" className="car-barge-rates-row-label" label={`Rate Row ${index + 1} Label`} path={[...pathPrefix, 'rows', index, 'label']} value={rowLabel}>
+                  {rowLabel}
                 </EditableText>
-              ))}
+              ) : null}
+
+              <div className="car-barge-rates-row-values">
+                {rowValues.map((value, valueIndex) => {
+                  const valueText = asText(value)
+
+                  return (
+                    <EditableText as="span" key={valueIndex} label={`Rate Row ${index + 1} Value ${valueIndex + 1}`} path={[...pathPrefix, 'rows', index, 'values', valueIndex]} value={valueText}>
+                      {valueText}
+                    </EditableText>
+                  )
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         <div className="car-barge-rates-footer">
-          {footer.map((line, lineIndex) => (
-            <EditableText as="p" key={lineIndex} label={`Rates Footer ${lineIndex + 1}`} path={[...pathPrefix, 'footer', lineIndex]} value={line}>
-              {line}
-            </EditableText>
-          ))}
+          {rateFooter.map((line, lineIndex) => {
+            const lineText = asText(line)
 
-          <EditableLink
-            destination={url}
-            destinationField="url"
-            destinationLabel="Rates Website URL"
-            destinationPath={[...pathPrefix, 'url']}
-            external
-            link={link}
-            linkPath={pathPrefix}
-            label={linkLabel || 'Visit operator website'}
-            labelLabel="Rates Website Link Text"
-            labelPath={[...pathPrefix, 'linkLabel']}
-          />
+            return (
+              <EditableText as="p" key={lineIndex} label={`Rates Footer ${lineIndex + 1}`} path={[...pathPrefix, 'footer', lineIndex]} value={lineText}>
+                {lineText}
+              </EditableText>
+            )
+          })}
+
+          {ratesUrl ? (
+            <EditableLink
+              destination={ratesUrl}
+              destinationField="url"
+              destinationLabel="Rates Website URL"
+              destinationPath={[...pathPrefix, 'url']}
+              external
+              link={asObject(link)}
+              linkPath={pathPrefix}
+              label={ratesLinkLabel}
+              labelLabel="Rates Website Link Text"
+              labelPath={[...pathPrefix, 'linkLabel']}
+            />
+          ) : null}
         </div>
       </div>
     </section>
@@ -94,30 +146,36 @@ function RatesBlock({ heading, link, linkLabel, rows, footer, pathPrefix, url })
 }
 
 function BargeOperatorSection({ operator, operatorIndex }) {
-  const imageUrl = getContentImageSrc(operator.image, { width: 820, height: 1240 })
+  const operatorRecord = asObject(operator)
+  const operatorImage = asObject(operatorRecord.image)
+  const operatorMeta = asObject(operatorRecord.meta)
+  const operatorRates = asObject(operatorRecord.rates)
+  const operatorSchedules = asArray(operatorRecord.schedules)
+  const operatorTitle = asText(operatorRecord.title)
+  const imageUrl = getContentImageSrc(operatorImage, { width: 820, height: 1240 })
 
   return (
     <section className="car-barge-operator">
       <div className="car-barge-operator-header">
-        <EditableText as="h2" label="Operator Title" path={['operators', operatorIndex, 'title']} value={operator.title}>
-          {operator.title}
+        <EditableText as="h2" label="Operator Title" path={['operators', operatorIndex, 'title']} value={operatorTitle}>
+          {operatorTitle}
         </EditableText>
 
         <div className="car-barge-operator-meta">
           <p>
             <strong>Barge Names:</strong>{' '}
-            <EditableText as="span" label="Barge Names" path={['operators', operatorIndex, 'meta', 'names']} value={operator.meta.names}>
-              {operator.meta.names}
+            <EditableText as="span" label="Barge Names" path={['operators', operatorIndex, 'meta', 'names']} value={asText(operatorMeta.names)}>
+              {asText(operatorMeta.names)}
             </EditableText>
           </p>
           <p>
             <strong>Telephone:</strong>{' '}
-            <EditablePhoneText label="Operator Phone" path={['operators', operatorIndex, 'meta', 'phone']} value={operator.meta.phone} />
+            <EditablePhoneText label="Operator Phone" path={['operators', operatorIndex, 'meta', 'phone']} value={asText(operatorMeta.phone)} />
           </p>
           <p>
             <strong>Travel Time:</strong>{' '}
-            <EditableText as="span" label="Travel Time" path={['operators', operatorIndex, 'meta', 'travelTime']} value={operator.meta.travelTime}>
-              {operator.meta.travelTime}
+            <EditableText as="span" label="Travel Time" path={['operators', operatorIndex, 'meta', 'travelTime']} value={asText(operatorMeta.travelTime)}>
+              {asText(operatorMeta.travelTime)}
             </EditableText>
           </p>
         </div>
@@ -127,9 +185,9 @@ function BargeOperatorSection({ operator, operatorIndex }) {
         <div className="car-barge-operator-media">
           {imageUrl ? (
             <EditableImage
-              alt={operator.image.alt}
+              alt={asText(operatorImage.alt) || operatorTitle}
               decoding="async"
-              image={operator.image}
+              image={operatorImage}
               path={['operators', operatorIndex, 'image']}
               loading="lazy"
               src={imageUrl}
@@ -138,24 +196,28 @@ function BargeOperatorSection({ operator, operatorIndex }) {
         </div>
 
         <div className="car-barge-operator-content">
-          {operator.schedules.map((schedule, scheduleIndex) => (
-            <ScheduleBlock
-              columns={schedule.columns}
-              key={scheduleIndex}
-              notes={schedule.notes}
-              pathPrefix={['operators', operatorIndex, 'schedules', scheduleIndex]}
-              title={schedule.title}
-            />
-          ))}
+          {operatorSchedules.map((schedule, scheduleIndex) => {
+            const scheduleRecord = asObject(schedule)
+
+            return (
+              <ScheduleBlock
+                columns={scheduleRecord.columns}
+                key={scheduleIndex}
+                notes={scheduleRecord.notes}
+                pathPrefix={['operators', operatorIndex, 'schedules', scheduleIndex]}
+                title={scheduleRecord.title}
+              />
+            )
+          })}
 
           <RatesBlock
-            footer={operator.rates.footer}
-            heading={operator.rates.heading}
-            link={operator.rates}
-            linkLabel={operator.rates.linkLabel}
+            footer={operatorRates.footer}
+            heading={operatorRates.heading}
+            link={operatorRates}
+            linkLabel={operatorRates.linkLabel}
             pathPrefix={['operators', operatorIndex, 'rates']}
-            rows={operator.rates.rows}
-            url={operator.rates.url}
+            rows={operatorRates.rows}
+            url={operatorRates.url}
           />
         </div>
       </div>
@@ -170,7 +232,20 @@ export function CarBargeInformationPage() {
     return <PageLoadingState />
   }
 
-  const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
+  const hero = asObject(page.hero)
+  const heroImage = asObject(hero.image)
+  const intro = asObject(page.intro)
+  const leftParagraphs = asArray(intro.leftParagraphs)
+  const rightParagraphs = asArray(intro.rightParagraphs)
+  const portAuthorityFees = asArray(intro.portAuthorityFees)
+  const referenceLink = asObject(intro.referenceLink)
+  const referenceHref = asText(referenceLink.href)
+  const referenceLabel = asText(referenceLink.label) || (referenceHref ? 'Link for information is here.' : '')
+  const operators = asArray(page.operators)
+  const note = asText(page.note)
+  const heroTitle = asText(hero.title) || asText(page.title) || 'Car Barge Information'
+  const heroImageUrl = getContentImageSrc(heroImage, { width: 1920, height: 720 })
+  const firstLeftParagraph = asText(leftParagraphs[0])
 
   return (
     <article className="car-barge-page">
@@ -178,18 +253,18 @@ export function CarBargeInformationPage() {
         <div className="car-barge-hero-media">
           {heroImageUrl ? (
             <EditableImage
-              alt={page.hero.image.alt || page.hero.title}
+              alt={asText(heroImage.alt) || heroTitle}
               decoding="async"
               fetchPriority="high"
-              image={page.hero.image}
+              image={heroImage}
               path={['hero', 'image']}
               src={heroImageUrl}
             />
           ) : null}
         </div>
 
-        <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={page.hero.title}>
-          {page.hero.title}
+        <EditableText as="h1" label="Hero Title" multiline path={['hero', 'title']} rows={3} value={heroTitle}>
+          {heroTitle}
         </EditableText>
       </section>
 
@@ -197,65 +272,83 @@ export function CarBargeInformationPage() {
         <section className="car-barge-intro">
           <div className="car-barge-intro-grid">
             <div className="car-barge-intro-copy">
-              <EditableText as="p" label="Left Paragraph 1" multiline path={['intro', 'leftParagraphs', 0]} rows={5} value={page.intro.leftParagraphs[0]}>
-                {page.intro.leftParagraphs[0]}
+              <EditableText as="p" label="Left Paragraph 1" multiline path={['intro', 'leftParagraphs', 0]} rows={5} value={firstLeftParagraph}>
+                {firstLeftParagraph}
               </EditableText>
 
               <div className="car-barge-fee-list">
-                {page.intro.portAuthorityFees.map((fee, feeIndex) => (
-                  <div className="car-barge-fee-row" key={feeIndex}>
-                    <EditableText as="span" label={`Port Fee ${feeIndex + 1} Label`} path={['intro', 'portAuthorityFees', feeIndex, 'label']} value={fee.label}>
-                      {fee.label}
-                    </EditableText>
-                    <EditableText as="span" label={`Port Fee ${feeIndex + 1} Value`} path={['intro', 'portAuthorityFees', feeIndex, 'value']} value={fee.value}>
-                      {fee.value}
-                    </EditableText>
-                  </div>
-                ))}
+                {portAuthorityFees.map((fee, feeIndex) => {
+                  const feeRecord = asObject(fee)
+                  const feeLabel = asText(feeRecord.label)
+                  const feeValue = asText(feeRecord.value)
+
+                  return (
+                    <div className="car-barge-fee-row" key={feeIndex}>
+                      <EditableText as="span" label={`Port Fee ${feeIndex + 1} Label`} path={['intro', 'portAuthorityFees', feeIndex, 'label']} value={feeLabel}>
+                        {feeLabel}
+                      </EditableText>
+                      <EditableText as="span" label={`Port Fee ${feeIndex + 1} Value`} path={['intro', 'portAuthorityFees', feeIndex, 'value']} value={feeValue}>
+                        {feeValue}
+                      </EditableText>
+                    </div>
+                  )
+                })}
               </div>
 
-              {page.intro.leftParagraphs.slice(1).map((paragraph, index) => (
-                <EditableText as="p" key={index} label={`Left Paragraph ${index + 2}`} multiline path={['intro', 'leftParagraphs', index + 1]} rows={5} value={paragraph}>
-                  {paragraph}
-                </EditableText>
-              ))}
+              {leftParagraphs.slice(1).map((paragraph, index) => {
+                const paragraphText = asText(paragraph)
+
+                return (
+                  <EditableText as="p" key={index} label={`Left Paragraph ${index + 2}`} multiline path={['intro', 'leftParagraphs', index + 1]} rows={5} value={paragraphText}>
+                    {paragraphText}
+                  </EditableText>
+                )
+              })}
             </div>
 
             <div className="car-barge-intro-copy">
-              {page.intro.rightParagraphs.map((paragraph, index) => (
-                <EditableText as="p" key={index} label={`Right Paragraph ${index + 1}`} multiline path={['intro', 'rightParagraphs', index]} rows={5} value={paragraph}>
-                  {paragraph}
-                </EditableText>
-              ))}
+              {rightParagraphs.map((paragraph, index) => {
+                const paragraphText = asText(paragraph)
 
-              <p>
-                VI Now has more information.{' '}
-                <EditableLink
-                  className="car-barge-inline-link"
-                  destination={page.intro.referenceLink.href}
-                  destinationLabel="Reference Link"
-                  destinationPath={['intro', 'referenceLink', 'href']}
-                  external
-                  link={page.intro.referenceLink}
-                  linkPath={['intro', 'referenceLink']}
-                  label={page.intro.referenceLink.label}
-                  labelLabel="Reference Label"
-                  labelPath={['intro', 'referenceLink', 'label']}
-                />
-              </p>
+                return (
+                  <EditableText as="p" key={index} label={`Right Paragraph ${index + 1}`} multiline path={['intro', 'rightParagraphs', index]} rows={5} value={paragraphText}>
+                    {paragraphText}
+                  </EditableText>
+                )
+              })}
+
+              {referenceHref || referenceLabel ? (
+                <p>
+                  VI Now has more information.{' '}
+                  <EditableLink
+                    className="car-barge-inline-link"
+                    destination={referenceHref}
+                    destinationLabel="Reference Link"
+                    destinationPath={['intro', 'referenceLink', 'href']}
+                    external
+                    link={referenceLink}
+                    linkPath={['intro', 'referenceLink']}
+                    label={referenceLabel}
+                    labelLabel="Reference Label"
+                    labelPath={['intro', 'referenceLink', 'label']}
+                  />
+                </p>
+              ) : null}
             </div>
           </div>
         </section>
 
-        {page.operators.map((operator, operatorIndex) => (
+        {operators.map((operator, operatorIndex) => (
           <BargeOperatorSection key={operatorIndex} operator={operator} operatorIndex={operatorIndex} />
         ))}
 
-        <section className="car-barge-note">
-          <EditableText as="p" label="Page Note" multiline path={['note']} rows={4} value={page.note}>
-            <strong>{page.note.split(':')[0]}:</strong> {page.note.split(':').slice(1).join(':').trim()}
-          </EditableText>
-        </section>
+        {note ? (
+          <section className="car-barge-note">
+            <EditableText as="p" label="Page Note" multiline path={['note']} rows={4} value={note}>
+              {note}
+            </EditableText>
+          </section>
+        ) : null}
       </div>
     </article>
   )

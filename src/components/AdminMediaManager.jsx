@@ -235,6 +235,84 @@ function buildDuplicateUploadPrompt(duplicates = []) {
     .join('\n')
 }
 
+function normalizeGuardrailPromptValue(value) {
+  return String(value ?? '').trim()
+}
+
+function requestTypedGuardrailConfirmation({ message, requiredText }) {
+  const expectedText = normalizeGuardrailPromptValue(requiredText)
+
+  if (!expectedText || typeof window === 'undefined' || typeof window.prompt !== 'function') {
+    return { canceled: true, confirmed: false }
+  }
+
+  const response = window.prompt(`${message}\n\nType ${expectedText} to confirm deletion.`)
+
+  if (response === null) {
+    return { canceled: true, confirmed: false }
+  }
+
+  return {
+    canceled: false,
+    confirmed: normalizeGuardrailPromptValue(response) === expectedText,
+  }
+}
+
+function getMediaDeletePromptLabel(entry, index = 0) {
+  return getMediaDisplayName(entry) || String(entry?.fileName ?? '').trim() || `Image ${index + 1}`
+}
+
+function buildImageDeleteGuardrailPrompt(entries = []) {
+  const deletableEntries = entries.filter((entry) => entry?.id)
+  const imageCount = deletableEntries.length
+  const previewLines = deletableEntries.slice(0, 6).map((entry, index) => {
+    const folderLabel = String(entry?.folderPath ?? '').trim()
+
+    return `- ${getMediaDeletePromptLabel(entry, index)}${folderLabel ? ` (${folderLabel})` : ''}`
+  })
+  const hiddenCount = Math.max(imageCount - previewLines.length, 0)
+  const referenceLabel = imageCount === 1 ? 'it' : 'them'
+  const storedFileLabel = imageCount === 1 ? 'the stored file' : 'the stored files'
+
+  return {
+    message: [
+      `Delete ${formatItemCountLabel(imageCount, 'image')} from the media library?`,
+      `This permanently removes ${storedFileLabel} and can break pages that still reference ${referenceLabel}.`,
+      imageCount === 1 ? 'Image:' : 'Images:',
+      ...previewLines,
+      hiddenCount > 0 ? `- ${hiddenCount} more image${hiddenCount === 1 ? '' : 's'} not shown` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    requiredText: imageCount === 1 ? 'DELETE' : `DELETE ${imageCount}`,
+  }
+}
+
+function buildFolderDeleteGuardrailPrompt(folder, descendantFolderCount = 0) {
+  const folderName = String(folder?.name ?? '').trim() || 'selected folder'
+  const folderPath = String(folder?.path ?? '').trim()
+  const imageCount = Number(folder?.itemCount ?? 0) || 0
+  const nestedFolderCount = Number(descendantFolderCount ?? 0) || 0
+  const contentsLabel = [
+    formatItemCountLabel(imageCount, 'image'),
+    nestedFolderCount > 0 ? formatItemCountLabel(nestedFolderCount, 'nested folder') : '',
+  ]
+    .filter(Boolean)
+    .join(' and ')
+
+  return {
+    message: [
+      `Delete the "${folderName}" folder?`,
+      `Path: ${folderPath}`,
+      `Contents: ${contentsLabel}.`,
+      'This permanently removes the folder, any nested folders, and all stored files inside it.',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+    requiredText: folderPath,
+  }
+}
+
 function buildSkippedDuplicateFeedback(skippedCount, { nothingUploaded = false } = {}) {
   if (skippedCount <= 0) {
     return ''
@@ -344,6 +422,20 @@ function matchesPathOrDescendant(candidatePath, rootPath) {
   }
 
   return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}/`)
+}
+
+function countDescendantFolders(folders = [], folderPath) {
+  const normalizedFolderPath = String(folderPath ?? '').trim()
+
+  if (!normalizedFolderPath) {
+    return 0
+  }
+
+  return folders.filter((folder) => {
+    const candidatePath = String(folder?.path ?? '').trim()
+
+    return candidatePath && candidatePath !== normalizedFolderPath && matchesPathOrDescendant(candidatePath, normalizedFolderPath)
+  }).length
 }
 
 function collectAncestorPaths(folderPath) {
@@ -1489,9 +1581,14 @@ export function AdminMediaManager({
       return
     }
 
-    const confirmationMessage = `Delete ${getMediaDisplayName(entry) || 'this image'} from the media library? This removes the stored file.`
+    const { message, requiredText } = buildImageDeleteGuardrailPrompt([entry])
+    const confirmation = requestTypedGuardrailConfirmation({ message, requiredText })
 
-    if (!window.confirm(confirmationMessage)) {
+    if (!confirmation.confirmed) {
+      if (!confirmation.canceled) {
+        setActionFeedback(`Deletion canceled. Type "${requiredText}" exactly to confirm.`)
+        setActionStatus('idle')
+      }
       return
     }
 
@@ -1525,9 +1622,14 @@ export function AdminMediaManager({
       return
     }
 
-    const confirmationMessage = `Delete ${formatItemCountLabel(selectedEntries.length, 'selected image')} from the media library? This removes the stored files.`
+    const { message, requiredText } = buildImageDeleteGuardrailPrompt(selectedEntries)
+    const confirmation = requestTypedGuardrailConfirmation({ message, requiredText })
 
-    if (!window.confirm(confirmationMessage)) {
+    if (!confirmation.confirmed) {
+      if (!confirmation.canceled) {
+        setActionFeedback(`Deletion canceled. Type "${requiredText}" exactly to confirm.`)
+        setActionStatus('idle')
+      }
       return
     }
 
@@ -1560,12 +1662,15 @@ export function AdminMediaManager({
       return
     }
 
-    const confirmationMessage = `Delete the "${folder.name}" folder and everything inside it (${formatItemCountLabel(
-      folder.itemCount,
-      'item',
-    )})? This cannot be undone.`
+    const descendantFolderCount = countDescendantFolders(libraryState.folders, folder.path)
+    const { message, requiredText } = buildFolderDeleteGuardrailPrompt(folder, descendantFolderCount)
+    const confirmation = requestTypedGuardrailConfirmation({ message, requiredText })
 
-    if (!window.confirm(confirmationMessage)) {
+    if (!confirmation.confirmed) {
+      if (!confirmation.canceled) {
+        setActionFeedback(`Folder deletion canceled. Type "${requiredText}" exactly to confirm.`)
+        setActionStatus('idle')
+      }
       return
     }
 

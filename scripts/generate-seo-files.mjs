@@ -5,6 +5,9 @@ import {
   CANONICAL_PATH_ALIASES,
   DEFAULT_SITE_DESCRIPTION,
   DEFAULT_SOCIAL_IMAGE,
+  DEFAULT_SOCIAL_IMAGE_HEIGHT,
+  DEFAULT_SOCIAL_IMAGE_TYPE,
+  DEFAULT_SOCIAL_IMAGE_WIDTH,
   SITE_NAME,
   SITE_ORIGIN,
   STATIC_SEO_ROUTES,
@@ -313,6 +316,7 @@ function buildPrerenderHead(route) {
   const description = normalizeText(route.description) || DEFAULT_SITE_DESCRIPTION
   const imageUrl = getImageUrl(route.image) || DEFAULT_SOCIAL_IMAGE
   const imageAlt = route.imageAlt || SITE_NAME
+  const usesDefaultSocialImage = imageUrl === toAbsoluteUrl(DEFAULT_SOCIAL_IMAGE)
   const robots = route.robots || 'index, follow'
   const structuredData = buildStructuredData(route)
 
@@ -328,13 +332,25 @@ function buildPrerenderHead(route) {
     `    <meta property="og:description" content="${htmlEscape(description)}" data-seo-prerender="true" />`,
     `    <meta property="og:url" content="${htmlEscape(route.canonicalUrl)}" data-seo-prerender="true" />`,
     `    <meta property="og:image" content="${htmlEscape(imageUrl)}" data-seo-prerender="true" />`,
+    `    <meta property="og:image:secure_url" content="${htmlEscape(imageUrl)}" data-seo-prerender="true" />`,
     `    <meta property="og:image:alt" content="${htmlEscape(imageAlt)}" data-seo-prerender="true" />`,
+    usesDefaultSocialImage
+      ? `    <meta property="og:image:width" content="${DEFAULT_SOCIAL_IMAGE_WIDTH}" data-seo-prerender="true" />`
+      : '',
+    usesDefaultSocialImage
+      ? `    <meta property="og:image:height" content="${DEFAULT_SOCIAL_IMAGE_HEIGHT}" data-seo-prerender="true" />`
+      : '',
+    usesDefaultSocialImage
+      ? `    <meta property="og:image:type" content="${htmlEscape(DEFAULT_SOCIAL_IMAGE_TYPE)}" data-seo-prerender="true" />`
+      : '',
     '    <meta name="twitter:card" content="summary_large_image" data-seo-prerender="true" />',
     `    <meta name="twitter:title" content="${htmlEscape(title)}" data-seo-prerender="true" />`,
     `    <meta name="twitter:description" content="${htmlEscape(description)}" data-seo-prerender="true" />`,
     `    <meta name="twitter:image" content="${htmlEscape(imageUrl)}" data-seo-prerender="true" />`,
     `    <script type="application/ld+json" data-seo-prerender="true">${escapeJsonForScript(structuredData)}</script>`,
-  ].join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 function injectPrerenderHead(baseHtml, route) {

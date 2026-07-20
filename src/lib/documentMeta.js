@@ -3,6 +3,9 @@ import { richTextValueToPlainText } from './richTextValue'
 import {
   DEFAULT_SITE_DESCRIPTION,
   DEFAULT_SOCIAL_IMAGE,
+  DEFAULT_SOCIAL_IMAGE_HEIGHT,
+  DEFAULT_SOCIAL_IMAGE_TYPE,
+  DEFAULT_SOCIAL_IMAGE_WIDTH,
   SITE_NAME,
   buildCanonicalUrl,
   buildSeoTitle,
@@ -83,7 +86,11 @@ function applyActiveDocumentMetaEntry() {
   setPropertyMeta('og:description', documentDescription)
   setPropertyMeta('og:url', canonicalUrl)
   setPropertyMeta('og:image', imageUrl)
+  setPropertyMeta('og:image:secure_url', imageUrl)
   setPropertyMeta('og:image:alt', imageAlt)
+  setOptionalPropertyMeta('og:image:width', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_WIDTH : '')
+  setOptionalPropertyMeta('og:image:height', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_HEIGHT : '')
+  setOptionalPropertyMeta('og:image:type', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_TYPE : '')
   setNamedMeta('twitter:card', 'summary_large_image')
   setNamedMeta('twitter:title', documentTitle)
   setNamedMeta('twitter:description', documentDescription)
@@ -114,6 +121,10 @@ function getMetaImageUrl(image) {
   }
 
   return toAbsoluteUrl(image?.url || image?.src)
+}
+
+function isDefaultSocialImageUrl(imageUrl) {
+  return toAbsoluteUrl(imageUrl) === toAbsoluteUrl(DEFAULT_SOCIAL_IMAGE)
 }
 
 function getOrCreateHeadElement(selector, createElement) {
@@ -153,6 +164,18 @@ function setPropertyMeta(property, content) {
   })
 
   tag?.setAttribute('content', normalizedContent)
+}
+
+function setOptionalPropertyMeta(property, content) {
+  const normalizedContent = normalizeMetaText(content)
+  const tag = document.querySelector(`meta[property="${property}"]`)
+
+  if (!normalizedContent) {
+    tag?.remove()
+    return
+  }
+
+  setPropertyMeta(property, normalizedContent)
 }
 
 function setCanonicalUrl(canonicalUrl) {
