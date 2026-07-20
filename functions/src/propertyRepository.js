@@ -420,10 +420,13 @@ function normalizeImageAsset(asset) {
     url: String(asset.url).trim(),
     alt: String(asset.alt ?? '').trim(),
     title: String(asset.title ?? '').trim(),
+    fileName: String(asset.fileName ?? '').trim(),
     width: asset.width ?? null,
     height: asset.height ?? null,
+    originalFileName: String(asset.originalFileName ?? '').trim(),
     originalWidth: asset.originalWidth ?? null,
     originalHeight: asset.originalHeight ?? null,
+    storagePath: String(asset.storagePath ?? '').trim(),
   }
 }
 

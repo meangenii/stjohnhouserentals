@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getAdminIdToken } from '../lib/adminAuth'
@@ -50,6 +50,9 @@ const AIR_CONDITIONING_FILTER_OPTIONS = [
   { value: 'whole-house', label: 'Whole House' },
 ]
 
+const AIR_CONDITIONING_FILTER_VALUES = new Set(AIR_CONDITIONING_FILTER_OPTIONS.map((option) => option.value))
+const RENTAL_ACCOMMODATIONS_PATH = '/for-rent'
+
 const BEDROOM_AIR_CONDITIONING_PATTERN =
   /\b(?:air[-\s]?condition(?:ed|ing)\s+bedrooms?|bedrooms?\s+(?:with\s+)?(?:air[-\s]?condition(?:ed|ing)|a\/c|ac)\b|(?:a\/c|ac)\s+bedrooms?)\b/i
 
@@ -93,6 +96,61 @@ function getAirConditioningType(lines = []) {
   return ''
 }
 
+function normalizeAmenityFilterIds(values = []) {
+  const valueSet = new Set(
+    values
+      .flatMap((value) => String(value ?? '').split(','))
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )
+
+  return AMENITY_FILTERS.map((filter) => filter.id).filter((amenityId) => valueSet.has(amenityId))
+}
+
+function parseRentalFilterSearchParams(searchParams) {
+  const roomCount = Number.parseInt(searchParams.get('rooms') ?? '', 10)
+  const airConditioningType = searchParams.get('ac') ?? ''
+
+  return {
+    selectedRoomCount: Number.isInteger(roomCount) && roomCount > 0 ? roomCount : null,
+    selectedAmenities: normalizeAmenityFilterIds([...searchParams.getAll('amenity'), searchParams.get('amenities') ?? '']),
+    selectedAirConditioningType: AIR_CONDITIONING_FILTER_VALUES.has(airConditioningType) ? airConditioningType : '',
+    selectedLocation: normalizePropertyLocationFilterValue(searchParams.get('location') ?? ''),
+  }
+}
+
+function buildRentalFilterSearchParams({ selectedRoomCount, selectedAmenities, selectedAirConditioningType, selectedLocation }) {
+  const nextSearchParams = new URLSearchParams()
+
+  if (Number.isInteger(selectedRoomCount) && selectedRoomCount > 0) {
+    nextSearchParams.set('rooms', String(selectedRoomCount))
+  }
+
+  const amenityIds = normalizeAmenityFilterIds(selectedAmenities)
+
+  if (amenityIds.length > 0) {
+    nextSearchParams.set('amenities', amenityIds.join(','))
+  }
+
+  if (AIR_CONDITIONING_FILTER_VALUES.has(selectedAirConditioningType)) {
+    nextSearchParams.set('ac', selectedAirConditioningType)
+  }
+
+  const locationValue = normalizePropertyLocationFilterValue(selectedLocation)
+
+  if (locationValue) {
+    nextSearchParams.set('location', locationValue)
+  }
+
+  return nextSearchParams
+}
+
+function buildRentalAccommodationsReturnPath(filters) {
+  const filterSearch = buildRentalFilterSearchParams(filters).toString()
+
+  return filterSearch ? `${RENTAL_ACCOMMODATIONS_PATH}?${filterSearch}` : RENTAL_ACCOMMODATIONS_PATH
+}
+
 function buildCardFromProperty(property) {
   const summaryLines = getShortDescriptionLines(property.shortDescription)
   const amenityLines = getAmenityLines(property.amenitiesHtml)
@@ -122,17 +180,16 @@ function formatRoomFilterLabel(roomCount) {
   return `${roomCount} Room${roomCount === 1 ? '' : 's'}`
 }
 
-function RentalAccommodationCard({ card, filteredPropertyOrder }) {
+function RentalAccommodationCard({ card, propertyNavigationState }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const visibleSummaryLines = isExpanded ? card.summaryLines : card.summaryLines.slice(0, 3)
-  const navigationState = { filteredPropertyOrder }
 
   return (
     <article className="rental-accommodations-card">
       <Link
         aria-label={card.name}
         className="rental-accommodations-card-media"
-        state={navigationState}
+        state={propertyNavigationState}
         to={card.path}
       >
         {card.imageUrl ? (
@@ -172,7 +229,7 @@ function RentalAccommodationCard({ card, filteredPropertyOrder }) {
           <div className="rental-accommodations-card-toggle-spacer" aria-hidden="true" />
         )}
 
-        <Link className="rental-accommodations-card-action" state={navigationState} to={card.path}>
+        <Link className="rental-accommodations-card-action" state={propertyNavigationState} to={card.path}>
           Learn More
         </Link>
       </div>
@@ -183,11 +240,12 @@ function RentalAccommodationCard({ card, filteredPropertyOrder }) {
 export function RentalAccommodationsPage() {
   const page = useStructuredPageContent('rentalAccommodations')
   const { isAdmin, status: adminSessionStatus } = useAdminSession({ immediate: true })
+  const [searchParams, setSearchParams] = useSearchParams()
+  const currentFilterSearch = searchParams.toString()
+  const activeRentalFilters = parseRentalFilterSearchParams(searchParams)
+  const canonicalFilterSearch = buildRentalFilterSearchParams(activeRentalFilters).toString()
   const [summaryState, setSummaryState] = useState({ status: 'loading', properties: [] })
-  const [selectedRoomCount, setSelectedRoomCount] = useState(null)
-  const [selectedAmenities, setSelectedAmenities] = useState([])
-  const [selectedAirConditioningType, setSelectedAirConditioningType] = useState('')
-  const [selectedLocation, setSelectedLocation] = useState('')
+  const { selectedRoomCount, selectedAmenities, selectedAirConditioningType, selectedLocation } = activeRentalFilters
   const roomFilterId = 'rental-room-filter'
   const airConditioningFilterId = 'rental-air-conditioning-filter'
   const locationFilterId = 'rental-location-filter'
@@ -232,6 +290,22 @@ export function RentalAccommodationsPage() {
   }
 
   const filteredPropertyOrder = cards.map((card) => ({ slug: card.slug, name: card.name, path: card.path }))
+  const propertyReturnPath = buildRentalAccommodationsReturnPath(activeRentalFilters)
+  const propertyNavigationState = {
+    filteredPropertyOrder,
+    propertyReturnPath,
+  }
+
+  useEffect(() => {
+    if (currentFilterSearch === canonicalFilterSearch) {
+      return
+    }
+
+    setSearchParams(canonicalFilterSearch ? new URLSearchParams(canonicalFilterSearch) : {}, {
+      preventScrollReset: true,
+      replace: true,
+    })
+  }, [canonicalFilterSearch, currentFilterSearch, setSearchParams])
 
   useEffect(() => {
     let cancelled = false
@@ -269,11 +343,23 @@ export function RentalAccommodationsPage() {
 
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
 
+  function setRentalFilters(nextFilters) {
+    const nextFilterSearch = buildRentalFilterSearchParams(nextFilters).toString()
+
+    setSearchParams(nextFilterSearch ? new URLSearchParams(nextFilterSearch) : {}, {
+      preventScrollReset: true,
+      replace: true,
+    })
+  }
+
   function toggleAmenity(amenityId) {
-    setSelectedAmenities((currentAmenities) =>
-      currentAmenities.includes(amenityId)
-        ? currentAmenities.filter((currentAmenityId) => currentAmenityId !== amenityId)
-        : [...currentAmenities, amenityId],
+    setRentalFilters(
+      {
+        ...activeRentalFilters,
+        selectedAmenities: selectedAmenities.includes(amenityId)
+          ? selectedAmenities.filter((currentAmenityId) => currentAmenityId !== amenityId)
+          : [...selectedAmenities, amenityId],
+      },
     )
   }
 
@@ -314,7 +400,10 @@ export function RentalAccommodationsPage() {
                       value={selectedRoomCount ?? ''}
                       onChange={(event) => {
                         const nextValue = Number.parseInt(event.target.value, 10)
-                        setSelectedRoomCount(Number.isInteger(nextValue) ? nextValue : null)
+                        setRentalFilters({
+                          ...activeRentalFilters,
+                          selectedRoomCount: Number.isInteger(nextValue) ? nextValue : null,
+                        })
                       }}
                     >
                       <option value="">All Rooms</option>
@@ -334,7 +423,12 @@ export function RentalAccommodationsPage() {
                       disabled={filtersDisabled}
                       id={airConditioningFilterId}
                       value={selectedAirConditioningType}
-                      onChange={(event) => setSelectedAirConditioningType(event.target.value)}
+                      onChange={(event) =>
+                        setRentalFilters({
+                          ...activeRentalFilters,
+                          selectedAirConditioningType: event.target.value,
+                        })
+                      }
                     >
                       <option value="">Air Conditioning</option>
                       {AIR_CONDITIONING_FILTER_OPTIONS.map((option) => (
@@ -369,7 +463,12 @@ export function RentalAccommodationsPage() {
                       disabled={filtersDisabled}
                       id={locationFilterId}
                       value={selectedLocation}
-                      onChange={(event) => setSelectedLocation(event.target.value)}
+                      onChange={(event) =>
+                        setRentalFilters({
+                          ...activeRentalFilters,
+                          selectedLocation: event.target.value,
+                        })
+                      }
                     >
                       <option value="">All Locations</option>
                       {locationOptions.map((option) => (
@@ -388,7 +487,7 @@ export function RentalAccommodationsPage() {
             cards.length ? (
               <div className="rental-accommodations-grid">
                 {cards.map((card) => (
-                  <RentalAccommodationCard card={card} filteredPropertyOrder={filteredPropertyOrder} key={card.path} />
+                  <RentalAccommodationCard card={card} key={card.path} propertyNavigationState={propertyNavigationState} />
                 ))}
               </div>
             ) : (

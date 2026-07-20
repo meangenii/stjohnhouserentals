@@ -185,7 +185,13 @@ function InlineToolbarButton({ active = false, children, disabled, onClick }) {
 }
 
 function isEmptyHtmlValue(value = '') {
-  return String(value ?? '')
+  const sourceHtml = String(value ?? '')
+
+  if (/<\s*table\b/i.test(sourceHtml)) {
+    return false
+  }
+
+  return sourceHtml
     .replace(/<br\s*\/?>/gi, '')
     .replace(/&nbsp;/gi, ' ')
     .replace(/<[^>]+>/g, '')

@@ -21,17 +21,107 @@ import { AdminLinkFields } from './AdminLinkFields'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
 import { RichTextFontSizeInput } from './RichTextFontSizeInput'
 
-function ToolbarButton({ active = false, children, disabled, onClick }) {
+function ToolbarButton({ active = false, children, disabled, icon = null, onClick }) {
+  const label = typeof children === 'string' ? children : undefined
+
   return (
     <button
-      className={`button-link button-link--ghost admin-rich-text-button ${active ? 'admin-rich-text-button--active' : ''}`.trim()}
+      aria-label={icon ? label : undefined}
+      className={`button-link button-link--ghost admin-rich-text-button ${icon ? 'admin-rich-text-button--icon' : ''} ${
+        active ? 'admin-rich-text-button--active' : ''
+      }`.trim()}
       disabled={disabled}
+      title={icon ? label : undefined}
       type="button"
       onClick={onClick}
       onMouseDown={(event) => event.preventDefault()}
     >
-      {children}
+      {icon ?? children}
     </button>
+  )
+}
+
+function BoldGlyphIcon() {
+  return (
+    <span aria-hidden="true" className="admin-rich-text-glyph admin-rich-text-glyph--bold">
+      B
+    </span>
+  )
+}
+
+function ItalicGlyphIcon() {
+  return (
+    <span aria-hidden="true" className="admin-rich-text-glyph admin-rich-text-glyph--italic">
+      I
+    </span>
+  )
+}
+
+function UnderlineGlyphIcon() {
+  return (
+    <span aria-hidden="true" className="admin-rich-text-glyph admin-rich-text-glyph--underline">
+      U
+    </span>
+  )
+}
+
+function BulletListIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <circle cx="3" cy="5" fill="currentColor" r="1.3" />
+      <circle cx="3" cy="10" fill="currentColor" r="1.3" />
+      <circle cx="3" cy="15" fill="currentColor" r="1.3" />
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="5" y2="5" />
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="10" y2="10" />
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="15" y2="15" />
+    </svg>
+  )
+}
+
+function NumberedListIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20">
+      <text fill="currentColor" fontSize="6" fontWeight="700" x="0.5" y="7">
+        1
+      </text>
+      <text fill="currentColor" fontSize="6" fontWeight="700" x="0.5" y="12">
+        2
+      </text>
+      <text fill="currentColor" fontSize="6" fontWeight="700" x="0.5" y="17">
+        3
+      </text>
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="5" y2="5" />
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="10" y2="10" />
+      <line stroke="currentColor" strokeLinecap="round" strokeWidth="1.6" x1="7.5" x2="17.5" y1="15" y2="15" />
+    </svg>
+  )
+}
+
+function LinkIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 20 20">
+      <path d="M8 12l4-4" />
+      <path d="M9 6.5l1.2-1.2a3 3 0 0 1 4.2 4.2L13 10.7" />
+      <path d="M11 13.5l-1.2 1.2a3 3 0 0 1-4.2-4.2L6.8 9.3" />
+    </svg>
+  )
+}
+
+function ClearFormatIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 20 20">
+      <path d="M4 12.5l6-6 5 5-3 3H7l-3-2Z" />
+      <path d="M3 16h9" />
+    </svg>
+  )
+}
+
+function LineBreakIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 20 20">
+      <path d="M16 5v5H7" />
+      <path d="M10 7.5 7 10l3 2.5" />
+    </svg>
   )
 }
 
@@ -57,10 +147,92 @@ function ensureDefaultParagraphSeparator() {
   }
 }
 
+function getSelectedTableCellElement(root) {
+  if (!root || typeof window === 'undefined') {
+    return null
+  }
+
+  const selection = window.getSelection()
+
+  if (!selection || selection.rangeCount === 0) {
+    return null
+  }
+
+  let node = selection.getRangeAt(0).commonAncestorContainer
+
+  if (node.nodeType === Node.TEXT_NODE) {
+    node = node.parentElement
+  }
+
+  const cell = node instanceof Element ? node.closest('td, th') : null
+  return cell && root.contains(cell) ? cell : null
+}
+
 function readEditorSelectionState(editor) {
   return {
     ...readRichTextSelectionState(editor, { defaultBlockTag: 'p' }),
+    tableCell: Boolean(getSelectedTableCellElement(editor)),
     tightenedLines: isTightenedBlockSelection(editor),
+  }
+}
+
+const RICH_TEXT_CONTENT_MODE_CONFIGS = {
+  block: {
+    blockFormatting: true,
+    clearFormatting: true,
+    fontSize: true,
+    lineBreaks: true,
+    lineTightening: true,
+    links: true,
+    lists: true,
+    sourceMode: false,
+    spacingHelp: true,
+    tables: true,
+  },
+  inline: {
+    blockFormatting: false,
+    clearFormatting: true,
+    fontSize: true,
+    lineBreaks: true,
+    lineTightening: false,
+    links: true,
+    lists: false,
+    sourceMode: false,
+    spacingHelp: false,
+    tables: false,
+  },
+  lines: {
+    blockFormatting: false,
+    clearFormatting: true,
+    fontSize: true,
+    lineBreaks: true,
+    lineTightening: false,
+    links: true,
+    lists: false,
+    sourceMode: false,
+    spacingHelp: false,
+    tables: false,
+  },
+  paragraphs: {
+    blockFormatting: false,
+    clearFormatting: true,
+    fontSize: true,
+    lineBreaks: true,
+    lineTightening: false,
+    links: true,
+    lists: false,
+    sourceMode: false,
+    spacingHelp: false,
+    tables: false,
+  },
+}
+
+function getRichTextContentModeConfig(contentMode, allowSourceMode) {
+  const baseConfig = RICH_TEXT_CONTENT_MODE_CONFIGS[contentMode] ?? RICH_TEXT_CONTENT_MODE_CONFIGS.block
+
+  return {
+    ...baseConfig,
+    sourceMode: typeof allowSourceMode === 'boolean' ? allowSourceMode : baseConfig.sourceMode,
   }
 }
 
@@ -209,8 +381,10 @@ function getInsertedLinkText(renderConfig) {
 }
 
 export function AdminRichTextEditor({
+  allowSourceMode = undefined,
   collapsedFontSizeBehavior = 'selection',
   compact = false,
+  contentMode = 'block',
   disabled = false,
   headerActions = null,
   helperText = '',
@@ -243,6 +417,7 @@ export function AdminRichTextEditor({
     bold: false,
     fontSize: 'default',
     italic: false,
+    tableCell: false,
     tightenedLines: false,
     underline: false,
   }))
@@ -251,12 +426,14 @@ export function AdminRichTextEditor({
   const routeOptions = buildRouteOptions(Array.isArray(previewState?.routeInventory) ? previewState.routeInventory : [])
   const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
   const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
+  const contentModeConfig = getRichTextContentModeConfig(contentMode, allowSourceMode)
+  const activeMode = contentModeConfig.sourceMode ? mode : 'visual'
   const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
   const renderedValue = richTextValueToHtml(value)
   const lastPublishedHtmlRef = useRef(renderedValue)
 
   useLayoutEffect(() => {
-    if (mode !== 'visual' || !editorRef.current) {
+    if (activeMode !== 'visual' || !editorRef.current) {
       return
     }
 
@@ -282,10 +459,10 @@ export function AdminRichTextEditor({
     }
 
     lastPublishedHtmlRef.current = nextHtml
-  }, [mode, renderedValue])
+  }, [activeMode, renderedValue])
 
   useEffect(() => {
-    if (mode !== 'visual' || typeof document === 'undefined') {
+    if (activeMode !== 'visual' || typeof document === 'undefined') {
       return undefined
     }
 
@@ -315,7 +492,7 @@ export function AdminRichTextEditor({
     return () => {
       document.removeEventListener('selectionchange', updateSelectionState)
     }
-  }, [mode])
+  }, [activeMode])
 
   useEffect(() => {
     if (!linkEditorState || typeof document === 'undefined') {
@@ -346,7 +523,7 @@ export function AdminRichTextEditor({
   }, [linkEditorState])
 
   useLayoutEffect(() => {
-    if (!toolbarVisible || mode !== 'visual' || typeof window === 'undefined') {
+    if (!toolbarVisible || activeMode !== 'visual' || typeof window === 'undefined') {
       return undefined
     }
 
@@ -418,7 +595,7 @@ export function AdminRichTextEditor({
       window.removeEventListener('resize', scheduleToolbarLayoutUpdate)
       window.removeEventListener('scroll', scheduleToolbarLayoutUpdate, true)
     }
-  }, [mode, toolbarVisible])
+  }, [activeMode, toolbarVisible])
 
   function syncValue({ cleanDom = true } = {}) {
     const editor = editorRef.current
@@ -493,11 +670,11 @@ export function AdminRichTextEditor({
     lastPublishedHtmlRef.current = normalizedHtml
     onChange(normalizedHtml)
 
-    if (mode === 'visual' && editorRef.current && editorRef.current.innerHTML !== normalizedHtml) {
+    if (activeMode === 'visual' && editorRef.current && editorRef.current.innerHTML !== normalizedHtml) {
       editorRef.current.innerHTML = normalizedHtml
     }
 
-    if (mode === 'visual') {
+    if (activeMode === 'visual') {
       setSelectionState(readEditorSelectionState(editorRef.current))
     }
   }
@@ -617,26 +794,20 @@ export function AdminRichTextEditor({
   }
 
   function getSelectedTableCell() {
-    const editor = editorRef.current
+    return getSelectedTableCellElement(editorRef.current)
+  }
 
-    if (!editor || typeof window === 'undefined') {
-      return null
+  function insertTable() {
+    if (disabled || !focusEditorSelection()) {
+      return
     }
 
-    const selection = window.getSelection()
-
-    if (!selection || selection.rangeCount === 0) {
-      return null
-    }
-
-    let node = selection.getRangeAt(0).commonAncestorContainer
-
-    if (node.nodeType === Node.TEXT_NODE) {
-      node = node.parentElement
-    }
-
-    const cell = node instanceof Element ? node.closest('td, th') : null
-    return cell && editor.contains(cell) ? cell : null
+    document.execCommand(
+      'insertHTML',
+      false,
+      '<table><tbody><tr><th>Heading</th><th>Heading</th></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></tbody></table><p><br /></p>',
+    )
+    syncValue()
   }
 
   function addTableRow() {
@@ -657,6 +828,94 @@ export function AdminRichTextEditor({
     })
 
     currentRow.after(newRow)
+    syncValue()
+  }
+
+  function addTableColumn() {
+    if (disabled || !focusEditorSelection()) {
+      return
+    }
+
+    const cell = getSelectedTableCell()
+    const currentRow = cell?.closest('tr')
+    const table = cell?.closest('table')
+
+    if (!cell || !currentRow || !table) {
+      return
+    }
+
+    const cellIndex = Array.from(currentRow.children).indexOf(cell)
+
+    if (cellIndex < 0) {
+      return
+    }
+
+    Array.from(table.querySelectorAll('tr')).forEach((row) => {
+      const referenceCell = row.children[cellIndex] ?? row.lastElementChild
+      const tagName = referenceCell?.tagName?.toLowerCase() === 'th' ? 'th' : 'td'
+      const newCell = document.createElement(tagName)
+
+      newCell.innerHTML = '&nbsp;'
+
+      if (referenceCell) {
+        referenceCell.after(newCell)
+      } else {
+        row.append(newCell)
+      }
+    })
+
+    syncValue()
+  }
+
+  function removeTableRow() {
+    if (disabled || !focusEditorSelection()) {
+      return
+    }
+
+    const cell = getSelectedTableCell()
+    const currentRow = cell?.closest('tr')
+    const table = cell?.closest('table')
+
+    if (!currentRow || !table) {
+      return
+    }
+
+    currentRow.remove()
+
+    if (table.querySelectorAll('tr').length === 0) {
+      table.remove()
+    }
+
+    syncValue()
+  }
+
+  function removeTableColumn() {
+    if (disabled || !focusEditorSelection()) {
+      return
+    }
+
+    const cell = getSelectedTableCell()
+    const currentRow = cell?.closest('tr')
+    const table = cell?.closest('table')
+
+    if (!cell || !currentRow || !table) {
+      return
+    }
+
+    const cellIndex = Array.from(currentRow.children).indexOf(cell)
+
+    if (cellIndex < 0) {
+      return
+    }
+
+    Array.from(table.querySelectorAll('tr')).forEach((row) => {
+      row.children[cellIndex]?.remove()
+    })
+
+    if (!Array.from(table.querySelectorAll('tr')).some((row) => row.children.length > 0)) {
+      table.remove()
+    }
+
     syncValue()
   }
 
@@ -694,12 +953,12 @@ export function AdminRichTextEditor({
     }
 
     if (snippet?.insertStrategy === 'section') {
-      const sourceHtml = mode === 'visual' && editorRef.current ? editorRef.current.innerHTML : value
+      const sourceHtml = activeMode === 'visual' && editorRef.current ? editorRef.current.innerHTML : value
       publishHtmlValue(insertSectionSnippetHtml(sourceHtml, snippet, snippets))
       return
     }
 
-    if (mode === 'html') {
+    if (activeMode === 'html') {
       const normalizedValue = String(value ?? '').trim()
       const separator = normalizedValue ? '\n' : ''
       onChange(`${normalizedValue}${separator}${html}`.trim())
@@ -721,7 +980,7 @@ export function AdminRichTextEditor({
       return
     }
 
-    const pastedHtml = getClipboardRichTextHtml(event.clipboardData)
+    const pastedHtml = getClipboardRichTextHtml(event.clipboardData, { inline: !contentModeConfig.blockFormatting })
 
     if (!pastedHtml) {
       return
@@ -742,7 +1001,7 @@ export function AdminRichTextEditor({
       return
     }
 
-    const droppedHtml = getClipboardRichTextHtml(event.dataTransfer)
+    const droppedHtml = getClipboardRichTextHtml(event.dataTransfer, { inline: !contentModeConfig.blockFormatting })
 
     event.preventDefault()
 
@@ -767,7 +1026,7 @@ export function AdminRichTextEditor({
       return
     }
 
-    const pastedHtml = getClipboardRichTextHtml(event.clipboardData)
+    const pastedHtml = getClipboardRichTextHtml(event.clipboardData, { inline: !contentModeConfig.blockFormatting })
 
     if (!pastedHtml) {
       return
@@ -802,7 +1061,7 @@ export function AdminRichTextEditor({
     setToolbarVisible(false)
   }
 
-  const toolbarFloating = toolbarVisible && mode === 'visual' && toolbarLayout.floating
+  const toolbarFloating = toolbarVisible && activeMode === 'visual' && toolbarLayout.floating
   const toolbarStyle = toolbarFloating
     ? {
         left: `${toolbarLayout.left}px`,
@@ -823,18 +1082,20 @@ export function AdminRichTextEditor({
         {hideLabel ? null : <span>{label}</span>}
         <div className="admin-rich-text-header-actions">
           {headerActions}
-          <div className="admin-inline-actions">
-            <ToolbarButton disabled={disabled || mode === 'visual'} onClick={() => setMode('visual')}>
-              Visual
-            </ToolbarButton>
-            <ToolbarButton disabled={disabled || mode === 'html'} onClick={() => setMode('html')}>
-              HTML
-            </ToolbarButton>
-          </div>
+          {contentModeConfig.sourceMode ? (
+            <div className="admin-inline-actions">
+              <ToolbarButton disabled={disabled || mode === 'visual'} onClick={() => setMode('visual')}>
+                Visual
+              </ToolbarButton>
+              <ToolbarButton disabled={disabled || mode === 'html'} onClick={() => setMode('html')}>
+                Source
+              </ToolbarButton>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {mode === 'visual' ? (
+      {activeMode === 'visual' ? (
         <>
           <div
             ref={toolbarShellRef}
@@ -842,62 +1103,111 @@ export function AdminRichTextEditor({
             style={toolbarFloating ? { minHeight: `${toolbarLayout.height}px` } : undefined}
           >
             <div ref={toolbarRef} className="admin-rich-text-toolbar" style={toolbarStyle}>
-              <AdminRichTextMenu
+              {contentModeConfig.blockFormatting ? (
+                <AdminRichTextMenu
+                  disabled={disabled}
+                  label="Tag"
+                  onBeforeOpen={rememberSelection}
+                  onSelect={handleBlockTagChange}
+                  options={blockStyleOptions}
+                  value={selectionState.blockTag}
+                />
+              ) : null}
+              {contentModeConfig.fontSize ? (
+                <AdminRichTextMenu
+                  disabled={disabled}
+                  footer={<RichTextFontSizeInput disabled={disabled} onApply={handleFontSizeChange} />}
+                  label="Size"
+                  onBeforeOpen={rememberSelection}
+                  onSelect={handleFontSizeChange}
+                  options={fontSizeOptions}
+                  value={selectionState.fontSize}
+                />
+              ) : null}
+              <ToolbarButton
+                active={selectionState.bold}
                 disabled={disabled}
-                label="Tag"
-                onBeforeOpen={rememberSelection}
-                onSelect={handleBlockTagChange}
-                options={blockStyleOptions}
-                value={selectionState.blockTag}
-              />
-              <AdminRichTextMenu
-                disabled={disabled}
-                footer={<RichTextFontSizeInput disabled={disabled} onApply={handleFontSizeChange} />}
-                label="Size"
-                onBeforeOpen={rememberSelection}
-                onSelect={handleFontSizeChange}
-                options={fontSizeOptions}
-                value={selectionState.fontSize}
-              />
-              <ToolbarButton active={selectionState.bold} disabled={disabled} onClick={() => applyCommand('bold')}>
+                icon={<BoldGlyphIcon />}
+                onClick={() => applyCommand('bold')}
+              >
                 Bold
               </ToolbarButton>
-              <ToolbarButton active={selectionState.italic} disabled={disabled} onClick={() => applyCommand('italic')}>
+              <ToolbarButton
+                active={selectionState.italic}
+                disabled={disabled}
+                icon={<ItalicGlyphIcon />}
+                onClick={() => applyCommand('italic')}
+              >
                 Italic
               </ToolbarButton>
-              <ToolbarButton active={selectionState.underline} disabled={disabled} onClick={() => applyCommand('underline')}>
+              <ToolbarButton
+                active={selectionState.underline}
+                disabled={disabled}
+                icon={<UnderlineGlyphIcon />}
+                onClick={() => applyCommand('underline')}
+              >
                 Underline
               </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertHTML', '<br />')}>
-                Line Break
-              </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={tightenSelectedLines}>
-                {selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
-              </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertUnorderedList')}>
-                Bullets
-              </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={() => applyCommand('insertOrderedList')}>
-                Numbers
-              </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={addTableRow}>
-                Add Table Row
-              </ToolbarButton>
-              <ToolbarButton active={Boolean(linkEditorState)} disabled={disabled} onClick={openLinkEditor}>
-                Link
-              </ToolbarButton>
-              <ToolbarButton disabled={disabled} onClick={() => applyCommand('removeFormat')}>
-                Clear
-              </ToolbarButton>
+              {contentModeConfig.lineBreaks ? (
+                <ToolbarButton disabled={disabled} icon={<LineBreakIcon />} onClick={() => applyCommand('insertHTML', '<br />')}>
+                  Line Break
+                </ToolbarButton>
+              ) : null}
+              {contentModeConfig.lineTightening ? (
+                <ToolbarButton disabled={disabled} onClick={tightenSelectedLines}>
+                  {selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
+                </ToolbarButton>
+              ) : null}
+              {contentModeConfig.lists ? (
+                <>
+                  <ToolbarButton disabled={disabled} icon={<BulletListIcon />} onClick={() => applyCommand('insertUnorderedList')}>
+                    Bullet List
+                  </ToolbarButton>
+                  <ToolbarButton disabled={disabled} icon={<NumberedListIcon />} onClick={() => applyCommand('insertOrderedList')}>
+                    Numbered List
+                  </ToolbarButton>
+                </>
+              ) : null}
+              {contentModeConfig.tables ? (
+                <>
+                  <ToolbarButton disabled={disabled} onClick={insertTable}>
+                    Insert Table
+                  </ToolbarButton>
+                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={addTableRow}>
+                    Add Row
+                  </ToolbarButton>
+                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={addTableColumn}>
+                    Add Column
+                  </ToolbarButton>
+                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={removeTableRow}>
+                    Delete Row
+                  </ToolbarButton>
+                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={removeTableColumn}>
+                    Delete Column
+                  </ToolbarButton>
+                </>
+              ) : null}
+              {contentModeConfig.links ? (
+                <ToolbarButton active={Boolean(linkEditorState)} disabled={disabled} icon={<LinkIcon />} onClick={openLinkEditor}>
+                  Link
+                </ToolbarButton>
+              ) : null}
+              {contentModeConfig.clearFormatting ? (
+                <ToolbarButton disabled={disabled} icon={<ClearFormatIcon />} onClick={() => applyCommand('removeFormat')}>
+                  Clear Formatting
+                </ToolbarButton>
+              ) : null}
             </div>
           </div>
 
-          <p className="admin-note admin-rich-text-linebreak-hint">
-            Press <strong>Enter</strong> for a new paragraph (adds spacing). Press <strong>Shift+Enter</strong> or click{' '}
-            <strong>Line Break</strong> to start a new line without extra spacing. Select a few lines and click{' '}
-            <strong>Tighten Lines</strong> to remove extra spacing. Select tightened text and click <strong>Untighten Lines</strong>{' '}
-            to restore paragraph spacing.
-          </p>
+          {contentModeConfig.spacingHelp ? (
+            <p className="admin-note admin-rich-text-linebreak-hint">
+              Press <strong>Enter</strong> for a new paragraph (adds spacing). Press <strong>Shift+Enter</strong> or click{' '}
+              <strong>Line Break</strong> to start a new line without extra spacing. Select a few lines and click{' '}
+              <strong>Tighten Lines</strong> to remove extra spacing. Select tightened text and click <strong>Untighten Lines</strong>{' '}
+              to restore paragraph spacing.
+            </p>
+          ) : null}
 
           {linkEditorState ? (
             <div className="admin-rich-text-link-editor-shell" role="presentation">

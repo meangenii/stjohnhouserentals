@@ -293,6 +293,156 @@ export function splitBlockAtLineBreaks(block) {
   return nextBlocks
 }
 
+// Resolves a collapsed range's caret to the specific node it sits on/in, so it can be
+// matched against original (pre-clone) nodes during the recursive split below.
+function resolveCollapsedAnchorNode(range) {
+  const container = range.startContainer
+
+  if (container.nodeType === 3) {
+    return container
+  }
+
+  const index = Math.min(range.startOffset, Math.max(container.childNodes.length - 1, 0))
+  return container.childNodes[index] ?? container
+}
+
+function nodeIntersectsRange(node, range) {
+  const nodeRange = document.createRange()
+  nodeRange.selectNode(node)
+
+  return (
+    range.compareBoundaryPoints(Range.END_TO_START, nodeRange) === -1 &&
+    range.compareBoundaryPoints(Range.START_TO_END, nodeRange) === 1
+  )
+}
+
+// Same recursive grouping as splitNodesAtLineBreaks (splits at every <br>, including ones
+// nested inside inline wrappers like a font-size <span>, by cloning and re-splitting the
+// wrapper per line) - but alongside each cloned line it also flags whether the selection
+// touches that line, checked against the ORIGINAL (pre-clone) nodes so nesting depth can't
+// throw off the check.
+function splitNodesAtLineBreaksWithSelection(nodes, range, collapsedAnchorNode) {
+  const groups = [[]]
+  const selectedFlags = [false]
+
+  Array.from(nodes).forEach((node) => {
+    if (node.nodeName === 'BR') {
+      groups.push([])
+      selectedFlags.push(false)
+      return
+    }
+
+    if (node.querySelector?.('br')) {
+      const child = splitNodesAtLineBreaksWithSelection(node.childNodes, range, collapsedAnchorNode)
+
+      child.groups.forEach((childGroup, index) => {
+        if (index > 0) {
+          groups.push([])
+          selectedFlags.push(false)
+        }
+
+        if (childGroup.length === 0) {
+          return
+        }
+
+        const wrapper = node.cloneNode(false)
+        childGroup.forEach((childNode) => wrapper.append(childNode))
+        groups[groups.length - 1].push(wrapper)
+
+        if (child.selectedFlags[index]) {
+          selectedFlags[selectedFlags.length - 1] = true
+        }
+      })
+      return
+    }
+
+    groups[groups.length - 1].push(node.cloneNode(true))
+
+    const isMatch = range.collapsed
+      ? node === collapsedAnchorNode || node.contains(collapsedAnchorNode)
+      : nodeIntersectsRange(node, range)
+
+    if (isMatch) {
+      selectedFlags[selectedFlags.length - 1] = true
+    }
+  })
+
+  return { groups, selectedFlags }
+}
+
+function buildLineBlockFromGroup(block, nodes) {
+  const nextBlock = cloneBlockShell(block)
+
+  if (nodes.length > 0) {
+    nodes.forEach((node) => nextBlock.append(node))
+  } else {
+    nextBlock.append(document.createElement('br'))
+  }
+
+  return nextBlock
+}
+
+function buildJoinedBlockFromGroups(block, groupsSlice) {
+  const nextBlock = cloneBlockShell(block)
+
+  groupsSlice.forEach((nodes, index) => {
+    if (index > 0) {
+      nextBlock.append(document.createElement('br'))
+    }
+
+    nodes.forEach((node) => nextBlock.append(node))
+  })
+
+  return nextBlock
+}
+
+// Splits only the line(s) touched by the selection out of a <br>-joined block, leaving the
+// rest of the block's lines joined together exactly as they were - regardless of whether any
+// of the block's <br>s are nested inside inline formatting (bold, links, font-size spans).
+export function splitBlockAtLineBreaksInSelection(block, range) {
+  if (!blockHasLineBreak(block)) {
+    return []
+  }
+
+  const collapsedAnchorNode = range.collapsed ? resolveCollapsedAnchorNode(range) : null
+  const { groups, selectedFlags } = splitNodesAtLineBreaksWithSelection(block.childNodes, range, collapsedAnchorNode)
+
+  const selectedIndexes = selectedFlags.map((flag, index) => (flag ? index : -1)).filter((index) => index !== -1)
+
+  if (selectedIndexes.length === 0) {
+    // The selection couldn't be resolved to a specific line (e.g. a collapsed caret sitting
+    // exactly on a <br>) - isolate just the first line rather than blowing up the whole block.
+    selectedIndexes.push(0)
+  }
+
+  const minIndex = Math.min(...selectedIndexes)
+  const maxIndex = Math.max(...selectedIndexes)
+
+  const fragment = document.createDocumentFragment()
+  const nextBlocks = []
+
+  if (minIndex > 0) {
+    const beforeBlock = buildJoinedBlockFromGroups(block, groups.slice(0, minIndex))
+    fragment.append(beforeBlock)
+    nextBlocks.push(beforeBlock)
+  }
+
+  for (let index = minIndex; index <= maxIndex; index += 1) {
+    const lineBlock = buildLineBlockFromGroup(block, groups[index])
+    fragment.append(lineBlock)
+    nextBlocks.push(lineBlock)
+  }
+
+  if (maxIndex < groups.length - 1) {
+    const afterBlock = buildJoinedBlockFromGroups(block, groups.slice(maxIndex + 1))
+    fragment.append(afterBlock)
+    nextBlocks.push(afterBlock)
+  }
+
+  block.replaceWith(fragment)
+  return nextBlocks
+}
+
 // Whether the current selection sits entirely inside a single block that already
 // contains manual line breaks - i.e. whether "Tighten Lines" would currently act as
 // "Untighten Lines". Works with both a real text selection and a plain collapsed
@@ -310,9 +460,10 @@ export function isTightenedBlockSelection(root) {
 }
 
 // Applies "Tighten Lines" (merge 2+ selected blocks into one, joined by <br>) or
-// "Untighten Lines" (split a single <br>-joined block back into separate blocks),
-// picking whichever applies to the current selection. Returns true if it changed
-// anything, so the caller knows whether to sync/publish the new value.
+// "Untighten Lines" (split only the selected line(s) of a <br>-joined block back
+// out into separate blocks, leaving the rest of the block's lines joined), picking
+// whichever applies to the current selection. Returns true if it changed anything,
+// so the caller knows whether to sync/publish the new value.
 export function tightenOrUntightenSelectedLines(root) {
   const range = captureRichTextSelectionRange(root)
 
@@ -323,8 +474,7 @@ export function tightenOrUntightenSelectedLines(root) {
   const selectedBlocks = getSelectedBlockElements(root, range)
 
   if (selectedBlocks.length === 1 && blockHasLineBreak(selectedBlocks[0])) {
-    splitBlockAtLineBreaks(selectedBlocks[0])
-    return true
+    return splitBlockAtLineBreaksInSelection(selectedBlocks[0], range).length > 0
   }
 
   if (range.collapsed || selectedBlocks.length < 2) {

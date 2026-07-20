@@ -1,9 +1,18 @@
-import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
+import { EditableBackgroundSection, EditableImage, EditableText } from '../components/AdminInlinePageEdit'
 import { EditablePhoneText } from '../components/EditablePhoneText'
+import { buildPhoneHref, formatPhoneNumber } from '../lib/contactLinks'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { getImageDimensions } from '../lib/imageSizePresets'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { useStructuredPageContent } from '../lib/useSiteContent'
+
+function PhoneIcon() {
+  return (
+    <svg aria-hidden="true" className="st-john-car-rentals-card-icon" viewBox="0 0 24 24">
+      <path d="M7.2 3.5 4.8 4.6c-.8.4-1.2 1.3-1 2.2 1.1 6.6 6.4 11.9 13 13 .9.2 1.8-.2 2.2-1l1.1-2.4c.3-.7.1-1.5-.5-2l-3-2.2c-.6-.4-1.4-.3-1.9.2l-1.4 1.4a12.5 12.5 0 0 1-3.2-2.2A12.5 12.5 0 0 1 8 8.5l1.4-1.4c.5-.5.6-1.3.2-1.9l-2.2-3c-.5-.6-1.3-.8-2-.5Z" />
+    </svg>
+  )
+}
 
 function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
   return phones.map((phone, index) => (
@@ -17,6 +26,22 @@ function PhoneLinks({ pathPrefix, phones, separator = '/' }) {
       />
     </span>
   ))
+}
+
+// The company grid is a read-only render of the data managed in the admin "Car Rental Companies"
+// form list — no click-to-edit here, so this renders plain links instead of the Editable*
+// components used elsewhere on the page.
+function StaticPhoneLinks({ phones, separator = '/' }) {
+  return (phones ?? []).map((phone, index) => {
+    const href = buildPhoneHref(phone)
+
+    return (
+      <span key={index}>
+        {index > 0 ? separator : ''}
+        {href ? <a href={href}>{formatPhoneNumber(phone)}</a> : formatPhoneNumber(phone)}
+      </span>
+    )
+  })
 }
 
 function mergeImageFallback(fallbackImage, image) {
@@ -38,6 +63,10 @@ function getCarRentalImageSrc(image, fallbackOptions) {
   }
 
   return getContentImageSrc(image, fallbackOptions)
+}
+
+function getWebsiteThumbnailUrl(url, { width = 640, height = 480 } = {}) {
+  return `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=${width}&h=${height}`
 }
 
 export function StJohnCarRentalsPage() {
@@ -81,74 +110,10 @@ export function StJohnCarRentalsPage() {
         <div className="st-john-car-rentals-directory-inner">
           <div className="st-john-car-rentals-directory-grid">
             <div className="st-john-car-rentals-copy">
-              <EditableText as="h2" label="Directory Title" multiline path={['directory', 'title']} rows={3} value={page.directory.title}>
-                {page.directory.title}
-              </EditableText>
               <EditableText as="p" label="Intro Paragraph" multiline path={['directory', 'introParagraph']} rows={5} value={page.directory.introParagraph}>
                 {page.directory.introParagraph}
               </EditableText>
 
-              <div className="st-john-car-rentals-list">
-                {page.directory.companies.map((company, companyIndex) => (
-                  <p className="st-john-car-rentals-entry" key={companyIndex}>
-                    {company.website ? (
-                      <EditableLink
-                        className="st-john-car-rentals-name"
-                        destination={company.website}
-                        destinationField="website"
-                        destinationLabel="Company Website"
-                        destinationPath={['directory', 'companies', companyIndex, 'website']}
-                        external
-                        link={company}
-                        linkPath={['directory', 'companies', companyIndex]}
-                        label={company.name}
-                        labelLabel="Company Name"
-                        labelPath={['directory', 'companies', companyIndex, 'name']}
-                      />
-                    ) : (
-                      <EditableText as="span" label="Company Name" path={['directory', 'companies', companyIndex, 'name']} value={company.name}>
-                        {company.name}
-                      </EditableText>
-                    )}{' '}
-                    <PhoneLinks pathPrefix={['directory', 'companies', companyIndex, 'phones']} phones={company.phones} separator={company.separator ?? '/'} />
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            <div className="st-john-car-rentals-directory-media">
-              {directoryImageUrl ? (
-                <EditableImage
-                  alt={directoryImage.alt || 'Rental jeep on St. John'}
-                  decoding="async"
-                  image={directoryImage}
-                  path={['directory', 'directoryImage']}
-                  loading="lazy"
-                  src={directoryImageUrl}
-                />
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="st-john-car-rentals-airport-notes">
-        <div className="st-john-car-rentals-airport-notes-inner">
-          <div className="st-john-car-rentals-airport-notes-grid">
-            <div className="st-john-car-rentals-airport-notes-media">
-              {detailImageUrl ? (
-                <EditableImage
-                  alt={page.directory.detailImage.alt || 'Red jeep on a St. John road'}
-                  decoding="async"
-                  image={page.directory.detailImage}
-                  path={['directory', 'detailImage']}
-                  loading="lazy"
-                  src={detailImageUrl}
-                />
-              ) : null}
-            </div>
-
-            <div className="st-john-car-rentals-notes st-john-car-rentals-airport-notes-copy">
               <EditableText as="p" label="Airport Paragraph" multiline path={['directory', 'airportParagraph']} rows={6} value={page.directory.airportParagraph}>
                 {page.directory.airportParagraph}
               </EditableText>
@@ -170,6 +135,86 @@ export function StJohnCarRentalsPage() {
                 />
               </p>
             </div>
+
+            <div className="st-john-car-rentals-directory-media">
+              {directoryImageUrl ? (
+                <EditableImage
+                  alt={directoryImage.alt || 'Rental jeep on St. John'}
+                  className="st-john-car-rentals-directory-media-item"
+                  decoding="async"
+                  image={directoryImage}
+                  path={['directory', 'directoryImage']}
+                  loading="lazy"
+                  src={directoryImageUrl}
+                />
+              ) : null}
+              {detailImageUrl ? (
+                <EditableImage
+                  alt={page.directory.detailImage.alt || 'Red jeep on a St. John road'}
+                  className="st-john-car-rentals-directory-media-item"
+                  decoding="async"
+                  image={page.directory.detailImage}
+                  path={['directory', 'detailImage']}
+                  loading="lazy"
+                  src={detailImageUrl}
+                />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="st-john-car-rentals-companies">
+        <div className="st-john-car-rentals-companies-inner">
+          <h2 className="st-john-car-rentals-companies-title">Car Rental Companies on St. John</h2>
+
+          <div className="st-john-car-rentals-cards">
+            {page.directory.companies.map((company, companyIndex) => {
+              if (company.active === false) {
+                return null
+              }
+
+              return (
+                <div className="st-john-car-rentals-card" key={company.id ?? companyIndex}>
+                  {company.website ? (
+                    <div className="st-john-car-rentals-card-preview">
+                      <img
+                        alt={`${company.name} website preview`}
+                        loading="lazy"
+                        src={getWebsiteThumbnailUrl(company.website)}
+                      />
+                      <a
+                        aria-label={`Visit ${company.name} website`}
+                        className="st-john-car-rentals-card-link"
+                        href={company.website}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      />
+                      <div className="st-john-car-rentals-card-name-badge">
+                        <a className="st-john-car-rentals-name" href={company.website} rel="noopener noreferrer" target="_blank">
+                          {company.name}
+                        </a>
+                      </div>
+                      <div className="st-john-car-rentals-card-phone-bar">
+                        <PhoneIcon />
+                        <p className="st-john-car-rentals-card-phones">
+                          <StaticPhoneLinks phones={company.phones} separator="" />
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="st-john-car-rentals-card-body">
+                      <p className="st-john-car-rentals-card-phones">
+                        <PhoneIcon />
+                        <StaticPhoneLinks phones={company.phones} separator="" />
+                      </p>
+                      <span className="st-john-car-rentals-name">{company.name}</span>
+                      <span className="st-john-car-rentals-card-no-website">No website</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

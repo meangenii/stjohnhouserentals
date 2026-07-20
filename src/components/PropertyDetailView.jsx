@@ -81,20 +81,16 @@ export function PropertyDetailView({ property }) {
         sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: (
+    calendar: property.calendarUrl ? (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"
         showHeader={sectionConfigs.calendar.showHeader}
         title={sectionConfigs.calendar.title}
       >
-        {property.calendarUrl ? (
-          <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
-        ) : (
-          availabilityFallback
-        )}
+        <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
       </PropertyContentSection>
-    ),
+    ) : null,
     amenities: (
       <PropertyContentSection
         key="amenities"

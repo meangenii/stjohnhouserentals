@@ -134,7 +134,7 @@ const DEFAULT_SITE_THEME_SETTINGS = {
     buttonPaddingX: '18px',
     buttonPaddingY: '12px',
     buttonRadius: '999px',
-    buttonShadow: '0 16px 30px rgba(7, 33, 74, 0.16)',
+    buttonShadow: '0 2px 6px rgba(7, 33, 74, 0.12)',
     cardPadding: '22px',
     cardRadius: '16px',
     heroOverlayOpacity: '0.14',

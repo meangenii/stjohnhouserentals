@@ -6,6 +6,7 @@ import {
   richTextValueToLines,
   richTextValueToPlainText,
 } from '../lib/richTextValue'
+import { getImageFileName } from '../lib/imageFileName'
 import {
   AIR_CONDITIONING_OPTIONS,
   buildPropertyShortDescription,
@@ -65,7 +66,7 @@ const PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS = [
   {
     key: 'bookingHtml',
     label: 'Booking',
-    editorLabel: 'Booking Copy',
+    editorLabel: 'Booking Contact:',
     placement: 'After Rates',
     storageClassName: 'property-description-section--booking',
     placeholder: 'Add booking contact, VRBO links, phone numbers, and email links here.',
@@ -79,8 +80,8 @@ const PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS = [
   },
   {
     key: 'policyHtml',
-    label: 'Policy',
-    editorLabel: 'Rental Policy',
+    label: 'Rental and Cancellation Policy',
+    editorLabel: 'Rental and Cancellation Policy',
     placement: 'After Booking',
     storageClassName: 'property-description-section--policy',
     placeholder: 'Add rental and cancellation policy details here.',
@@ -128,12 +129,34 @@ function PreviewInput({ disabled, inlineLabel = true, label, onChange, type = 't
   )
 }
 
-function PreviewRichText({ collapsedFontSizeBehavior = 'selection', disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
+function PreviewStaticValue({ inlineLabel = true, label, value, wide = false }) {
+  return (
+    <div className={['admin-field', wide ? 'admin-field--wide' : '', inlineLabel ? 'admin-field--inline' : ''].filter(Boolean).join(' ')}>
+      <span>{label}</span>
+      <div className="admin-field-static-value" title={value}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function PreviewRichText({
+  collapsedFontSizeBehavior = 'selection',
+  contentMode = 'inline',
+  disabled,
+  helperText = '',
+  label,
+  onChange,
+  placeholder = '',
+  value,
+  wide = true,
+}) {
   return (
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
       <AdminRichTextEditor
         collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
+        contentMode={contentMode}
         disabled={disabled}
         helperText={helperText}
         label={label}
@@ -151,6 +174,7 @@ function PreviewRichTextLineList({ collapsedFontSizeBehavior = 'selection', disa
       <AdminRichTextEditor
         collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
+        contentMode="lines"
         disabled={disabled}
         helperText={helperText}
         label={label}
@@ -533,6 +557,7 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
     <div className="admin-property-description-editor">
       <div className="admin-property-description-slot admin-property-description-slot--main">
         <AdminRichTextEditor
+          contentMode="block"
           disabled={disabled}
           label="Main Description"
           onChange={(nextValue) => updateSection('descriptionHtml', nextValue)}
@@ -543,7 +568,9 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
 
       <div className="admin-property-description-slot">
         <AdminRichTextEditor
+          allowSourceMode={activeRatesSectionKey === 'ratesTableHtml'}
           compact
+          contentMode="block"
           disabled={disabled}
           headerActions={
             <div className="admin-property-description-rate-actions">
@@ -584,7 +611,9 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
         return (
           <div className="admin-property-description-slot" key={definition.key}>
             <AdminRichTextEditor
+              allowSourceMode={definition.key === 'ratesTableHtml'}
               compact
+              contentMode="block"
               disabled={disabled}
               headerActions={
                 hasContent ? (
@@ -1010,7 +1039,7 @@ export function AdminPropertyPreview({
             </div>
           </EditSection>
 
-          <EditSection title="Description, Rates & Booking Copy">
+          <EditSection title="Description, Rates & Booking Contact">
             <AdminPropertyDescriptionEditor
               disabled={disabled}
               onChange={(nextSections) => onFieldChange(nextSections)}
@@ -1153,7 +1182,13 @@ export function AdminPropertyPreview({
             <div className="admin-collection-list">
               {formState.reviewEntries.map((entry) => (
                 <div className="admin-collection-card" key={entry.id}>
-                  <PreviewRichText disabled={disabled} label="Review Text" onChange={(value) => onReviewEntryChange(entry.id, 'quote', value)} value={entry.quote} />
+                  <PreviewRichText
+                    contentMode="paragraphs"
+                    disabled={disabled}
+                    label="Review Text"
+                    onChange={(value) => onReviewEntryChange(entry.id, 'quote', value)}
+                    value={entry.quote}
+                  />
                   <PreviewInput disabled={disabled} label="Author" onChange={(value) => onReviewEntryChange(entry.id, 'author', value)} value={entry.author} />
                   <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={() => onRemoveReviewEntry(entry.id)} type="button">
                     Remove Review
@@ -1197,31 +1232,14 @@ export function AdminPropertyPreview({
           >
             <div id={galleryEditorId}>
               {galleryEditorExpanded ? (
-                <div className="admin-image-grid">
+                <div className="admin-image-grid admin-image-grid--property-gallery">
                   {formState.galleryImages.length === 0 ? <p className="admin-empty">No gallery images yet.</p> : null}
 
-                  {formState.galleryImages.map((image, index) => (
-                    <div className="admin-image-card admin-image-card--property-gallery" key={image.id}>
-                      <div className="admin-image-card-header">
-                        <strong className="admin-image-card-label">Image {index + 1}</strong>
-                        <div className="admin-inline-actions">
-                          <button className="button-link button-link--ghost admin-action" disabled={disabled || index === 0} onClick={() => onMoveGalleryImage(image.id, -1)} type="button">
-                            Earlier
-                          </button>
-                          <button
-                            className="button-link button-link--ghost admin-action"
-                            disabled={disabled || index === formState.galleryImages.length - 1}
-                            onClick={() => onMoveGalleryImage(image.id, 1)}
-                            type="button"
-                          >
-                            Later
-                          </button>
-                          <button className="button-link button-link--ghost admin-action" disabled={disabled} onClick={() => onRemoveGalleryImage(image.id)} type="button">
-                            Remove
-                          </button>
-                        </div>
-                      </div>
+                  {formState.galleryImages.map((image, index) => {
+                    const imageFileName = getImageFileName(image) || 'No file selected'
 
+                    return (
+                      <div className="admin-image-card admin-image-card--property-gallery" key={image.id}>
                       <div className="admin-image-card-layout">
                         <div className="admin-image-thumb-shell">
                           {image.url ? (
@@ -1238,24 +1256,54 @@ export function AdminPropertyPreview({
                               selectedGalleryImageId === image.id ? ' admin-image-thumb-action--active' : ''
                             }`}
                             disabled={disabled}
-                            title={`Edit image ${index + 1} from media library`}
+                            title={`Edit ${imageFileName} from media library`}
                             type="button"
                             onClick={() => setSelectedGalleryImageId(image.id)}
                           >
                             <span aria-hidden="true">✎</span>
-                            <span className="visually-hidden">{`Edit image ${index + 1} from media library`}</span>
+                            <span className="visually-hidden">{`Edit ${imageFileName} from media library`}</span>
+                          </button>
+                        </div>
+
+                        <div className="admin-image-card-thumb-actions">
+                          <button
+                            aria-label={`Move ${imageFileName} up`}
+                            className="button-link button-link--ghost admin-action"
+                            disabled={disabled || index === 0}
+                            title={`Move ${imageFileName} up`}
+                            onClick={() => onMoveGalleryImage(image.id, -1)}
+                            type="button"
+                          >
+                            <span aria-hidden="true">↑</span>
+                          </button>
+                          <button
+                            aria-label={`Move ${imageFileName} down`}
+                            className="button-link button-link--ghost admin-action"
+                            disabled={disabled || index === formState.galleryImages.length - 1}
+                            title={`Move ${imageFileName} down`}
+                            onClick={() => onMoveGalleryImage(image.id, 1)}
+                            type="button"
+                          >
+                            <span aria-hidden="true">↓</span>
+                          </button>
+                          <button
+                            aria-label={`Remove ${imageFileName}`}
+                            className="button-link button-link--ghost admin-action admin-image-card-remove-action"
+                            disabled={disabled}
+                            title={`Remove ${imageFileName}`}
+                            onClick={() => onRemoveGalleryImage(image.id)}
+                            type="button"
+                          >
+                            <span aria-hidden="true">×</span>
                           </button>
                         </div>
 
                         <div className="admin-image-card-fields">
                           <div className="admin-compact-field-grid admin-compact-field-grid--gallery">
-                            <PreviewInput
-                              disabled={disabled}
+                            <PreviewStaticValue
                               inlineLabel
-                              label="URL"
-                              onChange={(value) => onGalleryImageChange(image.id, 'url', value)}
-                              type="url"
-                              value={image.url}
+                              label="File"
+                              value={imageFileName}
                               wide
                             />
                             <PreviewInput
@@ -1275,13 +1323,14 @@ export function AdminPropertyPreview({
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    )
+                  })}
 
                   {selectedGalleryImage ? (
                     <div className="admin-property-gallery-media-editor">
                       <div className="admin-property-gallery-media-editor-bar">
-                        <strong>{`Editing image ${selectedGalleryImageIndex + 1}`}</strong>
+                        <strong>{getImageFileName(selectedGalleryImage) || `Image ${selectedGalleryImageIndex + 1}`}</strong>
                         <button
                           className="button-link button-link--ghost admin-action"
                           disabled={disabled}
@@ -1296,9 +1345,25 @@ export function AdminPropertyPreview({
                         currentUrl={selectedGalleryImage.url}
                         defaultOpen
                         disabled={disabled}
-                        onClear={() => onGalleryImageChange(selectedGalleryImage.id, 'url', '')}
+                        onClear={() =>
+                          onGalleryImageChange(selectedGalleryImage.id, {
+                            fileName: '',
+                            originalFileName: '',
+                            storagePath: '',
+                            url: '',
+                          })
+                        }
                         onRequestClose={() => setSelectedGalleryImageId(null)}
-                        onSelect={(nextUrl) => onGalleryImageChange(selectedGalleryImage.id, 'url', nextUrl)}
+                        onSelect={(nextUrl, entry) =>
+                          onGalleryImageChange(selectedGalleryImage.id, {
+                            alt: String(entry?.alt ?? selectedGalleryImage.alt ?? ''),
+                            fileName: String(entry?.fileName ?? '').trim(),
+                            originalFileName: String(entry?.originalFileName ?? '').trim(),
+                            storagePath: String(entry?.storagePath ?? '').trim(),
+                            title: String(entry?.title ?? selectedGalleryImage.title ?? ''),
+                            url: String(nextUrl ?? entry?.managedUrl ?? entry?.url ?? '').trim(),
+                          })
+                        }
                         preferredOwnerKey={formState.slug}
                         preferredOwnerName={formState.name}
                         preferredOwnerType="property"
@@ -1343,11 +1408,23 @@ export function AdminPropertyPreview({
                   ) : null}
                 </div>
               ) : (
-                <p className="admin-empty">
-                  {formState.galleryImages.length > 0
-                    ? `${formState.galleryImages.length} gallery image${formState.galleryImages.length === 1 ? '' : 's'} configured.`
-                    : 'Expand the editor to add gallery images.'}
-                </p>
+                <div className="admin-gallery-summary">
+                  <p className="admin-empty">
+                    {formState.galleryImages.length > 0
+                      ? `${formState.galleryImages.length} gallery image${formState.galleryImages.length === 1 ? '' : 's'} configured.`
+                      : 'Expand the editor to add gallery images.'}
+                  </p>
+                  {formState.galleryImages.length > 0 ? (
+                    <ol className="admin-gallery-file-list">
+                      {formState.galleryImages.map((image, index) => (
+                        <li key={image.id}>
+                          <span>{index + 1}</span>
+                          <code>{getImageFileName(image) || 'No file selected'}</code>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </div>
               )}
             </div>
           </EditSection>

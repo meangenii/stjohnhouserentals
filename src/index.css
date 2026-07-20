@@ -48,7 +48,7 @@
   --button-padding-x: 18px;
   --button-padding-y: 12px;
   --button-font-weight: 600;
-  --button-shadow: 0 16px 30px rgba(7, 33, 74, 0.16);
+  --button-shadow: 0 2px 6px rgba(7, 33, 74, 0.12);
   --card-radius: 16px;
   --card-padding: 22px;
   --media-radius: 22px;
@@ -155,6 +155,116 @@ img {
 
 .site-main {
   flex: 1;
+}
+
+.back-to-top {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1px solid rgba(7, 26, 54, 0.16);
+  border-radius: 50%;
+  background: var(--brand-navy);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(7, 26, 54, 0.16);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(0.5rem);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    visibility 200ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+  pointer-events: none;
+}
+
+.back-to-top--visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+  background: var(--brand-navy-deep);
+  box-shadow: 0 4px 10px rgba(7, 26, 54, 0.2);
+}
+
+.back-to-top:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 4px rgba(11, 43, 95, 0.4),
+    0 4px 10px rgba(7, 26, 54, 0.2);
+}
+
+.back-to-top-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.return-to-properties {
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 3.65rem);
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border: 1px solid rgba(7, 26, 54, 0.16);
+  border-radius: 50%;
+  background: var(--brand-navy);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(7, 26, 54, 0.16);
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.return-to-properties:hover,
+.return-to-properties:focus-visible {
+  background: var(--brand-navy-deep);
+  box-shadow: 0 4px 10px rgba(7, 26, 54, 0.2);
+  transform: translateY(-1px);
+}
+
+.return-to-properties:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 4px rgba(11, 43, 95, 0.4),
+    0 4px 10px rgba(7, 26, 54, 0.2);
+}
+
+.return-to-properties-icon {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top,
+  .return-to-properties {
+    transition:
+      opacity 120ms linear,
+      visibility 120ms linear;
+  }
+}
+
+@media print {
+  .back-to-top,
+  .return-to-properties {
+    display: none;
+  }
 }
 
 .site-header {
@@ -359,7 +469,7 @@ img {
   border: 1px solid rgba(7, 33, 74, 0.14);
   border-radius: 999px;
   background: var(--surface);
-  box-shadow: 0 12px 28px rgba(7, 33, 74, 0.08);
+  box-shadow: 0 2px 6px rgba(7, 33, 74, 0.06);
   color: var(--brand-navy-deep);
   cursor: pointer;
   transition:
@@ -370,7 +480,7 @@ img {
 
 .site-menu-button:hover {
   border-color: rgba(34, 105, 255, 0.28);
-  box-shadow: 0 16px 30px rgba(7, 33, 74, 0.12);
+  box-shadow: 0 3px 8px rgba(7, 33, 74, 0.08);
 }
 
 .site-menu-button:focus-visible {
@@ -1579,7 +1689,7 @@ img {
 .rental-accommodations-pill:focus-visible {
   border-color: #6ea7dd;
   color: #0e2f62;
-  box-shadow: 0 10px 22px rgba(110, 167, 221, 0.16);
+  box-shadow: 0 2px 6px rgba(110, 167, 221, 0.12);
 }
 
 .rental-accommodations-pill:focus-visible,
@@ -1592,7 +1702,7 @@ img {
   background: #639bd3;
   border-color: #639bd3;
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(99, 155, 211, 0.22);
+  box-shadow: 0 2px 6px rgba(99, 155, 211, 0.16);
 }
 
 .rental-accommodations-pill:disabled,
@@ -2241,8 +2351,7 @@ img {
   padding: 2rem 1rem 3rem;
 }
 
-.st-john-car-rentals-hero-inner h1,
-.st-john-car-rentals-copy h2 {
+.st-john-car-rentals-hero-inner h1 {
   margin: 0;
   color: #ffffff;
   font-family: var(--font-display);
@@ -2266,67 +2375,123 @@ img {
 }
 
 .st-john-car-rentals-directory {
-  padding: 2rem 0 3rem;
+  padding: 2.6rem 0 3rem;
 }
 
 .st-john-car-rentals-directory-grid {
   display: grid;
-  gap: 1.9rem;
+  gap: 2.2rem;
+  align-items: start;
 }
 
-.st-john-car-rentals-airport-notes {
-  padding: 0 0 3rem;
+.st-john-car-rentals-companies {
+  padding: 0.5rem 0 3.2rem;
 }
 
-.st-john-car-rentals-airport-notes-inner {
+.st-john-car-rentals-companies-inner {
   width: min(1440px, calc(100% - 2rem));
   margin: 0 auto;
 }
 
-.st-john-car-rentals-airport-notes-grid {
-  display: grid;
-  gap: 1.9rem;
-  align-items: start;
-  padding: 1.5rem;
-  border-radius: 2rem;
-  background: transparent;
-}
-
-.st-john-car-rentals-copy h2 {
+.st-john-car-rentals-companies-title {
+  margin: 0 0 1.5rem;
   color: #173b79;
-  font-size: clamp(2.85rem, 7vw, 5rem);
-  line-height: 1.08;
-  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+  line-height: 1.15;
 }
 
-.st-john-car-rentals-copy > p,
-.st-john-car-rentals-entry,
-.st-john-car-rentals-notes p {
+.st-john-car-rentals-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.st-john-car-rentals-copy p {
   margin: 0;
   color: #8e9caf;
   font-size: clamp(1rem, 1.22vw, 1.12rem);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
-.st-john-car-rentals-copy > p {
-  margin-top: 1.25rem;
-}
-
-.st-john-car-rentals-list,
-.st-john-car-rentals-notes {
+.st-john-car-rentals-cards {
   display: grid;
-}
-
-.st-john-car-rentals-list {
-  gap: 1.05rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
   margin-top: 1.9rem;
 }
 
-.st-john-car-rentals-notes {
-  gap: 1.9rem;
+.st-john-car-rentals-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  background: #ffffff;
+  border: 1px solid rgba(23, 59, 121, 0.1);
+  box-shadow: 0 10px 24px rgba(15, 35, 75, 0.06);
 }
 
-.st-john-car-rentals-name,
+.st-john-car-rentals-card-preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #eef2f7;
+}
+
+.st-john-car-rentals-card-preview img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: top;
+}
+
+.st-john-car-rentals-card-link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.st-john-car-rentals-card-name-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: calc(100% - 1.2rem);
+}
+
+.st-john-car-rentals-card-phone-bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 2;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(23, 59, 121, 0.1);
+}
+
+.st-john-car-rentals-card-phone-bar .st-john-car-rentals-card-icon {
+  color: #24672d;
+}
+
+.st-john-car-rentals-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem 1.1rem 1.1rem;
+}
+
 .st-john-car-rentals-phone a {
   color: var(--brand-blue);
   text-decoration: underline;
@@ -2334,37 +2499,117 @@ img {
   text-underline-offset: 0.14em;
 }
 
-.st-john-car-rentals-name:hover,
-.st-john-car-rentals-name:focus-visible,
 .st-john-car-rentals-phone a:hover,
 .st-john-car-rentals-phone a:focus-visible {
   color: var(--brand-navy);
 }
 
-.st-john-car-rentals-directory-media,
-.st-john-car-rentals-airport-notes-media {
+.st-john-car-rentals-card-phones {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.9rem;
+}
+
+.st-john-car-rentals-card-phone-bar .st-john-car-rentals-card-phones {
+  justify-content: center;
+}
+
+.st-john-car-rentals-card-phones a {
+  color: #24672d;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.st-john-car-rentals-card-phones a:hover,
+.st-john-car-rentals-card-phones a:focus-visible {
+  color: #17491d;
+  text-decoration: underline;
+}
+
+.st-john-car-rentals-card-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.st-john-car-rentals-card-phones .st-john-car-rentals-card-icon {
+  color: #24672d;
+}
+
+.st-john-car-rentals-name {
+  color: #5b6b84;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.14em;
+}
+
+.st-john-car-rentals-name:hover,
+.st-john-car-rentals-name:focus-visible {
+  color: var(--brand-navy);
+}
+
+.st-john-car-rentals-card-no-website {
+  color: #8e9caf;
+  font-size: 0.78rem;
+}
+
+.st-john-car-rentals-card-phone-bar .st-john-car-rentals-card-phones a {
+  color: #24672d !important;
+  font-size: 1rem;
+  text-shadow: none;
+}
+
+.st-john-car-rentals-card-phone-bar .st-john-car-rentals-card-phones a:hover,
+.st-john-car-rentals-card-phone-bar .st-john-car-rentals-card-phones a:focus-visible {
+  color: #17491d !important;
+  text-decoration: underline;
+}
+
+.st-john-car-rentals-card-name-badge .st-john-car-rentals-name {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--brand-navy) !important;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-shadow: none;
+  box-shadow: 0 2px 8px rgba(15, 35, 75, 0.18);
+}
+
+.st-john-car-rentals-card-name-badge .st-john-car-rentals-name:hover,
+.st-john-car-rentals-card-name-badge .st-john-car-rentals-name:focus-visible {
+  background: #ffffff;
+  color: var(--brand-navy-deep) !important;
+}
+
+.st-john-car-rentals-directory-media {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
   min-width: 0;
 }
 
-.st-john-car-rentals-directory-media img,
-.st-john-car-rentals-airport-notes-media img {
-  width: 100%;
-  display: block;
-  border-radius: 2rem;
-  object-fit: cover;
+.st-john-car-rentals-directory-media-item {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 4 / 5 !important;
+  display: block !important;
+  border-radius: 1.4rem;
+  object-fit: cover !important;
 }
 
-.st-john-car-rentals-directory-media img {
-  aspect-ratio: 1.08 / 1;
-}
-
-.st-john-car-rentals-airport-notes-media img {
-  aspect-ratio: 0.66 / 1;
-}
-
-.st-john-car-rentals-airport-notes-copy {
-  align-content: start;
-}
 
 .charter-boats-page {
   background: #fbfdff;
@@ -2738,7 +2983,7 @@ img {
   border-radius: 999px;
   color: #ffffff;
   background: var(--brand-navy);
-  box-shadow: 0 14px 28px rgba(7, 33, 74, 0.18);
+  box-shadow: 0 2px 6px rgba(7, 33, 74, 0.12);
   font-size: 0.95rem;
   font-weight: 600;
   justify-self: start;
@@ -3325,6 +3570,7 @@ img {
   place-items: center;
   position: relative;
   overflow: hidden;
+  width: 100%;
   min-height: clamp(18rem, 42vw, 30rem);
   max-height: min(78vh, 52rem);
   aspect-ratio: 16 / 9;
@@ -3360,7 +3606,7 @@ img {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.88);
   color: var(--brand-navy);
-  box-shadow: 0 12px 28px rgba(7, 26, 54, 0.16);
+  box-shadow: 0 3px 8px rgba(7, 26, 54, 0.12);
   cursor: pointer;
   font-size: clamp(1.6rem, 2.9vw, 2.6rem);
   font-weight: 300;
@@ -3378,7 +3624,7 @@ img {
 .property-gallery-nav:focus-visible {
   background: #ffffff;
   border-color: rgba(7, 26, 54, 0.28);
-  box-shadow: 0 14px 34px rgba(7, 26, 54, 0.22);
+  box-shadow: 0 4px 10px rgba(7, 26, 54, 0.16);
   transform: translateY(-50%) scale(1.04);
 }
 
@@ -3713,9 +3959,7 @@ img {
 
 .property-rich-copy .property-rate-line--title,
 .admin-property-preview-rich-copy .property-rate-line--title {
-  color: var(--brand-navy);
   font-size: clamp(1.1rem, 1.18vw, 1.16rem);
-  font-weight: 700;
   line-height: 1.42;
 }
 
@@ -3723,20 +3967,38 @@ img {
 .property-rich-copy .property-rate-line--date,
 .admin-property-preview-rich-copy .property-rate-line--heading,
 .admin-property-preview-rich-copy .property-rate-line--date {
-  color: #000000;
   font-size: clamp(1rem, 1.08vw, 1.08rem);
-  font-weight: 700;
   line-height: 1.42;
 }
 
-.property-rich-copy .property-rate-line--minimum,
-.property-rich-copy .property-rate-line--price,
-.property-rich-copy .property-rate-line--fee,
-.property-rich-copy .property-rate-line--note,
-.admin-property-preview-rich-copy .property-rate-line--minimum,
-.admin-property-preview-rich-copy .property-rate-line--price,
-.admin-property-preview-rich-copy .property-rate-line--fee,
-.admin-property-preview-rich-copy .property-rate-line--note {
+/*
+ * The classifier's default look (bold navy/black season & date headings) only applies to
+ * lines the admin hasn't manually formatted - see property-rate-line--auto in
+ * formatPropertyRichHtml.js. Once a line has manual bold/italic/underline/size formatting,
+ * that formatting is left alone instead of being overridden here.
+ */
+.property-rich-copy .property-rate-line--title.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--title.property-rate-line--auto {
+  color: var(--brand-navy);
+  font-weight: 700;
+}
+
+.property-rich-copy .property-rate-line--heading.property-rate-line--auto,
+.property-rich-copy .property-rate-line--date.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--heading.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--date.property-rate-line--auto {
+  color: #000000;
+  font-weight: 700;
+}
+
+.property-rich-copy .property-rate-line--minimum.property-rate-line--auto,
+.property-rich-copy .property-rate-line--price.property-rate-line--auto,
+.property-rich-copy .property-rate-line--fee.property-rate-line--auto,
+.property-rich-copy .property-rate-line--note.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--minimum.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--price.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--fee.property-rate-line--auto,
+.admin-property-preview-rich-copy .property-rate-line--note.property-rate-line--auto {
   font-weight: 400;
 }
 
@@ -4415,6 +4677,19 @@ img {
   justify-content: center;
 }
 
+.site-nav.footer-nav {
+  flex-wrap: wrap;
+  gap: 0.7rem 1.35rem;
+}
+
+.site-nav.footer-nav > a {
+  margin: 0;
+}
+
+.site-nav.footer-nav .site-nav-link {
+  white-space: nowrap;
+}
+
 .footer-nav .site-nav-item {
   padding-top: 0.9rem;
   padding-bottom: 0;
@@ -4778,29 +5053,18 @@ img {
 
   .st-john-car-rentals-hero-inner,
   .st-john-car-rentals-directory-inner,
-  .st-john-car-rentals-airport-notes-inner {
+  .st-john-car-rentals-companies-inner {
     width: min(1440px, calc(100% - 5rem));
   }
 
   .st-john-car-rentals-directory-grid {
-    grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.82fr);
-    gap: 3rem;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    gap: 3.5rem;
     align-items: start;
   }
 
   .st-john-car-rentals-copy {
     min-width: 0;
-  }
-
-  .st-john-car-rentals-airport-notes-grid {
-    grid-template-columns: minmax(320px, 0.72fr) minmax(0, 1fr);
-    gap: 3rem;
-    align-items: start;
-    padding: 2rem;
-  }
-
-  .st-john-car-rentals-airport-notes-copy {
-    padding-top: 0.5rem;
   }
 
   .charter-boats-hero-inner,
@@ -5914,6 +6178,18 @@ button.admin-auth-badge {
   resize: vertical;
 }
 
+.admin-field-static-value {
+  width: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #dce8f6;
+  border-radius: 0.9rem;
+  background: #f7fbff;
+  color: #344256;
+  font: inherit;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .admin-field select {
   resize: none;
 }
@@ -6166,6 +6442,12 @@ button.admin-auth-badge {
   margin: 0;
 }
 
+.admin-checkbox-field--compact {
+  min-height: auto;
+  padding: 0.5rem;
+  justify-content: center;
+}
+
 .admin-document-grid {
   display: grid;
   gap: 1rem;
@@ -6310,12 +6592,17 @@ button.admin-auth-badge {
 }
 
 .admin-compact-field-grid--gallery {
-  gap: 0.65rem;
+  gap: 0.35rem;
 }
 
 .admin-image-grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.65rem;
+}
+
+.admin-image-grid--property-gallery {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45rem;
 }
 
 .admin-image-card {
@@ -6340,6 +6627,19 @@ button.admin-auth-badge {
   font-size: 0.95rem;
 }
 
+.admin-image-card-title {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.admin-image-card-filename {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .admin-image-card-layout {
   display: grid;
   gap: 0.85rem;
@@ -6352,14 +6652,55 @@ button.admin-auth-badge {
 }
 
 .admin-image-card--property-gallery {
-  --admin-gallery-thumb-size: 7rem;
-  gap: 0.8rem;
-  padding: 0.85rem;
+  --admin-gallery-thumb-size: 4.9rem;
+  gap: 0;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.7rem;
 }
 
 .admin-image-card--property-gallery .admin-image-card-layout {
-  grid-template-columns: var(--admin-gallery-thumb-size) minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: var(--admin-gallery-thumb-size) 2rem minmax(0, 1fr);
+  column-gap: 1rem;
+  row-gap: 0.35rem;
+  align-items: stretch;
+}
+
+.admin-image-card--property-gallery .admin-image-thumb-shell {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-image-card--property-gallery .admin-image-card-fields {
+  grid-column: 3;
+  grid-row: 1;
+  align-self: center;
+}
+
+.admin-image-card-thumb-actions {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  align-self: stretch;
+  justify-self: center;
+  width: 1.45rem;
+  gap: 0.14rem;
+}
+
+.admin-image-card-thumb-actions .admin-action {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0.36rem;
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+.admin-image-card-thumb-actions .admin-image-card-remove-action {
+  color: #8f2441;
+  border-color: #f0bfd0;
+  background: #fff8fb;
 }
 
 .admin-image-thumb-shell {
@@ -6382,6 +6723,18 @@ button.admin-auth-badge {
 .admin-image-thumb-action--active {
   border-color: #6baff0;
   box-shadow: 0 10px 24px rgba(34, 105, 255, 0.12);
+}
+
+.admin-image-card--property-gallery .admin-image-thumb-action {
+  top: 0.26rem;
+  right: 0.26rem;
+  width: 1.55rem;
+  min-height: 1.55rem;
+  font-size: 0.72rem;
+}
+
+.admin-image-card--property-gallery .admin-image-thumb-action--active {
+  box-shadow: 0 3px 8px rgba(34, 105, 255, 0.14);
 }
 
 .admin-image-thumb,
@@ -6410,12 +6763,60 @@ button.admin-auth-badge {
 .admin-image-card--property-gallery .admin-image-placeholder {
   min-height: auto;
   aspect-ratio: 1;
-  border-radius: 0.8rem;
+  border-radius: 0.55rem;
 }
 
 .admin-image-card--property-gallery .admin-image-placeholder {
-  padding: 0.75rem;
-  font-size: 0.82rem;
+  padding: 0.4rem;
+  font-size: 0.64rem;
+}
+
+.admin-gallery-summary {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.admin-gallery-file-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 14rem;
+  overflow: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.admin-gallery-file-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #dce8f6;
+  border-radius: 0.7rem;
+  background: #f7fbff;
+}
+
+.admin-gallery-file-list span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: #e8f1ff;
+  color: var(--brand-navy);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.admin-gallery-file-list code {
+  min-width: 0;
+  color: #344256;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .admin-property-hero-media-layout {
@@ -6546,7 +6947,12 @@ button.admin-auth-badge {
 }
 
 .admin-property-preview-frame {
-  overflow: hidden;
+  /*
+   * `clip` (not `hidden`) so this still clips content to the rounded corners, but — unlike
+   * `hidden` — it doesn't register as a scroll container, so the sticky rich-text toolbar
+   * inside the edit form can still track real page scroll instead of getting stuck in place.
+   */
+  overflow: clip;
   border: 1px solid #d9e7f2;
   border-radius: 1.2rem;
   background: #ffffff;
@@ -6618,12 +7024,28 @@ button.admin-auth-badge {
 }
 
 .admin-image-card--property-gallery .admin-field--inline {
-  grid-template-columns: minmax(3rem, 4rem) minmax(0, 1fr);
-  gap: 0.6rem;
+  grid-template-columns: minmax(2.25rem, 2.75rem) minmax(0, 1fr);
+  gap: 0.4rem;
 }
 
 .admin-image-card--property-gallery .admin-field--inline span {
-  font-size: 0.7rem;
+  font-size: 0.64rem;
+}
+
+.admin-image-card--property-gallery .admin-field input {
+  min-height: 2rem;
+  padding: 0.38rem 0.55rem;
+  border-radius: 0.65rem;
+  font-size: 0.84rem;
+  line-height: 1.2;
+}
+
+.admin-image-card--property-gallery .admin-field-static-value {
+  min-height: 2rem;
+  padding: 0.38rem 0.55rem;
+  border-radius: 0.65rem;
+  font-size: 0.84rem;
+  line-height: 1.2;
 }
 
 .admin-property-preview-title {
@@ -7329,6 +7751,43 @@ button.admin-auth-badge {
   gap: 0.55rem;
 }
 
+.admin-car-companies-panel {
+  margin-top: 1.5rem;
+}
+
+.admin-car-companies-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.admin-car-companies-row {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1.2fr auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  min-width: 40rem;
+}
+
+.admin-car-companies-row--header {
+  padding: 0 0.2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-car-companies-row input[type='text'] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cfe0ec;
+  border-radius: 0.6rem;
+  background: #ffffff;
+  font-size: 0.92rem;
+}
+
 .admin-content-html-field {
   display: grid;
   gap: 0.85rem;
@@ -7381,7 +7840,7 @@ button.admin-auth-badge {
   display: flex;
   flex-wrap: wrap;
   align-items: end;
-  gap: 0.55rem;
+  gap: 0.35rem;
 }
 
 .admin-rich-text-toolbar .admin-rich-text-button,
@@ -7392,12 +7851,16 @@ button.admin-auth-badge {
 }
 
 .admin-rich-text-editor--toolbar-visible .admin-rich-text-toolbar {
-  padding: 0.8rem 0.9rem;
+  padding: 0.5rem 0.6rem;
   border: 1px solid #dbe7f0;
-  border-radius: 1rem;
+  border-radius: 0.85rem;
   background: rgba(255, 255, 255, 0.97);
-  box-shadow: 0 16px 34px rgba(7, 33, 74, 0.12);
+  box-shadow: 0 10px 22px rgba(7, 33, 74, 0.1);
   backdrop-filter: blur(10px);
+}
+
+.admin-rich-text-editor:not(.admin-rich-text-editor--toolbar-visible) .admin-rich-text-toolbar {
+  display: none;
 }
 
 .admin-rich-text-toolbar-shell--floating {
@@ -7409,7 +7872,6 @@ button.admin-auth-badge {
   z-index: 140;
 }
 
-.admin-rich-text-editor:not(.admin-rich-text-editor--toolbar-visible) .admin-rich-text-toolbar,
 .admin-rich-text-editor:not(.admin-rich-text-editor--toolbar-visible) .admin-rich-text-linebreak-hint {
   display: none;
 }
@@ -7603,6 +8065,46 @@ button.admin-auth-badge {
   min-height: 2.45rem;
 }
 
+.admin-rich-text-toolbar .admin-rich-text-button {
+  min-height: 2.05rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+}
+
+.admin-rich-text-button--icon {
+  min-width: 2.05rem;
+  padding: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-rich-text-button--icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.admin-rich-text-glyph {
+  font-size: 0.92rem;
+  line-height: 1;
+  font-family: var(--font-body);
+}
+
+.admin-rich-text-glyph--bold {
+  font-weight: 800;
+}
+
+.admin-rich-text-glyph--italic {
+  font-style: italic;
+  font-weight: 600;
+}
+
+.admin-rich-text-glyph--underline {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .admin-rich-text-button--active {
   background: #d7e8fb;
   color: #0f3c78;
@@ -7611,6 +8113,9 @@ button.admin-auth-badge {
 
 .admin-rich-text-canvas {
   min-height: 18rem;
+  max-height: 34rem;
+  overflow-y: auto;
+  resize: vertical;
   padding: 1rem;
   border: 1px solid #cfe0ec;
   border-radius: 0.95rem;
@@ -7668,6 +8173,7 @@ button.admin-auth-badge {
 
 .admin-rich-text-canvas--compact {
   min-height: 8rem;
+  max-height: 20rem;
 }
 
 .admin-rich-text-canvas:focus-visible {
@@ -8695,6 +9201,62 @@ button.admin-auth-badge {
   border-radius: 999px;
 }
 
+.admin-media-command-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0;
+  padding: 0.36rem 0.45rem;
+  border: 1px solid #cfd9e4;
+  border-radius: 0.4rem;
+  background: #f5f8fb;
+}
+
+.admin-media-command-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.28rem;
+  min-width: 0;
+  padding: 0.12rem 0.55rem;
+  border-right: 1px solid #d7e1eb;
+}
+
+.admin-media-command-group:first-child {
+  padding-left: 0;
+}
+
+.admin-media-command-group:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.admin-media-command-bar .button-link {
+  min-height: 1.72rem;
+  padding: 0.24rem 0.48rem;
+  border-radius: 0.28rem;
+}
+
+.admin-media-command-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.72rem;
+  padding: 0.22rem 0.45rem;
+  border: 1px solid #c9d8e8;
+  border-radius: 0.28rem;
+  background: #ffffff;
+  color: #173b6b;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-media-command-bar .admin-media-command-danger {
+  color: #8f2441;
+  border-color: #f0bfd0;
+  background: #fff8fb;
+}
+
 .admin-media-picker-icon {
   display: inline-flex;
   align-items: center;
@@ -9105,6 +9667,14 @@ button.admin-auth-badge {
   background: #dcebff;
 }
 
+.admin-media-list-row--current {
+  box-shadow: inset 3px 0 0 #8db9e6;
+}
+
+.admin-media-list-row--current:not(.admin-media-list-row--selected) {
+  background: #f7fbff;
+}
+
 .admin-media-list-name {
   width: 100%;
   display: flex;
@@ -9422,6 +9992,10 @@ button.admin-auth-badge {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-image-grid--property-gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .admin-pages-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -9500,8 +10074,7 @@ button.admin-auth-badge {
     .car-barge-hero-media,
     .car-barge-operator-media,
     .passenger-ferry-hero,
-    .st-john-car-rentals-directory-media,
-    .st-john-car-rentals-airport-notes-media,
+    .st-john-car-rentals-directory-media-item,
     .charter-boats-intro-media,
     .charter-boats-card,
     .charter-boats-card-media,

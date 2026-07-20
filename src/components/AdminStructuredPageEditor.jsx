@@ -195,6 +195,15 @@ function TextField({ label, value, onChange, disabled, placeholder = '', type = 
   )
 }
 
+function CheckboxField({ label, checked, onChange, disabled }) {
+  return (
+    <label className="admin-checkbox-field">
+      <input checked={checked} disabled={disabled} type="checkbox" onChange={(event) => onChange(event.target.checked)} />
+      <span>{label}</span>
+    </label>
+  )
+}
+
 function TextAreaField({ label, value, onChange, disabled, placeholder = '', rows = 5, wide = true }) {
   return (
     <label className={`admin-field${wide ? ' admin-field--wide' : ''}`.trim()}>
@@ -225,6 +234,7 @@ function RichTextField({
       <AdminRichTextEditor
         collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
+        contentMode="inline"
         disabled={disabled}
         helperText={helperText}
         label={label}
@@ -266,6 +276,7 @@ function RichLinesField({
       <AdminRichTextEditor
         collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
+        contentMode="lines"
         disabled={disabled}
         helperText={helperText}
         label={label}
@@ -292,6 +303,7 @@ function RichParagraphsField({
       <AdminRichTextEditor
         collapsedFontSizeBehavior={collapsedFontSizeBehavior}
         compact
+        contentMode="paragraphs"
         disabled={disabled}
         helperText={helperText}
         label={label}
@@ -308,7 +320,7 @@ function HtmlField({ label, value, onChange, disabled }) {
 
   return (
     <div className="admin-content-html-field">
-      <AdminRichTextEditor disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
+      <AdminRichTextEditor allowSourceMode contentMode="block" disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
 
       {normalizedHtml ? (
         <div className="admin-document-preview admin-document-preview--copy">
@@ -1251,27 +1263,35 @@ function renderCarRentalsEditor(page, helpers) {
         <Field wide>
           <RepeatingSection
             addLabel="Add Rental Company"
+            description="Deactivated companies stay saved here but are hidden from the public company grid."
             disabled={disabled}
             itemLabel="rental company"
             items={companies}
-            onAdd={() => helpers.addItem(['directory', 'companies'], { name: '', website: '', phones: [], separator: '/' })}
-            renderItem={(company, companyIndex) => (
-              <ItemCard
-                canMoveDown={companyIndex < companies.length - 1}
-                canMoveUp={companyIndex > 0}
-                disabled={disabled}
-                key={company?.id ?? `car-company-${companyIndex}`}
-                onMoveDown={() => helpers.moveItem(['directory', 'companies'], companyIndex, 1)}
-                onMoveUp={() => helpers.moveItem(['directory', 'companies'], companyIndex, -1)}
-                onRemove={() => helpers.removeItem(['directory', 'companies'], companyIndex)}
-                title={company?.name || `Rental Company ${companyIndex + 1}`}
-              >
-                <TextField disabled={disabled} label="Company Name" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'name'], value)} value={company?.name ?? ''} />
-                <TextField disabled={disabled} label="Website URL" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'website'], value)} value={company?.website ?? ''} />
-                <LinesField disabled={disabled} label="Phone Numbers" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'phones'], value)} rows={4} value={company?.phones ?? []} />
-                <TextField disabled={disabled} label="Text Between Phone Numbers" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'separator'], value)} value={company?.separator ?? '/'} />
-              </ItemCard>
-            )}
+            onAdd={() => helpers.addItem(['directory', 'companies'], { name: '', website: '', phones: [], separator: '/', active: true })}
+            renderItem={(company, companyIndex) => {
+              const isActive = company?.active !== false
+
+              return (
+                <ItemCard
+                  canMoveDown={companyIndex < companies.length - 1}
+                  canMoveUp={companyIndex > 0}
+                  disabled={disabled}
+                  key={company?.id ?? `car-company-${companyIndex}`}
+                  onMoveDown={() => helpers.moveItem(['directory', 'companies'], companyIndex, 1)}
+                  onMoveUp={() => helpers.moveItem(['directory', 'companies'], companyIndex, -1)}
+                  onRemove={() => helpers.removeItem(['directory', 'companies'], companyIndex)}
+                  title={`${company?.name || `Rental Company ${companyIndex + 1}`}${isActive ? '' : ' (Deactivated)'}`}
+                >
+                  <TextField disabled={disabled} label="Company Name" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'name'], value)} value={company?.name ?? ''} />
+                  <TextField disabled={disabled} label="Website URL" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'website'], value)} value={company?.website ?? ''} />
+                  <LinesField disabled={disabled} label="Phone Numbers" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'phones'], value)} rows={4} value={company?.phones ?? []} />
+                  <TextField disabled={disabled} label="Text Between Phone Numbers" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'separator'], value)} value={company?.separator ?? '/'} />
+                  <Field wide>
+                    <CheckboxField checked={isActive} disabled={disabled} label="Active (shown on the public site)" onChange={(value) => setPath(['directory', 'companies', companyIndex, 'active'], value)} />
+                  </Field>
+                </ItemCard>
+              )
+            }}
             title="Rental Company Rows"
           />
         </Field>
@@ -1471,4 +1491,112 @@ export function AdminStructuredPageEditor({ page, onChange, disabled = false }) 
   }
 
   return <div className="admin-content-editor">{renderStructuredPageEditor(page, helpers)}</div>
+}
+
+// A dedicated one-row-per-company form for the car rentals company list — plain
+// text/checkbox inputs in a compact table, not the card-preview grid the public
+// site renders and not the stacked multi-field ItemCard style used elsewhere in
+// this file. Add, edit, deactivate, and delete all happen here as simple rows.
+export function CarRentalCompaniesPanel({ page, onChange, disabled = false }) {
+  const companies = Array.isArray(page?.directory?.companies) ? page.directory.companies : []
+
+  function setCompanyField(index, field, value) {
+    onChange((currentValue) => updateValueAtPath(currentValue, ['directory', 'companies', index, field], value))
+  }
+
+  function setCompanyPhones(index, value) {
+    const phones = String(value ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+    setCompanyField(index, 'phones', phones)
+  }
+
+  function addCompany() {
+    onChange((currentValue) =>
+      addArrayItemAtPath(currentValue, ['directory', 'companies'], {
+        id: makeStructuredItemId(),
+        name: '',
+        website: '',
+        phones: [],
+        separator: '/',
+        active: true,
+      }),
+    )
+  }
+
+  function removeCompany(index) {
+    onChange((currentValue) => removeArrayItemAtPath(currentValue, ['directory', 'companies'], index))
+  }
+
+  if (!page) {
+    return null
+  }
+
+  return (
+    <section className="admin-content-section admin-car-companies-panel">
+      <div className="admin-content-section-header">
+        <div>
+          <h4>Car Rental Companies</h4>
+          <p>One row per company. Deactivated companies stay saved here but are hidden from the public site.</p>
+        </div>
+        <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={addCompany}>
+          Add company
+        </button>
+      </div>
+
+      <div className="admin-car-companies-list">
+        <div className="admin-car-companies-row admin-car-companies-row--header">
+          <span>Name</span>
+          <span>Website URL</span>
+          <span>Phone number(s)</span>
+          <span>Active</span>
+          <span />
+        </div>
+
+        {companies.length === 0 ? <p className="admin-note">No rental companies yet.</p> : null}
+
+        {companies.map((company, index) => {
+          const isActive = company?.active !== false
+
+          return (
+            <div className="admin-car-companies-row" key={company?.id ?? index}>
+              <input
+                disabled={disabled}
+                placeholder="Company name"
+                type="text"
+                value={company?.name ?? ''}
+                onChange={(event) => setCompanyField(index, 'name', event.target.value)}
+              />
+              <input
+                disabled={disabled}
+                placeholder="https://example.com"
+                type="text"
+                value={company?.website ?? ''}
+                onChange={(event) => setCompanyField(index, 'website', event.target.value)}
+              />
+              <input
+                disabled={disabled}
+                placeholder="340-555-1234, 340-555-5678"
+                type="text"
+                value={(company?.phones ?? []).join(', ')}
+                onChange={(event) => setCompanyPhones(index, event.target.value)}
+              />
+              <label className="admin-checkbox-field admin-checkbox-field--compact">
+                <input
+                  checked={isActive}
+                  disabled={disabled}
+                  type="checkbox"
+                  onChange={(event) => setCompanyField(index, 'active', event.target.checked)}
+                />
+              </label>
+              <button className="button-link button-link--ghost" disabled={disabled} type="button" onClick={() => removeCompany(index)}>
+                Delete
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }

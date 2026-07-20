@@ -17,10 +17,19 @@ function PreviewInput({ disabled, label, onChange, type = 'text', value, wide = 
   )
 }
 
-function PreviewRichText({ disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
+function PreviewRichText({ contentMode = 'inline', disabled, helperText = '', label, onChange, placeholder = '', value, wide = true }) {
   return (
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <AdminRichTextEditor compact disabled={disabled} helperText={helperText} label={label} onChange={onChange} placeholder={placeholder} value={value ?? ''} />
+      <AdminRichTextEditor
+        compact
+        contentMode={contentMode}
+        disabled={disabled}
+        helperText={helperText}
+        label={label}
+        onChange={onChange}
+        placeholder={placeholder}
+        value={value ?? ''}
+      />
     </div>
   )
 }
@@ -141,6 +150,7 @@ export function AdminCharterEditorPreview({ charter, disabled = false, formState
           <PreviewSection
             controls={
               <PreviewRichText
+                contentMode="block"
                 disabled={disabled}
                 helperText="Use paragraphs, bold text, lists, and links to format the charter detail page."
                 label="Description"

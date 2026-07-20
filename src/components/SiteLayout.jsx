@@ -4,6 +4,7 @@ import { resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getSiteThemeCssProperties, getSiteThemeRuleOverrideCssText } from '../lib/siteThemeSettings'
 import { useAdminSession } from '../lib/useAdminSession'
 import { useSiteShellContent } from '../lib/useSiteContent'
+import { BackToTopButton } from './BackToTopButton'
 import { RichTextValue } from './RichTextValue'
 
 const ADMIN_NAV_ITEM = { label: 'Editor', path: '/admin', matchPaths: ['/admin'] }
@@ -298,6 +299,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   const socialLink = utility.socialLink ?? {}
   const bookingCallouts = Array.isArray(utility.bookingCallouts) ? utility.bookingCallouts : []
   const isMobileMenuOpen = mobileMenuState.pathname === pathname && mobileMenuState.open
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/')
   const socialLinkConfig = resolveLinkRenderConfig(socialLink, { defaultType: 'external', destinationField: 'href' })
   const themeStyle = getSiteThemeCssProperties(siteShell?.theme)
   const themeRuleOverrideCss = getSiteThemeRuleOverrideCssText(siteShell?.theme)
@@ -490,6 +492,8 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
           </div>
         </div>
       </footer>
+
+      {interactive && !isAdminRoute ? <BackToTopButton /> : null}
     </div>
   )
 }

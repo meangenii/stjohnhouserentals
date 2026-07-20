@@ -5,6 +5,7 @@ import { PropertyAvailabilityCalendar } from '../components/PropertyAvailability
 import { PropertyContentSection } from '../components/PropertyContentSection'
 import { PropertyDescriptionSections } from '../components/PropertyDescriptionSections'
 import { RichTextValue } from '../components/RichTextValue'
+import { ReturnToPropertiesButton } from '../components/ReturnToPropertiesButton'
 import { getAdminIdToken } from '../lib/adminAuth'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { getPropertyContactActions, getPropertyContactInfo } from '../lib/propertyContact'
@@ -326,7 +327,14 @@ export function PropertyDetailPage() {
   const nextProperty = usesFilteredPropertyOrder
     ? (filteredPropertyOrder[filteredPropertyIndex + 1] ?? null)
     : property.nextProperty
-  const adjacentPropertyNavigationState = usesFilteredPropertyOrder ? { filteredPropertyOrder } : null
+  const propertyReturnPath = typeof location.state?.propertyReturnPath === 'string' ? location.state.propertyReturnPath : '/for-rent'
+  const nextPropertyNavigationState =
+    usesFilteredPropertyOrder || propertyReturnPath !== '/for-rent'
+      ? {
+          ...(usesFilteredPropertyOrder ? { filteredPropertyOrder } : {}),
+          propertyReturnPath,
+        }
+      : null
 
   const propertyGallery = Array.isArray(property.gallery) ? property.gallery.filter(Boolean) : []
   const templateVariant = getPropertyTemplateVariantConfig(property.templateVariant)
@@ -394,20 +402,16 @@ export function PropertyDetailPage() {
         sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: (
+    calendar: property.calendarUrl ? (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"
         showHeader={sectionConfigs.calendar.showHeader}
         title={sectionConfigs.calendar.title}
       >
-        {property.calendarUrl ? (
-          <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
-        ) : (
-          availabilityFallback
-        )}
+        <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
       </PropertyContentSection>
-    ),
+    ) : null,
     amenities: (
       <PropertyContentSection
         key="amenities"
@@ -438,6 +442,7 @@ export function PropertyDetailPage() {
         aria-hidden="true"
         className={`property-route-transition property-route-transition--${routeTransitionPhase}`}
       />
+      <ReturnToPropertiesButton returnPath={propertyReturnPath} />
 
       <section
         className="property-banner"
@@ -537,9 +542,9 @@ export function PropertyDetailPage() {
                     aria-label={`Previous property: ${previousProperty.name}`}
                     className="property-adjacent-link"
                     onClick={(event) =>
-                      handleAdjacentPropertyNavigation(event, previousProperty.path, adjacentPropertyNavigationState)
+                      handleAdjacentPropertyNavigation(event, previousProperty.path, nextPropertyNavigationState)
                     }
-                    state={adjacentPropertyNavigationState ?? undefined}
+                    state={nextPropertyNavigationState ?? undefined}
                     to={previousProperty.path}
                   >
                     previous item
@@ -553,9 +558,9 @@ export function PropertyDetailPage() {
                     aria-label={`Next property: ${nextProperty.name}`}
                     className="property-adjacent-link"
                     onClick={(event) =>
-                      handleAdjacentPropertyNavigation(event, nextProperty.path, adjacentPropertyNavigationState)
+                      handleAdjacentPropertyNavigation(event, nextProperty.path, nextPropertyNavigationState)
                     }
-                    state={adjacentPropertyNavigationState ?? undefined}
+                    state={nextPropertyNavigationState ?? undefined}
                     to={nextProperty.path}
                   >
                     next item

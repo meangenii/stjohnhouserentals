@@ -1,10 +1,29 @@
 import { decodeEscapedSiteHtml, normalizeSiteHtml } from './normalizeSiteHtml'
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
-const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
-const SEMANTIC_PASTE_HTML_PATTERN = /<\s*(?:a|li|ol|table|td|th|tr|ul)\b/i
-const BLOCK_PASTE_TAGS = new Set(['BLOCKQUOTE', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'OL', 'P', 'TABLE', 'UL'])
+const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|table|tbody|td|th|thead|tr|ul)\b/i
+const SEMANTIC_PASTE_HTML_PATTERN = /<\s*(?:a|b|blockquote|em|h[1-6]|i|li|ol|strong|table|td|th|tr|u|ul)\b/i
+const BLOCK_PASTE_TAGS = new Set([
+  'BLOCKQUOTE',
+  'DIV',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'H5',
+  'H6',
+  'LI',
+  'OL',
+  'P',
+  'TABLE',
+  'TBODY',
+  'THEAD',
+  'TR',
+  'UL',
+])
 const INLINE_PASTE_TAGS = new Set(['A', 'B', 'BR', 'EM', 'I', 'SPAN', 'STRONG', 'U'])
+const INLINE_PASTE_BLOCK_TAGS = new Set(['BLOCKQUOTE', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'P'])
+const INLINE_PASTE_LIST_TAGS = new Set(['OL', 'UL'])
 const UNORDERED_LIST_LINE_PATTERN = /^\s*(?:[-*•‣▪◦]|–|—)\s+(.+)$/
 const ORDERED_LIST_LINE_PATTERN = /^\s*\d+[.)]\s+(.+)$/
 const AUTO_LINK_PATTERN =
@@ -194,6 +213,80 @@ function hasBlockPasteChild(element) {
   return Array.from(element?.children ?? []).some((child) => BLOCK_PASTE_TAGS.has(child.tagName.toUpperCase()))
 }
 
+function trimEdgeInlineBreaks(value = '') {
+  return String(value ?? '')
+    .replace(/^(?:\s*<br\s*\/?>\s*)+/i, '')
+    .replace(/(?:\s*<br\s*\/?>\s*)+$/i, '')
+}
+
+function getLastMeaningfulFragment(fragments = []) {
+  for (let index = fragments.length - 1; index >= 0; index -= 1) {
+    const fragment = String(fragments[index] ?? '')
+
+    if (fragment.trim()) {
+      return fragment
+    }
+  }
+
+  return ''
+}
+
+function appendInlineBreak(fragments) {
+  while (fragments.length > 0 && !String(fragments[fragments.length - 1] ?? '').trim()) {
+    fragments.pop()
+  }
+
+  const lastFragment = getLastMeaningfulFragment(fragments)
+
+  if (!lastFragment || /<br\s*\/?>\s*$/i.test(lastFragment)) {
+    return
+  }
+
+  fragments.push('<br />')
+}
+
+function appendInlineFragment(fragments, html, { block = false } = {}) {
+  const nextHtml = block ? trimEdgeInlineBreaks(String(html ?? '').trim()) : String(html ?? '')
+
+  if (!nextHtml) {
+    return
+  }
+
+  if (block) {
+    appendInlineBreak(fragments)
+  }
+
+  fragments.push(nextHtml)
+
+  if (block) {
+    appendInlineBreak(fragments)
+  }
+}
+
+function renderPastedInlineList(element) {
+  const items = Array.from(element.children ?? [])
+    .filter((child) => child.tagName.toUpperCase() === 'LI')
+    .map((child) => trimEdgeInlineBreaks(renderPastedInlineChildren(child).trim()))
+    .filter(Boolean)
+
+  return items.join('<br />')
+}
+
+function renderPastedInlineTable(element) {
+  const rows = Array.from(element.querySelectorAll('tr'))
+    .map((row) => {
+      const cells = Array.from(row.children).filter((cell) => ['TD', 'TH'].includes(cell.tagName.toUpperCase()))
+
+      return cells
+        .map((cell) => trimEdgeInlineBreaks(renderPastedInlineChildren(cell).trim()))
+        .filter(Boolean)
+        .join(' | ')
+    })
+    .filter(Boolean)
+
+  return rows.join('<br />')
+}
+
 function renderPastedInlineNode(node) {
   if (node.nodeType === 3) {
     return escapeAndLinkifyText(node.textContent ?? '', { trim: false })
@@ -210,6 +303,14 @@ function renderPastedInlineNode(node) {
     return '<br />'
   }
 
+  if (tagName === 'TABLE') {
+    return renderPastedInlineTable(element)
+  }
+
+  if (INLINE_PASTE_LIST_TAGS.has(tagName)) {
+    return renderPastedInlineList(element)
+  }
+
   if (tagName === 'A') {
     const href = element.getAttribute('href') ?? ''
     const bodyHtml = renderPastedInlineChildren(element).trim() || escapeAndLinkifyText(href)
@@ -217,11 +318,57 @@ function renderPastedInlineNode(node) {
     return href ? `<a href="${escapeHtml(href)}">${bodyHtml}</a>` : bodyHtml
   }
 
-  return renderPastedInlineChildren(element)
+  const innerHtml = renderPastedInlineChildren(element)
+
+  if (!innerHtml) {
+    return ''
+  }
+
+  if (tagName === 'STRONG' || tagName === 'B') {
+    return `<strong>${innerHtml}</strong>`
+  }
+
+  if (tagName === 'EM' || tagName === 'I') {
+    return `<em>${innerHtml}</em>`
+  }
+
+  if (tagName === 'U') {
+    return `<u>${innerHtml}</u>`
+  }
+
+  if (tagName === 'SPAN') {
+    const style = element.getAttribute('style')
+    return style ? `<span style="${escapeHtml(style)}">${innerHtml}</span>` : innerHtml
+  }
+
+  return innerHtml
 }
 
 function renderPastedInlineChildren(root) {
-  return Array.from(root.childNodes).map((child) => renderPastedInlineNode(child)).join('')
+  const fragments = []
+
+  Array.from(root.childNodes).forEach((child) => {
+    if (child.nodeType === 1 && child.tagName.toUpperCase() === 'BR') {
+      appendInlineBreak(fragments)
+      return
+    }
+
+    const html = renderPastedInlineNode(child)
+
+    if (!html) {
+      return
+    }
+
+    const tagName = child.nodeType === 1 ? child.tagName.toUpperCase() : ''
+    const isBlock =
+      INLINE_PASTE_BLOCK_TAGS.has(tagName) ||
+      INLINE_PASTE_LIST_TAGS.has(tagName) ||
+      tagName === 'TABLE'
+
+    appendInlineFragment(fragments, html, { block: isBlock })
+  })
+
+  return trimEdgeInlineBreaks(fragments.join(''))
 }
 
 function renderPastedTable(element) {
@@ -386,6 +533,15 @@ function blockInnerHtmlToLines(innerHtml = '') {
     .filter(Boolean)
 }
 
+function tableRowToInlineHtml(row) {
+  const cells = Array.from(row.children ?? []).filter((cell) => ['TD', 'TH'].includes(cell.tagName.toUpperCase()))
+
+  return cells
+    .map((cell) => normalizeSiteHtml(cell.innerHTML).trim())
+    .filter(Boolean)
+    .join(' | ')
+}
+
 function normalizeRichTextSource(value) {
   return decodeEscapedSiteHtml(String(value ?? ''))
 }
@@ -496,8 +652,12 @@ export function richTextValueToLines(value, { preserveBlankLines = false } = {})
   if (typeof DOMParser === 'undefined') {
     return dropBlankLines(
       sourceValue
-        .replace(/<\/p>/gi, '\n')
         .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/t[dh]>\s*<t[dh][^>]*>/gi, ' | ')
+        .replace(/<\/(?:blockquote|div|h[1-6]|li|p|tr)>/gi, '\n')
+        .replace(/<\s*(?:blockquote|div|h[1-6]|li|p|tr)(?:\s[^>]*)?>/gi, '')
+        .replace(/<\/?\s*(?:ol|table|tbody|thead|ul)(?:\s[^>]*)?>/gi, '')
+        .replace(/<\/?\s*t[dh](?:\s[^>]*)?>/gi, '')
         .split(/\r?\n/)
         .map((line) => normalizeSiteHtml(line).trim()),
     )
@@ -531,6 +691,26 @@ export function richTextValueToLines(value, { preserveBlankLines = false } = {})
       return
     }
 
+    if (tagName === 'UL' || tagName === 'OL') {
+      Array.from(node.children)
+        .filter((child) => child.tagName.toUpperCase() === 'LI')
+        .forEach((item) => {
+          lines.push(...blockInnerHtmlToLines(item.innerHTML))
+        })
+      return
+    }
+
+    if (tagName === 'TABLE') {
+      Array.from(node.querySelectorAll('tr')).forEach((row) => {
+        const rowHtml = tableRowToInlineHtml(row)
+
+        if (rowHtml) {
+          lines.push(rowHtml)
+        }
+      })
+      return
+    }
+
     lines.push(...blockInnerHtmlToLines(node.innerHTML))
   })
 
@@ -539,7 +719,7 @@ export function richTextValueToLines(value, { preserveBlankLines = false } = {})
 
 export function richTextLinesToHtml(values = [], { preserveBlankLines = false } = {}) {
   return values
-    .map((value) => richTextValueToHtml(value).trim())
+    .map((value) => richTextValueToInlineHtml(value).trim())
     .filter((value) => preserveBlankLines || Boolean(value))
     .map((value) => `<p>${value || '<br />'}</p>`)
     .join('')

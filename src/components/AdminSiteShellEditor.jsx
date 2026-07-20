@@ -150,7 +150,7 @@ function PlainTextField({ disabled, label, onChange, type = 'text', value, wide 
 function RichTextField({ disabled, label, onChange, value, wide = true }) {
   return (
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
-      <AdminRichTextEditor compact disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
+      <AdminRichTextEditor compact contentMode="inline" disabled={disabled} label={label} onChange={onChange} value={value ?? ''} />
     </div>
   )
 }
@@ -160,6 +160,7 @@ function RichLineListField({ disabled, label, onChange, value, wide = true }) {
     <div className={`admin-field admin-field--rich${wide ? ' admin-field--wide' : ''}`.trim()}>
       <AdminRichTextEditor
         compact
+        contentMode="lines"
         disabled={disabled}
         helperText="Press Enter to start a new line."
         label={label}

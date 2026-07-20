@@ -535,9 +535,22 @@ function createParagraphFromLineNodes(lineNodes, documentNode) {
   return paragraph
 }
 
-function createRateLineElement(documentNode, className, sourceLine) {
+// Lines with no manual bold/italic/underline/size formatting fall back to the classifier's
+// default look (bold season headings, etc). Lines the admin has explicitly formatted keep
+// exactly what they authored instead of having that formatting overridden. Bold/strong is
+// excluded when checking heading/title lines specifically, since bolding is also the signal
+// isRateHeadingLine() uses to detect a heading in the first place - without this exclusion,
+// every bolded heading would be misread as "manually formatted" and lose its auto styling.
+function lineHasManualFormatting(lineNode, { includeEmphasis = true } = {}) {
+  const selector = includeEmphasis ? 'strong, b, em, i, u, span[style]' : 'em, i, u, span[style]'
+  return Boolean(lineNode?.querySelector?.(selector))
+}
+
+function createRateLineElement(documentNode, className, sourceLine, hasManualFormatting = false, autoStyleLines = true) {
   const lineElement = documentNode.createElement('div')
-  lineElement.className = ['property-rate-line', className].filter(Boolean).join(' ')
+  lineElement.className = ['property-rate-line', className, autoStyleLines && !hasManualFormatting ? 'property-rate-line--auto' : '']
+    .filter(Boolean)
+    .join(' ')
   moveElementContents(sourceLine, lineElement)
   return lineElement
 }
@@ -642,7 +655,7 @@ function isCollectableRateLineElement(element, { force = false } = {}) {
   return isMeaningfulPropertyElement(element)
 }
 
-function transformPropertyRateSections(root, documentNode, { force = false } = {}) {
+function transformPropertyRateSections(root, documentNode, { autoStyleLines = true, force = false } = {}) {
   if (root.querySelector('.property-rate-block')) {
     return
   }
@@ -731,6 +744,8 @@ function transformPropertyRateSections(root, documentNode, { force = false } = {
         textContent,
         isBlankLine,
         isEmphasized: Boolean(lineNode.querySelector('strong, b')),
+        hasManualFormatting: lineHasManualFormatting(lineNode),
+        hasManualFormattingExcludingEmphasis: lineHasManualFormatting(lineNode, { includeEmphasis: false }),
       })
     })
 
@@ -750,7 +765,13 @@ function transformPropertyRateSections(root, documentNode, { force = false } = {
     return
   }
 
-  const titleElement = createRateLineElement(documentNode, 'property-rate-line--title', titleLine.lineNode)
+  const titleElement = createRateLineElement(
+    documentNode,
+    'property-rate-line--title',
+    titleLine.lineNode,
+    titleLine.hasManualFormattingExcludingEmphasis,
+    autoStyleLines,
+  )
   rateBlock.append(titleElement)
 
   let currentGroup = null
@@ -787,7 +808,7 @@ function transformPropertyRateSections(root, documentNode, { force = false } = {
     return footerGroup
   }
 
-  collectedLines.forEach(({ lineNode, textContent, isBlankLine, isEmphasized }) => {
+  collectedLines.forEach(({ lineNode, textContent, isBlankLine, isEmphasized, hasManualFormatting, hasManualFormattingExcludingEmphasis }) => {
     if (isBlankLine) {
       const spacer = documentNode.createElement('div')
       spacer.className = 'property-rate-spacer'
@@ -801,26 +822,26 @@ function transformPropertyRateSections(root, documentNode, { force = false } = {
       currentGroup.className = 'property-rate-group'
       currentGroup.dataset.kind = /holidays?/i.test(textContent) ? 'holiday' : 'season'
       currentSubgroup = null
-      currentGroup.append(createRateLineElement(documentNode, 'property-rate-line--heading', lineNode))
+      currentGroup.append(createRateLineElement(documentNode, 'property-rate-line--heading', lineNode, hasManualFormattingExcludingEmphasis, autoStyleLines))
       rateBlock.append(currentGroup)
       return
     }
 
     if (isRateHeadingLine(textContent, isEmphasized)) {
       currentSubgroup = null
-      ensureSubgroup().append(createRateLineElement(documentNode, 'property-rate-line--heading', lineNode))
+      ensureSubgroup().append(createRateLineElement(documentNode, 'property-rate-line--heading', lineNode, hasManualFormattingExcludingEmphasis, autoStyleLines))
       return
     }
 
     if (isRateDateLine(textContent)) {
       const target = currentSubgroup || ensureGroup()
-      target.append(createRateLineElement(documentNode, 'property-rate-line--date', lineNode))
+      target.append(createRateLineElement(documentNode, 'property-rate-line--date', lineNode, hasManualFormatting, autoStyleLines))
       return
     }
 
     if (isRateMinimumLine(textContent)) {
       const target = currentSubgroup || ensureGroup()
-      target.append(createRateLineElement(documentNode, 'property-rate-line--minimum', lineNode))
+      target.append(createRateLineElement(documentNode, 'property-rate-line--minimum', lineNode, hasManualFormatting, autoStyleLines))
       return
     }
 
@@ -831,13 +852,15 @@ function transformPropertyRateSections(root, documentNode, { force = false } = {
           documentNode,
           isRateNoteLine(textContent) ? 'property-rate-line--note' : 'property-rate-line--fee',
           lineNode,
+          hasManualFormatting,
+          autoStyleLines,
         ),
       )
       return
     }
 
     const target = currentSubgroup || ensureGroup()
-    target.append(createRateLineElement(documentNode, 'property-rate-line--price', lineNode))
+    target.append(createRateLineElement(documentNode, 'property-rate-line--price', lineNode, hasManualFormatting, autoStyleLines))
   })
 
   if (insertBeforeNode?.parentNode === root) {
@@ -1056,7 +1079,14 @@ export function extractPropertyTemplateSections(html) {
 
 export function formatPropertyRichHtml(
   html,
-  { compactTail = false, listSections = false, rateSection = false, reviewEntries = false, mergeLeadInLinkParagraphs = true } = {},
+  {
+    autoStyleRateLines = true,
+    compactTail = false,
+    listSections = false,
+    rateSection = false,
+    reviewEntries = false,
+    mergeLeadInLinkParagraphs = true,
+  } = {},
 ) {
   const normalizedHtml = normalizeSiteHtml(html)
 
@@ -1091,7 +1121,7 @@ export function formatPropertyRichHtml(
   }
 
   if (compactTail || rateSection) {
-    transformPropertyRateSections(root, documentNode)
+    transformPropertyRateSections(root, documentNode, { autoStyleLines: autoStyleRateLines })
   }
 
   if (!compactTail) {

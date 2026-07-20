@@ -5,6 +5,7 @@ import { AdminBackupManager } from '../components/AdminBackupManager'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
+import { CarRentalCompaniesPanel } from '../components/AdminStructuredPageEditor'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
 import { AdminMediaManager } from '../components/AdminMediaManager'
@@ -463,6 +464,9 @@ function createImageEditor(image = {}) {
     url: String(image.url ?? '').trim(),
     alt: repairSnapshotText(image.alt ?? ''),
     title: repairSnapshotText(image.title ?? ''),
+    fileName: String(image.fileName ?? '').trim(),
+    originalFileName: String(image.originalFileName ?? '').trim(),
+    storagePath: String(image.storagePath ?? '').trim(),
   }
 }
 
@@ -472,6 +476,9 @@ function createGalleryAssets(galleryImages = []) {
       url: String(image.url ?? '').trim(),
       alt: repairSnapshotText(image.alt ?? '').trim(),
       title: repairSnapshotText(image.title ?? '').trim(),
+      fileName: String(image.fileName ?? '').trim(),
+      originalFileName: String(image.originalFileName ?? '').trim(),
+      storagePath: String(image.storagePath ?? '').trim(),
     }))
     .filter((image) => image.url)
 }
@@ -1819,7 +1826,12 @@ export function AdminPage() {
     setFormState((currentState) => ({
       ...currentState,
       galleryImages: currentState.galleryImages.map((image) =>
-        image.id === imageId ? { ...image, [field]: value } : image,
+        image.id === imageId
+          ? {
+              ...image,
+              ...(field && typeof field === 'object' && !Array.isArray(field) ? field : { [field]: value }),
+            }
+          : image,
       ),
     }))
   }
@@ -1828,6 +1840,9 @@ export function AdminPage() {
     const normalizedUrl = String(nextUrl ?? entry?.managedUrl ?? entry?.url ?? '').trim()
     const image = createImageEditor({
       alt: repairSnapshotText(entry?.alt ?? ''),
+      fileName: entry?.fileName,
+      originalFileName: entry?.originalFileName,
+      storagePath: entry?.storagePath,
       title: repairSnapshotText(entry?.title ?? ''),
       url: normalizedUrl,
     })
@@ -1842,6 +1857,9 @@ export function AdminPage() {
     const galleryImagesToAdd = (Array.isArray(entries) ? entries : [])
       .map((entry) => ({
         alt: repairSnapshotText(entry?.alt ?? ''),
+        fileName: String(entry?.fileName ?? '').trim(),
+        originalFileName: String(entry?.originalFileName ?? '').trim(),
+        storagePath: String(entry?.storagePath ?? '').trim(),
         title: repairSnapshotText(entry?.title ?? ''),
         url: String(entry?.managedUrl ?? entry?.url ?? '').trim(),
       }))
@@ -3190,6 +3208,19 @@ export function AdminPage() {
                         />
                       )}
                     </div>
+
+                    {pageEditorState.activeKey === 'stJohnCarRentals' ? (
+                      <CarRentalCompaniesPanel
+                        disabled={!pageDraftEditingEnabled}
+                        page={pageEditorState.draft}
+                        onChange={(updater) =>
+                          setPageEditorState((current) => ({
+                            ...current,
+                            draft: typeof updater === 'function' ? updater(current.draft) : updater,
+                          }))
+                        }
+                      />
+                    ) : null}
                   </form>
                 ) : null}
               </div>

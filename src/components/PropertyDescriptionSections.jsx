@@ -22,7 +22,7 @@ const PROPERTY_OPTIONAL_COPY_SECTIONS = [
     htmlKey: 'policyHtml',
     key: 'policy',
     showHeader: true,
-    title: 'Rental Policy',
+    title: 'Rental and Cancellation Policy',
   },
   {
     className: 'property-template-section--details',
@@ -101,6 +101,7 @@ export function PropertyDescriptionSections({
           className={section.className}
           html={sections[section.htmlKey]}
           key={section.key}
+          preserveAuthoredRateFormatting={useStructuredSections && section.rateSection}
           rateSection={section.rateSection}
           showHeader={section.showHeader}
           title={section.title}

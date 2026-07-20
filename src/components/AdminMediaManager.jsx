@@ -979,6 +979,14 @@ export function AdminMediaManager({
     }))
   }
 
+  function handleRefreshCommand() {
+    refreshLibrary({
+      nextFolderPath: selectedFolderPath,
+      nextSelectedEntryIds: selectedEntryIds,
+      nextSelectedId: effectiveSelectedEntryId,
+    })
+  }
+
   async function handleCopy(value) {
     const copied = await copyText(value)
     setCopyStatus(copied ? 'Copied.' : 'Unable to copy.')
@@ -1855,19 +1863,119 @@ export function AdminMediaManager({
 
           {libraryState.status === 'ready' ? (
             <>
+              <div className="admin-media-command-bar" aria-label="Media library commands">
+                <div className="admin-media-command-group" aria-label="File commands">
+                  <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleUploadDropZoneClick}>
+                    Upload
+                  </button>
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={libraryMutationBusy}
+                    type="button"
+                    onClick={() => setShowCreateFolderForm((currentValue) => !currentValue)}
+                  >
+                    {showCreateFolderForm ? 'Cancel folder' : 'New folder'}
+                  </button>
+                  <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleRefreshCommand}>
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="admin-media-command-group" aria-label="Selection commands">
+                  {selectedEntries.length > 0 ? <span className="admin-media-command-status">{formatItemCountLabel(selectedEntries.length, 'image')} selected</span> : null}
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={filteredEntries.length === 0 || libraryMutationBusy}
+                    type="button"
+                    onClick={handleToggleSelectAllVisible}
+                  >
+                    {allVisibleEntriesSelected ? 'Clear visible' : 'Select all'}
+                  </button>
+                  {selectedEntries.length > 0 ? (
+                    <>
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        disabled={libraryMutationBusy || !canMoveSelectedToCurrentFolder}
+                        type="button"
+                        onClick={() => moveMediaSelectionToFolder(selectedEntries.map((entry) => entry.id), selectedFolderPath)}
+                      >
+                        Move selected here
+                      </button>
+                      <button
+                        className="button-link button-link--ghost admin-action admin-media-command-danger"
+                        disabled={libraryMutationBusy}
+                        type="button"
+                        onClick={handleDeleteSelectedEntries}
+                      >
+                        Delete selected
+                      </button>
+                      <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleClearSelectedEntries}>
+                        Clear selection
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+
+                {selectedEntry ? (
+                  <div className="admin-media-command-group" aria-label="Selected image commands">
+                    {onSelect ? (
+                      <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleUseEntry(selectedEntry)}>
+                        Use image
+                      </button>
+                    ) : null}
+                    <a className="button-link button-link--ghost admin-action" href={selectedEntry.managedUrl} rel="noreferrer" target="_blank">
+                      Open
+                    </a>
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedEntry.managedUrl)}>
+                      Copy URL
+                    </button>
+                    <button
+                      className="button-link button-link--ghost admin-action admin-media-command-danger"
+                      disabled={libraryMutationBusy}
+                      type="button"
+                      onClick={() => {
+                        if (detailsDeleteUsesSelection) {
+                          handleDeleteSelectedEntries()
+                          return
+                        }
+
+                        handleDeleteEntry(selectedEntry)
+                      }}
+                    >
+                      {detailsDeleteLabel}
+                    </button>
+                  </div>
+                ) : null}
+
+                <div className="admin-media-command-group" aria-label="Folder commands">
+                  {canUseCurrentFolderEntries ? (
+                    <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleUseCurrentFolderEntries}>
+                      {folderActionLabel}
+                    </button>
+                  ) : null}
+                  {selectedFolderPath ? (
+                    <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedFolderPath)}>
+                      Copy path
+                    </button>
+                  ) : null}
+                  {currentFolder && currentFolder.path !== libraryState.browserRootPath ? (
+                    <button
+                      className="button-link button-link--ghost admin-action admin-media-command-danger"
+                      disabled={libraryMutationBusy}
+                      type="button"
+                      onClick={() => handleDeleteFolder(currentFolder)}
+                    >
+                      Delete folder
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+
               <div className="admin-media-explorer">
                 <aside className="admin-media-sidebar">
                   <div className="admin-media-sidebar-header">
                     <div className="admin-media-sidebar-header-row">
                       <strong>Folders</strong>
-                      <button
-                        className="button-link button-link--ghost admin-action"
-                        disabled={libraryMutationBusy}
-                        type="button"
-                        onClick={() => setShowCreateFolderForm((currentValue) => !currentValue)}
-                      >
-                        {showCreateFolderForm ? 'Cancel folder' : 'New folder'}
-                      </button>
                     </div>
                     <button
                       className={`admin-media-tree-button admin-media-tree-button--root${
@@ -1960,50 +2068,8 @@ export function AdminMediaManager({
                         {currentFolder?.name ? ` | ${currentFolder.name}` : ''}
                         {libraryState.bucket ? ` | ${libraryState.bucket}` : ''}
                       </p>
-                      {canUseCurrentFolderEntries ? (
-                        <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleUseCurrentFolderEntries}>
-                          {folderActionLabel}
-                        </button>
-                      ) : null}
-                      {selectedFolderPath ? (
-                        <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedFolderPath)}>
-                          Copy path
-                        </button>
-                      ) : null}
-                      {currentFolder && currentFolder.path !== libraryState.browserRootPath ? (
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={libraryMutationBusy}
-                          type="button"
-                          onClick={() => handleDeleteFolder(currentFolder)}
-                        >
-                          Delete folder
-                        </button>
-                      ) : null}
                     </div>
                   </div>
-
-                  {selectedEntries.length > 0 ? (
-                    <div className="admin-media-bulk-actions">
-                      <span className="admin-media-bulk-summary">{formatItemCountLabel(selectedEntries.length, 'image')} selected</span>
-                      <div className="admin-inline-actions">
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={libraryMutationBusy || !canMoveSelectedToCurrentFolder}
-                          type="button"
-                          onClick={() => moveMediaSelectionToFolder(selectedEntries.map((entry) => entry.id), selectedFolderPath)}
-                        >
-                          Move selected here
-                        </button>
-                        <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleDeleteSelectedEntries}>
-                          Delete selected
-                        </button>
-                        <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleClearSelectedEntries}>
-                          Clear selection
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
 
                   <p className="admin-note admin-media-inline-note admin-media-browser-note">
                     Drag and drop images here to upload into <strong>{selectedFolderPath || libraryState.browserRootPath || 'media'}</strong>. You can also drag selected images onto any folder below to move them there.
@@ -2071,13 +2137,16 @@ export function AdminMediaManager({
                         ))}
 
                         {filteredEntries.map((entry) => {
-                          const isSelected = entry.id === effectiveSelectedEntryId || entry.managedUrl === normalizedCurrentUrl
+                          const isSelected = entry.id === effectiveSelectedEntryId
+                          const isCurrentValue = entry.managedUrl === normalizedCurrentUrl
                           const isBulkSelected = selectedEntryIdSet.has(entry.id)
                           const dimensionsLabel = formatDimensions(getEntryDimensions(entry))
 
                           return (
                             <tr
-                              className={`admin-media-list-row${isSelected || isBulkSelected ? ' admin-media-list-row--selected' : ''}`.trim()}
+                              className={`admin-media-list-row${isSelected || isBulkSelected ? ' admin-media-list-row--selected' : ''}${
+                                isCurrentValue ? ' admin-media-list-row--current' : ''
+                              }`.trim()}
                               draggable={!libraryMutationBusy}
                               key={entry.id}
                               onClick={() => handleSelectEntry(entry)}
@@ -2150,34 +2219,6 @@ export function AdminMediaManager({
                           {selectedEntry.folderPath ? ` | Folder: ${selectedEntry.folderPath}` : ''}
                         </p>
                         <code className="admin-media-card-path">{selectedEntry.storagePath}</code>
-                      </div>
-                      <div className="admin-inline-actions admin-media-details-actions">
-                        {onSelect ? (
-                          <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleUseEntry(selectedEntry)}>
-                            Use image
-                          </button>
-                        ) : null}
-                        <a className="button-link button-link--ghost admin-action" href={selectedEntry.managedUrl} rel="noreferrer" target="_blank">
-                          Open
-                        </a>
-                        <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedEntry.managedUrl)}>
-                          Copy URL
-                        </button>
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={libraryMutationBusy}
-                          type="button"
-                          onClick={() => {
-                            if (detailsDeleteUsesSelection) {
-                              handleDeleteSelectedEntries()
-                              return
-                            }
-
-                            handleDeleteEntry(selectedEntry)
-                          }}
-                        >
-                          {detailsDeleteLabel}
-                        </button>
                       </div>
                     </section>
                   ) : null}
