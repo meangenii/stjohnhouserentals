@@ -15,6 +15,7 @@ import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariant
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { usePropertyGalleryNavigation } from '../lib/usePropertyGalleryNavigation'
 import { useAdminSession } from '../lib/useAdminSession'
+import { hasPropertyCalendarLink } from '../lib/propertyCalendarLink'
 import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
 
 const PROPERTY_CROSSFADE_DURATION_MS = 180
@@ -359,6 +360,7 @@ export function PropertyDetailPage() {
   const contactActions = getPropertyContactActions(property)
   const contactInfo = getPropertyContactInfo(property)
   const availabilityFallback = <PropertyAvailabilityFallback contactActions={contactActions} contactInfo={contactInfo} />
+  const hasCalendarLink = hasPropertyCalendarLink(property)
   const propertySections = {
     shortDescription:
       shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
@@ -402,7 +404,7 @@ export function PropertyDetailPage() {
         sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: property.calendarUrl ? (
+    calendar: hasCalendarLink ? (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"

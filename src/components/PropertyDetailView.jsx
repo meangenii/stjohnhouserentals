@@ -5,6 +5,7 @@ import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { usePropertyGalleryNavigation } from '../lib/usePropertyGalleryNavigation'
+import { hasPropertyCalendarLink } from '../lib/propertyCalendarLink'
 import { PropertyAvailabilityFallback } from './PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from './PropertyAvailabilityCalendar'
 import { PropertyContentSection } from './PropertyContentSection'
@@ -38,6 +39,7 @@ export function PropertyDetailView({ property }) {
   const contactActions = getPropertyContactActions(property)
   const contactInfo = getPropertyContactInfo(property)
   const availabilityFallback = <PropertyAvailabilityFallback contactActions={contactActions} contactInfo={contactInfo} />
+  const hasCalendarLink = hasPropertyCalendarLink(property)
   const propertySections = {
     shortDescription:
       shortDescriptionLines.length > 0 || sectionConfigs.shortDescription.renderWhenEmpty ? (
@@ -81,7 +83,7 @@ export function PropertyDetailView({ property }) {
         sectionConfig={sectionConfigs.description}
       />
     ),
-    calendar: property.calendarUrl ? (
+    calendar: hasCalendarLink ? (
       <PropertyContentSection
         className="property-template-section--calendar"
         key="calendar"

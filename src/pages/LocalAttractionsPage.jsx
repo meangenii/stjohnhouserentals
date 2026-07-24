@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
+import { RestaurantDirectoryPanel } from '../components/RestaurantDirectoryPanel'
 import { buildPhoneHref } from '../lib/contactLinks'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { usePageEditor } from '../lib/usePageEditor'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 const DINING_FOOD_FILTERS = [
@@ -42,6 +44,10 @@ function matchesFoodType(restaurant, foodTypeId) {
   const filter = DINING_FOOD_FILTERS.find((option) => option.id === foodTypeId)
   const searchableText = [restaurant?.name, restaurant?.cuisine].filter(Boolean).join(' ')
   return filter ? filter.pattern.test(searchableText) : true
+}
+
+function isRestaurantActive(restaurant) {
+  return restaurant?.active !== false
 }
 
 function ActionIcon({ type }) {
@@ -135,6 +141,7 @@ function DiningSection({ restaurants, sectionIndex, title }) {
 
 export function LocalAttractionsPage() {
   const page = useStructuredPageContent('localAttractions')
+  const pageEditor = usePageEditor()
   const [selectedDiningArea, setSelectedDiningArea] = useState('all')
   const [selectedFoodType, setSelectedFoodType] = useState('all')
 
@@ -142,12 +149,14 @@ export function LocalAttractionsPage() {
     return <PageLoadingState />
   }
 
-  const diningSections = page.dining.sections
+  const allDiningSections = Array.isArray(page.dining?.sections) ? page.dining.sections : []
+  const diningSections = allDiningSections
     .map((section, sectionIndex) => ({
       ...section,
       sectionIndex,
       restaurants: (section.restaurants ?? [])
         .map((restaurant, restaurantIndex) => ({ restaurant, restaurantIndex }))
+        .filter(({ restaurant }) => isRestaurantActive(restaurant))
         .filter(({ restaurant }) => matchesFoodType(restaurant, selectedFoodType)),
     }))
     .filter((section) => selectedDiningArea === 'all' || String(section.sectionIndex) === selectedDiningArea)
@@ -156,7 +165,10 @@ export function LocalAttractionsPage() {
   const mapImageUrl = getContentImageSrc(page.map.image, { width: 1400, height: 900, mode: 'fit' })
   const mapActionUrl = String(page.map?.action?.href ?? '').trim() || mapImageUrl || '#'
   const diningResultCount = diningSections.reduce((total, section) => total + section.restaurants.length, 0)
-  const totalRestaurantCount = page.dining.sections.reduce((total, section) => total + section.restaurants.length, 0)
+  const totalRestaurantCount = allDiningSections.reduce(
+    (total, section) => total + (section.restaurants ?? []).filter((restaurant) => isRestaurantActive(restaurant)).length,
+    0,
+  )
 
   return (
     <article className="local-attractions-page">
@@ -251,7 +263,7 @@ export function LocalAttractionsPage() {
                   value={selectedDiningArea}
                 >
                   <option value="all">All Locations</option>
-                  {page.dining.sections.map((section, sectionIndex) => (
+                  {allDiningSections.map((section, sectionIndex) => (
                     <option key={sectionIndex} value={sectionIndex}>
                       {section.title.replace(/\s+dining$/i, '')}
                     </option>
@@ -280,6 +292,8 @@ export function LocalAttractionsPage() {
             Showing {diningResultCount} {diningResultCount === 1 ? 'place' : 'places'}
           </p>
         </div>
+
+        {pageEditor ? <RestaurantDirectoryPanel disabled={pageEditor.disabled} page={page} updatePath={pageEditor.updatePath} /> : null}
 
         {diningSections.map((section) => (
           <DiningSection key={section.sectionIndex} restaurants={section.restaurants} sectionIndex={section.sectionIndex} title={section.title} />

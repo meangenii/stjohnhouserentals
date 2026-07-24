@@ -7754,6 +7754,10 @@ button.admin-auth-badge {
 .admin-car-companies-panel {
   margin-top: 1.5rem;
 }
+.admin-restaurant-directory-panel {
+  margin-top: 1.5rem;
+}
+
 
 .admin-car-companies-list {
   display: grid;
@@ -7761,6 +7765,13 @@ button.admin-auth-badge {
   margin-top: 1rem;
   overflow-x: auto;
 }
+.admin-restaurant-directory-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
 
 .admin-car-companies-row {
   display: grid;
@@ -7769,6 +7780,14 @@ button.admin-auth-badge {
   align-items: center;
   min-width: 40rem;
 }
+.admin-restaurant-directory-row {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1.15fr 1.1fr 1.25fr 1fr auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  min-width: 70rem;
+}
+
 
 .admin-car-companies-row--header {
   padding: 0 0.2rem;
@@ -7778,8 +7797,19 @@ button.admin-auth-badge {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+.admin-restaurant-directory-row--header {
+  padding: 0 0.2rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 
-.admin-car-companies-row input[type='text'] {
+
+.admin-car-companies-row input[type='text'],
+.admin-restaurant-directory-row input[type='text'],
+.admin-restaurant-directory-row select {
   width: 100%;
   padding: 0.6rem 0.75rem;
   border: 1px solid #cfe0ec;
