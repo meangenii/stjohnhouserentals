@@ -22,6 +22,226 @@ import { PropertyDetailView } from './PropertyDetailView'
 
 const PROPERTY_DESCRIPTION_SECTION_ORDER = ['descriptionHtml', 'ratesHtml', 'ratesTableHtml', 'bookingHtml', 'policyHtml']
 const PROPERTY_DESCRIPTION_RATE_SECTION_KEYS = ['ratesHtml', 'ratesTableHtml']
+const PROPERTY_RATE_TABLE_YEAR = '2027'
+const PROPERTY_RATE_TABLE_EMPTY_ROW_COUNT = 9
+const PROPERTY_RATE_TABLE_COLUMNS = [
+  { key: 'starting', label: 'Starting' },
+  { key: 'ending', label: 'Ending' },
+  { key: 'dailyRate', label: 'Daily Rate' },
+]
+const PROPERTY_RATE_TABLE_DEFAULT_ROWS = [
+  { starting: '1/1', ending: '2/26', dailyRate: '$870' },
+  { starting: '2/27', ending: '3/13', dailyRate: '$906' },
+  { starting: '3/14', ending: '3/27', dailyRate: '$725' },
+  { starting: '3/28', ending: '8/31', dailyRate: '$550' },
+  { starting: '9/1', ending: '10/31', dailyRate: '$450' },
+  { starting: '11/1', ending: '11/24', dailyRate: '$725' },
+  { starting: '11/25', ending: '11/30', dailyRate: '$850' },
+  { starting: '12/1', ending: '12/20', dailyRate: '$725' },
+  { starting: '12/21', ending: '12/31', dailyRate: '$850' },
+]
+
+function escapePropertyRateTableText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function createEmptyPropertyRateTableRow() {
+  return {
+    starting: '',
+    ending: '',
+    dailyRate: '',
+  }
+}
+
+function createEmptyPropertyRateTableRows(count = PROPERTY_RATE_TABLE_EMPTY_ROW_COUNT) {
+  return Array.from({ length: count }, () => createEmptyPropertyRateTableRow())
+}
+
+function createPropertyRateTable({ rows = PROPERTY_RATE_TABLE_DEFAULT_ROWS, year = PROPERTY_RATE_TABLE_YEAR } = {}) {
+  return {
+    rows: normalizePropertyRateTableRows(rows),
+    year: normalizePropertyRateTableCellText(year) || PROPERTY_RATE_TABLE_YEAR,
+  }
+}
+
+function normalizePropertyRateTableCellText(value = '') {
+  return String(value ?? '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function normalizePropertyRateTableRows(rows = []) {
+  const normalizedRows = (Array.isArray(rows) ? rows : []).map((row) => ({
+    starting: normalizePropertyRateTableCellText(row?.starting),
+    ending: normalizePropertyRateTableCellText(row?.ending),
+    dailyRate: normalizePropertyRateTableCellText(row?.dailyRate),
+  }))
+
+  return normalizedRows.length > 0 ? normalizedRows : [createEmptyPropertyRateTableRow()]
+}
+
+function buildPropertyRateTableHtml({ rows = PROPERTY_RATE_TABLE_DEFAULT_ROWS, year = PROPERTY_RATE_TABLE_YEAR } = {}) {
+  const table = createPropertyRateTable({ rows, year })
+
+  return [
+    '<table class="property-rates-table">',
+    `<caption>${escapePropertyRateTableText(table.year)}</caption>`,
+    '<thead>',
+    `<tr>${PROPERTY_RATE_TABLE_COLUMNS.map((column) => `<th>${escapePropertyRateTableText(column.label)}</th>`).join('')}</tr>`,
+    '</thead>',
+    '<tbody>',
+    table.rows
+      .map(
+        (row) =>
+          `<tr>${PROPERTY_RATE_TABLE_COLUMNS.map((column) => {
+            const cellValue = escapePropertyRateTableText(row[column.key])
+            return `<td>${cellValue || '&nbsp;'}</td>`
+          }).join('')}</tr>`,
+      )
+      .join(''),
+    '</tbody>',
+    '</table>',
+  ].join('')
+}
+
+function normalizePropertyRateTableSideHtml(value = '') {
+  return richTextValueToHtml(value).trim()
+}
+
+function buildPropertyRateTablesHtml(value = {}) {
+  const source = Array.isArray(value) ? { tables: value } : value
+  const beforeHtml = normalizePropertyRateTableSideHtml(source?.beforeHtml)
+  const afterHtml = normalizePropertyRateTableSideHtml(source?.afterHtml)
+  const normalizedTables = (Array.isArray(source?.tables) ? source.tables : []).map((table) => createPropertyRateTable(table))
+  const safeTables = normalizedTables.length > 0 ? normalizedTables : [createPropertyRateTable()]
+  const tablesHtml = safeTables.map((table) => buildPropertyRateTableHtml(table)).join('\n')
+
+  return [beforeHtml, tablesHtml, afterHtml].filter(Boolean).join('\n')
+}
+
+function isPropertyRateTableHeadingRow(row) {
+  const cells = Array.from(row?.children ?? []).filter((cell) => ['TD', 'TH'].includes(cell.tagName.toUpperCase()))
+  const cellLabels = cells.map((cell) => normalizePropertyRateTableCellText(cell.textContent).toLowerCase())
+
+  return (
+    cellLabels.length === PROPERTY_RATE_TABLE_COLUMNS.length &&
+    PROPERTY_RATE_TABLE_COLUMNS.every((column, index) => column.label.toLowerCase() === cellLabels[index])
+  )
+}
+
+function parsePropertyRateTableElement(table) {
+  if (!table) {
+    return createPropertyRateTable()
+  }
+
+  const captionYear = normalizePropertyRateTableCellText(table.querySelector('caption')?.textContent)
+  const firstRow = table.querySelector('tr')
+  const firstRowCells = Array.from(firstRow?.children ?? []).filter((cell) => ['TD', 'TH'].includes(cell.tagName.toUpperCase()))
+  const firstRowText = firstRowCells.map((cell) => normalizePropertyRateTableCellText(cell.textContent)).filter(Boolean).join(' ')
+  const firstRowLooksLikeYear = firstRowCells.length === 1 && /^\d{4}$/.test(firstRowText)
+  const bodyRows = Array.from(table.querySelectorAll('tbody tr'))
+  const sourceRows = bodyRows.length > 0 ? bodyRows : Array.from(table.querySelectorAll('tr'))
+  const rows = sourceRows
+    .filter((row) => !row.closest('thead') && row !== (firstRowLooksLikeYear ? firstRow : null) && !isPropertyRateTableHeadingRow(row))
+    .map((row) => {
+      const cells = Array.from(row.children).filter((cell) => ['TD', 'TH'].includes(cell.tagName.toUpperCase()))
+
+      return {
+        starting: normalizePropertyRateTableCellText(cells[0]?.textContent),
+        ending: normalizePropertyRateTableCellText(cells[1]?.textContent),
+        dailyRate: normalizePropertyRateTableCellText(cells[2]?.textContent),
+      }
+    })
+
+  return createPropertyRateTable({
+    rows,
+    year: captionYear || (firstRowLooksLikeYear ? firstRowText : '') || PROPERTY_RATE_TABLE_YEAR,
+  })
+}
+
+function isDirectPropertyRateTableNode(node) {
+  return node?.nodeType === 1 && node.tagName === 'TABLE'
+}
+
+function appendPropertyRateTableSideNode(documentNode, targetRoot, node) {
+  if (node.nodeType === 3) {
+    const text = String(node.textContent ?? '').trim()
+
+    if (!text) {
+      return
+    }
+
+    const paragraph = documentNode.createElement('p')
+    paragraph.textContent = text
+    targetRoot.append(paragraph)
+    return
+  }
+
+  if (node.nodeType === 1) {
+    targetRoot.append(node.cloneNode(true))
+  }
+}
+
+function parsePropertyRateTablesHtml(value = '') {
+  const html = richTextValueToHtml(value)
+
+  if (!html.trim() || typeof DOMParser === 'undefined') {
+    return {
+      afterHtml: '',
+      beforeHtml: '',
+      tables: [createPropertyRateTable()],
+    }
+  }
+
+  const documentNode = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html')
+  const root = documentNode.body.firstElementChild
+
+  if (!root) {
+    return {
+      afterHtml: '',
+      beforeHtml: '',
+      tables: [createPropertyRateTable()],
+    }
+  }
+
+  const tables = Array.from(root.querySelectorAll('table')).map((table) => parsePropertyRateTableElement(table))
+  const beforeRoot = documentNode.createElement('div')
+  const afterRoot = documentNode.createElement('div')
+  let hasPassedFirstTable = false
+
+  Array.from(root.childNodes).forEach((node) => {
+    if (isDirectPropertyRateTableNode(node)) {
+      hasPassedFirstTable = true
+      return
+    }
+
+    appendPropertyRateTableSideNode(documentNode, hasPassedFirstTable ? afterRoot : beforeRoot, node)
+  })
+
+  return {
+    afterHtml: normalizePropertyRateTableSideHtml(afterRoot.innerHTML),
+    beforeHtml: normalizePropertyRateTableSideHtml(beforeRoot.innerHTML),
+    tables: tables.length > 0 ? tables : [createPropertyRateTable()],
+  }
+}
+
+function getNextPropertyRateTableYear(tables = []) {
+  const years = (Array.isArray(tables) ? tables : [])
+    .map((table) => Number.parseInt(String(table?.year ?? '').trim(), 10))
+    .filter((year) => Number.isInteger(year) && year > 0)
+
+  if (years.length === 0) {
+    return PROPERTY_RATE_TABLE_YEAR
+  }
+
+  return String(Math.max(...years) + 1)
+}
 
 const PROPERTY_DESCRIPTION_RATE_SECTIONS = [
   {
@@ -52,13 +272,7 @@ const PROPERTY_DESCRIPTION_RATE_SECTIONS = [
     placement: 'After Main Description',
     storageClassName: 'property-description-section--rates-table',
     placeholder: 'Edit table cells directly.',
-    defaultHtml: [
-      '<table><thead><tr><th>Starting</th><th>Ending</th><th>Daily Rate</th></tr></thead><tbody>',
-      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
-      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
-      '<tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>',
-      '</tbody></table>',
-    ].join(''),
+    defaultHtml: buildPropertyRateTableHtml(),
   },
 ]
 
@@ -453,6 +667,217 @@ function normalizeEnabledPropertyDescriptionSections(value, sections = {}) {
   )
 }
 
+function AdminPropertyRateTableEditor({
+  canRemoveTable = false,
+  disabled,
+  onAddRow,
+  onRemoveRow,
+  onRemoveTable,
+  onRowChange,
+  onYearChange,
+  table,
+  tableIndex,
+}) {
+  return (
+    <div className="admin-property-rate-table-editor">
+      <div className="admin-property-rate-table-editor-header">
+        <span>{`Table ${tableIndex + 1}`}</span>
+        <div className="admin-inline-actions">
+          <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={onAddRow}>
+            Add Row
+          </button>
+          {canRemoveTable ? (
+            <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={onRemoveTable}>
+              Remove Table
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="admin-property-rate-table-frame">
+        <label className="admin-property-rate-table-year">
+          <span className="visually-hidden">Rate year</span>
+          <input disabled={disabled} inputMode="numeric" value={table.year} onChange={(event) => onYearChange(event.target.value)} />
+        </label>
+
+        <div className="admin-property-rate-table-grid" role="table" aria-label={`Rates table ${table.year || tableIndex + 1}`}>
+          <div className="admin-property-rate-table-row admin-property-rate-table-row--header" role="row">
+            {PROPERTY_RATE_TABLE_COLUMNS.map((column) => (
+              <span className={`admin-property-rate-table-heading admin-property-rate-table-heading--${column.key}`} key={column.key} role="columnheader">
+                {column.label}
+              </span>
+            ))}
+            <span aria-hidden="true" className="admin-property-rate-table-action-spacer" />
+          </div>
+
+          {table.rows.map((row, rowIndex) => (
+            <div
+              className={`admin-property-rate-table-row${rowIndex % 2 === 0 ? ' admin-property-rate-table-row--striped' : ''}`}
+              key={`rate-row-${rowIndex}`}
+              role="row"
+            >
+              {PROPERTY_RATE_TABLE_COLUMNS.map((column) => (
+                <label className={`admin-property-rate-table-cell admin-property-rate-table-cell--${column.key}`} key={column.key}>
+                  <span className="visually-hidden">{`${column.label} row ${rowIndex + 1}`}</span>
+                  <input
+                    disabled={disabled}
+                    inputMode={column.key === 'dailyRate' ? 'decimal' : 'text'}
+                    value={row[column.key]}
+                    onChange={(event) => onRowChange(rowIndex, column.key, event.target.value)}
+                  />
+                </label>
+              ))}
+              <div className="admin-property-rate-table-row-actions">
+                <button
+                  className="button-link button-link--ghost admin-action"
+                  disabled={disabled}
+                  type="button"
+                  onClick={() => onRemoveRow(rowIndex)}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AdminPropertyRateTablesEditor({ disabled, onChange, value }) {
+  const tableDocument = useMemo(() => parsePropertyRateTablesHtml(value), [value])
+  const tables = tableDocument.tables
+
+  function emitDocumentChange(nextDocument) {
+    onChange(buildPropertyRateTablesHtml(nextDocument))
+  }
+
+  function emitTablesChange(nextTables) {
+    emitDocumentChange({
+      ...tableDocument,
+      tables: nextTables,
+    })
+  }
+
+  function updateBeforeHtml(nextValue) {
+    emitDocumentChange({
+      ...tableDocument,
+      beforeHtml: nextValue,
+    })
+  }
+
+  function updateAfterHtml(nextValue) {
+    emitDocumentChange({
+      ...tableDocument,
+      afterHtml: nextValue,
+    })
+  }
+
+  function updateTable(tableIndex, nextTable) {
+    emitTablesChange(tables.map((table, index) => (index === tableIndex ? createPropertyRateTable(nextTable) : table)))
+  }
+
+  function updateYear(tableIndex, nextYear) {
+    updateTable(tableIndex, {
+      ...tables[tableIndex],
+      year: nextYear,
+    })
+  }
+
+  function updateRow(tableIndex, rowIndex, columnKey, nextValue) {
+    const table = tables[tableIndex]
+
+    updateTable(tableIndex, {
+      ...table,
+      rows: table.rows.map((row, index) => (index === rowIndex ? { ...row, [columnKey]: nextValue } : row)),
+    })
+  }
+
+  function addRow(tableIndex) {
+    const table = tables[tableIndex]
+
+    updateTable(tableIndex, {
+      ...table,
+      rows: [...table.rows, createEmptyPropertyRateTableRow()],
+    })
+  }
+
+  function removeRow(tableIndex, rowIndex) {
+    const table = tables[tableIndex]
+    const nextRows = table.rows.filter((row, index) => index !== rowIndex)
+
+    updateTable(tableIndex, {
+      ...table,
+      rows: nextRows.length > 0 ? nextRows : [createEmptyPropertyRateTableRow()],
+    })
+  }
+
+  function addTable() {
+    emitTablesChange([
+      ...tables,
+      createPropertyRateTable({
+        rows: createEmptyPropertyRateTableRows(),
+        year: getNextPropertyRateTableYear(tables),
+      }),
+    ])
+  }
+
+  function removeTable(tableIndex) {
+    const nextTables = tables.filter((table, index) => index !== tableIndex)
+
+    emitTablesChange(nextTables.length > 0 ? nextTables : [createPropertyRateTable()])
+  }
+
+  return (
+    <div className="admin-property-rate-tables-editor">
+      <div className="admin-property-rate-tables-actions">
+        <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={addTable}>
+          Add Table
+        </button>
+      </div>
+      <div className="admin-property-rate-table-copy-field">
+        <AdminRichTextEditor
+          compact
+          contentMode="paragraphs"
+          disabled={disabled}
+          label="Text Before Tables"
+          onChange={updateBeforeHtml}
+          placeholder="Optional text before the rates tables."
+          value={tableDocument.beforeHtml}
+        />
+      </div>
+      <div className="admin-property-rate-table-list">
+        {tables.map((table, tableIndex) => (
+          <AdminPropertyRateTableEditor
+            canRemoveTable={tables.length > 1}
+            disabled={disabled}
+            key={`rate-table-${tableIndex}`}
+            table={table}
+            tableIndex={tableIndex}
+            onAddRow={() => addRow(tableIndex)}
+            onRemoveRow={(rowIndex) => removeRow(tableIndex, rowIndex)}
+            onRemoveTable={() => removeTable(tableIndex)}
+            onRowChange={(rowIndex, columnKey, nextValue) => updateRow(tableIndex, rowIndex, columnKey, nextValue)}
+            onYearChange={(nextYear) => updateYear(tableIndex, nextYear)}
+          />
+        ))}
+      </div>
+      <div className="admin-property-rate-table-copy-field">
+        <AdminRichTextEditor
+          compact
+          contentMode="paragraphs"
+          disabled={disabled}
+          label="Text After Tables"
+          onChange={updateAfterHtml}
+          placeholder="Optional text after the rates tables."
+          value={tableDocument.afterHtml}
+        />
+      </div>
+    </div>
+  )
+}
+
 function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
   const editorState = useMemo(() => {
     let nextSections
@@ -527,10 +952,11 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
       return
     }
 
+    const nextDefinition = getPropertyRateSectionDefinition(nextSectionKey)
     const nextSections = {
       ...sections,
-      ratesHtml: nextSectionKey === 'ratesHtml' ? sections.ratesHtml : '',
-      ratesTableHtml: nextSectionKey === 'ratesTableHtml' ? sections.ratesTableHtml : '',
+      ratesHtml: nextSectionKey === 'ratesHtml' ? sections.ratesHtml || nextDefinition.defaultHtml : '',
+      ratesTableHtml: nextSectionKey === 'ratesTableHtml' ? sections.ratesTableHtml || nextDefinition.defaultHtml : '',
     }
     const nextEnabledDescriptionSections = [
       ...enabledDescriptionSections.filter((sectionKey) => !PROPERTY_DESCRIPTION_RATE_SECTION_KEYS.includes(sectionKey)),
@@ -567,12 +993,8 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
       </div>
 
       <div className="admin-property-description-slot">
-        <AdminRichTextEditor
-          allowSourceMode={activeRatesSectionKey === 'ratesTableHtml'}
-          compact
-          contentMode="block"
-          disabled={disabled}
-          headerActions={
+        {activeRatesSectionKey === 'ratesTableHtml' ? (
+          <>
             <div className="admin-property-description-rate-actions">
               <div aria-label="Rates format" className="admin-property-description-rate-mode" role="group">
                 {PROPERTY_DESCRIPTION_RATE_SECTIONS.map((definition) => (
@@ -596,13 +1018,51 @@ function AdminPropertyDescriptionEditor({ disabled, onChange, value }) {
                 </button>
               ) : null}
             </div>
-          }
-          label={activeRatesSection.editorLabel}
-          onChange={(nextValue) => updateSection(activeRatesSectionKey, nextValue)}
-          placeholder={activeRatesSection.placeholder}
-          sourceRows={activeRatesSectionKey === 'ratesTableHtml' ? 10 : undefined}
-          value={sections[activeRatesSectionKey]}
-        />
+            <div className="admin-property-description-table-heading">
+              <span>{activeRatesSection.editorLabel}</span>
+            </div>
+            <AdminPropertyRateTablesEditor
+              disabled={disabled}
+              onChange={(nextValue) => updateSection(activeRatesSectionKey, nextValue)}
+              value={sections[activeRatesSectionKey] || activeRatesSection.defaultHtml}
+            />
+          </>
+        ) : (
+          <AdminRichTextEditor
+            compact
+            contentMode="block"
+            disabled={disabled}
+            headerActions={
+              <div className="admin-property-description-rate-actions">
+                <div aria-label="Rates format" className="admin-property-description-rate-mode" role="group">
+                  {PROPERTY_DESCRIPTION_RATE_SECTIONS.map((definition) => (
+                    <button
+                      aria-pressed={activeRatesSectionKey === definition.key}
+                      className={`admin-property-description-rate-mode-button${
+                        activeRatesSectionKey === definition.key ? ' admin-property-description-rate-mode-button--active' : ''
+                      }`}
+                      disabled={disabled}
+                      key={definition.key}
+                      onClick={() => selectRatesMode(definition.key)}
+                      type="button"
+                    >
+                      {definition.modeLabel}
+                    </button>
+                  ))}
+                </div>
+                {hasRatesContent ? (
+                  <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={removeRatesSection}>
+                    Remove Section
+                  </button>
+                ) : null}
+              </div>
+            }
+            label={activeRatesSection.editorLabel}
+            onChange={(nextValue) => updateSection(activeRatesSectionKey, nextValue)}
+            placeholder={activeRatesSection.placeholder}
+            value={sections[activeRatesSectionKey]}
+          />
+        )}
       </div>
 
       {PROPERTY_DESCRIPTION_OPTIONAL_SECTIONS.map((definition) => {
@@ -1058,16 +1518,12 @@ export function AdminPropertyPreview({
             <div className="admin-preview-field-grid">
               <PreviewInput
                 disabled={disabled}
-                label="Calendar URL (.ics)"
+                label="Calendar URL (.ics or OwnerRez)"
                 onChange={(value) => onFieldChange('calendarUrl', value)}
                 type="url"
                 value={formState.calendarUrl}
                 wide
               />
-              <p className="admin-note admin-field--wide">
-                Paste the property's iCal export link (VRBO, Streamline, Airbnb, etc.) to show a live availability calendar on the
-                property page. Leave blank to show the contact-for-availability fallback.
-              </p>
             </div>
           </EditSection>
 

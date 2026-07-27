@@ -7,6 +7,7 @@ const ALLOWED_TAGS = new Set([
   'B',
   'BLOCKQUOTE',
   'BR',
+  'CAPTION',
   'DIV',
   'EM',
   'H1',
@@ -59,6 +60,7 @@ const ALLOWED_CLASS_NAMES = new Set([
   'property-rate-line--title',
   'property-rate-spacer',
   'property-rate-subgroup',
+  'property-rates-table',
   'property-review-body',
   'property-review-entry',
   'property-review-list',
@@ -66,7 +68,7 @@ const ALLOWED_CLASS_NAMES = new Set([
   'property-section-list',
 ])
 const ESCAPED_SITE_HTML_TAG_PATTERN =
-  /&(?:lt|#60|#x3c);\s*\/?\s*(?:a|b|blockquote|br|div|em|h[1-6]|hr|i|li|ol|p|span|strong|table|tbody|td|th|thead|tr|u|ul)\b/i
+  /&(?:lt|#60|#x3c);\s*\/?\s*(?:a|b|blockquote|br|caption|div|em|h[1-6]|hr|i|li|ol|p|span|strong|table|tbody|td|th|thead|tr|u|ul)\b/i
 const HTML_ENTITY_DECODE_MAP = {
   '&nbsp;': ' ',
   '&amp;': '&',
