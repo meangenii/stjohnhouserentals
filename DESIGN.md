@@ -37,6 +37,7 @@ Backend:
 
 - Firebase Hosting serves the SPA
 - Firebase Hosting rewrites `/api/**` to `siteApi`
+- Firebase Hosting rewrites `/sitemap.xml`, `/robots.txt`, `/rental-properties/**`, `/1bedroom/**`, and `/charter-boat-rentals/**` to `siteSeo` so SEO output is built from published Firestore content at request time instead of from build-time property files
 - Cloud Functions provides public endpoints now and privileged actions later
 
 ## Current Implementation Status

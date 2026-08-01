@@ -1,5 +1,5 @@
 import { getAdminIdToken } from './adminAuth'
-import { deleteJson, postJson } from './api'
+import { deleteJson, getJson, postJson } from './api'
 import mediaUploadConfig from '../../shared/mediaUploadConfig.json'
 
 export const MAX_ADMIN_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
@@ -182,6 +182,28 @@ export async function moveAdminMediaFiles({ folderPath, mediaIds }) {
 
   const authToken = await requireAdminAuthToken()
   return postJson('/admin/media/library/move', { folderPath: normalizedFolderPath, mediaIds: normalizedMediaIds }, { authToken })
+}
+
+export async function findAdminMediaUsage(mediaId) {
+  const normalizedMediaId = String(mediaId ?? '').trim()
+
+  if (!normalizedMediaId) {
+    throw new Error('Choose an image before searching for its usage.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return getJson(`/admin/media/usage?mediaId=${encodeURIComponent(normalizedMediaId)}`, { authToken })
+}
+
+export async function convertAdminMediaFilesToAvif(mediaIds) {
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : []).map((value) => String(value ?? '').trim()).filter(Boolean))]
+
+  if (!normalizedMediaIds.length) {
+    throw new Error('Choose at least one image before converting it to AVIF.')
+  }
+
+  const authToken = await requireAdminAuthToken()
+  return postJson('/admin/media/library/convert-avif', { mediaIds: normalizedMediaIds }, { authToken })
 }
 
 export async function deleteAdminMediaFolder(folderPath) {

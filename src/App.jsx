@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
@@ -218,8 +218,29 @@ function readHashTarget(hash) {
   }
 }
 
+function shouldPreserveRouteScroll(locationState) {
+  return Boolean(
+    locationState &&
+      typeof locationState === 'object' &&
+      (locationState.restorePropertyReturnPosition === true || locationState.rentalFilterScrollTarget === true),
+  )
+}
+
+function focusHashTargetElement(targetElement) {
+  targetElement.scrollIntoView({ block: 'start', behavior: 'auto' })
+
+  if (targetElement instanceof HTMLElement) {
+    if (targetElement.id === 'main-content' && !targetElement.hasAttribute('tabindex')) {
+      targetElement.setAttribute('tabindex', '-1')
+    }
+
+    targetElement.focus({ preventScroll: true })
+  }
+}
+
 function RouteEnhancements() {
   const location = useLocation()
+  const previousScrollLocationRef = useRef(null)
   const routeMeta = getRouteSeoMeta(location.pathname)
 
   useDocumentMeta({ ...routeMeta, priority: 0 })
@@ -236,34 +257,64 @@ function RouteEnhancements() {
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    const hashTarget = readHashTarget(location.hash)
+    const previousScrollLocation = previousScrollLocationRef.current
+    previousScrollLocationRef.current = {
+      hash: location.hash,
+      pathname: location.pathname,
+    }
 
-    if (hashTarget) {
-      window.requestAnimationFrame(() => {
-        const targetElement = document.getElementById(hashTarget)
-
-        if (targetElement) {
-          targetElement.scrollIntoView()
-
-          if (targetElement instanceof HTMLElement) {
-            if (targetElement.id === 'main-content' && !targetElement.hasAttribute('tabindex')) {
-              targetElement.setAttribute('tabindex', '-1')
-            }
-
-            targetElement.focus({ preventScroll: true })
-          }
-
-          return
-        }
-
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-      })
-
+    if (
+      previousScrollLocation &&
+      previousScrollLocation.pathname === location.pathname &&
+      previousScrollLocation.hash === location.hash
+    ) {
       return
     }
 
+    if (shouldPreserveRouteScroll(location.state)) {
+      return
+    }
+
+    const hashTarget = readHashTarget(location.hash)
+
+    if (hashTarget) {
+      let frameId = 0
+      let retryTimerId = 0
+      let cancelled = false
+
+      function scrollToHashTarget(attempt = 0) {
+        frameId = window.requestAnimationFrame(() => {
+          if (cancelled) {
+            return
+          }
+
+          const targetElement = document.getElementById(hashTarget)
+
+          if (targetElement) {
+            focusHashTargetElement(targetElement)
+            return
+          }
+
+          if (attempt < 10) {
+            retryTimerId = window.setTimeout(() => scrollToHashTarget(attempt + 1), 50)
+            return
+          }
+
+          window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+        })
+      }
+
+      scrollToHashTarget()
+
+      return () => {
+        cancelled = true
+        window.cancelAnimationFrame(frameId)
+        window.clearTimeout(retryTimerId)
+      }
+    }
+
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-  }, [location.hash, location.pathname, location.search])
+  }, [location.hash, location.pathname, location.search, location.state])
 
   return null
 }

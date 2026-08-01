@@ -28,18 +28,26 @@ export const SHORT_DESCRIPTION_FEATURE_OPTIONS = [
   },
 ]
 
+const AIR_CONDITIONING_BEDROOM_DESCRIPTOR = 'A/C (Bedrooms)'
+const AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR = 'A/C (Whole House)'
+
 export const AIR_CONDITIONING_OPTIONS = [
   {
-    label: 'Bedrooms',
-    line: 'Air-conditioned Bedrooms',
+    label: AIR_CONDITIONING_BEDROOM_DESCRIPTOR,
+    line: AIR_CONDITIONING_BEDROOM_DESCRIPTOR,
     value: 'bedrooms',
   },
   {
-    label: 'Full House',
-    line: 'A/C (Whole House)',
+    label: AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR,
+    line: AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR,
     value: 'whole-house',
   },
 ]
+
+const AIR_CONDITIONING_TERM_PATTERN = /\b(?:air[-\s]?condition(?:ed|ing)?|a\/c|ac)\b/i
+const AIR_CONDITIONING_BEDROOM_CONTEXT_PATTERN = /\b(?:bedrooms?|brs?)\b/i
+const AIR_CONDITIONING_WHOLE_HOUSE_CONTEXT_PATTERN =
+  /(?:\b(?:full(?:y)?|whole\s+(?:house|home)|throughout|entire\s+(?:home|house)|every\s+room|all\s+rooms|common\s+areas|central)\b|100%)/i
 
 export function normalizeShortDescriptionFactLine(value = '') {
   return String(value ?? '')
@@ -57,13 +65,66 @@ export function getShortDescriptionFactLines(value = '') {
 }
 
 function matchesAirConditioningBedroomLine(line = '') {
+  const sourceLine = String(line ?? '').trim()
   const normalizedLine = normalizeShortDescriptionFactLine(line)
-  return ['air conditioned bedrooms', 'a/c bedrooms', 'ac bedrooms'].includes(normalizedLine)
+  return (
+    ['air conditioned bedrooms', 'air conditioning bedrooms', 'a/c bedroom', 'a/c bedrooms', 'ac bedroom', 'ac bedrooms'].includes(normalizedLine) ||
+    (AIR_CONDITIONING_TERM_PATTERN.test(sourceLine) && AIR_CONDITIONING_BEDROOM_CONTEXT_PATTERN.test(sourceLine))
+  )
 }
 
 function matchesAirConditioningWholeHouseLine(line = '') {
+  const sourceLine = String(line ?? '').trim()
   const normalizedLine = normalizeShortDescriptionFactLine(line)
-  return ['a/c whole house', 'ac whole house', 'full a/c', 'full ac', 'whole house a/c', 'whole house ac'].includes(normalizedLine)
+  return (
+    [
+      'a/c',
+      'ac',
+      'air conditioned',
+      'air conditioning',
+      'a/c whole house',
+      'ac whole house',
+      'full a/c',
+      'full ac',
+      'whole house a/c',
+      'whole house ac',
+    ].includes(normalizedLine) ||
+    (AIR_CONDITIONING_TERM_PATTERN.test(sourceLine) && AIR_CONDITIONING_WHOLE_HOUSE_CONTEXT_PATTERN.test(sourceLine))
+  )
+}
+
+function getAirConditioningDescriptorLine(line = '') {
+  if (matchesAirConditioningWholeHouseLine(line)) {
+    return AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR
+  }
+
+  if (matchesAirConditioningBedroomLine(line)) {
+    return AIR_CONDITIONING_BEDROOM_DESCRIPTOR
+  }
+
+  return ''
+}
+
+export function normalizePropertyShortDescriptionDescriptorLine(line = '') {
+  const normalizedLine = String(line ?? '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+
+  if (!normalizedLine) {
+    return ''
+  }
+
+  return getAirConditioningDescriptorLine(normalizedLine) || normalizedLine.replace(/\bAC\b/g, 'A/C')
+}
+
+export function normalizePropertyShortDescriptionDescriptorText(value = '') {
+  return String(value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => normalizePropertyShortDescriptionDescriptorLine(line))
+    .filter(Boolean)
+    .join('\n')
 }
 
 function matchesGeneratedPropertyFeatureLine(line = '') {
@@ -83,10 +144,10 @@ export function readShortDescriptionFeatureState(value = '') {
     }),
     {},
   )
-  const airConditioning = lines.some((line) => matchesAirConditioningBedroomLine(line))
-    ? 'bedrooms'
-    : lines.some((line) => matchesAirConditioningWholeHouseLine(line))
-      ? 'whole-house'
+  const airConditioning = lines.some((line) => matchesAirConditioningWholeHouseLine(line))
+    ? 'whole-house'
+    : lines.some((line) => matchesAirConditioningBedroomLine(line))
+      ? 'bedrooms'
       : ''
 
   return {

@@ -2,7 +2,8 @@ export const SITE_ORIGIN = 'https://www.stjohnhouserentals.com'
 export const SITE_NAME = 'St. John House Rentals'
 export const DEFAULT_SITE_DESCRIPTION =
   'Browse St. John vacation rentals, ferry information, charter boats, and island travel resources.'
-export const DEFAULT_SOCIAL_IMAGE = `${SITE_ORIGIN}/social-preview.jpg`
+export const DEFAULT_SOCIAL_IMAGE_VERSION = '20260727'
+export const DEFAULT_SOCIAL_IMAGE = `${SITE_ORIGIN}/social-preview.jpg?v=${DEFAULT_SOCIAL_IMAGE_VERSION}`
 export const DEFAULT_SOCIAL_IMAGE_WIDTH = 1200
 export const DEFAULT_SOCIAL_IMAGE_HEIGHT = 630
 export const DEFAULT_SOCIAL_IMAGE_TYPE = 'image/jpeg'

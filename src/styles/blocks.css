@@ -491,6 +491,14 @@ button.block-toolbar-image-picker {
   width: 100%;
 }
 
+.block-image-gallery-caption {
+  color: #4f6072;
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0.55rem 0 0;
+}
+
 .block-image-gallery-remove {
   margin-top: 0.35rem;
 }

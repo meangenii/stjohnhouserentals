@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { PropertyAvailabilityFallback } from '../components/PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'
-import { PropertyDescriptionSections } from '../components/PropertyDescriptionSections'
+import { PropertyDescriptionSections, PropertyDetailsSection, PropertyPolicySection } from '../components/PropertyDescriptionSections'
 import { RichTextValue } from '../components/RichTextValue'
 import { ReturnToPropertiesButton } from '../components/ReturnToPropertiesButton'
 import { getAdminIdToken } from '../lib/adminAuth'
@@ -329,11 +329,28 @@ export function PropertyDetailPage() {
     ? (filteredPropertyOrder[filteredPropertyIndex + 1] ?? null)
     : property.nextProperty
   const propertyReturnPath = typeof location.state?.propertyReturnPath === 'string' ? location.state.propertyReturnPath : '/for-rent'
+  const propertyReturnScrollY = Number(location.state?.propertyReturnScrollY)
+  const propertyReturnTargetId =
+    typeof location.state?.propertyReturnTargetId === 'string' ? location.state.propertyReturnTargetId : ''
+  const propertyReturnStatePayload =
+    Number.isFinite(propertyReturnScrollY) || propertyReturnTargetId
+      ? {
+          ...(Number.isFinite(propertyReturnScrollY) ? { propertyReturnScrollY } : {}),
+          ...(propertyReturnTargetId ? { propertyReturnTargetId } : {}),
+        }
+      : null
+  const propertyReturnState = propertyReturnStatePayload
+    ? {
+        ...propertyReturnStatePayload,
+        restorePropertyReturnPosition: true,
+      }
+    : undefined
   const nextPropertyNavigationState =
-    usesFilteredPropertyOrder || propertyReturnPath !== '/for-rent'
+    usesFilteredPropertyOrder || propertyReturnPath !== '/for-rent' || propertyReturnStatePayload
       ? {
           ...(usesFilteredPropertyOrder ? { filteredPropertyOrder } : {}),
           propertyReturnPath,
+          ...(propertyReturnStatePayload ?? {}),
         }
       : null
 
@@ -343,6 +360,7 @@ export function PropertyDetailPage() {
   const safeImageIndex =
     galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
+  const activeImageCaption = propertyGallery.length > 0 ? String(activeImage?.title ?? '').trim() : ''
   const thumbnailRailClassName = [
     'property-gallery-thumbnails-shell',
     thumbnailRailState.canScroll ? 'property-gallery-thumbnails-shell--scrollable' : '',
@@ -414,6 +432,30 @@ export function PropertyDetailPage() {
         <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
       </PropertyContentSection>
     ) : null,
+    policy: (
+      <PropertyPolicySection
+        bookingHtml={property.bookingHtml}
+        descriptionHtml={property.descriptionHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
+        key="policy"
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+      />
+    ),
+    details: (
+      <PropertyDetailsSection
+        bookingHtml={property.bookingHtml}
+        descriptionHtml={property.descriptionHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
+        key="details"
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+      />
+    ),
     amenities: (
       <PropertyContentSection
         key="amenities"
@@ -444,7 +486,7 @@ export function PropertyDetailPage() {
         aria-hidden="true"
         className={`property-route-transition property-route-transition--${routeTransitionPhase}`}
       />
-      <ReturnToPropertiesButton returnPath={propertyReturnPath} />
+      <ReturnToPropertiesButton returnPath={propertyReturnPath} returnState={propertyReturnState} />
 
       <section
         className="property-banner"
@@ -491,6 +533,12 @@ export function PropertyDetailPage() {
                   </>
                 ) : null}
               </div>
+
+              {activeImageCaption ? (
+                <p aria-live="polite" className="property-gallery-caption">
+                  {activeImageCaption}
+                </p>
+              ) : null}
 
               {galleryImages.length > 1 ? (
                 <div className={thumbnailRailClassName}>

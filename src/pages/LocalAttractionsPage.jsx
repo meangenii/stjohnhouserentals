@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { RestaurantDirectoryPanel } from '../components/RestaurantDirectoryPanel'
@@ -20,6 +21,34 @@ const DINING_FOOD_FILTERS = [
   { id: 'vegan-healthy', label: 'Vegan & Healthy', pattern: /vegan|healthy/i },
   { id: 'food-trucks', label: 'Food Trucks', pattern: /food truck/i },
 ]
+const LOCAL_ATTRACTIONS_HASH_TARGETS = new Set(['island-map', 'dining-guide'])
+
+function readLocalAttractionsHashTarget(hash = '') {
+  if (!hash) {
+    return ''
+  }
+
+  try {
+    return decodeURIComponent(hash.replace(/^#/, '').trim())
+  } catch {
+    return hash.replace(/^#/, '').trim()
+  }
+}
+
+function scrollToLocalAttractionsHashTarget(hashTarget) {
+  if (!LOCAL_ATTRACTIONS_HASH_TARGETS.has(hashTarget)) {
+    return false
+  }
+
+  const targetElement = document.getElementById(hashTarget)
+
+  if (!targetElement) {
+    return false
+  }
+
+  targetElement.scrollIntoView({ block: 'start', behavior: 'auto' })
+  return true
+}
 
 function buildRestaurantOnlineHref(restaurant) {
   const website = String(restaurant?.website ?? '').trim()
@@ -142,8 +171,37 @@ function DiningSection({ restaurants, sectionIndex, title }) {
 export function LocalAttractionsPage() {
   const page = useStructuredPageContent('localAttractions')
   const pageEditor = usePageEditor()
+  const location = useLocation()
   const [selectedDiningArea, setSelectedDiningArea] = useState('all')
   const [selectedFoodType, setSelectedFoodType] = useState('all')
+  const requestedHashTarget = readLocalAttractionsHashTarget(location.hash)
+  const shouldRestoreHashScroll = LOCAL_ATTRACTIONS_HASH_TARGETS.has(requestedHashTarget)
+
+  useLayoutEffect(() => {
+    if (!page || !shouldRestoreHashScroll) {
+      return undefined
+    }
+
+    const frameIds = []
+    const timerIds = []
+
+    function scheduleHashScroll() {
+      const frameId = window.requestAnimationFrame(() => {
+        scrollToLocalAttractionsHashTarget(requestedHashTarget)
+      })
+      frameIds.push(frameId)
+    }
+
+    scheduleHashScroll()
+    ;[75, 250, 600].forEach((delay) => {
+      timerIds.push(window.setTimeout(scheduleHashScroll, delay))
+    })
+
+    return () => {
+      frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId))
+      timerIds.forEach((timerId) => window.clearTimeout(timerId))
+    }
+  }, [page, requestedHashTarget, shouldRestoreHashScroll])
 
   if (!page) {
     return <PageLoadingState />
@@ -169,6 +227,16 @@ export function LocalAttractionsPage() {
     (total, section) => total + (section.restaurants ?? []).filter((restaurant) => isRestaurantActive(restaurant)).length,
     0,
   )
+
+  function handleMapImageLoad() {
+    if (!shouldRestoreHashScroll) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      scrollToLocalAttractionsHashTarget(requestedHashTarget)
+    })
+  }
 
   return (
     <article className="local-attractions-page">
@@ -232,8 +300,11 @@ export function LocalAttractionsPage() {
             fetchPriority="low"
             image={page.map.image}
             path={['map', 'image']}
+            height="900"
             loading="lazy"
+            onLoad={handleMapImageLoad}
             src={mapImageUrl}
+            width="1400"
           />
           <div className="local-attractions-map-caption">
             <span>Virgin Islands National Park</span>

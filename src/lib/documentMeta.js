@@ -70,6 +70,9 @@ function applyActiveDocumentMetaEntry() {
   const image = activeEntry?.image ?? DEFAULT_SOCIAL_IMAGE
   const imageUrl = getMetaImageUrl(image) || DEFAULT_SOCIAL_IMAGE
   const imageAlt = normalizeMetaText(activeEntry?.imageAlt) || SITE_TITLE
+  const imageWidth = getMetaImageWidth(image, imageUrl)
+  const imageHeight = getMetaImageHeight(image, imageUrl)
+  const imageType = getMetaImageType(image, imageUrl)
   const robots = activeEntry?.robots ?? (canonicalPath.startsWith('/admin') ? 'noindex, nofollow' : 'index, follow')
   const type = activeEntry?.type ?? 'website'
   const documentTitle = buildDocumentTitle(title)
@@ -88,9 +91,9 @@ function applyActiveDocumentMetaEntry() {
   setPropertyMeta('og:image', imageUrl)
   setPropertyMeta('og:image:secure_url', imageUrl)
   setPropertyMeta('og:image:alt', imageAlt)
-  setOptionalPropertyMeta('og:image:width', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_WIDTH : '')
-  setOptionalPropertyMeta('og:image:height', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_HEIGHT : '')
-  setOptionalPropertyMeta('og:image:type', isDefaultSocialImageUrl(imageUrl) ? DEFAULT_SOCIAL_IMAGE_TYPE : '')
+  setOptionalPropertyMeta('og:image:width', imageWidth)
+  setOptionalPropertyMeta('og:image:height', imageHeight)
+  setOptionalPropertyMeta('og:image:type', imageType)
   setNamedMeta('twitter:card', 'summary_large_image')
   setNamedMeta('twitter:title', documentTitle)
   setNamedMeta('twitter:description', documentDescription)
@@ -123,8 +126,79 @@ function getMetaImageUrl(image) {
   return toAbsoluteUrl(image?.url || image?.src)
 }
 
+function normalizePositiveInteger(value) {
+  const number = Number.parseInt(value, 10)
+  return Number.isFinite(number) && number > 0 ? String(number) : ''
+}
+
+function getMetaImageWidth(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return String(DEFAULT_SOCIAL_IMAGE_WIDTH)
+  }
+
+  return typeof image === 'object' && image ? normalizePositiveInteger(image.width) : ''
+}
+
+function getMetaImageHeight(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return String(DEFAULT_SOCIAL_IMAGE_HEIGHT)
+  }
+
+  return typeof image === 'object' && image ? normalizePositiveInteger(image.height) : ''
+}
+
+function inferMetaImageTypeFromUrl(imageUrl) {
+  let pathname
+
+  try {
+    pathname = new URL(imageUrl).pathname
+  } catch {
+    pathname = String(imageUrl ?? '').split('?')[0]
+  }
+
+  const normalizedPathname = String(pathname).toLowerCase()
+
+  if (/\.(?:jpg|jpeg)$/.test(normalizedPathname)) {
+    return 'image/jpeg'
+  }
+
+  if (/\.png$/.test(normalizedPathname)) {
+    return 'image/png'
+  }
+
+  if (/\.webp$/.test(normalizedPathname)) {
+    return 'image/webp'
+  }
+
+  if (/\.gif$/.test(normalizedPathname)) {
+    return 'image/gif'
+  }
+
+  return ''
+}
+
+function getMetaImageType(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return DEFAULT_SOCIAL_IMAGE_TYPE
+  }
+
+  const contentType = typeof image === 'object' && image ? normalizeMetaText(image.contentType || image.type || image.mimeType) : ''
+
+  if (/^image\//i.test(contentType)) {
+    return contentType
+  }
+
+  return inferMetaImageTypeFromUrl(imageUrl)
+}
+
 function isDefaultSocialImageUrl(imageUrl) {
-  return toAbsoluteUrl(imageUrl) === toAbsoluteUrl(DEFAULT_SOCIAL_IMAGE)
+  try {
+    const defaultUrl = new URL(DEFAULT_SOCIAL_IMAGE)
+    const candidateUrl = new URL(toAbsoluteUrl(imageUrl))
+    return defaultUrl.origin === candidateUrl.origin && defaultUrl.pathname === candidateUrl.pathname
+  } catch {
+    return toAbsoluteUrl(imageUrl).split('?')[0] === DEFAULT_SOCIAL_IMAGE.split('?')[0]
+  }
 }
 
 function getOrCreateHeadElement(selector, createElement) {

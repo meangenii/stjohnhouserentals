@@ -1,20 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
+  convertAdminMediaFilesToAvif,
   createAdminMediaFolder,
   deleteAdminMediaFile,
   deleteAdminMediaFiles,
   deleteAdminMediaFolder,
+  findAdminMediaUsage,
   moveAdminMediaFiles,
   uploadAdminMediaFile,
 } from '../lib/adminMediaApi'
-import { loadAdminMediaLibrary, normalizeAdminMediaSearchValue } from '../lib/adminMediaLibrary'
+import { loadAdminMediaLibrary, normalizeAdminMediaSearchValue, resetAdminMediaLibraryCache } from '../lib/adminMediaLibrary'
+import { buildAdminEditorHrefForUsageMatch } from '../lib/adminEditTarget'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 
-function humanizeOwnerType(ownerType) {
-  return String(ownerType ?? '')
-    .replace(/[_-]+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (character) => character.toUpperCase())
+function CopyIcon() {
+  return (
+    <svg aria-hidden="true" className="admin-media-copy-icon" fill="none" focusable="false" viewBox="0 0 24 24">
+      <path d="M8 8.5C8 7.12 9.12 6 10.5 6h6C17.88 6 19 7.12 19 8.5v6c0 1.38-1.12 2.5-2.5 2.5h-6C9.12 17 8 15.88 8 14.5v-6Z" />
+      <path d="M5 12.5v-6C5 5.12 6.12 4 7.5 4h6" />
+    </svg>
+  )
+}
+
+function isAvifConvertibleEntry(entry) {
+  return entry?.contentType === 'image/jpeg' || entry?.contentType === 'image/png'
 }
 
 function formatItemCountLabel(count, noun) {
@@ -37,6 +47,71 @@ function formatBytes(value) {
   }
 
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function getAvifSkippedReasonLabel(reason) {
+  switch (reason) {
+    case 'already-avif':
+      return 'already AVIF'
+    case 'animated':
+      return 'animated'
+    case 'conversion-failed':
+      return 'failed conversion'
+    case 'unsupported-format':
+      return 'unsupported format'
+    default:
+      return 'skipped'
+  }
+}
+
+function summarizeAvifSkippedReasons(skipped = []) {
+  const reasonCounts = new Map()
+
+  skipped.forEach((item) => {
+    const label = getAvifSkippedReasonLabel(item?.reason)
+    reasonCounts.set(label, (reasonCounts.get(label) ?? 0) + 1)
+  })
+
+  return Array.from(reasonCounts.entries())
+    .map(([label, count]) => `${count} ${label}`)
+    .join(', ')
+}
+
+function buildAvifConversionFeedback(result) {
+  const convertedCount = Number(result?.convertedCount ?? 0)
+  const skippedCount = Number(result?.skippedCount ?? 0)
+  const skippedReasonSummary = summarizeAvifSkippedReasons(result?.skipped ?? [])
+  const bytesSaved = (result?.converted ?? []).reduce(
+    (total, item) => total + Math.max(Number(item?.bytesBefore ?? 0) - Number(item?.bytesAfter ?? 0), 0),
+    0,
+  )
+
+  if (convertedCount === 0) {
+    return skippedCount > 0
+      ? `No images converted. Skipped ${formatItemCountLabel(skippedCount, 'image')}${skippedReasonSummary ? `: ${skippedReasonSummary}.` : '.'}`
+      : ''
+  }
+
+  const savedLabel = formatBytes(bytesSaved)
+  let message = `Converted ${formatItemCountLabel(convertedCount, 'image')} to AVIF${savedLabel ? `, saving ${savedLabel}` : ''}.`
+
+  if (skippedCount > 0) {
+    message += ` Skipped ${formatItemCountLabel(skippedCount, 'image')}${skippedReasonSummary ? `: ${skippedReasonSummary}.` : '.'}`
+  }
+
+  return message
+}
+
+function mergeAvifConversionResults(results = []) {
+  const converted = results.flatMap((result) => (Array.isArray(result?.converted) ? result.converted : []))
+  const skipped = results.flatMap((result) => (Array.isArray(result?.skipped) ? result.skipped : []))
+
+  return {
+    converted,
+    convertedCount: converted.length,
+    skipped,
+    skippedCount: skipped.length,
+  }
 }
 
 function normalizeDimension(value) {
@@ -624,6 +699,15 @@ function buildFolderTree(
   })
 }
 
+function flattenFolderOptions(childFoldersByParent, parentPath, depth = 0) {
+  const childFolders = childFoldersByParent.get(parentPath) ?? []
+
+  return childFolders.flatMap((folder) => [
+    { depth, name: folder.name, path: folder.path },
+    ...flattenFolderOptions(childFoldersByParent, folder.path, depth + 1),
+  ])
+}
+
 function buildUploadFeedback(files, uploads) {
   const uploadCount = files.length
   const avifConversionCount = uploads.filter((upload) => upload?.wasConvertedToAvif).length
@@ -717,6 +801,33 @@ function buildUploadProgressMessage(progress) {
   return `Uploading image ${currentIndex} of ${totalCount}${currentFileName ? `: ${currentFileName}` : ''}...`
 }
 
+function buildAvifConversionProgressMessage(progress) {
+  const totalCount = Number(progress?.totalCount ?? 0)
+  const completedCount = Number(progress?.completedCount ?? 0)
+  const currentFileName = String(progress?.currentFileName ?? '').trim()
+
+  if (totalCount <= 0) {
+    return 'Preparing images for AVIF conversion...'
+  }
+
+  if (totalCount === 1) {
+    return currentFileName ? `Converting ${currentFileName}...` : 'Converting 1 image...'
+  }
+
+  const currentIndex = Math.min(totalCount, Math.max(completedCount + 1, 1))
+  return `Converting image ${currentIndex} of ${totalCount}${currentFileName ? `: ${currentFileName}` : ''}...`
+}
+
+function createEmptyAvifConversionModalState() {
+  return {
+    completedCount: 0,
+    currentFileName: '',
+    entries: [],
+    status: 'idle',
+    totalCount: 0,
+  }
+}
+
 function isFileDragEvent(event) {
   return Array.from(event?.dataTransfer?.types ?? []).includes('Files')
 }
@@ -727,6 +838,69 @@ function collectDraggedFiles(fileSource) {
 }
 
 const MEDIA_SELECTION_DRAG_TYPE = 'application/x-genericcms-media-selection'
+const MEDIA_MANAGER_RESTORE_KEY_PREFIX = 'genericcms.admin.media-manager.selection'
+
+function buildMediaManagerRestoreKey({
+  currentUrl,
+  displayMode,
+  folderActionLabel,
+  preferredOwnerKey,
+  preferredOwnerName,
+  preferredOwnerType,
+  showToggle,
+  title,
+}) {
+  const pathname = typeof window !== 'undefined' ? String(window.location?.pathname ?? '').trim() : ''
+  const rawKey = [
+    pathname || 'page',
+    String(displayMode ?? '').trim() || 'auto',
+    showToggle ? 'toggle' : 'inline',
+    String(title ?? '').trim(),
+    String(folderActionLabel ?? '').trim(),
+    normalizeAdminMediaSearchValue(preferredOwnerType),
+    normalizeAdminMediaSearchValue(preferredOwnerKey),
+    normalizeAdminMediaSearchValue(preferredOwnerName),
+    String(currentUrl ?? '').trim(),
+  ].join('|')
+
+  return `${MEDIA_MANAGER_RESTORE_KEY_PREFIX}:${encodeURIComponent(rawKey).slice(0, 1500)}`
+}
+
+function readStoredMediaManagerSelection(storageKey) {
+  if (typeof window === 'undefined' || !storageKey) {
+    return { folderPath: 'auto', selectedEntryId: '' }
+  }
+
+  try {
+    const parsedValue = JSON.parse(window.sessionStorage.getItem(storageKey) || '{}')
+    return {
+      folderPath: String(parsedValue?.folderPath ?? '').trim() || 'auto',
+      selectedEntryId: '',
+    }
+  } catch {
+    return { folderPath: 'auto', selectedEntryId: '' }
+  }
+}
+
+function persistMediaManagerSelection(storageKey, selection) {
+  if (typeof window === 'undefined' || !storageKey) {
+    return
+  }
+
+  const folderPath = String(selection?.folderPath ?? '').trim()
+
+  try {
+    window.sessionStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        folderPath: folderPath || 'auto',
+        selectedEntryId: '',
+      }),
+    )
+  } catch {
+    // Session restore is best-effort; a blocked storage write should not affect editing.
+  }
+}
 
 function isMediaSelectionDragEvent(event) {
   return Array.from(event?.dataTransfer?.types ?? []).includes(MEDIA_SELECTION_DRAG_TYPE)
@@ -780,10 +954,22 @@ export function AdminMediaManager({
   const fileInputRef = useRef(null)
   // Track nested dragenter/dragleave events so the upload highlight does not flicker across child elements.
   const uploadDragDepthRef = useRef(0)
+  const hasSeenCurrentUrlRef = useRef(false)
   const shouldForceRefreshOnLoadRef = useRef(defaultOpen || !showToggle)
   const latestLibraryLoadIdRef = useRef(0)
+  const mediaManagerRestoreKey = buildMediaManagerRestoreKey({
+    currentUrl,
+    displayMode,
+    folderActionLabel,
+    preferredOwnerKey,
+    preferredOwnerName,
+    preferredOwnerType,
+    showToggle,
+    title,
+  })
+  const [initialRestoredSelection] = useState(() => readStoredMediaManagerSelection(mediaManagerRestoreKey))
   const [open, setOpen] = useState(defaultOpen || !showToggle)
-  const [folderPathFilter, setFolderPathFilter] = useState('auto')
+  const [folderPathFilter, setFolderPathFilter] = useState(initialRestoredSelection.folderPath)
   const [copyStatus, setCopyStatus] = useState('')
   const [actionFeedback, setActionFeedback] = useState('')
   const [actionStatus, setActionStatus] = useState('idle')
@@ -794,14 +980,17 @@ export function AdminMediaManager({
     folderPath: '',
     totalCount: 0,
   })
+  const [avifConversionModal, setAvifConversionModal] = useState(createEmptyAvifConversionModalState)
+  const [moveFolderPickerOpen, setMoveFolderPickerOpen] = useState(false)
   const [showCreateFolderForm, setShowCreateFolderForm] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
-  const [selectedEntryId, setSelectedEntryId] = useState('')
+  const [selectedEntryId, setSelectedEntryId] = useState(initialRestoredSelection.selectedEntryId)
   const [selectedEntryIds, setSelectedEntryIds] = useState([])
   const [expandedFolderPaths, setExpandedFolderPaths] = useState(() => new Set())
   const [isUploadDragActive, setIsUploadDragActive] = useState(false)
   const [uploadHoverFolderPath, setUploadHoverFolderPath] = useState('')
   const [measuredDimensionsById, setMeasuredDimensionsById] = useState({})
+  const [usageState, setUsageState] = useState({ status: 'idle', matches: [], mediaId: '', error: '' })
   const [libraryLoadVersion, setLibraryLoadVersion] = useState(0)
   const [libraryState, setLibraryState] = useState({
     bucket: '',
@@ -875,6 +1064,8 @@ export function AdminMediaManager({
   )
   const selectedFolderPath = effectiveFolderPathFilter || libraryState.browserRootPath || ''
   const selectedEntryIdSet = useMemo(() => new Set(selectedEntryIds), [selectedEntryIds])
+  const avifConversionModalOpen = avifConversionModal.status !== 'idle'
+  const avifConversionActive = avifConversionModal.status === 'converting'
 
   const treeFolders = libraryState.folders
   const childFoldersByParent = useMemo(() => {
@@ -941,13 +1132,15 @@ export function AdminMediaManager({
   }, [isOpen, libraryLoadVersion, libraryState.status])
   const effectiveExpandedFolderPaths = useMemo(() => {
     const nextPaths = new Set(expandedFolderPaths)
-    ;[libraryState.browserRootPath, effectiveFolderPathFilter, preferredFolderPath].forEach((folderPath) => {
-      collectAncestorPaths(folderPath).forEach((ancestorPath) => {
+
+    collectAncestorPaths(effectiveFolderPathFilter)
+      .slice(0, -1)
+      .forEach((ancestorPath) => {
         nextPaths.add(ancestorPath)
       })
-    })
+
     return nextPaths
-  }, [effectiveFolderPathFilter, expandedFolderPaths, libraryState.browserRootPath, preferredFolderPath])
+  }, [effectiveFolderPathFilter, expandedFolderPaths])
 
   const filteredFolders = useMemo(() => {
     const candidateFolders = treeFolders.filter((folder) => {
@@ -1008,10 +1201,6 @@ export function AdminMediaManager({
     normalizedPreferredOwnerName,
     preferredOwnerType,
   ])
-  const libraryStatusSummary = `${formatItemCountLabel(filteredFolders.length, 'folder')} | ${formatItemCountLabel(
-    filteredEntries.length,
-    'image',
-  )}`
   const selectedEntries = useMemo(
     () => libraryState.entries.filter((entry) => selectedEntryIdSet.has(entry.id)),
     [libraryState.entries, selectedEntryIdSet],
@@ -1021,21 +1210,22 @@ export function AdminMediaManager({
     [filteredEntries, selectedEntryIdSet],
   )
   const allVisibleEntriesSelected = filteredEntries.length > 0 && visibleSelectedEntries.length === filteredEntries.length
-  const canMoveSelectedToCurrentFolder = selectedEntries.length > 0 && selectedEntries.some((entry) => entry.folderPath !== selectedFolderPath)
   const canUseCurrentFolderEntries = typeof onSelectFolderEntries === 'function' && filteredEntries.length > 0
+  const moveFolderOptions = useMemo(
+    () => [
+      { depth: 0, name: 'All media', path: libraryState.browserRootPath || '' },
+      ...flattenFolderOptions(childFoldersByParent, libraryState.browserRootPath || '', 1),
+    ],
+    [childFoldersByParent, libraryState.browserRootPath],
+  )
 
   const effectiveSelectedEntryId = useMemo(() => {
     if (libraryState.status !== 'ready') {
       return ''
     }
 
-    const stillVisible = filteredEntries.find((entry) => entry.id === selectedEntryId)?.id ?? ''
-    const selectedByUrl = normalizedCurrentUrl
-      ? libraryState.entries.find((entry) => entry.managedUrl === normalizedCurrentUrl)?.id ?? ''
-      : ''
-
-    return stillVisible || selectedByUrl || filteredEntries[0]?.id || ''
-  }, [filteredEntries, libraryState.entries, libraryState.status, normalizedCurrentUrl, selectedEntryId])
+    return filteredEntries.find((entry) => entry.id === selectedEntryId)?.id ?? ''
+  }, [filteredEntries, libraryState.status, selectedEntryId])
 
   const selectedEntry = useMemo(
     () => filteredEntries.find((entry) => entry.id === effectiveSelectedEntryId) ?? null,
@@ -1044,9 +1234,24 @@ export function AdminMediaManager({
   const detailsDeleteUsesSelection = Boolean(selectedEntry?.id) && selectedEntryIdSet.has(selectedEntry.id) && selectedEntries.length > 0
   const detailsDeleteLabel =
     detailsDeleteUsesSelection && selectedEntries.length > 1 ? `Delete ${formatItemCountLabel(selectedEntries.length, 'selected image')}` : 'Delete image'
+  const avifConversionEntries = selectedEntries.length > 0 ? selectedEntries : selectedEntry ? [selectedEntry] : []
+  const avifConversionButtonLabel = selectedEntries.length > 0 ? 'Convert selected to AVIF' : 'Convert to AVIF'
+  const canConvertAvifEntries = avifConversionEntries.some(isAvifConvertibleEntry)
+
+  useEffect(() => {
+    if (!isOpen || libraryState.status !== 'ready') {
+      return
+    }
+
+    persistMediaManagerSelection(mediaManagerRestoreKey, {
+      folderPath: selectedFolderPath,
+      selectedEntryId: '',
+    })
+  }, [isOpen, libraryState.status, mediaManagerRestoreKey, selectedFolderPath])
 
   function refreshLibrary(options = {}) {
     const nextFolderPath = options.nextFolderPath
+    const shouldUpdateSelectedId = Object.prototype.hasOwnProperty.call(options, 'nextSelectedId')
     const nextSelectedId = options.nextSelectedId ?? ''
     const nextSelectedEntryIds = Array.isArray(options.nextSelectedEntryIds)
       ? [...new Set(options.nextSelectedEntryIds.map((value) => String(value ?? '').trim()).filter(Boolean))]
@@ -1056,7 +1261,9 @@ export function AdminMediaManager({
       setFolderPathFilter(nextFolderPath)
     }
 
-    setSelectedEntryId(nextSelectedId)
+    if (shouldUpdateSelectedId) {
+      setSelectedEntryId(nextSelectedId)
+    }
 
     if (nextSelectedEntryIds) {
       setSelectedEntryIds(nextSelectedEntryIds)
@@ -1085,6 +1292,45 @@ export function AdminMediaManager({
   }
 
   useEffect(() => {
+    const mediaId = String(selectedEntry?.id ?? '').trim()
+
+    if (!mediaId) {
+      return undefined
+    }
+
+    let cancelled = false
+    const loadingTimeoutId = window.setTimeout(() => {
+      setUsageState({ status: 'loading', matches: [], mediaId, error: '' })
+    }, 0)
+
+    findAdminMediaUsage(mediaId)
+      .then((result) => {
+        if (cancelled) {
+          return
+        }
+
+        setUsageState({ status: 'ready', matches: Array.isArray(result?.matches) ? result.matches : [], mediaId, error: '' })
+      })
+      .catch((error) => {
+        if (cancelled) {
+          return
+        }
+
+        setUsageState({
+          status: 'error',
+          matches: [],
+          mediaId,
+          error: error instanceof Error ? error.message : 'Unable to search for where this image is used.',
+        })
+      })
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(loadingTimeoutId)
+    }
+  }, [selectedEntry?.id])
+
+  useEffect(() => {
     if (libraryState.status !== 'ready') {
       return
     }
@@ -1101,6 +1347,11 @@ export function AdminMediaManager({
   }, [libraryState.entries, libraryState.status])
 
   useEffect(() => {
+    if (!hasSeenCurrentUrlRef.current) {
+      hasSeenCurrentUrlRef.current = true
+      return undefined
+    }
+
     const timeoutId = window.setTimeout(() => {
       setSelectedEntryId('')
     }, 0)
@@ -1123,17 +1374,41 @@ export function AdminMediaManager({
   }
 
   function handleOpenFolder(folderPath) {
-    setFolderPathFilter(folderPath || libraryState.browserRootPath || '')
+    const nextFolderPath = String(folderPath || libraryState.browserRootPath || '').trim()
+    const currentFolderPath = String(selectedFolderPath || '').trim()
+
+    if (nextFolderPath !== currentFolderPath) {
+      setSelectedEntryId('')
+      setSelectedEntryIds([])
+    }
+
+    setFolderPathFilter(nextFolderPath)
   }
 
   function handleToggleFolder(folderPath) {
+    const normalizedFolderPath = String(folderPath ?? '').trim()
+
+    if (!normalizedFolderPath) {
+      return
+    }
+
+    const isCurrentlyExpanded = effectiveExpandedFolderPaths.has(normalizedFolderPath)
+
+    if (
+      isCurrentlyExpanded &&
+      selectedFolderPath !== normalizedFolderPath &&
+      matchesPathOrDescendant(selectedFolderPath, normalizedFolderPath)
+    ) {
+      handleOpenFolder(normalizedFolderPath)
+    }
+
     setExpandedFolderPaths((currentPaths) => {
       const nextPaths = new Set(currentPaths)
 
-      if (nextPaths.has(folderPath)) {
-        nextPaths.delete(folderPath)
+      if (isCurrentlyExpanded) {
+        nextPaths.delete(normalizedFolderPath)
       } else {
-        nextPaths.add(folderPath)
+        nextPaths.add(normalizedFolderPath)
       }
 
       return nextPaths
@@ -1182,12 +1457,14 @@ export function AdminMediaManager({
     setUploadHoverFolderPath('')
   }
 
-  function handleToggleEntrySelection(entryId, shouldSelect) {
-    const normalizedEntryId = String(entryId ?? '').trim()
+  function handleToggleEntrySelection(entry) {
+    const normalizedEntryId = String(entry?.id ?? '').trim()
 
     if (!normalizedEntryId) {
       return
     }
+
+    const shouldSelect = !selectedEntryIdSet.has(normalizedEntryId)
 
     setSelectedEntryIds((currentIds) => {
       const nextIds = new Set(currentIds)
@@ -1200,6 +1477,7 @@ export function AdminMediaManager({
 
       return Array.from(nextIds)
     })
+    setSelectedEntryId((currentEntryId) => (shouldSelect ? normalizedEntryId : currentEntryId === normalizedEntryId ? '' : currentEntryId))
   }
 
   function handleToggleSelectAllVisible() {
@@ -1223,6 +1501,7 @@ export function AdminMediaManager({
   }
 
   function handleClearSelectedEntries() {
+    setSelectedEntryId('')
     setSelectedEntryIds([])
   }
 
@@ -1314,15 +1593,24 @@ export function AdminMediaManager({
         }
       }
 
-      const firstUploadedMediaId = String(uploads[0]?.id ?? '').trim()
+      const uploadedEntries = uploads.filter(Boolean)
+      const uploadFeedback = [buildUploadBatchFeedback(filesToUpload, uploads, failures), buildSkippedDuplicateFeedback(skippedDuplicateCount)]
+        .filter(Boolean)
+        .join(' ')
 
-      setActionFeedback([buildUploadBatchFeedback(filesToUpload, uploads, failures), buildSkippedDuplicateFeedback(skippedDuplicateCount)].filter(Boolean).join(' '))
+      setActionFeedback(
+        typeof onSelect === 'function' && uploadedEntries.length > 0 && failures.length === 0
+          ? `${uploadFeedback} Choose ${uploadedEntries.length === 1 ? 'the uploaded image' : 'one of the uploaded images'} below and click Use image.`
+          : uploadFeedback,
+      )
 
-      if (uploads.length > 0) {
+      if (uploadedEntries.length > 0) {
+        resetAdminMediaLibraryCache()
         setActionStatus(failures.length > 0 ? 'warning' : 'success')
+
         refreshLibrary({
           nextFolderPath: targetFolderPath,
-          nextSelectedId: firstUploadedMediaId,
+          nextSelectedId: '',
           nextSelectedEntryIds: [],
         })
       } else {
@@ -1576,6 +1864,23 @@ export function AdminMediaManager({
     }
   }
 
+  function handleOpenMoveFolderPicker() {
+    if (selectedEntries.length === 0) {
+      return
+    }
+
+    setMoveFolderPickerOpen(true)
+  }
+
+  function handleCloseMoveFolderPicker() {
+    setMoveFolderPickerOpen(false)
+  }
+
+  async function handleMoveSelectedToFolder(folderPath) {
+    setMoveFolderPickerOpen(false)
+    await moveMediaSelectionToFolder(selectedEntries.map((entry) => entry.id), folderPath)
+  }
+
   async function handleDeleteEntry(entry) {
     if (!entry?.id) {
       return
@@ -1657,6 +1962,102 @@ export function AdminMediaManager({
     }
   }
 
+  function handleConvertEntriesToAvif(entries) {
+    const convertibleEntries = entries.filter(isAvifConvertibleEntry)
+
+    if (convertibleEntries.length === 0) {
+      return
+    }
+
+    setActionFeedback('')
+    setActionStatus('idle')
+    setAvifConversionModal({
+      completedCount: 0,
+      currentFileName: '',
+      entries: convertibleEntries,
+      status: 'confirming',
+      totalCount: convertibleEntries.length,
+    })
+  }
+
+  function handleCancelAvifConversion() {
+    if (avifConversionActive) {
+      return
+    }
+
+    setAvifConversionModal(createEmptyAvifConversionModalState())
+  }
+
+  async function handleStartAvifConversion() {
+    const convertibleEntries = avifConversionModal.entries.filter(isAvifConvertibleEntry)
+
+    if (convertibleEntries.length === 0) {
+      setAvifConversionModal(createEmptyAvifConversionModalState())
+      return
+    }
+
+    setActionFeedback('Converting images to AVIF...')
+    setActionStatus('saving')
+    setAvifConversionModal({
+      completedCount: 0,
+      currentFileName: convertibleEntries[0]?.fileName || '',
+      entries: convertibleEntries,
+      status: 'converting',
+      totalCount: convertibleEntries.length,
+    })
+
+    const conversionResults = []
+
+    try {
+      for (let index = 0; index < convertibleEntries.length; index += 1) {
+        const entry = convertibleEntries[index]
+
+        setActionFeedback(`Converting ${index + 1} of ${convertibleEntries.length} to AVIF...`)
+        setAvifConversionModal({
+          completedCount: index,
+          currentFileName: entry.fileName || '',
+          entries: convertibleEntries,
+          status: 'converting',
+          totalCount: convertibleEntries.length,
+        })
+        conversionResults.push(await convertAdminMediaFilesToAvif([entry.id]))
+      }
+
+      const result = mergeAvifConversionResults(conversionResults)
+
+      setActionFeedback(buildAvifConversionFeedback(result))
+      setActionStatus(result?.skippedCount > 0 && result?.convertedCount === 0 ? 'warning' : 'success')
+      setAvifConversionModal(createEmptyAvifConversionModalState())
+
+      resetAdminMediaLibraryCache()
+      refreshLibrary({
+        nextFolderPath: effectiveFolderPathFilter || libraryState.browserRootPath || 'media',
+        nextSelectedEntryIds: selectedEntryIds,
+        nextSelectedId: effectiveSelectedEntryId,
+      })
+    } catch (error) {
+      const partialResult = mergeAvifConversionResults(conversionResults)
+      const partialFeedback = partialResult.convertedCount > 0 ? `${buildAvifConversionFeedback(partialResult)} ` : ''
+      const errorMessage =
+        error?.status === 503
+          ? 'The image conversion service became unavailable while processing an image. Try that image again by itself.'
+          : error instanceof Error
+            ? error.message
+            : 'Unable to convert the selected images to AVIF.'
+
+      setActionFeedback(`${partialFeedback}${errorMessage}`.trim())
+      setActionStatus('error')
+      setAvifConversionModal(createEmptyAvifConversionModalState())
+
+      resetAdminMediaLibraryCache()
+      refreshLibrary({
+        nextFolderPath: effectiveFolderPathFilter || libraryState.browserRootPath || 'media',
+        nextSelectedEntryIds: selectedEntryIds,
+        nextSelectedId: effectiveSelectedEntryId,
+      })
+    }
+  }
+
   async function handleDeleteFolder(folder) {
     if (!folder?.path) {
       return
@@ -1693,10 +2094,6 @@ export function AdminMediaManager({
       setActionFeedback(error instanceof Error ? error.message : 'Unable to delete the selected folder.')
       setActionStatus('error')
     }
-  }
-
-  function handleSelectEntry(entry) {
-    setSelectedEntryId(entry.id)
   }
 
   function handleEntryDragStart(event, entry) {
@@ -1803,7 +2200,12 @@ export function AdminMediaManager({
   }
 
   function handleCloseLibrary() {
-    if (uploadProgress.active) {
+    if (uploadProgress.active || avifConversionActive) {
+      return
+    }
+
+    if (avifConversionModalOpen) {
+      setAvifConversionModal(createEmptyAvifConversionModalState())
       return
     }
 
@@ -1822,7 +2224,7 @@ export function AdminMediaManager({
     handleCloseLibrary()
   }
 
-  const actionBusy = disabled || actionStatus === 'saving'
+  const actionBusy = disabled || actionStatus === 'saving' || avifConversionActive
   const libraryMutationBusy = actionBusy || libraryState.status !== 'ready'
   const toggleButtonLabel = open
     ? 'Close media library'
@@ -1830,6 +2232,89 @@ export function AdminMediaManager({
       ? 'Replace image from media library'
       : 'Choose image from media library'
   const iconToggle = toggleButtonMode === 'icon'
+  const selectedMediaDetailsPanel = selectedEntry ? (
+    <section className="admin-media-details">
+      <div className="admin-media-details-thumb">
+        <img
+          alt={getMediaDisplayName(selectedEntry) || selectedEntry.ownerName || 'Selected media item'}
+          loading="lazy"
+          onLoad={(event) => handlePreviewImageLoad(selectedEntry, event)}
+          src={buildRemoteImageUrl(selectedEntry.managedUrl, { width: 360, height: 260, mode: 'fit' }) || selectedEntry.managedUrl}
+        />
+        <a className="admin-media-thumb-view" href={selectedEntry.managedUrl} rel="noreferrer" target="_blank">
+          View
+        </a>
+      </div>
+      <div className="admin-media-details-copy">
+        <div className="admin-media-card-topline">
+          <strong>{getMediaDisplayName(selectedEntry) || 'Untitled image'}</strong>
+          <span className="admin-media-file-info">
+            {selectedEntry.contentType ? selectedEntry.contentType.replace('image/', '').toUpperCase() : 'Image'}
+            {formatDimensions(getEntryDimensions(selectedEntry)) ? ` | ${formatDimensions(getEntryDimensions(selectedEntry))}` : ''}
+            {selectedEntry.bytes ? ` | ${formatBytes(selectedEntry.bytes)}` : ''}
+            {selectedEntry.updatedAt ? ` | ${formatModifiedDate(selectedEntry.updatedAt)}` : ''}
+          </span>
+          {selectedEntry.managedUrl === normalizedCurrentUrl ? <span className="admin-chip">Selected</span> : null}
+        </div>
+        <div className="admin-media-card-path">
+          <code>{selectedEntry.storagePath}</code>
+          <button className="admin-media-copy-url-button" title="Copy URL" type="button" aria-label="Copy URL" onClick={() => handleCopy(selectedEntry.managedUrl)}>
+            <CopyIcon />
+          </button>
+        </div>
+
+        <div className="admin-media-details-actions" aria-label="Selected image actions">
+          {onSelect ? (
+            <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleUseEntry(selectedEntry)}>
+              Use image
+            </button>
+          ) : null}
+          {selectedEntries.length === 0 && canConvertAvifEntries ? (
+            <button
+              className="button-link button-link--ghost admin-action"
+              disabled={libraryMutationBusy}
+              type="button"
+              onClick={() => handleConvertEntriesToAvif(avifConversionEntries)}
+            >
+              {avifConversionButtonLabel}
+            </button>
+          ) : null}
+          {selectedEntries.length === 0 ? (
+            <button
+              className="button-link button-link--ghost admin-action admin-media-command-danger"
+              disabled={libraryMutationBusy}
+              type="button"
+              onClick={() => handleDeleteEntry(selectedEntry)}
+            >
+              {detailsDeleteLabel}
+            </button>
+          ) : null}
+        </div>
+
+        {usageState.mediaId === selectedEntry.id ? (
+          <div className="admin-media-usage">
+            {usageState.status === 'loading' ? (
+              <p className="admin-media-details-meta">Checking where this image is used...</p>
+            ) : null}
+            {usageState.status === 'error' ? <p className="admin-media-details-meta">{usageState.error}</p> : null}
+            {usageState.status === 'ready' && usageState.matches.length === 0 ? (
+              <p className="admin-media-details-meta">Not used in any property, charter, page, or the site header/footer.</p>
+            ) : null}
+            {usageState.status === 'ready' && usageState.matches.length > 0 ? (
+              <ul className="admin-media-usage-list">
+                {usageState.matches.map((match, index) => (
+                  <li className="admin-media-usage-item" key={`${match.type}-${match.slug || match.pageKey || index}`}>
+                    <span className="admin-media-usage-label">Used on:</span>
+                    <Link to={buildAdminEditorHrefForUsageMatch(match)}>{match.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  ) : null
 
   return (
     <div className="admin-media-manager">
@@ -1895,7 +2380,7 @@ export function AdminMediaManager({
           onMouseDown={shouldRenderAsModal ? handleDialogBackdropMouseDown : undefined}
         >
         <section
-          aria-busy={uploadProgress.active}
+          aria-busy={uploadProgress.active || avifConversionActive}
           aria-label={shouldRenderAsModal ? modalTitle : undefined}
           aria-modal={shouldRenderAsModal ? 'true' : undefined}
           className={`admin-media-manager-panel${shouldRenderAsModal ? ' admin-media-manager-panel--modal' : ''}`.trim()}
@@ -1920,13 +2405,94 @@ export function AdminMediaManager({
             </div>
           ) : null}
 
+          {avifConversionModalOpen ? (
+            <div className="admin-media-upload-modal-shell admin-media-conversion-modal-shell" role="presentation">
+              <div
+                aria-label={avifConversionActive ? 'Converting media to AVIF' : 'Confirm AVIF conversion'}
+                aria-live="polite"
+                aria-modal="true"
+                className="admin-media-upload-modal admin-media-conversion-modal"
+                role="dialog"
+              >
+                {avifConversionActive ? (
+                  <span aria-hidden="true" className="admin-media-upload-spinner" />
+                ) : (
+                  <span aria-hidden="true" className="admin-media-conversion-badge">
+                    AVIF
+                  </span>
+                )}
+                <strong>
+                  {avifConversionActive
+                    ? 'Converting to AVIF...'
+                    : `Convert ${formatItemCountLabel(avifConversionModal.entries.length, 'image')} to AVIF?`}
+                </strong>
+                {avifConversionActive ? (
+                  <>
+                    <p>{buildAvifConversionProgressMessage(avifConversionModal)}</p>
+                    <p className="admin-media-upload-modal-detail">Large images can take a minute. The library will refresh when conversion finishes.</p>
+                  </>
+                ) : (
+                  <>
+                    <p>AVIF usually makes images smaller for faster page loads. This permanently replaces each JPEG or PNG file with a recompressed AVIF file.</p>
+                    <div className="admin-media-conversion-modal-notes">
+                      <span>The public URL stays the same.</span>
+                      <span>Images convert one at a time to avoid service timeouts.</span>
+                      <span>Animated or unsupported files are skipped.</span>
+                    </div>
+                    <div className="admin-media-conversion-modal-actions">
+                      <button className="button-link button-link--ghost admin-action" type="button" onClick={handleCancelAvifConversion}>
+                        Cancel
+                      </button>
+                      <button className="button-link admin-action" disabled={disabled} type="button" onClick={handleStartAvifConversion}>
+                        Start conversion
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
+
+          {moveFolderPickerOpen ? (
+            <div className="admin-media-upload-modal-shell admin-media-move-modal-shell" role="presentation">
+              <div
+                aria-label="Move to folder"
+                aria-modal="true"
+                className="admin-media-upload-modal admin-media-move-modal"
+                role="dialog"
+              >
+                <strong>{`Move ${formatItemCountLabel(selectedEntries.length, 'image')} to folder`}</strong>
+                <div className="admin-media-move-modal-list">
+                  {moveFolderOptions.map((folder) => (
+                    <button
+                      className="admin-media-move-modal-option"
+                      disabled={libraryMutationBusy}
+                      key={folder.path || 'root'}
+                      style={{ paddingLeft: `${1 + folder.depth * 1.1}rem` }}
+                      type="button"
+                      onClick={() => handleMoveSelectedToFolder(folder.path)}
+                    >
+                      <span className="admin-media-list-icon admin-media-list-icon--folder" />
+                      <span>{folder.name}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="admin-media-conversion-modal-actions">
+                  <button className="button-link button-link--ghost admin-action" type="button" onClick={handleCloseMoveFolderPicker}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {shouldRenderAsModal || normalizedTitle ? (
             <div className="admin-media-manager-header">
               <div className="admin-media-manager-heading">
                 {shouldRenderAsModal || normalizedTitle ? <h6>{modalTitle}</h6> : <span />}
               </div>
               {shouldRenderAsModal ? (
-                <button className="button-link button-link--ghost admin-action admin-media-manager-close" disabled={uploadProgress.active} type="button" onClick={handleCloseLibrary}>
+                <button className="button-link button-link--ghost admin-action admin-media-manager-close" disabled={uploadProgress.active || avifConversionActive} type="button" onClick={handleCloseLibrary}>
                   Close
                 </button>
               ) : null}
@@ -1942,26 +2508,6 @@ export function AdminMediaManager({
             type="file"
             onChange={handleUploadSelection}
           />
-
-          <button
-            aria-disabled={libraryMutationBusy}
-            className={`admin-media-dropzone${
-              isUploadDragActive ? ' admin-media-dropzone--active' : ''
-            }${libraryMutationBusy ? ' admin-media-dropzone--disabled' : ''}`.trim()}
-            type="button"
-            onDragEnter={handleUploadDragEnter}
-            onDragLeave={handleUploadDragLeave}
-            onDragOver={handleUploadDragOver}
-            onDrop={handleUploadDrop}
-            onClick={handleUploadDropZoneClick}
-          >
-            <strong>Drag and drop images to upload</strong>
-            <span>
-              {libraryMutationBusy
-                ? 'Wait for the current media refresh or upload to finish before dropping files.'
-                : `Drop files here or in the selected folder area to upload into ${selectedFolderPath || libraryState.browserRootPath || 'media'}, or click here to browse.`}
-            </span>
-          </button>
 
           {libraryState.status === 'loading' ? <p className="admin-empty">Loading the media library...</p> : null}
           {libraryState.status === 'error' ? <p className="admin-empty">{libraryState.error}</p> : null}
@@ -1986,8 +2532,7 @@ export function AdminMediaManager({
                   </button>
                 </div>
 
-                <div className="admin-media-command-group" aria-label="Selection commands">
-                  {selectedEntries.length > 0 ? <span className="admin-media-command-status">{formatItemCountLabel(selectedEntries.length, 'image')} selected</span> : null}
+                <div className="admin-media-command-group" aria-label="List commands">
                   <button
                     className="button-link button-link--ghost admin-action"
                     disabled={filteredEntries.length === 0 || libraryMutationBusy}
@@ -1996,63 +2541,33 @@ export function AdminMediaManager({
                   >
                     {allVisibleEntriesSelected ? 'Clear visible' : 'Select all'}
                   </button>
-                  {selectedEntries.length > 0 ? (
-                    <>
-                      <button
-                        className="button-link button-link--ghost admin-action"
-                        disabled={libraryMutationBusy || !canMoveSelectedToCurrentFolder}
-                        type="button"
-                        onClick={() => moveMediaSelectionToFolder(selectedEntries.map((entry) => entry.id), selectedFolderPath)}
-                      >
-                        Move selected here
-                      </button>
-                      <button
-                        className="button-link button-link--ghost admin-action admin-media-command-danger"
-                        disabled={libraryMutationBusy}
-                        type="button"
-                        onClick={handleDeleteSelectedEntries}
-                      >
-                        Delete selected
-                      </button>
-                      <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleClearSelectedEntries}>
-                        Clear selection
-                      </button>
-                    </>
-                  ) : null}
                 </div>
 
-                {selectedEntry ? (
-                  <div className="admin-media-command-group" aria-label="Selected image commands">
-                    {onSelect ? (
-                      <button className="button-link button-link--ghost admin-action" disabled={disabled} type="button" onClick={() => handleUseEntry(selectedEntry)}>
-                        Use image
-                      </button>
-                    ) : null}
-                    <a className="button-link button-link--ghost admin-action" href={selectedEntry.managedUrl} rel="noreferrer" target="_blank">
-                      Open
-                    </a>
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={() => handleCopy(selectedEntry.managedUrl)}>
-                      Copy URL
-                    </button>
-                    <button
-                      className="button-link button-link--ghost admin-action admin-media-command-danger"
-                      disabled={libraryMutationBusy}
-                      type="button"
-                      onClick={() => {
-                        if (detailsDeleteUsesSelection) {
-                          handleDeleteSelectedEntries()
-                          return
-                        }
+                <div className="admin-media-command-group admin-media-command-group--address">
+                  <div className="admin-media-addressbar">
+                    <div className="admin-media-folder-breadcrumbs admin-media-addressbar-path" aria-label="Media folder path">
+                      {folderBreadcrumbs.map((breadcrumb) => {
+                        const isActive = breadcrumb.path === effectiveFolderPathFilter
 
-                        handleDeleteEntry(selectedEntry)
-                      }}
-                    >
-                      {detailsDeleteLabel}
-                    </button>
+                        return (
+                          <span className="admin-media-addressbar-step" key={breadcrumb.path || 'all-media'}>
+                            <button
+                              className={`admin-media-addressbar-segment${
+                                isActive ? ' admin-media-addressbar-segment--active' : ''
+                              }`.trim()}
+                              type="button"
+                              onClick={() => handleOpenFolder(breadcrumb.path)}
+                            >
+                              {breadcrumb.label}
+                            </button>
+                          </span>
+                        )
+                      })}
+                    </div>
                   </div>
-                ) : null}
+                </div>
 
-                <div className="admin-media-command-group" aria-label="Folder commands">
+                <div className="admin-media-command-group admin-media-command-group--folder-actions admin-media-folder-actions" aria-label="Current folder actions">
                   {canUseCurrentFolderEntries ? (
                     <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleUseCurrentFolderEntries}>
                       {folderActionLabel}
@@ -2143,44 +2658,42 @@ export function AdminMediaManager({
                   onDragOver={handleUploadDragOver}
                   onDrop={handleUploadDrop}
                 >
-                  <div className="admin-media-folder-header">
-                    <div className="admin-media-addressbar">
-                      <span className="admin-media-addressbar-label">Address</span>
-                      <div className="admin-media-folder-breadcrumbs admin-media-addressbar-path" aria-label="Media folder path">
-                        {folderBreadcrumbs.map((breadcrumb) => {
-                          const isActive = breadcrumb.path === effectiveFolderPathFilter
-
-                          return (
-                            <span className="admin-media-addressbar-step" key={breadcrumb.path || 'all-media'}>
-                              <button
-                                className={`admin-media-addressbar-segment${
-                                  isActive ? ' admin-media-addressbar-segment--active' : ''
-                                }`.trim()}
-                                type="button"
-                                onClick={() => handleOpenFolder(breadcrumb.path)}
-                              >
-                                {breadcrumb.label}
-                              </button>
-                            </span>
-                          )
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="admin-media-folder-meta">
-                      <p className="admin-media-folder-status">
-                        {libraryStatusSummary}
-                        {currentFolder?.name ? ` | ${currentFolder.name}` : ''}
-                        {libraryState.bucket ? ` | ${libraryState.bucket}` : ''}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="admin-note admin-media-inline-note admin-media-browser-note">
-                    Drag and drop images here to upload into <strong>{selectedFolderPath || libraryState.browserRootPath || 'media'}</strong>. You can also drag selected images onto any folder below to move them there.
-                  </p>
+                  {selectedMediaDetailsPanel}
 
                   <div className="admin-media-list-shell">
+                    {selectedEntries.length > 0 ? (
+                      <div className="admin-media-selection-actions" aria-label="Selected image actions">
+                        <span className="admin-media-selection-actions-label">{formatItemCountLabel(selectedEntries.length, 'image')} selected</span>
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={libraryMutationBusy}
+                          type="button"
+                          onClick={handleOpenMoveFolderPicker}
+                        >
+                          Move to folder
+                        </button>
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={libraryMutationBusy || !canConvertAvifEntries}
+                          type="button"
+                          onClick={() => handleConvertEntriesToAvif(avifConversionEntries)}
+                        >
+                          {avifConversionButtonLabel}
+                        </button>
+                        <button
+                          className="button-link button-link--ghost admin-action admin-media-command-danger"
+                          disabled={libraryMutationBusy}
+                          type="button"
+                          onClick={handleDeleteSelectedEntries}
+                        >
+                          Delete selected
+                        </button>
+                        <button className="button-link button-link--ghost admin-action" disabled={libraryMutationBusy} type="button" onClick={handleClearSelectedEntries}>
+                          Clear selection
+                        </button>
+                      </div>
+                    ) : null}
+
                     <table className="admin-media-list">
                       <thead>
                         <tr>
@@ -2220,18 +2733,6 @@ export function AdminMediaManager({
                                   <span className="admin-media-list-icon admin-media-list-icon--folder" />
                                   <span>{folder.name}</span>
                                 </button>
-                                <button
-                                  className="button-link button-link--ghost admin-media-list-inline-action"
-                                  disabled={libraryMutationBusy}
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    handleDeleteFolder(folder)
-                                  }}
-                                  onDoubleClick={(event) => event.stopPropagation()}
-                                >
-                                  Delete folder
-                                </button>
                               </div>
                             </td>
                             <td></td>
@@ -2242,19 +2743,18 @@ export function AdminMediaManager({
                         ))}
 
                         {filteredEntries.map((entry) => {
-                          const isSelected = entry.id === effectiveSelectedEntryId
                           const isCurrentValue = entry.managedUrl === normalizedCurrentUrl
                           const isBulkSelected = selectedEntryIdSet.has(entry.id)
                           const dimensionsLabel = formatDimensions(getEntryDimensions(entry))
 
                           return (
                             <tr
-                              className={`admin-media-list-row${isSelected || isBulkSelected ? ' admin-media-list-row--selected' : ''}${
+                              className={`admin-media-list-row${isBulkSelected ? ' admin-media-list-row--selected' : ''}${
                                 isCurrentValue ? ' admin-media-list-row--current' : ''
                               }`.trim()}
                               draggable={!libraryMutationBusy}
                               key={entry.id}
-                              onClick={() => handleSelectEntry(entry)}
+                              onClick={() => handleToggleEntrySelection(entry)}
                               onDragEnd={handleEntryDragEnd}
                               onDragStart={(event) => handleEntryDragStart(event, entry)}
                               onDoubleClick={() => handleUseEntry(entry)}
@@ -2265,13 +2765,13 @@ export function AdminMediaManager({
                                   checked={isBulkSelected}
                                   disabled={libraryMutationBusy}
                                   type="checkbox"
-                                  onChange={(event) => handleToggleEntrySelection(entry.id, event.target.checked)}
+                                  onChange={() => handleToggleEntrySelection(entry)}
                                   onClick={(event) => event.stopPropagation()}
                                   onDoubleClick={(event) => event.stopPropagation()}
                                 />
                               </td>
                               <td>
-                                <button className="admin-media-list-name admin-media-list-name--file" type="button" onClick={() => handleSelectEntry(entry)}>
+                                <button className="admin-media-list-name admin-media-list-name--file" type="button">
                                   <img
                                     alt={getMediaDisplayName(entry) || entry.ownerName || 'Managed media item'}
                                     className="admin-media-list-thumb"
@@ -2297,36 +2797,6 @@ export function AdminMediaManager({
                     ) : null}
                   </div>
 
-                  {selectedEntry ? (
-                    <section className="admin-media-details">
-                      <div className="admin-media-details-thumb">
-                        <img
-                          alt={getMediaDisplayName(selectedEntry) || selectedEntry.ownerName || 'Selected media item'}
-                          loading="lazy"
-                          onLoad={(event) => handlePreviewImageLoad(selectedEntry, event)}
-                          src={buildRemoteImageUrl(selectedEntry.managedUrl, { width: 220, height: 160, mode: 'fit' }) || selectedEntry.managedUrl}
-                        />
-                      </div>
-                      <div className="admin-media-details-copy">
-                        <div className="admin-media-card-topline">
-                          <strong>{getMediaDisplayName(selectedEntry) || 'Untitled image'}</strong>
-                          {selectedEntry.managedUrl === normalizedCurrentUrl ? <span className="admin-chip">Selected</span> : null}
-                        </div>
-                        <p className="admin-media-details-meta">
-                          {selectedEntry.contentType ? selectedEntry.contentType.replace('image/', '').toUpperCase() : 'Image'}
-                          {formatDimensions(getEntryDimensions(selectedEntry)) ? ` | ${formatDimensions(getEntryDimensions(selectedEntry))}` : ''}
-                          {selectedEntry.bytes ? ` | ${formatBytes(selectedEntry.bytes)}` : ''}
-                          {selectedEntry.updatedAt ? ` | ${formatModifiedDate(selectedEntry.updatedAt)}` : ''}
-                        </p>
-                        <p className="admin-media-details-meta">
-                          {selectedEntry.ownerName || selectedEntry.ownerKey ? `Owner: ${selectedEntry.ownerName || selectedEntry.ownerKey}` : 'Owner: Unassigned'}
-                          {selectedEntry.ownerType ? ` | ${humanizeOwnerType(selectedEntry.ownerType)}` : ''}
-                          {selectedEntry.folderPath ? ` | Folder: ${selectedEntry.folderPath}` : ''}
-                        </p>
-                        <code className="admin-media-card-path">{selectedEntry.storagePath}</code>
-                      </div>
-                    </section>
-                  ) : null}
                 </div>
               </div>
             </>

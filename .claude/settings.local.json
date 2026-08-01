@@ -29,7 +29,26 @@
       "Bash(git stash *)",
       "Bash(npx vite *)",
       "Bash(taskkill //PID 6040 //F)",
-      "Bash(rm -rf /tmp/pwtest2)"
+      "Bash(rm -rf /tmp/pwtest2)",
+      "Bash(git check-ignore *)",
+      "Bash(curl -sI --max-time 15 \"https://stjohn-villarentals.com/calendar/seacove-villa-peter-bay-st-john.ics\")",
+      "Bash(curl -sI --max-time 15 \"https://st-john-house-rentals.web.app/calendar/seacove-villa-peter-bay-st-john.ics\")",
+      "Bash(curl -s --max-time 15 \"https://stjohn-villarentals.com/\" -o /dev/null -w \"final_url:%{url_effective} http_code:%{http_code}\\\\n\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s --max-time 20 \"https://stjohn-villarentals.com/property/seacove-villa-peter-bay-st-john/\" -o /tmp/seacove.html)",
+      "Bash(echo \"---data attrs near calendar---\"; grep -o 'data-[a-z-]*=\"[^\"]*\"' /tmp/seacove.html | sort -u | grep -i -E 'calendar|property|booking|ical|feed|avail' ; echo \"---scripts---\"; grep -o '<script[^>]*src=\"[^\"]*\"' /tmp/seacove.html | sort -u; echo \"---shortcode/plugin hints---\"; grep -oi -E '\\(lodgify|hospitable|smoobu|guesty|streamline|track ?hs|escapia|rentals? united|booking ?sync|ownerrez|ical|icalendar\\)[a-z0-9_-]*' /tmp/seacove.html | sort -u | head -30)",
+      "Bash(grep -o '.\\\\{80\\\\}ical.\\\\{80\\\\}' /tmp/seacove.html | head -10; echo \"---inline script blocks mentioning booked/dates---\"; grep -o '.\\\\{60\\\\}\\\\\\(bookedDates\\\\|disableDates\\\\|beforeShowDay\\\\|unavailable\\\\|booked_dates\\\\|reservation\\\\\\).\\\\{60\\\\}' /tmp/seacove.html | head -20)",
+      "Bash(curl -s --max-time 20 \"https://stjohn-villarentals.com/wp-json/wp/v2/properties/8999\")",
+      "Bash(curl -s --max-time 20 \"https://stjohn-villarentals.com/wp-json/wp/v2/types\")",
+      "Bash(grep -n -o '.\\\\{200\\\\}CALENDARS.\\\\{2000\\\\}' /tmp/seacove.html | head -c 4000)",
+      "Bash(curl -s --max-time 15 \"https://stjohn-villarentals.com/sitemap.xml\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 \"https://stjohn-villarentals.com/calendar/\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 \"https://stjohn-villarentals.com/ical/seacove-villa-peter-bay-st-john.ics\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 15 \"https://stjohn-villarentals.com/wp-content/uploads/calendars/seacove-villa-peter-bay-st-john.ics\")",
+      "Bash(grep -oi -E 'ownerrez|barefoot|track ?pmp|streamline|escapia|hostfully|guesty|lodgify|kigo|virtual ?resort|rezserver|resnexus|innsoft|bookonline|reserv[ae]tion ?system' /tmp/seacove.html | sort -u *)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s \"http://localhost:5173/api/properties/summaries\")",
+      "Bash(curl -s \"http://localhost:5173/api/properties/catalog\")"
     ],
     "additionalDirectories": [
       "\\tmp\\pwtest"

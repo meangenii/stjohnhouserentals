@@ -555,14 +555,100 @@ function getLegacyPropertyLines(record) {
   return normalizeLegacyPropertyLines(record?.highlights)
 }
 
+const AIR_CONDITIONING_BEDROOM_DESCRIPTOR = 'A/C (Bedrooms)'
+const AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR = 'A/C (Whole House)'
+const AIR_CONDITIONING_TERM_PATTERN = /\b(?:air[-\s]?condition(?:ed|ing)?|a\/c|ac)\b/i
+const AIR_CONDITIONING_BEDROOM_CONTEXT_PATTERN = /\b(?:bedrooms?|brs?)\b/i
+const AIR_CONDITIONING_WHOLE_HOUSE_CONTEXT_PATTERN =
+  /(?:\b(?:full(?:y)?|whole\s+(?:house|home)|throughout|entire\s+(?:home|house)|every\s+room|all\s+rooms|common\s+areas|central)\b|100%)/i
+const BEDROOM_AIR_CONDITIONING_LINES = new Set([
+  'air conditioned bedrooms',
+  'air conditioning bedrooms',
+  'a/c bedroom',
+  'a/c bedrooms',
+  'ac bedroom',
+  'ac bedrooms',
+])
+const WHOLE_HOUSE_AIR_CONDITIONING_LINES = new Set([
+  'a/c',
+  'ac',
+  'air conditioned',
+  'air conditioning',
+  'a/c whole house',
+  'ac whole house',
+  'full a/c',
+  'full ac',
+  'whole house a/c',
+  'whole house ac',
+])
+
+function normalizeShortDescriptionFactLine(value = '') {
+  return String(value ?? '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[()]/g, ' ')
+    .replace(/[-\s]+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function matchesAirConditioningBedroomLine(line = '') {
+  const sourceLine = String(line ?? '').trim()
+  const normalizedLine = normalizeShortDescriptionFactLine(sourceLine)
+
+  return (
+    BEDROOM_AIR_CONDITIONING_LINES.has(normalizedLine) ||
+    (AIR_CONDITIONING_TERM_PATTERN.test(sourceLine) && AIR_CONDITIONING_BEDROOM_CONTEXT_PATTERN.test(sourceLine))
+  )
+}
+
+function matchesAirConditioningWholeHouseLine(line = '') {
+  const sourceLine = String(line ?? '').trim()
+  const normalizedLine = normalizeShortDescriptionFactLine(sourceLine)
+
+  return (
+    WHOLE_HOUSE_AIR_CONDITIONING_LINES.has(normalizedLine) ||
+    (AIR_CONDITIONING_TERM_PATTERN.test(sourceLine) && AIR_CONDITIONING_WHOLE_HOUSE_CONTEXT_PATTERN.test(sourceLine))
+  )
+}
+
+function normalizePropertyShortDescriptionDescriptorLine(line = '') {
+  const normalizedLine = String(line ?? '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+
+  if (!normalizedLine) {
+    return ''
+  }
+
+  if (matchesAirConditioningWholeHouseLine(normalizedLine)) {
+    return AIR_CONDITIONING_WHOLE_HOUSE_DESCRIPTOR
+  }
+
+  if (matchesAirConditioningBedroomLine(normalizedLine)) {
+    return AIR_CONDITIONING_BEDROOM_DESCRIPTOR
+  }
+
+  return normalizedLine.replace(/\bAC\b/g, 'A/C')
+}
+
+function normalizePropertyShortDescriptionDescriptorText(value = '') {
+  return String(value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => normalizePropertyShortDescriptionDescriptorLine(line))
+    .filter(Boolean)
+    .join('\n')
+}
+
 function normalizePropertyShortDescription(shortDescription, fallbackLines = []) {
-  const normalizedShortDescription = String(shortDescription ?? '').trim()
+  const normalizedShortDescription = normalizePropertyShortDescriptionDescriptorText(shortDescription)
 
   if (normalizedShortDescription) {
     return normalizedShortDescription
   }
 
-  return fallbackLines.join('\n')
+  return normalizePropertyShortDescriptionDescriptorText(fallbackLines.join('\n'))
 }
 
 function normalizePropertyBooking(record, externalLinks, descriptionHtml = '') {
@@ -829,6 +915,8 @@ function summarizeProperty(property) {
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
     amenitiesHtml: property.amenitiesHtml,
+    booking: property.booking,
+    externalLinks: property.externalLinks,
   }
 
   if (property.adminOriginalSlug) {

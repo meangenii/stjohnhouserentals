@@ -4,11 +4,16 @@ import { resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getSiteThemeCssProperties, getSiteThemeRuleOverrideCssText } from '../lib/siteThemeSettings'
 import { useAdminSession } from '../lib/useAdminSession'
 import { useSiteShellContent } from '../lib/useSiteContent'
+import { AdminEditPageButton } from './AdminEditPageButton'
 import { BackToTopButton } from './BackToTopButton'
 import { RichTextValue } from './RichTextValue'
 
 const ADMIN_NAV_ITEM = { label: 'Editor', path: '/admin', matchPaths: ['/admin'] }
 const DESKTOP_NAV_MEDIA_QUERY = '(min-width: 900px)'
+const LOCAL_ATTRACTIONS_NAV_ITEMS = [
+  { label: 'Beaches', path: '/map#island-map', matchPaths: ['/map'] },
+  { label: 'Restaurants', path: '/map#dining-guide', matchPaths: ['/map'] },
+]
 
 function getMediaQueryMatches(query, fallback = false) {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -26,6 +31,83 @@ function isActiveNavItem(pathname, matchPaths) {
 
 function isActiveChildItem(pathname, child) {
   return isActiveNavItem(pathname, child.matchPaths ?? [child.path])
+}
+
+function readHashTarget(hash) {
+  if (!hash) {
+    return ''
+  }
+
+  try {
+    return decodeURIComponent(hash.replace(/^#/, '').trim())
+  } catch {
+    return hash.replace(/^#/, '').trim()
+  }
+}
+
+function normalizeNavPath(value = '') {
+  const candidate = String(value ?? '').trim()
+
+  if (!candidate) {
+    return ''
+  }
+
+  const withoutOrigin = candidate.replace(/^(?:[a-z][a-z\d+\-.]*:)?\/\/[^/]+/i, '')
+  const [rawPath = ''] = withoutOrigin.split(/[?#]/, 1)
+  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
+
+  return normalizedPath === '/' ? '/' : normalizedPath.replace(/\/+$/, '') || '/'
+}
+
+function isLocalAttractionsNavItem(item) {
+  return String(item?.label ?? '').trim().toLowerCase() === 'local attractions' && normalizeNavPath(item?.path || item?.href) === '/map'
+}
+
+function expandLocalAttractionsNavItems(items = []) {
+  return (Array.isArray(items) ? items : []).flatMap((item) => {
+    if (isLocalAttractionsNavItem(item)) {
+      return LOCAL_ATTRACTIONS_NAV_ITEMS
+    }
+
+    if (Array.isArray(item?.children) && item.children.length > 0) {
+      return [
+        {
+          ...item,
+          children: expandLocalAttractionsNavItems(item.children),
+        },
+      ]
+    }
+
+    return [item]
+  })
+}
+
+function scrollCurrentPageHashLink(destination = '') {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const normalizedDestination = String(destination ?? '').trim()
+
+  if (!normalizedDestination.includes('#')) {
+    return
+  }
+
+  const destinationUrl = new URL(normalizedDestination, window.location.origin)
+
+  if (destinationUrl.pathname !== window.location.pathname || destinationUrl.search !== window.location.search) {
+    return
+  }
+
+  const hashTarget = readHashTarget(destinationUrl.hash)
+
+  if (!hashTarget) {
+    return
+  }
+
+  window.requestAnimationFrame(() => {
+    document.getElementById(hashTarget)?.scrollIntoView({ block: 'start', behavior: 'auto' })
+  })
 }
 
 function buildNavItemId(baseId, itemIndex, suffix) {
@@ -206,6 +288,7 @@ function SiteMenu({
                     target={itemLink.target}
                     to={itemLink.to}
                     onClick={() => {
+                      scrollCurrentPageHashLink(itemLink.to || itemLink.href)
                       setCurrentOpenMenuLabel('')
                       onNavigate?.()
                     }}
@@ -246,6 +329,7 @@ function SiteMenu({
                       target={childLink.target}
                       to={childLink.to}
                       onClick={() => {
+                        scrollCurrentPageHashLink(childLink.to || childLink.href)
                         setCurrentOpenMenuLabel('')
                         onNavigate?.()
                       }}
@@ -272,6 +356,7 @@ function SiteMenu({
             target={directItemLink.target}
             to={directItemLink.to}
             onClick={() => {
+              scrollCurrentPageHashLink(directItemLink.to || directItemLink.href)
               setCurrentOpenMenuLabel('')
               onNavigate?.()
             }}
@@ -290,9 +375,9 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   const mobileNavRef = useRef(null)
   const header = siteShell?.header ?? {}
   const footer = siteShell?.footer ?? {}
-  const baseNavItems = Array.isArray(header.primaryNav) ? header.primaryNav : []
+  const baseNavItems = expandLocalAttractionsNavItems(header.primaryNav)
   const siteNavItems = interactive && isAdmin ? [...baseNavItems, ADMIN_NAV_ITEM] : baseNavItems
-  const footerNavItems = Array.isArray(footer.primaryNav) ? footer.primaryNav : []
+  const footerNavItems = expandLocalAttractionsNavItems(footer.primaryNav)
   const footerMetaItems = Array.isArray(footer.legalNav) ? footer.legalNav : []
   const logo = header.logo ?? {}
   const utility = header.utility ?? {}
@@ -494,6 +579,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
       </footer>
 
       {interactive && !isAdminRoute ? <BackToTopButton /> : null}
+      {interactive && !isAdminRoute && isAdmin ? <AdminEditPageButton /> : null}
     </div>
   )
 }

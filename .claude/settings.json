@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --no-install playwright --version)",
+      "Bash(node \"C:\\\\Users\\\\j_luc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-j-luc-OneDrive-Desktop-GenericCMS\\\\4173ef9d-44e6-4e5a-b7e6-84526bff9d7d\\\\scratchpad\\\\verify-pills.mjs\")",
+      "Bash(node .scratch-verify/verify-pills.mjs)",
+      "Bash(node .scratch-verify/verify-pills-mobile.mjs)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(node .scratch-verify/verify-static-pills.mjs)",
+      "Bash(node .scratch-verify/verify-active-visual.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s \"http://localhost:5173/api/properties/catalog\" -o /tmp_catalog_check.json)",
+      "Bash(curl -s \"http://localhost:5173/api/properties/catalog\")",
+      "Bash(node -e \"require\\('./src/index.js'\\); console.log\\('index.js loads OK'\\)\")",
+      "Bash(firebase deploy *)",
+      "Bash(claude mcp *)",
+      "Bash(node -e \"console.log\\(require.resolve\\('playwright'\\)\\)\")",
+      "Bash(node .scratch-verify/verify-return.js)",
+      "Bash(mv .scratch-verify/verify-return.js .scratch-verify/verify-return.cjs)",
+      "Bash(node .scratch-verify/verify-return.cjs)",
+      "Bash(node .scratch-verify/verify-direct.cjs)",
+      "Bash(node .scratch-verify/verify-for-rent.cjs)",
+      "Bash(powershell -Command \"Stop-Process -Id 9660 -Force\")",
+      "Bash(taskkill //PID 9660 //F)",
+      "Bash(VITE_PROPERTY_DATA_SOURCE=mock npm run dev -- --port 5183)",
+      "Bash(disown)",
+      "Bash(node .scratch-verify/verify-prevnext.cjs)",
+      "PowerShell(Stop-Process -Id 30920 -Force)",
+      "Bash(git log *)",
+      "Read(//tmp/**)",
+      "Bash(cat /tmp/gitlog_full.txt)"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -9,9 +9,7 @@ import {
   DEFAULT_SOCIAL_IMAGE_TYPE,
   DEFAULT_SOCIAL_IMAGE_WIDTH,
   SITE_NAME,
-  SITE_ORIGIN,
   STATIC_SEO_ROUTES,
-  buildBreadcrumbJsonLd,
   buildCanonicalUrl,
   buildSeoTitle,
   buildSiteJsonLd,
@@ -23,8 +21,8 @@ import {
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(scriptDir, '..')
-const publicDir = resolve(rootDir, 'public')
 const distDir = resolve(rootDir, 'dist')
+const functionsGeneratedDir = resolve(rootDir, 'functions', 'src', 'generated')
 
 const HTML_ENTITY_DECODE_MAP = {
   '&nbsp;': ' ',
@@ -59,15 +57,6 @@ function normalizePathname(pathname = '/') {
   return withSlash.length > 1 ? withSlash.replace(/\/+$/, '') : '/'
 }
 
-function xmlEscape(value) {
-  return String(value ?? '')
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;')
-}
-
 function htmlEscape(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -78,14 +67,6 @@ function htmlEscape(value) {
 
 function escapeJsonForScript(value) {
   return JSON.stringify(value).replaceAll('<', '\\u003c')
-}
-
-async function readJsonArtifact(relativePath, fallback) {
-  try {
-    return JSON.parse(await readFile(resolve(rootDir, relativePath), 'utf8'))
-  } catch {
-    return fallback
-  }
 }
 
 async function writeIfChanged(targetPath, content) {
@@ -101,6 +82,25 @@ async function writeIfChanged(targetPath, content) {
   await writeFile(targetPath, content, 'utf8')
 }
 
+async function removeGeneratedStaticSeoFiles() {
+  await Promise.all([
+    rm(resolve(distDir, 'sitemap.xml'), { force: true }),
+    rm(resolve(distDir, 'robots.txt'), { force: true }),
+    rm(resolve(distDir, 'rental-properties'), { force: true, recursive: true }),
+    rm(resolve(distDir, '1bedroom'), { force: true, recursive: true }),
+    rm(resolve(distDir, 'charter-boat-rentals'), { force: true, recursive: true }),
+  ])
+}
+
+async function writeDynamicSeoShell() {
+  try {
+    const baseHtml = await readFile(resolve(distDir, 'index.html'), 'utf8')
+    await writeIfChanged(resolve(functionsGeneratedDir, 'indexShell.html'), baseHtml)
+  } catch {
+    return
+  }
+}
+
 function getImageUrl(image) {
   if (typeof image === 'string') {
     return toAbsoluteUrl(image)
@@ -109,36 +109,79 @@ function getImageUrl(image) {
   return toAbsoluteUrl(image?.url || image?.src)
 }
 
-function getImageAlt(image, fallback) {
-  return normalizeText(image?.alt || image?.title || fallback)
+function normalizePositiveInteger(value) {
+  const number = Number.parseInt(value, 10)
+  return Number.isFinite(number) && number > 0 ? String(number) : ''
 }
 
-function buildPropertyDescription(property) {
-  const shortDescription = normalizeText(property.shortDescription)
-
-  if (shortDescription) {
-    return shortDescription
+function isDefaultSocialImageUrl(imageUrl) {
+  try {
+    const defaultUrl = new URL(DEFAULT_SOCIAL_IMAGE)
+    const candidateUrl = new URL(toAbsoluteUrl(imageUrl))
+    return defaultUrl.origin === candidateUrl.origin && defaultUrl.pathname === candidateUrl.pathname
+  } catch {
+    return toAbsoluteUrl(imageUrl).split('?')[0] === DEFAULT_SOCIAL_IMAGE.split('?')[0]
   }
-
-  const facts = Array.isArray(property.facts)
-    ? property.facts.map((fact) => normalizeText(fact)).filter(Boolean)
-    : []
-
-  if (facts.length > 0) {
-    return `St. John vacation rental ${property.name}: ${facts.join(', ')}.`
-  }
-
-  return `View ${property.name}, a St. John vacation rental, and contact the owner or manager directly.`
 }
 
-function buildCharterDescription(charter) {
-  const shortDescription = normalizeText(charter.shortDescription)
-
-  if (shortDescription) {
-    return shortDescription
+function getImageWidth(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return String(DEFAULT_SOCIAL_IMAGE_WIDTH)
   }
 
-  return `View ${charter.name}, a St. John charter boat listing, and contact the operator directly.`
+  return typeof image === 'object' && image ? normalizePositiveInteger(image.width) : ''
+}
+
+function getImageHeight(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return String(DEFAULT_SOCIAL_IMAGE_HEIGHT)
+  }
+
+  return typeof image === 'object' && image ? normalizePositiveInteger(image.height) : ''
+}
+
+function inferImageTypeFromUrl(imageUrl) {
+  let pathname
+
+  try {
+    pathname = new URL(imageUrl).pathname
+  } catch {
+    pathname = String(imageUrl ?? '').split('?')[0]
+  }
+
+  const normalizedPathname = String(pathname).toLowerCase()
+
+  if (/\.(?:jpg|jpeg)$/.test(normalizedPathname)) {
+    return 'image/jpeg'
+  }
+
+  if (/\.png$/.test(normalizedPathname)) {
+    return 'image/png'
+  }
+
+  if (/\.webp$/.test(normalizedPathname)) {
+    return 'image/webp'
+  }
+
+  if (/\.gif$/.test(normalizedPathname)) {
+    return 'image/gif'
+  }
+
+  return ''
+}
+
+function getImageType(image, imageUrl) {
+  if (isDefaultSocialImageUrl(imageUrl)) {
+    return DEFAULT_SOCIAL_IMAGE_TYPE
+  }
+
+  const contentType = typeof image === 'object' && image ? normalizeText(image.contentType || image.type || image.mimeType) : ''
+
+  if (/^image\//i.test(contentType)) {
+    return contentType
+  }
+
+  return inferImageTypeFromUrl(imageUrl)
 }
 
 function addRoute(routeMap, route) {
@@ -184,120 +227,6 @@ function createStaticRoutes() {
   return routeMap
 }
 
-function createPropertyRoutes(properties) {
-  const routes = []
-
-  properties
-    .filter((property) => property?.active !== false && property?.slug && property?.name)
-    .forEach((property) => {
-      const path = normalizePathname(property.path || `/rental-properties/${property.slug}`)
-      const route = {
-        path,
-        title: `${property.name} | St. John Vacation Rental`,
-        description: buildPropertyDescription(property),
-        image: getImageUrl(property.heroImage),
-        imageAlt: getImageAlt(property.heroImage, property.name),
-        priority: '0.7',
-        changefreq: 'weekly',
-        type: 'article',
-        structuredData: buildBreadcrumbJsonLd([
-          { name: 'Home', path: '/' },
-          { name: 'Rental Accommodations', path: '/for-rent' },
-          { name: property.name, path },
-        ]),
-      }
-
-      routes.push(route)
-
-      if (Number(property.bedrooms) === 1) {
-        routes.push({
-          ...route,
-          path: `/1bedroom/${property.slug}`,
-          canonicalPath: path,
-          includeInSitemap: false,
-        })
-      }
-    })
-
-  return routes
-}
-
-function createCharterRoutes(charters) {
-  return charters
-    .filter((charter) => charter?.active !== false && charter?.slug && charter?.name)
-    .map((charter) => {
-      const path = normalizePathname(charter.path || `/charter-boat-rentals/${charter.slug}`)
-
-      return {
-        path,
-        title: `${charter.name} | St. John Charter Boat`,
-        description: buildCharterDescription(charter),
-        image: getImageUrl(charter.heroImage),
-        imageAlt: getImageAlt(charter.heroImage, charter.name),
-        priority: '0.6',
-        changefreq: 'monthly',
-        type: 'article',
-        structuredData: buildBreadcrumbJsonLd([
-          { name: 'Home', path: '/' },
-          { name: 'Charter Boats', path: '/boats' },
-          { name: charter.name, path },
-        ]),
-      }
-    })
-}
-
-function buildSitemap(routes) {
-  const sitemapRoutes = routes
-    .filter((route) => route.includeInSitemap !== false)
-    .sort((first, second) => first.path.localeCompare(second.path))
-  const entries = sitemapRoutes
-    .map((route) => {
-      const imageUrl = getImageUrl(route.image)
-      const imageEntry = imageUrl
-        ? [
-            '    <image:image>',
-            `      <image:loc>${xmlEscape(imageUrl)}</image:loc>`,
-            route.imageAlt ? `      <image:caption>${xmlEscape(route.imageAlt)}</image:caption>` : '',
-            '    </image:image>',
-          ]
-            .filter(Boolean)
-            .join('\n')
-        : ''
-
-      return [
-        '  <url>',
-        `    <loc>${xmlEscape(route.canonicalUrl)}</loc>`,
-        `    <changefreq>${xmlEscape(route.changefreq)}</changefreq>`,
-        `    <priority>${xmlEscape(route.priority)}</priority>`,
-        imageEntry,
-        '  </url>',
-      ]
-        .filter(Boolean)
-        .join('\n')
-    })
-    .join('\n')
-
-  return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
-    entries,
-    '</urlset>',
-    '',
-  ].join('\n')
-}
-
-function buildRobotsTxt() {
-  return [
-    'User-agent: *',
-    'Allow: /',
-    'Disallow: /admin',
-    'Disallow: /api/',
-    '',
-    `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
-    '',
-  ].join('\n')
-}
-
 function buildStructuredData(route) {
   return [
     ...buildSiteJsonLd(),
@@ -316,7 +245,9 @@ function buildPrerenderHead(route) {
   const description = normalizeText(route.description) || DEFAULT_SITE_DESCRIPTION
   const imageUrl = getImageUrl(route.image) || DEFAULT_SOCIAL_IMAGE
   const imageAlt = route.imageAlt || SITE_NAME
-  const usesDefaultSocialImage = imageUrl === toAbsoluteUrl(DEFAULT_SOCIAL_IMAGE)
+  const imageWidth = getImageWidth(route.image, imageUrl)
+  const imageHeight = getImageHeight(route.image, imageUrl)
+  const imageType = getImageType(route.image, imageUrl)
   const robots = route.robots || 'index, follow'
   const structuredData = buildStructuredData(route)
 
@@ -334,15 +265,9 @@ function buildPrerenderHead(route) {
     `    <meta property="og:image" content="${htmlEscape(imageUrl)}" data-seo-prerender="true" />`,
     `    <meta property="og:image:secure_url" content="${htmlEscape(imageUrl)}" data-seo-prerender="true" />`,
     `    <meta property="og:image:alt" content="${htmlEscape(imageAlt)}" data-seo-prerender="true" />`,
-    usesDefaultSocialImage
-      ? `    <meta property="og:image:width" content="${DEFAULT_SOCIAL_IMAGE_WIDTH}" data-seo-prerender="true" />`
-      : '',
-    usesDefaultSocialImage
-      ? `    <meta property="og:image:height" content="${DEFAULT_SOCIAL_IMAGE_HEIGHT}" data-seo-prerender="true" />`
-      : '',
-    usesDefaultSocialImage
-      ? `    <meta property="og:image:type" content="${htmlEscape(DEFAULT_SOCIAL_IMAGE_TYPE)}" data-seo-prerender="true" />`
-      : '',
+    imageWidth ? `    <meta property="og:image:width" content="${imageWidth}" data-seo-prerender="true" />` : '',
+    imageHeight ? `    <meta property="og:image:height" content="${imageHeight}" data-seo-prerender="true" />` : '',
+    imageType ? `    <meta property="og:image:type" content="${htmlEscape(imageType)}" data-seo-prerender="true" />` : '',
     '    <meta name="twitter:card" content="summary_large_image" data-seo-prerender="true" />',
     `    <meta name="twitter:title" content="${htmlEscape(title)}" data-seo-prerender="true" />`,
     `    <meta name="twitter:description" content="${htmlEscape(description)}" data-seo-prerender="true" />`,
@@ -389,26 +314,12 @@ async function generatePrerenderedHtml(routes) {
 }
 
 async function main() {
-  const propertySummaryPayload = await readJsonArtifact('public/livePropertySummaryCatalog.json', { properties: [] })
-  const charterPayload = await readJsonArtifact('public/liveCharterCatalog.json', { charters: [] })
   const routeMap = createStaticRoutes()
-
-  ;[
-    ...createPropertyRoutes(propertySummaryPayload.properties ?? []),
-    ...createCharterRoutes(charterPayload.charters ?? []),
-  ].forEach((route) => addRoute(routeMap, route))
-
   const routes = Array.from(routeMap.values())
-  const sitemap = buildSitemap(routes)
-  const robots = buildRobotsTxt()
 
-  await Promise.all([
-    writeIfChanged(resolve(publicDir, 'sitemap.xml'), sitemap),
-    writeIfChanged(resolve(publicDir, 'robots.txt'), robots),
-    writeIfChanged(resolve(distDir, 'sitemap.xml'), sitemap),
-    writeIfChanged(resolve(distDir, 'robots.txt'), robots),
-    generatePrerenderedHtml(routes),
-  ])
+  await removeGeneratedStaticSeoFiles()
+  await writeDynamicSeoShell()
+  await generatePrerenderedHtml(routes)
 }
 
 main().catch((error) => {

@@ -858,3 +858,26 @@ exports.listAdminPageInventory = async function listAdminPageInventory() {
   const records = await listStructuredPageDocumentsFromFirestore()
   return cloneData(buildPageIndexDocument(buildStructuredPageSummaryList(records, 'admin')).pageInventory)
 }
+
+exports.listAllStructuredPageContent = async function listAllStructuredPageContent() {
+  const records = await listStructuredPageDocumentsFromFirestore()
+
+  return cloneData(
+    records
+      .map((record) => {
+        const page = getStructuredPageView(record.key, record.data, 'admin')
+
+        if (!page) {
+          return null
+        }
+
+        return {
+          key: record.key,
+          title: resolveStructuredPageTitle(page),
+          path: String(page.path ?? '').trim(),
+          content: page,
+        }
+      })
+      .filter(Boolean),
+  )
+}

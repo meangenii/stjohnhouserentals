@@ -1,12 +1,25 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { listBedroomGroups } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
 
 const preferredBedroomOrder = new Map([1, 2, 3, 4, 5, 6].map((bedrooms, index) => [bedrooms, index]))
 
+function isUnmodifiedPrimaryClick(event) {
+  return event.button === 0 && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey
+}
+
+function getPropertyDirectoryTargetId(slug = '') {
+  const normalizedSlug = String(slug ?? '').trim()
+
+  return normalizedSlug ? `property-directory-${normalizedSlug.replace(/[^a-z0-9_-]+/gi, '-')}` : ''
+}
+
 export function PropertyDirectorySection({ title, groups: providedGroups = null }) {
   const [state, setState] = useState({ status: 'loading', groups: [] })
+  const location = useLocation()
+  const navigate = useNavigate()
+  const restoredScrollLocationKeyRef = useRef('')
 
   useEffect(() => {
     if (providedGroups) {
@@ -72,6 +85,70 @@ export function PropertyDirectorySection({ title, groups: providedGroups = null 
       return leftGroup.bedrooms - rightGroup.bedrooms || leftGroup.label.localeCompare(rightGroup.label)
     })
 
+  const shouldRestorePropertyReturnPosition = location.state?.restorePropertyReturnPosition === true
+  const propertyReturnScrollY = Number(location.state?.propertyReturnScrollY)
+  const hasPropertyReturnScrollY = Number.isFinite(propertyReturnScrollY)
+  const propertyReturnTargetId =
+    typeof location.state?.propertyReturnTargetId === 'string' ? location.state.propertyReturnTargetId : ''
+
+  function handlePropertyNavigate(event, property, groupProperties) {
+    if (!isUnmodifiedPrimaryClick(event)) {
+      return
+    }
+
+    const returnTargetId = getPropertyDirectoryTargetId(property?.slug)
+    const filteredPropertyOrder = Array.isArray(groupProperties)
+      ? groupProperties.map((groupProperty) => ({
+          slug: groupProperty.slug,
+          name: groupProperty.name,
+          path: groupProperty.path,
+        }))
+      : []
+
+    event.preventDefault()
+    navigate(property.path, {
+      state: {
+        filteredPropertyOrder,
+        propertyReturnPath: `${location.pathname}${location.search}`,
+        propertyReturnScrollY: window.scrollY,
+        ...(returnTargetId ? { propertyReturnTargetId: returnTargetId } : {}),
+      },
+    })
+  }
+
+  useEffect(() => {
+    if (
+      !shouldRestorePropertyReturnPosition ||
+      !isReady ||
+      restoredScrollLocationKeyRef.current === location.key ||
+      (!propertyReturnTargetId && !hasPropertyReturnScrollY)
+    ) {
+      return
+    }
+
+    restoredScrollLocationKeyRef.current = location.key
+
+    window.requestAnimationFrame(() => {
+      const targetElement = propertyReturnTargetId ? document.getElementById(propertyReturnTargetId) : null
+
+      if (targetElement) {
+        targetElement.scrollIntoView({ block: 'nearest', behavior: 'auto' })
+        return
+      }
+
+      if (hasPropertyReturnScrollY) {
+        window.scrollTo({ top: Math.max(0, propertyReturnScrollY), left: 0, behavior: 'auto' })
+      }
+    })
+  }, [
+    hasPropertyReturnScrollY,
+    isReady,
+    location.key,
+    propertyReturnScrollY,
+    propertyReturnTargetId,
+    shouldRestorePropertyReturnPosition,
+  ])
+
   return (
     <section className="property-directory">
       <div className="property-directory-inner">
@@ -95,8 +172,12 @@ export function PropertyDirectorySection({ title, groups: providedGroups = null 
 
                 <ul className="property-link-list">
                   {group.properties.map((property) => (
-                    <li key={property.slug}>
-                      <Link className="property-directory-link" to={property.path}>
+                    <li id={getPropertyDirectoryTargetId(property.slug) || undefined} key={property.slug}>
+                      <Link
+                        className="property-directory-link"
+                        to={property.path}
+                        onClick={(event) => handlePropertyNavigate(event, property, group.properties)}
+                      >
                         {property.name}
                       </Link>
                     </li>

@@ -1,6 +1,8 @@
 const { onRequest } = require('firebase-functions/v2/https')
+const { readFileSync } = require('node:fs')
+const { join } = require('node:path')
 const { listAdvertiseInquiries, saveAdvertiseInquiry } = require('./advertiseInquiryRepository')
-const { getIcsAvailability } = require('./calendarRepository')
+const { getCalendarAvailability } = require('./calendarRepository')
 const {
   createManagedBackupExport,
   createStagingClone,
@@ -41,15 +43,27 @@ const {
   seedPropertyRecords,
 } = require('./propertyRepository')
 const {
+  convertMediaAssetsToAvif,
   createMediaFolder,
   deleteMediaAsset,
   deleteMediaAssets,
   deleteMediaFolder,
+  findMediaUsage,
   listMediaLibrary,
   moveMediaAssets,
   uploadMediaAsset,
 } = require('./mediaRepository')
 const { acquireLock, getLockStatus, heartbeatLock, listLockStatuses, releaseLock } = require('./editLockRepository')
+const {
+  buildRobotsTxt,
+  buildSitemap,
+  createCharterRoute,
+  createNotFoundRoute,
+  createPropertyRoute,
+  createSeoRoutes,
+  injectPrerenderHead,
+  normalizePathname,
+} = require('./seoRenderer')
 const {
   getAdminSiteShellContent,
   getAdminStructuredPageContent,
@@ -97,10 +111,50 @@ const publicSiteConfig = {
 }
 
 const PUBLIC_AVAILABILITY_CACHE_CONTROL = 'public, max-age=300, s-maxage=300, stale-while-revalidate=1800'
+const PUBLIC_SEO_CACHE_CONTROL = 'no-store'
+const SITE_API_FUNCTION_OPTIONS = {
+  region: 'us-central1',
+  cors: true,
+  memory: '1GiB',
+  timeoutSeconds: 540,
+}
+const SITE_SEO_FUNCTION_OPTIONS = {
+  region: 'us-central1',
+}
+const INDEX_SHELL_PATH = join(__dirname, 'generated', 'indexShell.html')
+const FALLBACK_INDEX_SHELL = [
+  '<!doctype html>',
+  '<html lang="en">',
+  '  <head>',
+  '    <meta charset="UTF-8" />',
+  '    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />',
+  '    <meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+  '    <title>St. John House Rentals</title>',
+  '  </head>',
+  '  <body>',
+  '    <div id="root"></div>',
+  '  </body>',
+  '</html>',
+].join('\n')
+let cachedIndexShell = ''
 
 function sendAvailabilityJson(response, payload) {
   response.set('Cache-Control', PUBLIC_AVAILABILITY_CACHE_CONTROL)
   response.json(payload)
+}
+
+function loadIndexShell() {
+  if (cachedIndexShell) {
+    return cachedIndexShell
+  }
+
+  try {
+    cachedIndexShell = readFileSync(INDEX_SHELL_PATH, 'utf8')
+  } catch {
+    cachedIndexShell = FALLBACK_INDEX_SHELL
+  }
+
+  return cachedIndexShell
 }
 
 function normalizeRequestPath(pathname) {
@@ -116,6 +170,11 @@ function normalizeRequestPath(pathname) {
 
 function sendError(response, error, path) {
   if (error instanceof HttpError) {
+    console.warn('siteApi request failed', {
+      path,
+      status: error.status,
+      message: error.message,
+    })
     response.status(error.status).json({
       error: 'request-failed',
       message: error.message,
@@ -124,11 +183,98 @@ function sendError(response, error, path) {
     return
   }
 
+  console.error('siteApi unexpected error', {
+    path,
+    message: error instanceof Error ? error.message : 'Unexpected siteApi error',
+    stack: error instanceof Error ? error.stack : undefined,
+  })
   response.status(500).json({
     error: 'internal',
     message: error instanceof Error ? error.message : 'Unexpected siteApi error',
     path,
   })
+}
+
+function getSeoRequestPathname(request) {
+  const urlPath = String(request.path || request.url || '/').split('?')[0].split('#')[0]
+  return normalizePathname(urlPath)
+}
+
+function getSlugAfterPrefix(pathname, prefix) {
+  const normalizedPrefix = normalizePathname(prefix)
+  const normalizedPathname = normalizePathname(pathname)
+
+  if (!normalizedPathname.startsWith(`${normalizedPrefix}/`)) {
+    return ''
+  }
+
+  return normalizedPathname.slice(normalizedPrefix.length + 1)
+}
+
+function sendSeoHtml(response, route, status = 200) {
+  response.status(status)
+  response.type('html')
+  response.send(injectPrerenderHead(loadIndexShell(), route))
+}
+
+async function handleSiteSeoRequest(request, response, { serviceName, databaseId, mode }) {
+  const pathname = getSeoRequestPathname(request)
+  response.set('Cache-Control', PUBLIC_SEO_CACHE_CONTROL)
+  response.set('X-Firestore-Database', databaseId)
+  response.set('X-Site-Api-Variant', mode)
+  response.set('X-Site-Seo-Service', serviceName)
+
+  try {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      response.status(405).send('Method Not Allowed')
+      return
+    }
+
+    if (pathname === '/robots.txt') {
+      response.type('text/plain')
+      response.send(buildRobotsTxt())
+      return
+    }
+
+    if (pathname === '/sitemap.xml') {
+      const [properties, charters] = await Promise.all([listPropertySummaries(), listCharters()])
+      response.type('application/xml')
+      response.send(buildSitemap(createSeoRoutes({ properties, charters })))
+      return
+    }
+
+    const propertySlug = getSlugAfterPrefix(pathname, '/rental-properties') || getSlugAfterPrefix(pathname, '/1bedroom')
+
+    if (propertySlug) {
+      const property = await getPropertyBySlug(propertySlug)
+
+      if (!property) {
+        sendSeoHtml(response, createNotFoundRoute(pathname), 404)
+        return
+      }
+
+      sendSeoHtml(response, createPropertyRoute(property, pathname))
+      return
+    }
+
+    const charterSlug = getSlugAfterPrefix(pathname, '/charter-boat-rentals')
+
+    if (charterSlug) {
+      const charter = await getCharterBySlug(charterSlug)
+
+      if (!charter) {
+        sendSeoHtml(response, createNotFoundRoute(pathname), 404)
+        return
+      }
+
+      sendSeoHtml(response, createCharterRoute(charter, pathname))
+      return
+    }
+
+    sendSeoHtml(response, createNotFoundRoute(pathname), 404)
+  } catch (error) {
+    sendError(response, error, request.path)
+  }
 }
 
 async function handleSiteApiRequest(request, response, { serviceName, databaseId, mode }) {
@@ -262,10 +408,9 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         return
       }
 
-      const availability = await getIcsAvailability(property)
+      const availability = await getCalendarAvailability(property)
 
       sendAvailabilityJson(response, {
-        source: 'ics',
         checkedAt: new Date().toISOString(),
         slug,
         ...availability,
@@ -592,6 +737,16 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'GET' && path === 'admin/media/usage') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...(await findMediaUsage(request.query?.mediaId ?? '')),
+      })
+      return
+    }
+
     if (request.method === 'POST' && path === 'admin/media/upload') {
       const adminUser = await requireAdminUser(request)
       const media = await uploadMediaAsset(request.body ?? {}, adminUser)
@@ -612,6 +767,18 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         media,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/media/library/convert-avif') {
+      const adminUser = await requireAdminUser(request)
+      const result = await convertMediaAssetsToAvif(request.body?.mediaIds ?? [], adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        result,
       })
       return
     }
@@ -855,7 +1022,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 }
 
 function createSiteApiFunction({ serviceName, mode, resolveDatabaseId }) {
-  return onRequest({ region: 'us-central1', cors: true }, async (request, response) => {
+  return onRequest(SITE_API_FUNCTION_OPTIONS, async (request, response) => {
     let databaseId = ''
 
     try {
@@ -867,6 +1034,23 @@ function createSiteApiFunction({ serviceName, mode, resolveDatabaseId }) {
 
     return runWithRuntimeContext({ databaseId, mode }, async () =>
       handleSiteApiRequest(request, response, { serviceName, databaseId, mode }),
+    )
+  })
+}
+
+function createSiteSeoFunction({ serviceName, mode, resolveDatabaseId }) {
+  return onRequest(SITE_SEO_FUNCTION_OPTIONS, async (request, response) => {
+    let databaseId = ''
+
+    try {
+      databaseId = resolveDatabaseId()
+    } catch (error) {
+      sendError(response, error, request.path)
+      return
+    }
+
+    return runWithRuntimeContext({ databaseId, mode }, async () =>
+      handleSiteSeoRequest(request, response, { serviceName, databaseId, mode }),
     )
   })
 }
@@ -885,6 +1069,12 @@ function resolveStagingDatabaseId() {
 
 exports.siteApi = createSiteApiFunction({
   serviceName: 'siteApi',
+  mode: 'live',
+  resolveDatabaseId: () => getLiveFirestoreDatabaseId(),
+})
+
+exports.siteSeo = createSiteSeoFunction({
+  serviceName: 'siteSeo',
   mode: 'live',
   resolveDatabaseId: () => getLiveFirestoreDatabaseId(),
 })

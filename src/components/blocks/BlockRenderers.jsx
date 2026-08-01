@@ -80,6 +80,11 @@ export function ImageGalleryBlockRenderer({ block, path }) {
             path={[...path, 'images', index]}
             src={getContentImageSrc(image, { height: 720, width: 960 })}
           />
+          {String(image?.title ?? '').trim() ? (
+            <EditableText as="figcaption" className="block-image-gallery-caption" label={`Image ${index + 1} Title`} path={[...path, 'images', index, 'title']} value={image?.title ?? ''}>
+              {image?.title ?? ''}
+            </EditableText>
+          ) : null}
           {editable ? (
             <button
               className="button-link button-link--ghost block-image-gallery-remove"

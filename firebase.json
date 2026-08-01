@@ -27,15 +27,62 @@
             "value": "public, max-age=31536000, immutable"
           }
         ]
+      },
+      {
+        "source": "/social-preview.jpg",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=86400"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
       }
     ],
     "rewrites": [
       {
+        "source": "/sitemap.xml",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/robots.txt",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/rental-properties/**",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/1bedroom/**",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/charter-boat-rentals/**",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "siteApi",
-          "region": "us-central1",
-          "pinTag": true
+          "region": "us-central1"
         }
       },
       {

@@ -4,6 +4,7 @@ import { DEFAULT_PROPERTY_TEMPLATE_VARIANT, normalizePropertyTemplateVariant } f
 import { richTextValueToHtml, richTextValueToInlineHtml } from './richTextValue'
 import { getRouteSlugVariants } from './routeSlug'
 import { isApiBackedSiteContentSource } from './siteContentRepository'
+import { normalizePropertyShortDescriptionDescriptorText } from './propertyShortDescription'
 
 const liveCatalogUrl = '/livePropertyCatalog.json'
 const MOCK_STORAGE_KEY = 'propertyCatalog'
@@ -265,13 +266,13 @@ function getLegacyPropertyLines(record) {
 }
 
 function normalizePropertyShortDescription(shortDescription, fallbackLines = []) {
-  const normalizedShortDescription = String(shortDescription ?? '').trim()
+  const normalizedShortDescription = normalizePropertyShortDescriptionDescriptorText(shortDescription)
 
   if (normalizedShortDescription) {
     return normalizedShortDescription
   }
 
-  return fallbackLines.join('\n')
+  return normalizePropertyShortDescriptionDescriptorText(fallbackLines.join('\n'))
 }
 
 function normalizePropertyBooking(record, externalLinks, descriptionHtml = '') {
@@ -844,6 +845,8 @@ function summarizeProperty(property) {
     templateVariant: property.templateVariant,
     heroImage: property.heroImage,
     amenitiesHtml: property.amenitiesHtml,
+    booking: property.booking,
+    externalLinks: property.externalLinks,
   }
 
   if (property.adminOriginalSlug) {

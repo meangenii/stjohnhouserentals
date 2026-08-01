@@ -9,7 +9,7 @@ import { hasPropertyCalendarLink } from '../lib/propertyCalendarLink'
 import { PropertyAvailabilityFallback } from './PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from './PropertyAvailabilityCalendar'
 import { PropertyContentSection } from './PropertyContentSection'
-import { PropertyDescriptionSections } from './PropertyDescriptionSections'
+import { PropertyDescriptionSections, PropertyDetailsSection, PropertyPolicySection } from './PropertyDescriptionSections'
 import { RichTextValue } from './RichTextValue'
 
 export function PropertyDetailView({ property }) {
@@ -30,6 +30,7 @@ export function PropertyDetailView({ property }) {
   const galleryImages = propertyGallery.length > 0 ? propertyGallery : property.heroImage ? [property.heroImage] : []
   const safeImageIndex = galleryImages.length > 0 ? Math.min(activeImageIndex, galleryImages.length - 1) : 0
   const activeImage = galleryImages[safeImageIndex] ?? property.heroImage
+  const activeImageCaption = propertyGallery.length > 0 ? String(activeImage?.title ?? '').trim() : ''
   const bannerImageUrl = property.heroImage?.url
     ? buildRemoteImageUrl(property.heroImage, { width: 1600, height: 540 })
     : activeImage?.url
@@ -93,6 +94,30 @@ export function PropertyDetailView({ property }) {
         <PropertyAvailabilityCalendar fallback={availabilityFallback} propertySlug={property.slug} />
       </PropertyContentSection>
     ) : null,
+    policy: (
+      <PropertyPolicySection
+        bookingHtml={property.bookingHtml}
+        descriptionHtml={property.descriptionHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
+        key="policy"
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+      />
+    ),
+    details: (
+      <PropertyDetailsSection
+        bookingHtml={property.bookingHtml}
+        descriptionHtml={property.descriptionHtml}
+        enabledDescriptionSections={property.enabledDescriptionSections}
+        hasStructuredDescriptionSections={property.hasStructuredDescriptionSections}
+        key="details"
+        policyHtml={property.policyHtml}
+        ratesHtml={property.ratesHtml}
+        ratesTableHtml={property.ratesTableHtml}
+      />
+    ),
     amenities: (
       <PropertyContentSection
         key="amenities"
@@ -164,6 +189,12 @@ export function PropertyDetailView({ property }) {
                   </>
                 ) : null}
               </div>
+
+              {activeImageCaption ? (
+                <p aria-live="polite" className="property-gallery-caption">
+                  {activeImageCaption}
+                </p>
+              ) : null}
 
               {galleryImages.length > 1 ? (
                 <div className="property-gallery-thumbnails-shell">

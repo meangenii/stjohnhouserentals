@@ -60,6 +60,11 @@ export function ContentPage({ page }) {
                   loading="lazy"
                   src={getImageSrc(image)}
                 />
+                {String(image.title ?? '').trim() ? (
+                  <EditableText as="figcaption" className="snapshot-gallery-caption" label="Image Title" path={['imageGallery', index, 'title']} value={image.title ?? ''}>
+                    {image.title ?? ''}
+                  </EditableText>
+                ) : null}
               </figure>
             ))}
           </section>

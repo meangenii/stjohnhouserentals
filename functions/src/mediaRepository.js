@@ -3,12 +3,16 @@ const path = require('node:path')
 const sharp = require('sharp')
 const { HttpError, getDb, getServerTimestamp, getStorageBucket, isStagingRuntime } = require('./firebaseAdmin')
 const mediaUploadConfig = require('./mediaUploadConfig.json')
+const { listAllProperties } = require('./propertyRepository')
+const { listAllCharters } = require('./charterRepository')
+const { listAllStructuredPageContent, getAdminSiteShellContent } = require('./siteContentRepository')
 
 const MEDIA_LIBRARY_COLLECTION = 'cmsMediaLibrary'
 const MEDIA_FOLDER_COLLECTION = 'cmsMediaFolders'
 const MAX_MEDIA_UPLOAD_BYTES = Number(mediaUploadConfig.maxBinaryUploadBytes) || 6291456
 const MAX_MEDIA_UPLOAD_LABEL = String(mediaUploadConfig.maxBinaryUploadLabel ?? '6 MB').trim() || '6 MB'
 const AVIF_CONVERSION_CONTENT_TYPES = new Set(['image/jpeg', 'image/png'])
+const MAX_AVIF_CONVERSION_BATCH_SIZE = 1
 const AVIF_QUALITY = 60
 const AVIF_EFFORT = 4
 
@@ -663,13 +667,190 @@ async function listMediaLibrary() {
   }
 }
 
+async function convertMediaAssetsToAvif(mediaIds, actor) {
+  if (isStagingRuntime()) {
+    throw new HttpError(
+      403,
+      'Media conversion is disabled on the staging API so preview testing cannot rewrite shared live storage assets.',
+    )
+  }
+
+  const normalizedMediaIds = [...new Set((Array.isArray(mediaIds) ? mediaIds : [mediaIds]).map((value) => normalizeString(value)).filter(Boolean))]
+
+  if (!normalizedMediaIds.length) {
+    throw new HttpError(400, 'Choose at least one image before converting it to AVIF.')
+  }
+
+  if (normalizedMediaIds.length > MAX_AVIF_CONVERSION_BATCH_SIZE) {
+    throw new HttpError(400, 'Convert one image at a time so large AVIF jobs do not time out. The admin media browser will handle selected images one by one.')
+  }
+
+  const db = getDb()
+  const mediaDocumentRefs = normalizedMediaIds.map((mediaId) => db.collection(MEDIA_LIBRARY_COLLECTION).doc(mediaId))
+  const mediaDocuments = await Promise.all(mediaDocumentRefs.map((reference) => reference.get()))
+  const missingDocument = mediaDocuments.find((document) => !document.exists)
+
+  if (missingDocument) {
+    throw new HttpError(404, 'One or more selected media items no longer exist.')
+  }
+
+  const converted = []
+  const skipped = []
+
+  for (const mediaDocument of mediaDocuments) {
+    const mediaRecord = mediaDocument.data() ?? {}
+    const contentType = normalizeString(mediaRecord.contentType)
+    const fileName = normalizeString(mediaRecord.fileName)
+
+    if (!AVIF_CONVERSION_CONTENT_TYPES.has(contentType)) {
+      skipped.push({
+        id: mediaDocument.id,
+        fileName,
+        reason: contentType === 'image/avif' ? 'already-avif' : 'unsupported-format',
+      })
+      continue
+    }
+
+    try {
+      const bucket = getStorageBucket(normalizeString(mediaRecord.bucket))
+      const storagePath = normalizeString(mediaRecord.storagePath)
+      const [originalBuffer] = await bucket.file(storagePath).download()
+      const sourceImage = sharp(originalBuffer, { animated: true })
+      const metadata = await sourceImage.metadata()
+
+      if ((metadata.pages ?? 1) > 1) {
+        skipped.push({ id: mediaDocument.id, fileName, reason: 'animated' })
+        continue
+      }
+
+      const convertedBuffer = await sourceImage
+        .rotate()
+        .avif({
+          effort: AVIF_EFFORT,
+          quality: AVIF_QUALITY,
+        })
+        .toBuffer()
+      const dimensions = await readImageDimensions(convertedBuffer)
+
+      await bucket.file(storagePath).save(convertedBuffer, {
+        resumable: false,
+        contentType: 'image/avif',
+        metadata: {
+          cacheControl: 'public,max-age=31536000,immutable',
+          metadata: {
+            firebaseStorageDownloadTokens: normalizeString(mediaRecord.downloadToken),
+            ownerKey: normalizeString(mediaRecord.ownerKey),
+            ownerType: normalizeString(mediaRecord.ownerType),
+          },
+        },
+      })
+
+      await mediaDocument.ref.set(
+        {
+          bytes: convertedBuffer.length,
+          contentType: 'image/avif',
+          height: dimensions.height,
+          originalBytes: originalBuffer.length,
+          originalContentType: contentType,
+          sourceHashSha256: createHash('sha256').update(originalBuffer).digest('hex'),
+          storageHashSha256: createHash('sha256').update(convertedBuffer).digest('hex'),
+          updatedAt: getServerTimestamp(),
+          updatedBy: actor.email || actor.uid || 'admin',
+          wasConvertedToAvif: true,
+          width: dimensions.width,
+        },
+        { merge: true },
+      )
+
+      converted.push({
+        id: mediaDocument.id,
+        fileName,
+        bytesBefore: originalBuffer.length,
+        bytesAfter: convertedBuffer.length,
+      })
+    } catch {
+      skipped.push({ id: mediaDocument.id, fileName, reason: 'conversion-failed' })
+    }
+  }
+
+  return {
+    converted,
+    convertedCount: converted.length,
+    skipped,
+    skippedCount: skipped.length,
+  }
+}
+
+function contentIncludesNeedle(record, needles) {
+  const serialized = JSON.stringify(record ?? null)
+  return needles.some((needle) => needle && serialized.includes(needle))
+}
+
+async function findMediaUsage(mediaId) {
+  const normalizedMediaId = normalizeString(mediaId)
+
+  if (!normalizedMediaId) {
+    throw new HttpError(400, 'Choose a media item before searching for its usage.')
+  }
+
+  const mediaDocument = await getDb().collection(MEDIA_LIBRARY_COLLECTION).doc(normalizedMediaId).get()
+
+  if (!mediaDocument.exists) {
+    throw new HttpError(404, 'The selected media item no longer exists.')
+  }
+
+  const mediaRecord = mediaDocument.data() ?? {}
+  const managedUrl = normalizeString(mediaRecord.managedUrl)
+  const storagePath = normalizeString(mediaRecord.storagePath)
+  const needles = [managedUrl, storagePath].filter(Boolean)
+
+  const [properties, charters, pages, siteShell] = await Promise.all([
+    listAllProperties(),
+    listAllCharters(),
+    listAllStructuredPageContent(),
+    getAdminSiteShellContent(),
+  ])
+
+  const matches = []
+
+  properties.forEach((property) => {
+    if (contentIncludesNeedle(property, needles)) {
+      matches.push({ type: 'property', label: normalizeString(property.name) || property.slug, slug: property.slug })
+    }
+  })
+
+  charters.forEach((charter) => {
+    if (contentIncludesNeedle(charter, needles)) {
+      matches.push({ type: 'charter', label: normalizeString(charter.name) || charter.slug, slug: charter.slug })
+    }
+  })
+
+  pages.forEach((page) => {
+    if (contentIncludesNeedle(page.content, needles)) {
+      matches.push({ type: 'page', label: normalizeString(page.title) || page.key, pageKey: page.key })
+    }
+  })
+
+  if (contentIncludesNeedle(siteShell, needles)) {
+    matches.push({ type: 'site-shell', label: 'Site header & footer' })
+  }
+
+  return {
+    mediaId: normalizedMediaId,
+    managedUrl,
+    matches,
+  }
+}
+
 exports.MAX_MEDIA_UPLOAD_BYTES = MAX_MEDIA_UPLOAD_BYTES
 exports.MEDIA_FOLDER_COLLECTION = MEDIA_FOLDER_COLLECTION
 exports.MEDIA_LIBRARY_COLLECTION = MEDIA_LIBRARY_COLLECTION
+exports.convertMediaAssetsToAvif = convertMediaAssetsToAvif
 exports.createMediaFolder = createMediaFolder
 exports.deleteMediaAsset = deleteMediaAsset
 exports.deleteMediaAssets = deleteMediaAssets
 exports.deleteMediaFolder = deleteMediaFolder
+exports.findMediaUsage = findMediaUsage
 exports.listMediaLibrary = listMediaLibrary
 exports.moveMediaAssets = moveMediaAssets
 exports.uploadMediaAsset = uploadMediaAsset

@@ -257,6 +257,56 @@ function parseIcsBusyRanges(icsText) {
   return ranges.sort((left, right) => (left.start < right.start ? -1 : left.start > right.start ? 1 : 0))
 }
 
+function extractOwnerRezWidget(html) {
+  const widgetTagMatch = String(html ?? '').match(/<div[^>]*\bclass="[^"]*\bownerrez-widget\b[^"]*"[^>]*>/i)
+
+  if (!widgetTagMatch) {
+    return null
+  }
+
+  const tag = widgetTagMatch[0]
+  const propertyId = tag.match(/data-propertyid="([^"]+)"/i)?.[1]
+  const widgetId = tag.match(/data-widgetid="([^"]+)"/i)?.[1]
+
+  if (!propertyId || !widgetId) {
+    return null
+  }
+
+  return { propertyId, widgetId }
+}
+
+// OwnerRez's widget iframe renders its own multi-month calendar client-side,
+// but the underlying booking data is embedded server-side as a JS string
+// literal (`var bookingData = JSON.parse("...")`). Reading that directly lets
+// availability from an OwnerRez listing feed the site's own month-by-month
+// calendar instead of hosting OwnerRez's iframe (which has no month view and
+// depends on a cross-origin resize handshake to size itself correctly).
+function extractOwnerRezBookingData(html) {
+  const match = String(html ?? '').match(/var\s+bookingData\s*=\s*JSON\.parse\((".*?")\)\s*;/)
+
+  if (!match) {
+    return null
+  }
+
+  let bookings
+
+  try {
+    const jsonText = JSON.parse(match[1])
+    bookings = JSON.parse(jsonText)
+  } catch {
+    return null
+  }
+
+  if (!Array.isArray(bookings)) {
+    return null
+  }
+
+  return bookings
+    .filter((booking) => typeof booking?.Arrival === 'string' && typeof booking?.Departure === 'string')
+    .map((booking) => ({ start: booking.Arrival, end: booking.Departure }))
+    .sort((left, right) => (left.start < right.start ? -1 : left.start > right.start ? 1 : 0))
+}
+
 function getCachedAvailability(url) {
   const cached = availabilityCache.get(url)
 
@@ -271,11 +321,11 @@ function setCachedAvailability(url, result, ttlMs) {
   availabilityCache.set(url, { result, expiresAt: Date.now() + ttlMs })
 }
 
-async function getIcsAvailability(propertyRecord) {
+async function getCalendarAvailability(propertyRecord) {
   const url = String(propertyRecord?.calendarUrl ?? '').trim()
 
   if (!url) {
-    return { busy: [] }
+    return { type: 'none', busy: [] }
   }
 
   const cached = getCachedAvailability(url)
@@ -285,18 +335,43 @@ async function getIcsAvailability(propertyRecord) {
   }
 
   try {
-    const icsText = await fetchIcsText(url)
-    const result = { busy: parseIcsBusyRanges(icsText) }
-    setCachedAvailability(url, result, SUCCESS_CACHE_TTL_MS)
+    const feedText = await fetchIcsText(url)
+
+    if (/BEGIN:VCALENDAR/i.test(feedText)) {
+      const result = { type: 'ics', busy: parseIcsBusyRanges(feedText) }
+      setCachedAvailability(url, result, SUCCESS_CACHE_TTL_MS)
+      return result
+    }
+
+    const ownerRezWidget = extractOwnerRezWidget(feedText)
+
+    if (ownerRezWidget) {
+      const widgetUrl = `https://app.ownerrez.com/widgets/${encodeURIComponent(ownerRezWidget.widgetId)}?propertyKey=${encodeURIComponent(ownerRezWidget.propertyId)}`
+      const widgetHtml = await fetchIcsText(widgetUrl)
+      const busy = extractOwnerRezBookingData(widgetHtml)
+
+      if (busy) {
+        const result = { type: 'ics', busy }
+        setCachedAvailability(url, result, SUCCESS_CACHE_TTL_MS)
+        return result
+      }
+
+      const result = { type: 'ics', busy: [], error: 'Unable to read OwnerRez booking data.' }
+      setCachedAvailability(url, result, ERROR_CACHE_TTL_MS)
+      return result
+    }
+
+    const result = { type: 'ics', busy: [], error: 'Calendar URL did not return a recognized calendar feed.' }
+    setCachedAvailability(url, result, ERROR_CACHE_TTL_MS)
     return result
   } catch (error) {
-    const result = { busy: [], error: error instanceof Error ? error.message : 'Unable to load calendar availability.' }
+    const result = { type: 'ics', busy: [], error: error instanceof Error ? error.message : 'Unable to load calendar availability.' }
     setCachedAvailability(url, result, ERROR_CACHE_TTL_MS)
     return result
   }
 }
 
 module.exports = {
-  getIcsAvailability,
+  getCalendarAvailability,
   parseIcsBusyRanges,
 }

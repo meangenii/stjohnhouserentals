@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
 import { AdminBackupManager } from '../components/AdminBackupManager'
+import { AdminViewLiveButton } from '../components/AdminViewLiveButton'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
@@ -34,6 +35,7 @@ import { buildPropertyLocationOptions } from '../lib/propertyLocationFilters'
 import { buildPropertyShortDescription, mergePropertyShortDescription } from '../lib/propertyShortDescription'
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
 import { richTextValueToHtml, richTextValueToInlineHtml, richTextValueToPlainLineText } from '../lib/richTextValue'
+import { getRouteSlugVariants } from '../lib/routeSlug'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
@@ -48,6 +50,17 @@ import {
 
 const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
 const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
+const EXPECTED_PROPERTY_IMAGE_STORAGE_BUCKET =
+  String(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? '').trim() || 'st-john-house-rentals.firebasestorage.app'
+const PROPERTY_HTML_IMAGE_FIELDS = [
+  ['descriptionHtml', 'Description'],
+  ['ratesHtml', 'Rates'],
+  ['ratesTableHtml', 'Rates table'],
+  ['bookingHtml', 'Booking'],
+  ['policyHtml', 'Policy'],
+  ['existingAmenitiesHtml', 'Amenities'],
+  ['existingReviewsHtml', 'Reviews'],
+]
 
 function makeToken() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
@@ -119,6 +132,31 @@ function normalizeAdminRoutePath(value = '') {
 
 function isActualPublicRoutePath(path) {
   return Boolean(path) && path !== '/admin' && !path.includes('/:')
+}
+
+function getRoutePathSlug(path = '') {
+  const normalizedPath = normalizeAdminRoutePath(path)
+  return normalizedPath.split('/').filter(Boolean).pop() ?? ''
+}
+
+function findRecordByRouteSlug(records = [], requestedSlug = '') {
+  const requestedVariants = new Set(getRouteSlugVariants(requestedSlug))
+
+  if (requestedVariants.size === 0) {
+    return null
+  }
+
+  return (
+    records.find((record) => {
+      const recordVariants = new Set()
+
+      ;[record?.slug, record?.adminOriginalSlug, getRoutePathSlug(record?.path)].filter(Boolean).forEach((candidate) => {
+        getRouteSlugVariants(candidate).forEach((variant) => recordVariants.add(variant))
+      })
+
+      return Array.from(requestedVariants).some((variant) => recordVariants.has(variant))
+    }) ?? null
+  )
 }
 
 const RESERVED_PAGE_PATH_PREFIXES = ['/admin', '/rental-properties/', '/1bedroom/', '/charter-boat-rentals/']
@@ -206,9 +244,35 @@ function normalizeAdminEditorLocation(value = {}) {
   }
 }
 
+function readAdminEditorLocationFromSearch(search = '') {
+  const params = new URLSearchParams(search)
+
+  if (Array.from(params.keys()).length === 0) {
+    return null
+  }
+
+  const propertySlug = params.get('propertySlug') ?? ''
+  const charterSlug = params.get('charterSlug') ?? ''
+
+  return {
+    tab: params.get('tab') ?? '',
+    pageKey: params.get('pageKey') ?? '',
+    propertyMode: propertySlug ? 'edit' : '',
+    propertySlug,
+    charterMode: charterSlug ? 'edit' : '',
+    charterSlug,
+  }
+}
+
 function readStoredAdminEditorLocation() {
   if (typeof window === 'undefined') {
     return DEFAULT_ADMIN_EDITOR_LOCATION
+  }
+
+  const queryLocation = readAdminEditorLocationFromSearch(window.location.search)
+
+  if (queryLocation) {
+    return normalizeAdminEditorLocation(queryLocation)
   }
 
   try {
@@ -481,6 +545,105 @@ function createGalleryAssets(galleryImages = []) {
       storagePath: String(image.storagePath ?? '').trim(),
     }))
     .filter((image) => image.url)
+}
+
+function isExpectedFirebaseStorageUrl(value) {
+  const candidate = String(value ?? '').trim()
+
+  if (!candidate) {
+    return true
+  }
+
+  let parsedUrl
+
+  try {
+    parsedUrl = new URL(candidate)
+  } catch {
+    return false
+  }
+
+  if (parsedUrl.hostname === 'firebasestorage.googleapis.com') {
+    const pathMatch = parsedUrl.pathname.match(/^\/v0\/b\/([^/]+)\/o\//)
+    return decodeURIComponent(pathMatch?.[1] ?? '') === EXPECTED_PROPERTY_IMAGE_STORAGE_BUCKET
+  }
+
+  if (parsedUrl.hostname === 'storage.googleapis.com') {
+    return parsedUrl.pathname.startsWith(`/${EXPECTED_PROPERTY_IMAGE_STORAGE_BUCKET}/`)
+  }
+
+  return false
+}
+
+function truncateImageUrl(value) {
+  const candidate = String(value ?? '').trim()
+
+  if (candidate.length <= 92) {
+    return candidate
+  }
+
+  return `${candidate.slice(0, 89)}...`
+}
+
+function findFirstHtmlImageUrl(value) {
+  const html = String(value ?? '')
+  const match = html.match(/<img\b[^>]*\bsrc=['"]([^'"]+)['"][^>]*>/i)
+
+  return match?.[1] ?? ''
+}
+
+function getPropertyImageValidationMessage(formState = {}) {
+  const invalidReferences = []
+  const heroImageUrl = String(formState.heroImageUrl ?? '').trim()
+
+  if (heroImageUrl && !isExpectedFirebaseStorageUrl(heroImageUrl)) {
+    invalidReferences.push({ label: 'Hero image', url: heroImageUrl })
+  }
+
+  const galleryImages = Array.isArray(formState.galleryImages) ? formState.galleryImages : []
+
+  galleryImages.some((image, index) => {
+    const imageUrl = String(image?.url ?? '').trim()
+
+    if (imageUrl && !isExpectedFirebaseStorageUrl(imageUrl)) {
+      invalidReferences.push({ label: `Gallery image ${index + 1}`, url: imageUrl })
+      return true
+    }
+
+    return false
+  })
+
+  if (invalidReferences.length === 0) {
+    PROPERTY_HTML_IMAGE_FIELDS.some(([field, label]) => {
+      const imageUrl = findFirstHtmlImageUrl(formState[field])
+
+      if (imageUrl && !isExpectedFirebaseStorageUrl(imageUrl)) {
+        invalidReferences.push({ label: `${label} image`, url: imageUrl })
+        return true
+      }
+
+      return false
+    })
+  }
+
+  const invalidReference = invalidReferences[0]
+
+  if (!invalidReference) {
+    return ''
+  }
+
+  return `${invalidReference.label} uses an image URL outside this site's Firebase Storage bucket: ${truncateImageUrl(
+    invalidReference.url,
+  )}. Choose an uploaded image from Media, then save again.`
+}
+
+function buildValidatedPropertyDraft(formState = {}) {
+  const imageValidationMessage = getPropertyImageValidationMessage(formState)
+
+  if (imageValidationMessage) {
+    throw new Error(imageValidationMessage)
+  }
+
+  return buildPropertyDraft(formState)
 }
 
 function createEmptyFormState() {
@@ -1036,6 +1199,15 @@ export function AdminPage() {
   const initialPropertyFormState = createEmptyFormState()
   const initialCharterFormState = createEmptyCharterFormState()
   const [initialAdminEditorLocation] = useState(() => readStoredAdminEditorLocation())
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.location.search) {
+      return
+    }
+
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.hash}`)
+  }, [])
+
   const preferredPropertyMode = initialAdminEditorLocation.propertyMode
   const preferredPropertySlug = initialAdminEditorLocation.propertySlug
   const preferredCharterMode = initialAdminEditorLocation.charterMode
@@ -1265,8 +1437,7 @@ export function AdminPage() {
           return
         }
 
-        const preferredProperty =
-          (preferredPropertySlug ? properties.find((property) => property.slug === preferredPropertySlug) : null) ?? properties[0]
+        const preferredProperty = preferredPropertySlug ? findRecordByRouteSlug(properties, preferredPropertySlug) : properties[0]
 
         if (preferredProperty) {
           const nextFormState = createFormState(preferredProperty)
@@ -1336,8 +1507,7 @@ export function AdminPage() {
           return
         }
 
-        const preferredCharter =
-          (preferredCharterSlug ? charters.find((charter) => charter.slug === preferredCharterSlug) : null) ?? charters[0]
+        const preferredCharter = preferredCharterSlug ? findRecordByRouteSlug(charters, preferredCharterSlug) : charters[0]
 
         if (preferredCharter) {
           const nextFormState = createCharterFormState(preferredCharter)
@@ -1552,6 +1722,14 @@ export function AdminPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [charterDirty, pageDirty, propertyDirty, siteShellDirty])
+
+  function confirmLivePageNavigation() {
+    if (!propertyDirty && !charterDirty && !pageDirty && !siteShellDirty) {
+      return true
+    }
+
+    return window.confirm('You have unsaved admin edits. View the live page and discard those changes?')
+  }
 
   async function getAdminRequestOptions() {
     if (!requiresAdminSignIn) {
@@ -1982,7 +2160,7 @@ export function AdminPage() {
         ? { ...(await getAdminRequestOptions()), expectedUpdatedAt: editorMode === 'edit' ? propertyPublication?.savedAt ?? null : null }
         : {}
       const savedProperty = await saveAdminProperty(
-        buildPropertyDraft(formStateToPersist),
+        buildValidatedPropertyDraft(formStateToPersist),
         editorMode === 'edit' ? formStateToPersist.originalSlug : '',
         requestOptions,
       )
@@ -2121,7 +2299,7 @@ export function AdminPage() {
 
       if (hadUnsavedChanges) {
         const savedDraftProperty = await saveAdminProperty(
-          buildPropertyDraft(currentFormState),
+          buildValidatedPropertyDraft(currentFormState),
           currentFormState.originalSlug,
           { ...requestOptions, expectedUpdatedAt: propertyPublication?.savedAt ?? null },
         )
@@ -2825,7 +3003,6 @@ export function AdminPage() {
   const pageHasPendingPublication = hasPendingPublication(pagePublication)
   const pagePreviewModeKey = `${activeTab === 'pages' ? 'pages' : 'hidden'}:${pageEditorState.activeKey}`
   const pagePreviewMode = pagePreviewViewState.key === pagePreviewModeKey ? pagePreviewViewState.mode : 'edit'
-  const authBadgeDetail = authState.user?.email ?? ''
   const showGoogleSignInButton = authState.status === 'signed-out'
   const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
   const requiresAuthenticationScreen = requiresAdminSignIn && !authState.user
@@ -2837,7 +3014,6 @@ export function AdminPage() {
           <div className="admin-auth-shell">
             <div className="admin-auth-shell-header">
               <div className="eyebrow">Admin</div>
-              <h1>Content workspace</h1>
               <p>Sign in with Google to open the editor.</p>
             </div>
 
@@ -2874,66 +3050,54 @@ export function AdminPage() {
   return (
     <article className="admin-page">
       <section className="page-section admin-header">
-        <div className="admin-header-bar">
-          <div>
-            <div className="eyebrow">Admin</div>
-            <h1>Content workspace</h1>
+        <div className="admin-tab-row admin-tab-row--with-account">
+          <div className="admin-tab-row-tabs">
+            <AdminTabButton
+              active={activeTab === 'site-shell'}
+              label="Header & Footer"
+              onClick={() => setActiveTab('site-shell')}
+            />
+            <AdminTabButton
+              active={activeTab === 'pages'}
+              label="Pages"
+              onClick={() => setActiveTab('pages')}
+            />
+            <AdminTabButton
+              active={activeTab === 'styles'}
+              label="Styles"
+              onClick={() => setActiveTab('styles')}
+            />
+            <AdminTabButton
+              active={activeTab === 'properties'}
+              label="Properties"
+              onClick={() => setActiveTab('properties')}
+            />
+            <AdminTabButton
+              active={activeTab === 'charters'}
+              label="Charters"
+              onClick={() => setActiveTab('charters')}
+            />
+            <AdminTabButton
+              active={activeTab === 'media'}
+              label="Media"
+              onClick={() => setActiveTab('media')}
+            />
+            <AdminTabButton
+              active={activeTab === 'submissions'}
+              label="Advertise"
+              onClick={() => setActiveTab('submissions')}
+            />
+            <AdminTabButton
+              active={activeTab === 'backups'}
+              label="Backups"
+              onClick={() => setActiveTab('backups')}
+            />
           </div>
-
           {requiresAdminSignIn ? (
-            <div className="admin-auth-summary">
-              <div className="admin-auth-badge admin-auth-badge--success">
-                <span>Signed in</span>
-                {authBadgeDetail ? <strong>{authBadgeDetail}</strong> : null}
-              </div>
-              <button className="button-link button-link--ghost admin-action" type="button" onClick={handleAdminSignOut}>
-                Sign out
-              </button>
-            </div>
+            <button className="button-link button-link--ghost admin-action admin-sign-out-action" type="button" onClick={handleAdminSignOut}>
+              Sign out
+            </button>
           ) : null}
-        </div>
-
-        <div className="admin-tab-row">
-          <AdminTabButton
-            active={activeTab === 'site-shell'}
-            label="Header & Footer"
-            onClick={() => setActiveTab('site-shell')}
-          />
-          <AdminTabButton
-            active={activeTab === 'pages'}
-            label="Page Content"
-            onClick={() => setActiveTab('pages')}
-          />
-          <AdminTabButton
-            active={activeTab === 'styles'}
-            label="Styles"
-            onClick={() => setActiveTab('styles')}
-          />
-          <AdminTabButton
-            active={activeTab === 'properties'}
-            label="Properties"
-            onClick={() => setActiveTab('properties')}
-          />
-          <AdminTabButton
-            active={activeTab === 'charters'}
-            label="Charters"
-            onClick={() => setActiveTab('charters')}
-          />
-          <AdminTabButton
-            active={activeTab === 'media'}
-            label="Media Library"
-            onClick={() => setActiveTab('media')}
-          />
-          <AdminTabButton
-            active={activeTab === 'submissions'}
-            label="Form Submissions"
-            onClick={() => setActiveTab('submissions')}
-          />
-          <AdminTabButton
-            active={activeTab === 'backups'}
-            label="Backups"
-            onClick={() => setActiveTab('backups')}
-          />
         </div>
       </section>
 
@@ -3102,6 +3266,10 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor admin-editor--page">
+                {selectedStructuredPage?.path ? (
+                  <AdminViewLiveButton path={selectedStructuredPage.path} onBeforeNavigate={confirmLivePageNavigation} />
+                ) : null}
+
                 {pageFeedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(pageSaveStatus)}`}>{pageFeedback}</p> : null}
 
                 {pageConflict ? (
@@ -3326,6 +3494,10 @@ export function AdminPage() {
                   </button>
                 ) : null}
 
+                {editorState.mode === 'edit' && editorState.activeSlug ? (
+                  <AdminViewLiveButton path={`/rental-properties/${editorState.activeSlug}`} onBeforeNavigate={confirmLivePageNavigation} />
+                ) : null}
+
                 <form className="admin-form admin-form--flush" onSubmit={handleSubmit}>
                   <div className="admin-toolbar-row admin-toolbar-row--split">
                     <div className="admin-chip-row admin-chip-row--compact">
@@ -3518,6 +3690,10 @@ export function AdminPage() {
                   </button>
                 ) : null}
 
+                {charterEditorState.mode === 'edit' && charterEditorState.activeSlug ? (
+                  <AdminViewLiveButton path={`/charter-boat-rentals/${charterEditorState.activeSlug}`} onBeforeNavigate={confirmLivePageNavigation} />
+                ) : null}
+
                 <form className="admin-form admin-form--flush" onSubmit={handleCharterSubmit}>
                     {charterEditorState.mode === 'edit' && charterEditorState.activeSlug ? (
                       <div className="admin-toolbar-row">
@@ -3558,8 +3734,8 @@ export function AdminPage() {
           ) : null}
 
           {activeTab === 'media' ? (
-            <section className="admin-panel">
-              <div className="admin-editor">
+            <section className="admin-panel admin-panel--media">
+              <div className="admin-editor admin-editor--media">
                 <AdminMediaManager
                   defaultOpen
                   showToggle={false}

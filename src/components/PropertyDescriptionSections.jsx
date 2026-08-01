@@ -17,20 +17,6 @@ const PROPERTY_OPTIONAL_COPY_SECTIONS = [
     showHeader: true,
     title: 'Booking',
   },
-  {
-    className: 'property-template-section--policy',
-    htmlKey: 'policyHtml',
-    key: 'policy',
-    showHeader: true,
-    title: 'Rental and Cancellation Policy',
-  },
-  {
-    className: 'property-template-section--details',
-    htmlKey: 'detailsHtml',
-    key: 'details',
-    showHeader: true,
-    title: 'Additional Details',
-  },
 ]
 
 const PROPERTY_RATE_SECTION_KEYS = ['ratesHtml', 'ratesTableHtml']
@@ -58,7 +44,7 @@ function getActiveRatesHtml(enabledDescriptionSections = [], ratesHtml = '', rat
   return hasHtmlContent(textRatesHtml) ? textRatesHtml : tableRatesHtml
 }
 
-export function PropertyDescriptionSections({
+function derivePropertyStructuredSections({
   bookingHtml = '',
   descriptionHtml,
   enabledDescriptionSections = [],
@@ -66,7 +52,6 @@ export function PropertyDescriptionSections({
   policyHtml = '',
   ratesHtml = '',
   ratesTableHtml = '',
-  sectionConfig,
 }) {
   const enabledSectionSet = new Set(Array.isArray(enabledDescriptionSections) ? enabledDescriptionSections : [])
   const activeRatesHtml = getActiveRatesHtml(enabledDescriptionSections, ratesHtml, ratesTableHtml)
@@ -81,10 +66,37 @@ export function PropertyDescriptionSections({
         detailsHtml: '',
       }
     : extractPropertyTemplateSections(descriptionHtml)
+
+  return { sections, useStructuredSections }
+}
+
+export function PropertyDescriptionSections({
+  bookingHtml = '',
+  descriptionHtml,
+  enabledDescriptionSections = [],
+  hasStructuredDescriptionSections = false,
+  policyHtml = '',
+  ratesHtml = '',
+  ratesTableHtml = '',
+  sectionConfig,
+}) {
+  const { sections, useStructuredSections } = derivePropertyStructuredSections({
+    bookingHtml,
+    descriptionHtml,
+    enabledDescriptionSections,
+    hasStructuredDescriptionSections,
+    policyHtml,
+    ratesHtml,
+    ratesTableHtml,
+  })
   const optionalSections = PROPERTY_OPTIONAL_COPY_SECTIONS.filter(
     (section) => hasHtmlContent(sections[section.htmlKey]),
   )
-  const renderDescriptionWhenEmpty = sectionConfig.renderWhenEmpty && optionalSections.length === 0
+  const renderDescriptionWhenEmpty =
+    sectionConfig.renderWhenEmpty &&
+    optionalSections.length === 0 &&
+    !hasHtmlContent(sections.policyHtml) &&
+    !hasHtmlContent(sections.detailsHtml)
 
   return (
     <>
@@ -108,5 +120,63 @@ export function PropertyDescriptionSections({
         />
       ))}
     </>
+  )
+}
+
+export function PropertyPolicySection({
+  bookingHtml = '',
+  descriptionHtml,
+  enabledDescriptionSections = [],
+  hasStructuredDescriptionSections = false,
+  policyHtml = '',
+  ratesHtml = '',
+  ratesTableHtml = '',
+}) {
+  const { sections } = derivePropertyStructuredSections({
+    bookingHtml,
+    descriptionHtml,
+    enabledDescriptionSections,
+    hasStructuredDescriptionSections,
+    policyHtml,
+    ratesHtml,
+    ratesTableHtml,
+  })
+
+  return (
+    <PropertyContentSection
+      className="property-template-section--policy"
+      html={sections.policyHtml}
+      showHeader
+      title="Rental and Cancellation Policy"
+    />
+  )
+}
+
+export function PropertyDetailsSection({
+  bookingHtml = '',
+  descriptionHtml,
+  enabledDescriptionSections = [],
+  hasStructuredDescriptionSections = false,
+  policyHtml = '',
+  ratesHtml = '',
+  ratesTableHtml = '',
+}) {
+  const { sections } = derivePropertyStructuredSections({
+    bookingHtml,
+    descriptionHtml,
+    enabledDescriptionSections,
+    hasStructuredDescriptionSections,
+    policyHtml,
+    ratesHtml,
+    ratesTableHtml,
+  })
+
+  return (
+    <PropertyContentSection
+      className="property-template-section--details"
+      html={sections.detailsHtml}
+      showHeader
+      title="Additional Details"
+    />
   )
 }
