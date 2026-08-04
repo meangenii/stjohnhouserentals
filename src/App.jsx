@@ -46,6 +46,12 @@ const StJohnCarRentalsPage = lazyPage(() => import('./pages/StJohnCarRentalsPage
 const TermsOfAgreementPage = lazyPage(() => import('./pages/TermsOfAgreementPage'), 'TermsOfAgreementPage')
 const BlockPage = lazyPage(() => import('./components/BlockPage'), 'BlockPage')
 const ContentPage = lazyPage(() => import('./components/ContentPage'), 'ContentPage')
+const EditorInteractionHarnessPage = import.meta.env.DEV
+  ? lazyPage(() => import('./pages/EditorInteractionHarnessPage'), 'EditorInteractionHarnessPage')
+  : null
+const EditorReviewHarnessPage = import.meta.env.DEV
+  ? lazyPage(() => import('./pages/EditorReviewHarnessPage'), 'EditorReviewHarnessPage')
+  : null
 
 function normalizeHashRoute() {
   if (typeof window === 'undefined') {
@@ -402,6 +408,38 @@ normalizeHashRoute()
 
 function AppRoutes() {
   const location = useLocation()
+
+  if (EditorInteractionHarnessPage && location.pathname === '/admin/__editor-test') {
+    return (
+      <RouteErrorBoundary locationKey={location.pathname}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <EditorInteractionHarnessPage />
+        </Suspense>
+      </RouteErrorBoundary>
+    )
+  }
+
+  if (EditorReviewHarnessPage && location.pathname === '/admin/__editor-review-test') {
+    return (
+      <RouteErrorBoundary locationKey={location.pathname}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <EditorReviewHarnessPage />
+        </Suspense>
+      </RouteErrorBoundary>
+    )
+  }
+
+  if (location.pathname === '/admin' || location.pathname === '/admin/') {
+    return (
+      <RouteErrorBoundary locationKey={location.pathname}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <main id="main-content">
+            <AdminPage />
+          </main>
+        </Suspense>
+      </RouteErrorBoundary>
+    )
+  }
 
   return (
     <RouteErrorBoundary locationKey={location.pathname}>

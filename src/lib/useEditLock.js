@@ -4,15 +4,25 @@ import { acquireEditLock, heartbeatEditLock, releaseEditLock } from './editLockR
 
 const HEARTBEAT_INTERVAL_MS = 15000
 
-const IDLE_STATE = { status: 'idle', lockedByEmail: '', lockedAt: null }
+const IDLE_STATE = { status: 'idle', lockedByEmail: '', lockedAt: null, leaseId: '', message: '' }
+
+function makeLeaseId() {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID()
+  }
+
+  return `lease-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
 
 function lockStateFromError(error) {
   const lock = error?.payload?.lock ?? null
 
   return {
-    status: 'locked-by-other',
+    status: error?.status === 409 ? 'locked-by-other' : 'error',
     lockedByEmail: lock?.lockedByEmail || '',
     lockedAt: lock?.lockedAt ?? null,
+    leaseId: '',
+    message: error instanceof Error ? error.message : 'Unable to secure the edit lock.',
   }
 }
 
@@ -29,6 +39,7 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
     const seq = ++requestSeqRef.current
     let heartbeatTimer = null
     let lastAuthToken = ''
+    const leaseId = makeLeaseId()
 
     function isStale() {
       return cancelled || seq !== requestSeqRef.current
@@ -39,13 +50,13 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
         return
       }
 
-      releaseEditLock(resourceType, resourceId, { authToken: lastAuthToken, keepalive: true }).catch(() => {})
+      releaseEditLock(resourceType, resourceId, { authToken: lastAuthToken, keepalive: true, leaseId }).catch(() => {})
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     async function acquire() {
-      setState({ status: 'acquiring', lockedByEmail: '', lockedAt: null })
+      setState({ status: 'acquiring', lockedByEmail: '', lockedAt: null, leaseId: '', message: '' })
 
       const authToken = await getAdminIdToken()
 
@@ -59,17 +70,15 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
       }
 
       try {
-        await acquireEditLock(resourceType, resourceId, { authToken })
+        await acquireEditLock(resourceType, resourceId, { authToken, leaseId })
 
         if (isStale()) {
-          releaseEditLock(resourceType, resourceId, { authToken }).catch(() => {})
+          releaseEditLock(resourceType, resourceId, { authToken, leaseId }).catch(() => {})
           return
         }
 
-        // Only remember the token once the lock is actually held, so a failed or
-        // stale acquire can never trigger a release of a lock this client doesn't own.
         lastAuthToken = authToken
-        setState({ status: 'editing', lockedByEmail: '', lockedAt: null })
+        setState({ status: 'editing', lockedByEmail: '', lockedAt: null, leaseId, message: '' })
 
         heartbeatTimer = setInterval(async () => {
           try {
@@ -80,19 +89,16 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
             }
 
             lastAuthToken = heartbeatToken
-            await heartbeatEditLock(resourceType, resourceId, { authToken: heartbeatToken })
+            await heartbeatEditLock(resourceType, resourceId, { authToken: heartbeatToken, leaseId })
           } catch (error) {
             if (isStale()) {
               return
             }
 
-            if (error?.status === 409) {
-              clearInterval(heartbeatTimer)
-              // Another admin now owns the lock — forget our token so unmount/unload
-              // cleanup doesn't release the lock out from under them.
-              lastAuthToken = ''
-              setState(lockStateFromError(error))
-            }
+            clearInterval(heartbeatTimer)
+            // Ownership can no longer be proven, so content mutation must stop.
+            lastAuthToken = ''
+            setState(lockStateFromError(error))
           }
         }, HEARTBEAT_INTERVAL_MS)
       } catch (error) {
@@ -113,7 +119,7 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
       }
 
       if (lastAuthToken) {
-        releaseEditLock(resourceType, resourceId, { authToken: lastAuthToken, keepalive: false }).catch(() => {})
+        releaseEditLock(resourceType, resourceId, { authToken: lastAuthToken, keepalive: false, leaseId }).catch(() => {})
       }
 
       setState(IDLE_STATE)
@@ -124,6 +130,9 @@ export function useEditLock({ resourceType, resourceId, enabled = true }) {
     status: state.status,
     lockedByEmail: state.lockedByEmail,
     lockedAt: state.lockedAt,
+    leaseId: state.leaseId,
+    message: state.message,
     isBlocked: state.status === 'locked-by-other',
+    isReady: !enabled || state.status === 'editing',
   }
 }

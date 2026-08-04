@@ -52,6 +52,7 @@ async function main() {
   await writeGeneratedJson('siteContent.json', buildSiteContentPayload())
 
   await Promise.all([
+    copyRequiredJsonArtifact('shared/blockContract.json'),
     copyRequiredJsonArtifact('public/livePropertyCatalog.json'),
     copyRequiredJsonArtifact('public/livePropertySummaryCatalog.json'),
     copyRequiredJsonArtifact('public/liveCharterCatalog.json'),

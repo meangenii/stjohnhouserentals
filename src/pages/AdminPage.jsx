@@ -1,11 +1,20 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Plus, Redo2, RefreshCw, Trash2, Undo2 } from 'lucide-react'
 import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
 import { AdminBackupManager } from '../components/AdminBackupManager'
 import { AdminViewLiveButton } from '../components/AdminViewLiveButton'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
 import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
+import { BlockInspectorPanel } from '../components/BlockInspectorPanel'
+import { BlockLayoutOutline, BlockOutline } from '../components/BlockOutline'
+import { EditorContextPanel, EditorContextToolbar } from '../components/EditorContextPanel'
+import { EditorIconButton } from '../components/EditorIconButton'
+import { EditorReviewToolbar } from '../components/EditorReviewToolbar'
+import { PageChangeSummaryPanel } from '../components/PageChangeSummaryPanel'
+import { PageQualityPanel } from '../components/PageQualityPanel'
+import { PageRevisionHistoryPanel } from '../components/PageRevisionHistoryPanel'
 import { CarRentalCompaniesPanel } from '../components/AdminStructuredPageEditor'
 import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
@@ -36,20 +45,39 @@ import { buildPropertyShortDescription, mergePropertyShortDescription } from '..
 import { DEFAULT_PROPERTY_TEMPLATE_VARIANT } from '../lib/propertyTemplateVariants'
 import { richTextValueToHtml, richTextValueToInlineHtml, richTextValueToPlainLineText } from '../lib/richTextValue'
 import { getRouteSlugVariants } from '../lib/routeSlug'
+import { validateEditorBlockPageDraft } from '../lib/blockPageValidation'
+import { collectBlockOutlineEntries } from '../lib/blockTree'
+import { updateValueAtPath } from '../lib/inlinePageEditor'
+import { buildPageDiff } from '../lib/pageDiff'
+import { findValidationIssueOwner } from '../lib/pageValidationIssues'
+import { validatePageRouteSettings } from '../lib/pageRouteSettings'
+import {
+  getPageEditorHistoryStatus,
+  recordPageEditorHistory,
+  redoPageEditorHistory,
+  resetPageEditorHistory,
+  undoPageEditorHistory,
+} from '../lib/pageEditorHistory'
 import {
   fetchAdminSiteShellContent,
   fetchAdminStructuredPageContent,
   fetchAdminStructuredPageDirectory,
+  fetchAdminStructuredPageRevision,
+  fetchAdminStructuredPageRevisions,
   isSiteContentEditingEnabled,
+  normalizeAdminStructuredPageConflict,
   publishAdminSiteShellContent,
   publishAdminStructuredPageContent,
   resetAdminStructuredPageContent,
+  restoreAdminDeletedStructuredPage,
+  restoreAdminStructuredPageRevision,
   saveAdminSiteShellContent,
   saveAdminStructuredPageContent,
 } from '../lib/siteContentRepository'
 
 const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
 const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
+const EMPTY_PAGE_LAYOUT_METRICS = Object.freeze({ bySelectionId: {}, entries: [] })
 const EXPECTED_PROPERTY_IMAGE_STORAGE_BUCKET =
   String(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? '').trim() || 'st-john-house-rentals.firebasestorage.app'
 const PROPERTY_HTML_IMAGE_FIELDS = [
@@ -72,6 +100,10 @@ function jsonSnapshot(value) {
   } catch {
     return ''
   }
+}
+
+function getSnapshotValueAtPath(value, path = []) {
+  return path.reduce((current, segment) => current?.[segment], value)
 }
 
 function cloneSnapshotValue(value) {
@@ -159,37 +191,22 @@ function findRecordByRouteSlug(records = [], requestedSlug = '') {
   )
 }
 
-const RESERVED_PAGE_PATH_PREFIXES = ['/admin', '/rental-properties/', '/1bedroom/', '/charter-boat-rentals/']
 const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 
-function isReservedPagePath(path) {
-  if (!path || path === '/') {
-    return true
-  }
-
-  return RESERVED_PAGE_PATH_PREFIXES.some((prefix) => {
-    const prefixWithoutSlash = prefix.replace(/\/$/, '')
-    return path === prefixWithoutSlash || path.startsWith(`${prefixWithoutSlash}/`)
-  })
-}
-
 function findPagePathConflict(path, { inventory = [], structuredPages = [] } = {}) {
-  if (isReservedPagePath(path)) {
-    return 'That URL is reserved by the site. Choose a different one.'
-  }
+  const validation = validatePageRouteSettings(
+    {
+      blocks: [],
+      contentModel: 'block-page',
+      group: 'custom',
+      navLabel: 'New page',
+      path,
+      routeAliases: [],
+    },
+    { routeInventory: inventory, structuredPages },
+  )
 
-  const takenPaths = new Set()
-
-  inventory.forEach((route) => {
-    normalizeAdminRoutePath(route?.path) && takenPaths.add(normalizeAdminRoutePath(route.path))
-    ;(route?.routeAliases ?? []).forEach((alias) => normalizeAdminRoutePath(alias) && takenPaths.add(normalizeAdminRoutePath(alias)))
-  })
-
-  structuredPages.forEach((page) => {
-    normalizeAdminRoutePath(page?.path) && takenPaths.add(normalizeAdminRoutePath(page.path))
-  })
-
-  return takenPaths.has(path) ? 'A page already uses that URL. Choose a different one.' : ''
+  return validation.errors.find((issue) => issue.path.join('.') === 'path')?.message ?? ''
 }
 
 function findPageKeyConflict(key, structuredPages = []) {
@@ -204,6 +221,7 @@ function buildNewPageDraft({ path, title }) {
     metaDescription: '',
     navLabel: title,
     path,
+    routeAliases: [],
     title,
   }
 }
@@ -1153,6 +1171,35 @@ function AdminPreviewDeviceButton({ active, label, onClick }) {
   )
 }
 
+function AdminEditLockNotice({ lock, resourceLabel }) {
+  if (lock.status === 'locked-by-other') {
+    return (
+      <p className="admin-feedback admin-feedback--warning" role="status">
+        This {resourceLabel} is currently being edited by {lock.lockedByEmail || 'another admin'}. You can look around, but editing is
+        disabled until they finish.
+      </p>
+    )
+  }
+
+  if (lock.status === 'acquiring') {
+    return (
+      <p className="admin-note" role="status">
+        Securing exclusive edit access to this {resourceLabel}...
+      </p>
+    )
+  }
+
+  if (lock.status === 'error') {
+    return (
+      <p className="admin-feedback admin-feedback--error" role="alert">
+        Editing is disabled because edit access could not be secured. {lock.message || 'Refresh the editor and try again.'}
+      </p>
+    )
+  }
+
+  return null
+}
+
 function AdminFloatingSaveButton({
   disabled = false,
   label,
@@ -1193,6 +1240,31 @@ function hasPendingPublication(publication) {
 
 function getFeedbackStatusTone(status = 'idle') {
   return status === 'publishing' ? 'saving' : status
+}
+
+async function loadPageRevisionState(pageKey, requestOptions) {
+  const normalizedKey = String(pageKey ?? '').trim()
+
+  if (!normalizedKey) {
+    return { activeRevisionId: '', message: '', revisions: [], status: 'idle' }
+  }
+
+  try {
+    const payload = await fetchAdminStructuredPageRevisions(normalizedKey, { ...requestOptions, limit: 80 })
+    return {
+      activeRevisionId: '',
+      message: '',
+      revisions: payload.revisions ?? [],
+      status: 'ready',
+    }
+  } catch (error) {
+    return {
+      activeRevisionId: '',
+      message: error instanceof Error ? error.message : 'Unable to load page revisions.',
+      revisions: [],
+      status: 'error',
+    }
+  }
 }
 
 export function AdminPage() {
@@ -1263,6 +1335,7 @@ export function AdminPage() {
 
   const [pageWorkspaceState, setPageWorkspaceState] = useState(() => ({
     status: 'loading',
+    deletedPages: [],
     inventory: [],
     pages: [],
     message: '',
@@ -1271,18 +1344,33 @@ export function AdminPage() {
     status: 'idle',
     activeKey: preferredPageKey,
     draft: null,
+    publishedPage: null,
     savedDraft: null,
   }))
   const [pageFeedback, setPageFeedback] = useState('')
   const [pageSaveStatus, setPageSaveStatus] = useState('idle')
   const [pagePublication, setPagePublication] = useState(null)
   const [pageConflict, setPageConflict] = useState(null)
+  const [pageRevisionState, setPageRevisionState] = useState(() => ({
+    activeRevisionId: '',
+    message: '',
+    revisions: [],
+    status: 'idle',
+  }))
+  const [pageRevisionPreview, setPageRevisionPreview] = useState({ id: '', message: '', page: null, status: 'idle' })
   const [newPageForm, setNewPageForm] = useState(null)
   const [newPageStatus, setNewPageStatus] = useState('idle')
   const [newPageError, setNewPageError] = useState('')
   const [pageDeleteStatus, setPageDeleteStatus] = useState('idle')
+  const [pageTrashState, setPageTrashState] = useState({ activeKey: '', message: '', status: 'idle' })
   const [pagePreviewDevice, setPagePreviewDevice] = useState('desktop')
   const [pagePreviewViewState, setPagePreviewViewState] = useState(() => ({ key: '', mode: 'edit' }))
+  const [selectedPageBlockId, setSelectedPageBlockId] = useState('')
+  const [pageContextView, setPageContextView] = useState('')
+  const [pageLayoutMetrics, setPageLayoutMetrics] = useState(EMPTY_PAGE_LAYOUT_METRICS)
+  const [pageReviewView, setPageReviewView] = useState('')
+  const [pageHistoryState, setPageHistoryState] = useState(() => resetPageEditorHistory(preferredPageKey))
+  const pageDraftRef = useRef(null)
   const propertyFloatingSaveRef = useRef(null)
 
   const siteContentEditingEnabled = isSiteContentEditingEnabled()
@@ -1378,10 +1466,18 @@ export function AdminPage() {
   const propertyDirty = jsonSnapshot(formState) !== jsonSnapshot(savedFormState)
   const charterDirty = jsonSnapshot(charterFormState) !== jsonSnapshot(savedCharterFormState)
   const siteShellDirty = jsonSnapshot(siteShellDraft) !== jsonSnapshot(siteShellWorkspaceState.shell)
-  const pageDirty = jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft)
+  const pageDirty = useMemo(
+    () => jsonSnapshot(pageEditorState.draft) !== jsonSnapshot(pageEditorState.savedDraft),
+    [pageEditorState.draft, pageEditorState.savedDraft],
+  )
+  const deferredPageDraft = useDeferredValue(pageEditorState.draft)
   const propertyPreviewEditorKey = formState.originalSlug || 'new-property'
   const propertyPreviewModeKey = `${activeTab === 'properties' ? 'properties' : 'hidden'}:${propertyPreviewEditorKey}`
   const propertyPreviewMode = propertyPreviewViewState.key === propertyPreviewModeKey ? propertyPreviewViewState.mode : 'edit'
+
+  useEffect(() => {
+    pageDraftRef.current = pageEditorState.draft
+  }, [pageEditorState.draft])
 
   useEffect(() => {
     persistAdminEditorLocation({
@@ -1638,9 +1734,11 @@ export function AdminPage() {
 
         const inventory = Array.isArray(directory?.inventory) ? directory.inventory : []
         const pages = Array.isArray(directory?.pages) ? directory.pages : []
+        const deletedPages = Array.isArray(directory?.deletedPages) ? directory.deletedPages : []
 
         setPageWorkspaceState({
           status: 'ready',
+          deletedPages,
           inventory,
           pages,
           message: '',
@@ -1649,12 +1747,18 @@ export function AdminPage() {
         const nextPageKey = (preferredPageKey ? pages.find((page) => page.key === preferredPageKey)?.key : '') || pages[0]?.key || ''
 
         if (!nextPageKey) {
-          setPageEditorState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
+          setPageEditorState({ status: 'idle', activeKey: '', draft: null, publishedPage: null, savedDraft: null })
           setPagePublication(null)
+          setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
           return
         }
 
-        const page = await fetchAdminStructuredPageContent(nextPageKey, requestOptions)
+        setPageRevisionState((current) => ({ ...current, activeRevisionId: '', message: '', status: 'loading' }))
+
+        const [page, nextRevisionState] = await Promise.all([
+          fetchAdminStructuredPageContent(nextPageKey, requestOptions),
+          loadPageRevisionState(nextPageKey, requestOptions),
+        ])
 
         if (cancelled) {
           return
@@ -1664,19 +1768,23 @@ export function AdminPage() {
           status: 'ready',
           activeKey: nextPageKey,
           draft: page?.page ?? {},
+          publishedPage: page?.publishedPage ?? null,
           savedDraft: page?.page ?? {},
         })
         setPagePublication(page?.publication ?? null)
+        setPageRevisionState(nextRevisionState)
       } catch (error) {
         if (!cancelled) {
           setPageWorkspaceState({
             status: 'error',
+            deletedPages: [],
             inventory: [],
             pages: [],
             message: error instanceof Error ? error.message : 'Unable to load structured pages.',
           })
-          setPageEditorState({ status: 'error', activeKey: '', draft: null, savedDraft: null })
+          setPageEditorState({ status: 'error', activeKey: '', draft: null, publishedPage: null, savedDraft: null })
           setPagePublication(null)
+          setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
         }
       }
     }
@@ -1805,23 +1913,39 @@ export function AdminPage() {
     pageEditorSessionRef.current += 1
 
     try {
+      setPageConflict(null)
+      setPageRevisionPreview({ id: '', message: '', page: null, status: 'idle' })
+      setSelectedPageBlockId('')
+      setPageContextView('')
+      setPageLayoutMetrics(EMPTY_PAGE_LAYOUT_METRICS)
+      setPageReviewView('')
+      setPageHistoryState(resetPageEditorHistory(pageKey))
       setPageEditorState((current) => ({ ...current, status: 'loading', activeKey: pageKey }))
+      setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
       const requestOptions = await getAdminRequestOptions()
       const page = await fetchAdminStructuredPageContent(pageKey, requestOptions)
       setPageEditorState({
         status: 'ready',
         activeKey: pageKey,
         draft: page?.page ?? {},
+        publishedPage: page?.publishedPage ?? null,
         savedDraft: page?.page ?? {},
       })
+      setPageHistoryState(resetPageEditorHistory(pageKey))
       setPagePublication(page?.publication ?? null)
       setPageFeedback('')
       setPageSaveStatus('idle')
     } catch (error) {
-      setPageEditorState({ status: 'error', activeKey: pageKey, draft: null, savedDraft: null })
+      setSelectedPageBlockId('')
+      setPageContextView('')
+      setPageLayoutMetrics(EMPTY_PAGE_LAYOUT_METRICS)
+      setPageReviewView('')
+      setPageHistoryState(resetPageEditorHistory(pageKey))
+      setPageEditorState({ status: 'error', activeKey: pageKey, draft: null, publishedPage: null, savedDraft: null })
       setPageFeedback(error instanceof Error ? error.message : 'Unable to load the structured page.')
       setPageSaveStatus('error')
       setPagePublication(null)
+      setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
     }
   }
 
@@ -1830,10 +1954,12 @@ export function AdminPage() {
     const directory = await fetchAdminStructuredPageDirectory(requestOptions)
     const inventory = Array.isArray(directory?.inventory) ? directory.inventory : []
     const pages = Array.isArray(directory?.pages) ? directory.pages : []
+    const deletedPages = Array.isArray(directory?.deletedPages) ? directory.deletedPages : []
     const nextKey = preferredKey || pages[0]?.key || ''
 
     setPageWorkspaceState({
       status: 'ready',
+      deletedPages,
       inventory,
       pages,
       message: '',
@@ -1847,10 +1973,19 @@ export function AdminPage() {
     }
 
     if (!nextKey) {
-      setPageEditorState({ status: 'idle', activeKey: '', draft: null, savedDraft: null })
+      setSelectedPageBlockId('')
+      setPageContextView('')
+      setPageLayoutMetrics(EMPTY_PAGE_LAYOUT_METRICS)
+      setPageReviewView('')
+      setPageHistoryState(resetPageEditorHistory(''))
+      setPageEditorState({ status: 'idle', activeKey: '', draft: null, publishedPage: null, savedDraft: null })
       setPagePublication(null)
+      setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
+      setPageRevisionPreview({ id: '', message: '', page: null, status: 'idle' })
       return null
     }
+
+    setPageRevisionState({ activeRevisionId: '', message: '', revisions: [], status: 'idle' })
 
     const page = await fetchAdminStructuredPageContent(nextKey, requestOptions)
 
@@ -1858,13 +1993,22 @@ export function AdminPage() {
       return null
     }
 
+    const nextDraft = page?.page ?? pages.find((entry) => entry.key === nextKey) ?? {}
+
     setPageEditorState({
       status: 'ready',
       activeKey: nextKey,
-      draft: page?.page ?? pages.find((entry) => entry.key === nextKey) ?? {},
-      savedDraft: page?.page ?? pages.find((entry) => entry.key === nextKey) ?? {},
+      draft: nextDraft,
+      publishedPage: page?.publishedPage ?? null,
+      savedDraft: nextDraft,
     })
+    setSelectedPageBlockId('')
+    setPageContextView('')
+    setPageLayoutMetrics(EMPTY_PAGE_LAYOUT_METRICS)
+    setPageReviewView('')
+    setPageHistoryState(resetPageEditorHistory(nextKey))
     setPagePublication(page?.publication ?? null)
+    setPageRevisionPreview({ id: '', message: '', page: null, status: 'idle' })
 
     return page
   }
@@ -2660,6 +2804,104 @@ export function AdminPage() {
     setSiteShellDraft(updater)
   }
 
+  function handleStructuredPageDraftChange(updater, historyOptions = {}) {
+    const previousDraft = pageDraftRef.current
+    const nextDraft = typeof updater === 'function' ? updater(previousDraft) : updater
+    const comparisonPath = Array.isArray(historyOptions.path) ? historyOptions.path : null
+    const previousValue = comparisonPath ? getSnapshotValueAtPath(previousDraft, comparisonPath) : previousDraft
+    const nextValue = comparisonPath ? getSnapshotValueAtPath(nextDraft, comparisonPath) : nextDraft
+
+    if (jsonSnapshot(previousValue) === jsonSnapshot(nextValue)) {
+      return
+    }
+
+    setPageHistoryState((currentHistory) =>
+      recordPageEditorHistory(currentHistory, {
+        activeKey: pageEditorState.activeKey,
+        ...historyOptions,
+        nextDraft,
+        previousDraft,
+      }),
+    )
+    pageDraftRef.current = nextDraft
+    setPageEditorState((current) => ({
+      ...current,
+      draft: nextDraft,
+    }))
+  }
+
+  function updateStructuredPageDraftPath(path, nextValue) {
+    handleStructuredPageDraftChange((currentDraft) => updateValueAtPath(currentDraft ?? {}, path, nextValue), {
+      coalesce: typeof nextValue === 'string' || typeof nextValue === 'number',
+      path,
+    })
+  }
+
+  function handleStructuredPageValidationIssue(issue) {
+    const entries = collectBlockOutlineEntries(pageEditorState.draft?.blocks)
+    const owner = findValidationIssueOwner(issue, entries)
+
+    setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'edit' })
+    setSelectedPageBlockId(owner?.selectionId ?? '')
+    setPageContextView('inspector')
+  }
+
+  function handlePageEditorNodeSelection(selectionId) {
+    setSelectedPageBlockId(selectionId)
+    setPageContextView((currentView) => (selectionId ? (currentView === 'layers' ? 'inspector' : currentView) : ''))
+  }
+
+  function openStructuredPageSettings() {
+    setSelectedPageBlockId('')
+    setPageContextView('inspector')
+  }
+
+
+  function applyStructuredPageHistoryResult(result, feedbackMessage) {
+    if (!result?.changed) {
+      return
+    }
+
+    pageDraftRef.current = result.draft
+    setPageHistoryState(result.history)
+    setPageEditorState((current) => ({
+      ...current,
+      draft: result.draft,
+    }))
+    setSelectedPageBlockId('')
+    setPageContextView('')
+    setPageSaveStatus('idle')
+    setPageFeedback(feedbackMessage)
+  }
+
+  function handleUndoStructuredPageEdit() {
+    if (!pageDraftEditingEnabled) {
+      return
+    }
+
+    applyStructuredPageHistoryResult(
+      undoPageEditorHistory(pageHistoryState, {
+        activeKey: pageEditorState.activeKey,
+        currentDraft: pageDraftRef.current,
+      }),
+      'Undid the last page edit.',
+    )
+  }
+
+  function handleRedoStructuredPageEdit() {
+    if (!pageDraftEditingEnabled) {
+      return
+    }
+
+    applyStructuredPageHistoryResult(
+      redoPageEditorHistory(pageHistoryState, {
+        activeKey: pageEditorState.activeKey,
+        currentDraft: pageDraftRef.current,
+      }),
+      'Redid the page edit.',
+    )
+  }
+
   async function saveSiteShellDraft() {
     try {
       setSiteShellSaveStatus('saving')
@@ -2740,15 +2982,39 @@ export function AdminPage() {
     setSiteShellFeedback('Restored the last saved shell draft.')
   }
 
+  function captureStructuredPageConflict(error, operation) {
+    const latest = normalizeAdminStructuredPageConflict(error?.payload)
+
+    setPageConflict({
+      latest: latest?.page ? latest : null,
+      localDraft: cloneSnapshotValue(pageDraftRef.current),
+      operation,
+    })
+    setPageFeedback('This page changed after you loaded it. Compare both versions before deciding which draft to keep.')
+  }
+
   async function handleStructuredPageSubmit(event) {
     event.preventDefault()
 
-    if (!pageEditorState.activeKey) {
+    if (!pageEditorState.activeKey || !pageDirty) {
       return
     }
 
-    if (!pageDirty && hasPendingPublication(pagePublication)) {
-      await handlePublishStructuredPage()
+    if (!pageLock.isReady) {
+      setPageSaveStatus('error')
+      setPageFeedback(pageLock.message || 'Wait until this editor has secured the page lock before saving.')
+      return
+    }
+
+    const currentPageValidation = validateEditorBlockPageDraft(pageEditorState.draft, {
+      activeKey: pageEditorState.activeKey,
+      routeInventory: pageWorkspaceState.inventory,
+      structuredPages: pageWorkspaceState.pages,
+    })
+
+    if (currentPageValidation.applies && !currentPageValidation.valid) {
+      setPageSaveStatus('error')
+      setPageFeedback('Fix page check errors before saving.')
       return
     }
 
@@ -2756,8 +3022,12 @@ export function AdminPage() {
 
     try {
       setPageSaveStatus('saving')
-      setPageConflict(false)
-      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
+      setPageConflict(null)
+      const requestOptions = {
+        ...(await getAdminRequestOptions()),
+        editLeaseId: pageLock.leaseId,
+        expectedUpdatedAt: pagePublication?.savedAt ?? null,
+      }
       const savedPage = await saveAdminStructuredPageContent(pageEditorState.activeKey, pageEditorState.draft ?? {}, requestOptions)
       await reloadStructuredPageWorkspace(savedPage?.page?.key ?? pageEditorState.activeKey, { sessionToken: sessionAtStart })
 
@@ -2773,8 +3043,7 @@ export function AdminPage() {
       setPageSaveStatus('error')
 
       if (error?.status === 409) {
-        setPageConflict(true)
-        setPageFeedback('Someone else saved changes to this page since you loaded it. Load the latest version to continue.')
+        captureStructuredPageConflict(error, 'save')
         return
       }
 
@@ -2788,7 +3057,73 @@ export function AdminPage() {
     }
 
     await loadStructuredPageIntoEditor(pageEditorState.activeKey)
-    setPageConflict(false)
+    setPageConflict(null)
+  }
+
+  function handleUseLatestStructuredPageConflict() {
+    const latest = pageConflict?.latest
+
+    if (!latest?.page) {
+      handleLoadLatestStructuredPage()
+      return
+    }
+
+    const latestDraft = cloneSnapshotValue(latest.page)
+    setPageEditorState((current) => ({
+      ...current,
+      draft: latestDraft,
+      publishedPage: cloneSnapshotValue(latest.publishedPage),
+      savedDraft: cloneSnapshotValue(latest.page),
+      status: 'ready',
+    }))
+    pageDraftRef.current = latestDraft
+    setPagePublication(latest.publication ?? null)
+    setPageHistoryState(resetPageEditorHistory(pageEditorState.activeKey))
+    setSelectedPageBlockId('')
+    setPageContextView('')
+    setPageConflict(null)
+    setPageSaveStatus('idle')
+    setPageFeedback('Loaded the latest saved version. Your previous local draft was not saved.')
+  }
+
+  function handleKeepLocalStructuredPageConflict() {
+    const latest = pageConflict?.latest
+    const localDraft = pageConflict?.localDraft
+
+    if (!latest?.page || !localDraft) {
+      return
+    }
+
+    const rebasedDraft = cloneSnapshotValue(localDraft)
+    setPageEditorState((current) => ({
+      ...current,
+      draft: rebasedDraft,
+      publishedPage: cloneSnapshotValue(latest.publishedPage),
+      savedDraft: cloneSnapshotValue(latest.page),
+      status: 'ready',
+    }))
+    pageDraftRef.current = rebasedDraft
+    setPagePublication(latest.publication ?? null)
+    setPageHistoryState(resetPageEditorHistory(pageEditorState.activeKey))
+    setPageConflict(null)
+    setPageSaveStatus('idle')
+    setPageFeedback('Kept your local draft on top of the latest saved version. Review the comparison, then save explicitly.')
+  }
+
+  function handleDownloadStructuredPageConflictDraft() {
+    const localDraft = pageConflict?.localDraft
+
+    if (!localDraft) {
+      return
+    }
+
+    const blob = new Blob([`${JSON.stringify(localDraft, null, 2)}\n`], { type: 'application/json' })
+    const downloadUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = `${pageEditorState.activeKey || 'page'}-local-draft.json`
+    link.href = downloadUrl
+    link.click()
+    URL.revokeObjectURL(downloadUrl)
   }
 
   async function handlePublishStructuredPage() {
@@ -2796,12 +3131,40 @@ export function AdminPage() {
       return
     }
 
+    if (pageDirty) {
+      setPageSaveStatus('error')
+      setPageFeedback('Save the current draft before publishing it live.')
+      return
+    }
+
+    if (!pageLock.isReady) {
+      setPageSaveStatus('error')
+      setPageFeedback(pageLock.message || 'Wait until this editor has secured the page lock before publishing.')
+      return
+    }
+
+    const currentPageValidation = validateEditorBlockPageDraft(pageEditorState.draft, {
+      activeKey: pageEditorState.activeKey,
+      routeInventory: pageWorkspaceState.inventory,
+      structuredPages: pageWorkspaceState.pages,
+    })
+
+    if (currentPageValidation.applies && !currentPageValidation.valid) {
+      setPageSaveStatus('error')
+      setPageFeedback('Fix page check errors before publishing.')
+      return
+    }
+
     const sessionAtStart = pageEditorSessionRef.current
 
     try {
       setPageSaveStatus('publishing')
-      setPageConflict(false)
-      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: pagePublication?.savedAt ?? null }
+      setPageConflict(null)
+      const requestOptions = {
+        ...(await getAdminRequestOptions()),
+        editLeaseId: pageLock.leaseId,
+        expectedUpdatedAt: pagePublication?.savedAt ?? null,
+      }
       const publishedPage = await publishAdminStructuredPageContent(pageEditorState.activeKey, requestOptions)
       await reloadStructuredPageWorkspace(publishedPage?.page?.key ?? pageEditorState.activeKey, { sessionToken: sessionAtStart })
 
@@ -2817,8 +3180,7 @@ export function AdminPage() {
       setPageSaveStatus('error')
 
       if (error?.status === 409) {
-        setPageConflict(true)
-        setPageFeedback('Someone else saved changes to this page since you loaded it. Load the latest version to continue.')
+        captureStructuredPageConflict(error, 'publish')
         return
       }
 
@@ -2839,8 +3201,132 @@ export function AdminPage() {
       ...current,
       draft: cloneSnapshotValue(current.savedDraft),
     }))
+    setSelectedPageBlockId('')
+    setPageContextView('')
+    setPageHistoryState(resetPageEditorHistory(pageEditorState.activeKey))
     setPageSaveStatus('idle')
     setPageFeedback(`Restored the last saved draft for ${selectedStructuredPage?.navLabel || selectedStructuredPage?.key || 'this page'}.`)
+  }
+
+  async function handleRefreshStructuredPageRevisions() {
+    if (!pageEditorState.activeKey) {
+      return
+    }
+
+    try {
+      setPageRevisionState((current) => ({ ...current, activeRevisionId: '', message: '', status: 'loading' }))
+
+      const requestOptions = await getAdminRequestOptions()
+      const nextRevisionState = await loadPageRevisionState(pageEditorState.activeKey, requestOptions)
+      setPageRevisionState(nextRevisionState)
+    } catch (error) {
+      setPageRevisionState((current) => ({
+        ...current,
+        activeRevisionId: '',
+        message: error instanceof Error ? error.message : 'Unable to load page revisions.',
+        status: 'error',
+      }))
+    }
+  }
+
+  function handlePageReviewViewChange(nextView) {
+    setPageReviewView(nextView)
+
+    if (nextView === 'revisions' && pageRevisionState.status === 'idle') {
+      void handleRefreshStructuredPageRevisions()
+    }
+  }
+
+  async function handlePreviewStructuredPageRevision(revision) {
+    const revisionId = String(revision?.id ?? '').trim()
+
+    if (!pageEditorState.activeKey || !revisionId) {
+      return
+    }
+
+    try {
+      setPageRevisionPreview({ id: revisionId, message: '', page: null, status: 'loading' })
+      setPageRevisionState((current) => ({ ...current, activeRevisionId: revisionId, message: '', status: 'previewing' }))
+      const requestOptions = await getAdminRequestOptions()
+      const revisionDetail = await fetchAdminStructuredPageRevision(pageEditorState.activeKey, revisionId, requestOptions)
+
+      if (!revisionDetail?.page) {
+        throw new Error('The selected revision snapshot is unavailable.')
+      }
+
+      setSelectedPageBlockId('')
+      setPageContextView('')
+      setPageRevisionPreview({ id: revisionId, message: '', page: revisionDetail.page, status: 'ready' })
+      setPageRevisionState((current) => ({ ...current, activeRevisionId: '', message: '', status: 'ready' }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to preview the selected revision.'
+      setPageRevisionPreview({ id: '', message, page: null, status: 'error' })
+      setPageRevisionState((current) => ({ ...current, activeRevisionId: '', message, status: 'error' }))
+    }
+  }
+
+  function handleCloseStructuredPageRevisionPreview() {
+    setPageRevisionPreview({ id: '', message: '', page: null, status: 'idle' })
+  }
+
+  async function handleRestoreStructuredPageRevision(revision) {
+    const revisionId = String(revision?.id ?? '').trim()
+
+    if (!pageEditorState.activeKey || !revisionId) {
+      return
+    }
+
+    const confirmationMessage = pageDirty
+      ? 'Restore this revision to the draft and discard unsaved page changes?'
+      : 'Restore this revision to the draft?'
+
+    if (!window.confirm(confirmationMessage)) {
+      return
+    }
+
+    const sessionAtStart = pageEditorSessionRef.current
+
+    try {
+      setPageSaveStatus('saving')
+      setPageConflict(null)
+      setPageRevisionState((current) => ({
+        ...current,
+        activeRevisionId: revisionId,
+        message: '',
+        status: 'restoring',
+      }))
+
+      const requestOptions = {
+        ...(await getAdminRequestOptions()),
+        editLeaseId: pageLock.leaseId,
+        expectedUpdatedAt: pagePublication?.savedAt ?? null,
+      }
+      const restoredPage = await restoreAdminStructuredPageRevision(pageEditorState.activeKey, revisionId, requestOptions)
+      await reloadStructuredPageWorkspace(restoredPage?.page?.key ?? pageEditorState.activeKey, { sessionToken: sessionAtStart })
+
+      if (pageEditorSessionRef.current !== sessionAtStart) {
+        setPageSaveStatus('idle')
+        return
+      }
+
+      setPageFeedback(`Restored ${revision.pageTitle || revision.pageKey || 'the selected revision'} to draft.`)
+      setPageSaveStatus('idle')
+    } catch (error) {
+      setPageSaveStatus('error')
+      setPageRevisionState((current) => ({
+        ...current,
+        activeRevisionId: '',
+        message: error instanceof Error ? error.message : 'Unable to restore the selected revision.',
+        status: 'error',
+      }))
+
+      if (error?.status === 409) {
+        captureStructuredPageConflict(error, 'restore')
+        return
+      }
+
+      setPageFeedback(error instanceof Error ? error.message : 'Unable to restore the selected revision.')
+    }
   }
 
   function openNewPageForm() {
@@ -2939,26 +3425,79 @@ export function AdminPage() {
       return
     }
 
-    if (!window.confirm(`Delete "${selectedStructuredPage.navLabel || selectedStructuredPage.key}"? This cannot be undone.`)) {
+    if (pageDirty) {
+      setPageFeedback('Save or reset the current draft before deleting or resetting this page.')
+      return
+    }
+
+    if (!pageLock.isReady) {
+      setPageFeedback(pageLock.message || 'Wait until this editor has secured the page lock.')
+      return
+    }
+
+    const isCustomPage = selectedStructuredPage.group === 'custom'
+    const confirmationMessage = isCustomPage
+      ? `Move "${selectedStructuredPage.navLabel || selectedStructuredPage.key}" to deleted pages? It can be restored later.`
+      : `Reset "${selectedStructuredPage.navLabel || selectedStructuredPage.key}" to its original seeded content?`
+
+    if (!window.confirm(confirmationMessage)) {
       return
     }
 
     try {
       setPageDeleteStatus('saving')
-      const requestOptions = await getAdminRequestOptions()
+      const requestOptions = {
+        ...(await getAdminRequestOptions()),
+        editLeaseId: pageLock.leaseId,
+        expectedUpdatedAt: pagePublication?.savedAt ?? null,
+      }
       await resetAdminStructuredPageContent(selectedStructuredPage.key, requestOptions)
-      await reloadStructuredPageWorkspace()
+      await reloadStructuredPageWorkspace(isCustomPage ? '' : selectedStructuredPage.key)
       setPageDeleteStatus('idle')
-      setPageFeedback(`Deleted "${selectedStructuredPage.navLabel || selectedStructuredPage.key}".`)
+      setPageFeedback(
+        isCustomPage
+          ? `Moved "${selectedStructuredPage.navLabel || selectedStructuredPage.key}" to deleted pages.`
+          : `Reset "${selectedStructuredPage.navLabel || selectedStructuredPage.key}" to its original content.`,
+      )
     } catch (error) {
       setPageDeleteStatus('error')
+
+      if (error?.status === 409) {
+        captureStructuredPageConflict(error, isCustomPage ? 'delete' : 'reset')
+        return
+      }
+
       setPageFeedback(error instanceof Error ? error.message : 'Unable to delete the page.')
+    }
+  }
+
+  async function handleRestoreDeletedStructuredPage(page) {
+    const pageKey = String(page?.key ?? '').trim()
+
+    if (!pageKey || !window.confirm(`Restore "${page.title || page.label || pageKey}" as an unpublished draft?`)) {
+      return
+    }
+
+    try {
+      setPageTrashState({ activeKey: pageKey, message: '', status: 'restoring' })
+      const requestOptions = { ...(await getAdminRequestOptions()), expectedUpdatedAt: page.savedAt ?? null }
+      await restoreAdminDeletedStructuredPage(pageKey, requestOptions)
+      await reloadStructuredPageWorkspace(pageKey)
+      setPageTrashState({ activeKey: '', message: '', status: 'idle' })
+      setPageFeedback(`Restored "${page.title || page.label || pageKey}" as an unpublished draft.`)
+    } catch (error) {
+      setPageTrashState({
+        activeKey: '',
+        message: error instanceof Error ? error.message : 'Unable to restore the deleted page.',
+        status: 'error',
+      })
     }
   }
 
   const properties = workspaceState.properties ?? []
   const propertyLocationOptions = buildPropertyLocationOptions(properties)
   const structuredPages = pageWorkspaceState.pages ?? []
+  const deletedStructuredPages = pageWorkspaceState.deletedPages ?? []
   const siteShellRouteSuggestions = buildSiteShellRouteSuggestions({
     charters: charterWorkspaceState.charters,
     inventory: pageWorkspaceState.inventory,
@@ -2966,8 +3505,9 @@ export function AdminPage() {
   })
   const selectedStructuredPage =
     structuredPages.find((page) => page.key === pageEditorState.activeKey) ?? structuredPages[0] ?? null
+  const selectedStructuredPageIsBlockPage = selectedStructuredPage?.contentModel === 'block-page'
   const propertySaveEnabled =
-    propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user)) && !propertyLock.isBlocked
+    propertyEditingEnabled && (!propertyUsesFirebase || Boolean(authState.user)) && propertyLock.isReady
   const propertyHasPendingPublication = hasPendingPublication(propertyPublication)
   const propertyActionBusy = saveStatus === 'saving' || saveStatus === 'publishing'
   const propertyPublishVisible = propertyUsesFirebase && editorState.mode === 'edit' && propertyHasPendingPublication
@@ -2975,16 +3515,23 @@ export function AdminPage() {
   const propertyPreviewToggleVisible = Boolean(formState)
   const propertyPreviewModel = buildPropertyPreviewModel(formState)
   const charterSaveEnabled =
-    charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user)) && !charterLock.isBlocked
+    charterEditingEnabled && (!charterUsesFirebase || Boolean(authState.user)) && charterLock.isReady
   const charterActionBusy = charterSaveStatus === 'saving' || charterSaveStatus === 'publishing'
   const charterHasPendingPublication = hasPendingPublication(charterPublication)
   const charterPreviewModel = buildCharterPreviewModel(charterFormState)
   const siteContentDraftEditingEnabled = siteContentEditingEnabled
   const siteContentSaveEnabled = siteContentEditingEnabled && Boolean(authState.user)
-  const siteShellDraftEditingEnabled = siteContentDraftEditingEnabled && !siteShellLock.isBlocked
-  const siteShellSaveEnabled = siteContentSaveEnabled && !siteShellLock.isBlocked
-  const pageDraftEditingEnabled = siteContentDraftEditingEnabled && !pageLock.isBlocked
-  const pageSaveEnabled = siteContentSaveEnabled && !pageLock.isBlocked
+  const siteShellDraftEditingEnabled = siteContentDraftEditingEnabled && siteShellLock.isReady
+  const siteShellSaveEnabled = siteContentSaveEnabled && siteShellLock.isReady
+  const pageDraftEditingEnabled = siteContentDraftEditingEnabled && pageLock.isReady
+  const pageValidation = validateEditorBlockPageDraft(deferredPageDraft, {
+    activeKey: pageEditorState.activeKey,
+    routeInventory: pageWorkspaceState.inventory,
+    structuredPages,
+  })
+  const pageHasBlockingValidationErrors = pageValidation.applies && !pageValidation.valid
+  const pageAuthenticatedSaveEnabled = siteContentSaveEnabled && pageLock.isReady
+  const pageSaveEnabled = pageAuthenticatedSaveEnabled && !pageHasBlockingValidationErrors
   const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
   const showSiteShellPublishAction = siteShellHasPendingPublication && siteShellEditedSinceLoad && !siteShellDirty
   const propertyFloatingSaveVisible = propertyPreviewToggleVisible || propertyDirty || propertyPublishVisible || propertyActionBusy
@@ -3001,8 +3548,26 @@ export function AdminPage() {
     return observeAdminFloatingStackOffset(propertyFloatingSaveRef.current, ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR)
   }, [activeTab, propertyFloatingSaveVisible])
   const pageHasPendingPublication = hasPendingPublication(pagePublication)
+  const pageDraftDiff = buildPageDiff(pageEditorState.savedDraft, deferredPageDraft)
+  const pagePublishDiff = buildPageDiff(pageEditorState.publishedPage, pageEditorState.savedDraft)
+  const pageConflictDiff = pageConflict?.latest?.page
+    ? buildPageDiff(pageConflict.latest.page, pageConflict.localDraft)
+    : null
+  const pageRevisionPreviewDiff = pageRevisionPreview.page
+    ? buildPageDiff(pageRevisionPreview.page, pageEditorState.savedDraft)
+    : null
+  const pageChangeSummaryMode = pageDirty ? 'draft' : pageHasPendingPublication ? 'publish' : ''
+  const pageChangeSummaryDiff = pageChangeSummaryMode === 'draft' ? pageDraftDiff : pageChangeSummaryMode === 'publish' ? pagePublishDiff : null
+  const pageReviewDiff = pageRevisionPreviewDiff ?? pageChangeSummaryDiff
+  const pageReviewDiffMode = pageRevisionPreviewDiff ? 'revision' : pageChangeSummaryMode
+  const pageReviewIssueCount = (pageValidation.errors?.length ?? 0) + (pageValidation.warnings?.length ?? 0)
   const pagePreviewModeKey = `${activeTab === 'pages' ? 'pages' : 'hidden'}:${pageEditorState.activeKey}`
   const pagePreviewMode = pagePreviewViewState.key === pagePreviewModeKey ? pagePreviewViewState.mode : 'edit'
+  const pageHistoryStatus = getPageEditorHistoryStatus(pageHistoryState, pageEditorState.activeKey)
+  const pageHistoryActionsDisabled =
+    !selectedStructuredPageIsBlockPage || pagePreviewMode !== 'edit' || !pageDraftEditingEnabled || Boolean(pageRevisionPreview.id)
+  const pageUndoEnabled = !pageHistoryActionsDisabled && pageHistoryStatus.canUndo
+  const pageRedoEnabled = !pageHistoryActionsDisabled && pageHistoryStatus.canRedo
   const showGoogleSignInButton = authState.status === 'signed-out'
   const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
   const requiresAuthenticationScreen = requiresAdminSignIn && !authState.user
@@ -3010,6 +3575,7 @@ export function AdminPage() {
   if (requiresAuthenticationScreen) {
     return (
       <article className="admin-page">
+        <h1 className="visually-hidden">Site administration</h1>
         <section className="page-section admin-header admin-header--auth-only">
           <div className="admin-auth-shell">
             <div className="admin-auth-shell-header">
@@ -3048,7 +3614,8 @@ export function AdminPage() {
   }
 
   return (
-    <article className="admin-page">
+    <article className={`admin-page${activeTab === 'pages' ? ' admin-page--editor-workspace' : ''}`}>
+      <h1 className="visually-hidden">Site administration</h1>
       <section className="page-section admin-header">
         <div className="admin-tab-row admin-tab-row--with-account">
           <div className="admin-tab-row-tabs">
@@ -3101,10 +3668,10 @@ export function AdminPage() {
         </div>
       </section>
 
-      <section className="page-section admin-shell">
+      <section className={`page-section admin-shell${activeTab === 'pages' ? ' admin-shell--page-editor' : ''}`}>
         <div className="admin-panel-stack">
           {activeTab === 'site-shell' ? (
-            <section className="admin-panel">
+            <section className="admin-panel admin-panel--page-editor">
               <div className="admin-panel-header">
                 <div>
                   <h2>Site Shell</h2>
@@ -3133,13 +3700,7 @@ export function AdminPage() {
                   </button>
                 ) : null}
 
-                {siteShellLock.isBlocked ? (
-                  <p className="admin-feedback admin-feedback--warning">
-                    This is currently being edited by {siteShellLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
-                  </p>
-                ) : !siteShellSaveEnabled ? (
-                  <p className="admin-note">You can edit the header and footer draft here, but you must sign in before saving drafts or publishing changes live.</p>
-                ) : null}
+                <AdminEditLockNotice lock={siteShellLock} resourceLabel="site shell" />
 
                 {siteShellWorkspaceState.status === 'loading' ? (
                   <p className="admin-empty">Loading header and footer content...</p>
@@ -3175,17 +3736,50 @@ export function AdminPage() {
 
           {activeTab === 'pages' ? (
             <section className="admin-panel">
-              <div className="admin-panel-header">
-                <div>
-                  <h2>Page Editor</h2>
+              <div className="admin-page-editor-heading-toolbar">
+                <h2>Page Editor</h2>
+
+                {pageWorkspaceState.status === 'ready' && structuredPages.length > 0 ? (
+                  <label className="admin-field admin-selector-field">
+                    <span className="visually-hidden">Page</span>
+                    <select value={pageEditorState.activeKey || ''} onChange={handleStructuredPageSelectionChange}>
+                      {structuredPages.map((page) => (
+                        <option key={page.key} value={page.key}>
+                          {formatPageSelectorLabel(page)}
+                          {lockBadgeSuffix('structuredPage', page.key)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <span className="admin-page-editor-heading-spacer" />
+                )}
+
+                <div className="admin-page-editor-heading-actions">
+                  {selectedStructuredPage ? (
+                    <>
+                      <EditorIconButton icon={RefreshCw} label="Refresh page" onClick={() => handleReloadStructuredPage(selectedStructuredPage.key)} />
+                      {selectedStructuredPage.contentModel === 'block-page' ? (
+                        <EditorIconButton
+                          disabled={pageDeleteStatus === 'saving' || pageDirty || !pageLock.isReady}
+                          icon={Trash2}
+                          label={
+                            pageDeleteStatus === 'saving'
+                              ? selectedStructuredPage.group === 'custom'
+                                ? 'Moving page to trash'
+                                : 'Resetting page'
+                              : selectedStructuredPage.group === 'custom'
+                                ? 'Delete page'
+                                : 'Reset page'
+                          }
+                          tone="danger"
+                          onClick={handleDeleteStructuredPage}
+                        />
+                      ) : null}
+                    </>
+                  ) : null}
+                  {siteContentEditingEnabled ? <EditorIconButton icon={Plus} label="New page" onClick={openNewPageForm} /> : null}
                 </div>
-                {siteContentEditingEnabled ? (
-                  <div className="admin-inline-actions">
-                    <button className="button-link button-link--ghost admin-action" type="button" onClick={openNewPageForm}>
-                      New page
-                    </button>
-                  </div>
-                ) : null}
               </div>
 
               {!siteContentEditingEnabled ? (
@@ -3227,42 +3821,30 @@ export function AdminPage() {
                 <p className="admin-empty">No structured pages are available yet.</p>
               ) : null}
 
-              {pageWorkspaceState.status === 'ready' && structuredPages.length > 0 ? (
-                <div className="admin-selector-row admin-selector-row--toolbar">
-                  <label className="admin-field admin-selector-field">
-                    <span className="visually-hidden">Page</span>
-                    <select value={pageEditorState.activeKey || ''} onChange={handleStructuredPageSelectionChange}>
-                      {structuredPages.map((page) => (
-                        <option key={page.key} value={page.key}>
-                          {formatPageSelectorLabel(page)}
-                          {lockBadgeSuffix('structuredPage', page.key)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  {selectedStructuredPage ? (
-                    <div className="admin-inline-actions">
-                      <button
-                        className="button-link button-link--ghost admin-action"
-                        type="button"
-                        onClick={() => handleReloadStructuredPage(selectedStructuredPage.key)}
-                      >
-                        Refresh
-                      </button>
-                      {selectedStructuredPage.contentModel === 'block-page' ? (
+              {pageWorkspaceState.status === 'ready' && deletedStructuredPages.length > 0 ? (
+                <details className="admin-page-trash">
+                  <summary>Deleted pages ({deletedStructuredPages.length})</summary>
+                  {pageTrashState.message ? <p className="admin-feedback admin-feedback--error">{pageTrashState.message}</p> : null}
+                  <ul>
+                    {deletedStructuredPages.map((page) => (
+                      <li key={page.key}>
+                        <div>
+                          <strong>{page.title || page.label || page.key}</strong>
+                          <span>{page.path || 'No path'}</span>
+                          {page.deletedAt ? <time>{new Date(page.deletedAt).toLocaleString()}</time> : null}
+                        </div>
                         <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={pageDeleteStatus === 'saving'}
+                          className="button-link button-link--secondary admin-action"
+                          disabled={pageTrashState.status === 'restoring'}
                           type="button"
-                          onClick={handleDeleteStructuredPage}
+                          onClick={() => handleRestoreDeletedStructuredPage(page)}
                         >
-                          {pageDeleteStatus === 'saving' ? 'Deleting...' : 'Delete page'}
+                          {pageTrashState.status === 'restoring' && pageTrashState.activeKey === page.key ? 'Restoring...' : 'Restore'}
                         </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               ) : null}
 
               <div className="admin-editor admin-editor--page">
@@ -3273,20 +3855,44 @@ export function AdminPage() {
                 {pageFeedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(pageSaveStatus)}`}>{pageFeedback}</p> : null}
 
                 {pageConflict ? (
-                  <button className="button-link button-link--secondary admin-action" type="button" onClick={handleLoadLatestStructuredPage}>
-                    Load latest version
-                  </button>
+                  <section className="admin-page-conflict" aria-label="Page edit conflict">
+                    <div>
+                      <strong>Another saved version exists</strong>
+                      <p>Your local draft is preserved. Compare it with the latest saved version before choosing what to keep.</p>
+                    </div>
+                    <div className="admin-inline-actions">
+                      <button
+                        className="button-link button-link--secondary admin-action"
+                        disabled={!pageConflict.latest}
+                        type="button"
+                        onClick={handleKeepLocalStructuredPageConflict}
+                      >
+                        Keep my draft
+                      </button>
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        type="button"
+                        onClick={handleUseLatestStructuredPageConflict}
+                      >
+                        Use latest saved
+                      </button>
+                      <button
+                        className="button-link button-link--ghost admin-action"
+                        disabled={!pageConflict.localDraft}
+                        type="button"
+                        onClick={handleDownloadStructuredPageConflictDraft}
+                      >
+                        Download my draft
+                      </button>
+                    </div>
+                  </section>
                 ) : null}
+
+                {pageConflictDiff ? <PageChangeSummaryPanel diff={pageConflictDiff} mode="conflict" /> : null}
 
                 {pageEditorState.status === 'loading' ? <p className="admin-empty">Loading structured page content...</p> : null}
 
-                {pageLock.isBlocked ? (
-                  <p className="admin-feedback admin-feedback--warning">
-                    This page is currently being edited by {pageLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
-                  </p>
-                ) : !pageSaveEnabled ? (
-                  <p className="admin-note">You can edit this page draft now, but you must sign in before saving drafts or publishing changes live.</p>
-                ) : null}
+                <AdminEditLockNotice lock={pageLock} resourceLabel="page" />
 
                 {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
                   <form className="admin-form admin-form--flush" onSubmit={handleStructuredPageSubmit}>
@@ -3298,9 +3904,69 @@ export function AdminPage() {
                           </Link>
                         ) : null}
                         <AdminPreviewDeviceButton active={pagePreviewDevice === 'desktop'} label="Desktop" onClick={() => setPagePreviewDevice('desktop')} />
+                        <AdminPreviewDeviceButton active={pagePreviewDevice === 'tablet'} label="Tablet" onClick={() => setPagePreviewDevice('tablet')} />
                         <AdminPreviewDeviceButton active={pagePreviewDevice === 'mobile'} label="Mobile" onClick={() => setPagePreviewDevice('mobile')} />
+                        {selectedStructuredPageIsBlockPage ? (
+                          <>
+                            <EditorIconButton
+                              disabled={!pageUndoEnabled}
+                              icon={Undo2}
+                              label="Undo"
+                              onClick={handleUndoStructuredPageEdit}
+                            />
+                            <EditorIconButton
+                              disabled={!pageRedoEnabled}
+                              icon={Redo2}
+                              label="Redo"
+                              onClick={handleRedoStructuredPageEdit}
+                            />
+                            <EditorReviewToolbar
+                              activeView={pageReviewView}
+                              changeCount={pageReviewDiff?.totalChanges ?? 0}
+                              changesAvailable={Boolean(pageReviewDiff && !pageReviewDiff.empty)}
+                              disabled={pageEditorState.status !== 'ready'}
+                              issueCount={pageReviewIssueCount}
+                              revisionsCount={pageRevisionState.revisions.length}
+                              onViewChange={handlePageReviewViewChange}
+                            />
+                            {pagePreviewMode === 'edit' && !pageRevisionPreview.id ? (
+                              <EditorContextToolbar activeView={pageContextView} onViewChange={setPageContextView} />
+                            ) : null}
+                          </>
+                        ) : null}
                       </div>
                     </div>
+
+                    {selectedStructuredPageIsBlockPage && pageReviewView ? (
+                      <div className="admin-page-editor-review-view">
+                        {pageReviewView === 'checks' ? (
+                          <PageQualityPanel defaultOpen validation={pageValidation} onSelectIssue={handleStructuredPageValidationIssue} />
+                        ) : null}
+                        {pageReviewView === 'changes' ? (
+                          <PageChangeSummaryPanel
+                            defaultOpen
+                            diff={pageReviewDiff}
+                            mode={pageReviewDiffMode}
+                            publication={pagePublication}
+                          />
+                        ) : null}
+                        {pageReviewView === 'revisions' ? (
+                          <PageRevisionHistoryPanel
+                            defaultOpen
+                            disabled={!pageAuthenticatedSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                            message={pageRevisionState.message}
+                            previewRevisionId={pageRevisionPreview.id || (pageRevisionState.status === 'previewing' ? pageRevisionState.activeRevisionId : '')}
+                            restoringRevisionId={pageRevisionState.activeRevisionId}
+                            revisions={pageRevisionState.revisions}
+                            status={pageRevisionState.status}
+                            onClosePreview={handleCloseStructuredPageRevisionPreview}
+                            onPreview={handlePreviewStructuredPageRevision}
+                            onRefresh={handleRefreshStructuredPageRevisions}
+                            onRestore={handleRestoreStructuredPageRevision}
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     <div className="admin-floating-save-shell">
                       <div className="admin-floating-save">
@@ -3334,59 +4000,113 @@ export function AdminPage() {
                           </button>
                         ) : null}
 
-                        {pageDirty || pageHasPendingPublication ? (
+                        {pageDirty ? (
                           <button
                             className="button-link button-link--primary admin-submit"
                             disabled={!pageSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
                             type="submit"
                           >
-                            {pageSaveStatus === 'publishing'
-                              ? 'Publishing...'
-                              : pageSaveStatus === 'saving'
-                                ? 'Saving...'
-                                : pageHasPendingPublication
-                                  ? 'Publish page changes'
-                                  : 'Save page changes'}
+                            {pageSaveStatus === 'saving' ? 'Saving...' : 'Save draft'}
+                          </button>
+                        ) : null}
+
+                        {pageHasPendingPublication ? (
+                          <button
+                            className="button-link button-link--secondary admin-submit"
+                            disabled={!pageSaveEnabled || pageDirty || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                            title={pageDirty ? 'Save the current draft before publishing.' : undefined}
+                            type="button"
+                            onClick={handlePublishStructuredPage}
+                          >
+                            {pageSaveStatus === 'publishing' ? 'Publishing...' : 'Publish saved draft'}
                           </button>
                         ) : null}
                       </div>
 
-                      {pagePreviewMode === 'preview' ? (
-                        <AdminPagePreview
-                          device={pagePreviewDevice}
-                          page={pageEditorState.draft}
-                          pageKey={pageEditorState.activeKey}
-                          routeInventory={pageWorkspaceState.inventory}
-                          siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                        />
-                      ) : (
-                        <AdminPageEditorCanvas
-                          device={pagePreviewDevice}
-                          disabled={!pageDraftEditingEnabled}
-                          onChange={(updater) =>
-                            setPageEditorState((current) => ({
-                              ...current,
-                              draft: typeof updater === 'function' ? updater(current.draft) : updater,
-                            }))
-                          }
-                          page={pageEditorState.draft}
-                          pageKey={pageEditorState.activeKey}
-                          routeInventory={pageWorkspaceState.inventory}
-                          siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                        />
-                      )}
+                      <div
+                        className={`admin-page-editor-shell${
+                          selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id
+                            ? ''
+                            : ' admin-page-editor-shell--single'
+                        }`}
+                      >
+                        {selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id ? (
+                          <EditorContextPanel activeView={pageContextView} onViewChange={setPageContextView}>
+                            <div className="admin-page-editor-layers-rail admin-page-editor-rail--active" hidden={pageContextView !== 'layers'}>
+                              <BlockOutline
+                                blocks={pageEditorState.draft?.blocks}
+                                disabled={pagePreviewMode !== 'edit' || Boolean(pageRevisionPreview.id)}
+                                selectedBlockId={selectedPageBlockId}
+                                validation={pageValidation}
+                                onBlocksChange={(nextBlocks) => updateStructuredPageDraftPath(['blocks'], nextBlocks)}
+                                onSelectBlock={handlePageEditorNodeSelection}
+                              />
+                            </div>
+                            <div className="admin-page-editor-layout-rail admin-page-editor-rail--active" hidden={pageContextView !== 'layout'}>
+                              <BlockLayoutOutline
+                                blocks={pageEditorState.draft?.blocks}
+                                layoutMetrics={pageLayoutMetrics}
+                                selectedBlockId={selectedPageBlockId}
+                                onSelectBlock={handlePageEditorNodeSelection}
+                              />
+                            </div>
+                            <div className="admin-page-editor-inspector-rail admin-page-editor-rail--active" hidden={pageContextView !== 'inspector'}>
+                              <BlockInspectorPanel
+                                disabled={!pageDraftEditingEnabled || pagePreviewMode !== 'edit' || Boolean(pageRevisionPreview.id)}
+                                page={pageEditorState.draft}
+                                routeInventory={pageWorkspaceState.inventory}
+                                selectedBlockId={selectedPageBlockId}
+                                siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                                validation={pageValidation}
+                                onClearSelection={openStructuredPageSettings}
+                                onUpdatePath={updateStructuredPageDraftPath}
+                              />
+                            </div>
+                          </EditorContextPanel>
+                        ) : null}
+
+                        <div className="admin-page-editor-canvas">
+                          {pageRevisionPreview.status === 'loading' ? (
+                            <p className="admin-empty">Loading revision preview...</p>
+                          ) : pageRevisionPreview.page ? (
+                            <AdminPagePreview
+                              device={pagePreviewDevice}
+                              page={pageRevisionPreview.page}
+                              pageKey={pageEditorState.activeKey}
+                              routeInventory={pageWorkspaceState.inventory}
+                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                            />
+                          ) : pagePreviewMode === 'preview' ? (
+                            <AdminPagePreview
+                              device={pagePreviewDevice}
+                              page={pageEditorState.draft}
+                              pageKey={pageEditorState.activeKey}
+                              routeInventory={pageWorkspaceState.inventory}
+                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                            />
+                          ) : (
+                            <AdminPageEditorCanvas
+                              device={pagePreviewDevice}
+                              disabled={!pageDraftEditingEnabled}
+                              onChange={handleStructuredPageDraftChange}
+                              onLayoutMetricsChange={setPageLayoutMetrics}
+                              onSelectedBlockIdChange={handlePageEditorNodeSelection}
+                              page={pageEditorState.draft}
+                              pageKey={pageEditorState.activeKey}
+                              routeInventory={pageWorkspaceState.inventory}
+                              selectedBlockId={selectedPageBlockId}
+                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                            />
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {pageEditorState.activeKey === 'stJohnCarRentals' ? (
                       <CarRentalCompaniesPanel
                         disabled={!pageDraftEditingEnabled}
                         page={pageEditorState.draft}
-                        onChange={(updater) =>
-                          setPageEditorState((current) => ({
-                            ...current,
-                            draft: typeof updater === 'function' ? updater(current.draft) : updater,
-                          }))
-                        }
+                        onChange={handleStructuredPageDraftChange}
                       />
                     ) : null}
                   </form>
@@ -3403,11 +4123,7 @@ export function AdminPage() {
                 </div>
               </div>
 
-              {siteShellLock.isBlocked ? (
-                <p className="admin-feedback admin-feedback--warning">
-                  This is currently being edited by {siteShellLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
-                </p>
-              ) : null}
+              <AdminEditLockNotice lock={siteShellLock} resourceLabel="site appearance" />
 
               <AdminStyleEditor
                 canPublishSiteShell={showSiteShellPublishAction}
@@ -3480,11 +4196,7 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor">
-                {propertyLock.isBlocked ? (
-                  <p className="admin-feedback admin-feedback--warning">
-                    This property is currently being edited by {propertyLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
-                  </p>
-                ) : null}
+                <AdminEditLockNotice lock={propertyLock} resourceLabel="property" />
 
                 {feedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(saveStatus)}`}>{feedback}</p> : null}
 
@@ -3674,11 +4386,7 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor">
-                {charterLock.isBlocked ? (
-                  <p className="admin-feedback admin-feedback--warning">
-                    This charter is currently being edited by {charterLock.lockedByEmail || 'another admin'}. You can look around, but editing is disabled until they finish.
-                  </p>
-                ) : null}
+                <AdminEditLockNotice lock={charterLock} resourceLabel="charter" />
 
                 {charterFeedback ? (
                   <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(charterSaveStatus)}`}>{charterFeedback}</p>

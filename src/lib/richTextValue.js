@@ -1,4 +1,4 @@
-import { decodeEscapedSiteHtml, normalizeSiteHtml } from './normalizeSiteHtml'
+import { decodeEscapedSiteHtml, normalizeSiteHtml } from './normalizeSiteHtml.js'
 
 const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
 const BLOCK_HTML_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|table|tbody|td|th|thead|tr|ul)\b/i

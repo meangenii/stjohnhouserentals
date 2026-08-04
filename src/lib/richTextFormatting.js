@@ -49,6 +49,20 @@ function formatPointValue(value) {
   return Number.isInteger(roundedValue) ? String(roundedValue) : String(roundedValue).replace(/0+$/, '').replace(/\.$/, '')
 }
 
+function formatComputedFontSizeLabel(element) {
+  if (typeof Element === 'undefined' || typeof window === 'undefined' || !(element instanceof Element)) {
+    return ''
+  }
+
+  const fontSizePx = Number.parseFloat(window.getComputedStyle(element).fontSize)
+
+  if (!Number.isFinite(fontSizePx) || fontSizePx <= 0) {
+    return ''
+  }
+
+  return `${formatPointValue(fontSizePx * PX_TO_PT)}pt`
+}
+
 export const RICH_TEXT_FONT_SIZE_OPTIONS = [
   { label: 'Default', value: 'default' },
   { label: 'Small', value: '10.5pt' },
@@ -770,6 +784,7 @@ export function readRichTextSelectionState(root, { defaultBlockTag = 'p', fixedB
   const formattingState = {
     blockTag: fixedBlockTag || defaultBlockTag,
     bold: false,
+    defaultFontSizeLabel: formatComputedFontSizeLabel(root),
     fontSize: 'default',
     italic: false,
     underline: false,
@@ -802,6 +817,7 @@ export function readRichTextSelectionState(root, { defaultBlockTag = 'p', fixedB
 
     if (blockElement && root.contains(blockElement)) {
       formattingState.blockTag = blockElement.tagName.toLowerCase()
+      formattingState.defaultFontSizeLabel = formatComputedFontSizeLabel(blockElement) || formattingState.defaultFontSizeLabel
     }
   }
 

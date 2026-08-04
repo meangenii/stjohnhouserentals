@@ -426,6 +426,11 @@ export function AdminRichTextEditor({
   const routeOptions = buildRouteOptions(Array.isArray(previewState?.routeInventory) ? previewState.routeInventory : [])
   const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
   const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
+  const displayedFontSizeOptions = fontSizeOptions.map((option) =>
+    option.value === 'default' && selectionState.defaultFontSizeLabel
+      ? { ...option, label: selectionState.defaultFontSizeLabel }
+      : option,
+  )
   const contentModeConfig = getRichTextContentModeConfig(contentMode, allowSourceMode)
   const activeMode = contentModeConfig.sourceMode ? mode : 'visual'
   const htmlSourceRows = Number(sourceRows) > 0 ? Number(sourceRows) : compact ? 8 : 14
@@ -1115,12 +1120,13 @@ export function AdminRichTextEditor({
               ) : null}
               {contentModeConfig.fontSize ? (
                 <AdminRichTextMenu
+                  currentLabel={selectionState.fontSize === 'default' ? selectionState.defaultFontSizeLabel : ''}
                   disabled={disabled}
                   footer={<RichTextFontSizeInput disabled={disabled} onApply={handleFontSizeChange} />}
                   label="Size"
                   onBeforeOpen={rememberSelection}
                   onSelect={handleFontSizeChange}
-                  options={fontSizeOptions}
+                  options={displayedFontSizeOptions}
                   value={selectionState.fontSize}
                 />
               ) : null}

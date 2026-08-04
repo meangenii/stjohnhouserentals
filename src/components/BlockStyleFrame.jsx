@@ -1,6 +1,6 @@
 import { getContentImageSrc } from '../lib/contentAssets'
 import { getSiteThemeElementStylePresets } from '../lib/siteThemeSettings'
-import { isDefaultBlockStyle, resolveBlockStyle } from '../lib/blockStyle'
+import { getBlockBackgroundPosition, isDefaultBlockStyle, resolveBlockStyle } from '../lib/blockStyle'
 import { useSiteShellContent } from '../lib/useSiteContent'
 
 export function BlockStyleFrame({ block, children }) {
@@ -16,10 +16,17 @@ export function BlockStyleFrame({ block, children }) {
 
   const frameStyle = {
     ...(style.background.type === 'color' && style.background.color ? { backgroundColor: style.background.color } : {}),
-    ...(backgroundImageUrl ? { backgroundImage: `url(${backgroundImageUrl})`, backgroundPosition: 'center', backgroundSize: 'cover' } : {}),
+    ...(backgroundImageUrl
+      ? {
+          backgroundImage: `url(${backgroundImageUrl})`,
+          backgroundPosition: getBlockBackgroundPosition(style.background.focalPoint),
+          backgroundSize: 'cover',
+        }
+      : {}),
     ...(style.color ? { color: style.color } : {}),
   }
 
+  const overlay = backgroundImageUrl ? style.background.overlay : 'none'
   const frameClassName = [
     'block-style-frame',
     `block-style-frame--width-${style.width}`,
@@ -27,6 +34,7 @@ export function BlockStyleFrame({ block, children }) {
     `block-style-frame--align-${style.align}`,
     `block-style-frame--border-${style.border}`,
     `block-style-frame--radius-${style.borderRadius}`,
+    `block-style-frame--overlay-${overlay}`,
   ].join(' ')
 
   return (

@@ -23,6 +23,16 @@ function normalizeResourceId(resourceId) {
   return id
 }
 
+function normalizeLeaseId(leaseId) {
+  const id = String(leaseId ?? '').trim()
+
+  if (!id) {
+    throw new HttpError(400, 'leaseId is required.')
+  }
+
+  return id
+}
+
 function buildLockDocId(resourceType, resourceId) {
   return `${resourceType}:${encodeURIComponent(resourceId)}`
 }
@@ -59,16 +69,17 @@ function createLockUnavailableError() {
   )
 }
 
-exports.acquireLock = async function acquireLock(resourceType, resourceId, adminUser) {
+exports.acquireLock = async function acquireLock(resourceType, resourceId, adminUser, leaseId) {
   const type = normalizeResourceType(resourceType)
   const id = normalizeResourceId(resourceId)
+  const normalizedLeaseId = normalizeLeaseId(leaseId)
   const docRef = getDb().collection(EDIT_LOCK_COLLECTION).doc(buildLockDocId(type, id))
 
   try {
     return await getDb().runTransaction(async (transaction) => {
       const snapshot = await transaction.get(docRef)
       const existing = snapshot.exists ? snapshot.data() : null
-      const heldByRequester = existing?.lockedBy === adminUser.uid
+      const heldByRequester = existing?.lockedBy === adminUser.uid && existing?.leaseId === normalizedLeaseId
 
       if (existing && !heldByRequester && !isLockExpired(existing)) {
         throw new HttpError(409, `This ${type} is currently being edited by ${existing.lockedByEmail || 'another admin'}.`, {
@@ -82,6 +93,7 @@ exports.acquireLock = async function acquireLock(resourceType, resourceId, admin
         resourceId: id,
         lockedBy: adminUser.uid,
         lockedByEmail: adminUser.email || '',
+        leaseId: normalizedLeaseId,
         lockedAt: heldByRequester ? existing.lockedAt || now : now,
         lastHeartbeat: now,
       }
@@ -113,9 +125,10 @@ exports.acquireLock = async function acquireLock(resourceType, resourceId, admin
   }
 }
 
-exports.heartbeatLock = async function heartbeatLock(resourceType, resourceId, adminUser) {
+exports.heartbeatLock = async function heartbeatLock(resourceType, resourceId, adminUser, leaseId) {
   const type = normalizeResourceType(resourceType)
   const id = normalizeResourceId(resourceId)
+  const normalizedLeaseId = normalizeLeaseId(leaseId)
   const docRef = getDb().collection(EDIT_LOCK_COLLECTION).doc(buildLockDocId(type, id))
 
   try {
@@ -123,7 +136,12 @@ exports.heartbeatLock = async function heartbeatLock(resourceType, resourceId, a
       const snapshot = await transaction.get(docRef)
       const existing = snapshot.exists ? snapshot.data() : null
 
-      if (!existing || existing.lockedBy !== adminUser.uid) {
+      if (
+        !existing ||
+        existing.lockedBy !== adminUser.uid ||
+        existing.leaseId !== normalizedLeaseId ||
+        isLockExpired(existing)
+      ) {
         if (existing && !isLockExpired(existing)) {
           throw new HttpError(409, `This ${type} is now being edited by ${existing.lockedByEmail || 'another admin'}.`, {
             lock: serializeLock(existing),
@@ -160,15 +178,20 @@ exports.heartbeatLock = async function heartbeatLock(resourceType, resourceId, a
   }
 }
 
-exports.releaseLock = async function releaseLock(resourceType, resourceId, adminUser) {
+exports.releaseLock = async function releaseLock(resourceType, resourceId, adminUser, leaseId) {
   const type = normalizeResourceType(resourceType)
   const id = normalizeResourceId(resourceId)
+  const normalizedLeaseId = normalizeLeaseId(leaseId)
   const docRef = getDb().collection(EDIT_LOCK_COLLECTION).doc(buildLockDocId(type, id))
 
   try {
     const snapshot = await docRef.get()
 
-    if (snapshot.exists && snapshot.data()?.lockedBy === adminUser.uid) {
+    if (
+      snapshot.exists &&
+      snapshot.data()?.lockedBy === adminUser.uid &&
+      snapshot.data()?.leaseId === normalizedLeaseId
+    ) {
       await docRef.delete()
     }
 
@@ -180,6 +203,38 @@ exports.releaseLock = async function releaseLock(resourceType, resourceId, admin
 
     throw error
   }
+}
+
+exports.assertActiveEditLease = async function assertActiveEditLease(
+  transaction,
+  resourceType,
+  resourceId,
+  adminUser,
+  leaseId,
+) {
+  const type = normalizeResourceType(resourceType)
+  const id = normalizeResourceId(resourceId)
+  const normalizedLeaseId = normalizeLeaseId(leaseId)
+  const docRef = getDb().collection(EDIT_LOCK_COLLECTION).doc(buildLockDocId(type, id))
+  const snapshot = await transaction.get(docRef)
+  const existing = snapshot.exists ? snapshot.data() : null
+  const owned =
+    existing &&
+    existing.lockedBy === adminUser.uid &&
+    existing.leaseId === normalizedLeaseId &&
+    !isLockExpired(existing)
+
+  if (!owned) {
+    const activeLock = existing && !isLockExpired(existing) ? existing : null
+    const message = activeLock
+      ? `This ${type} is currently being edited by ${activeLock.lockedByEmail || 'another admin'}.`
+      : 'Your edit lock expired. Reload the editor before making more changes.'
+
+    throw new HttpError(409, message, { lock: serializeLock(activeLock) })
+  }
+
+  transaction.update(docRef, { lastHeartbeat: getServerTimestamp() })
+  return existing
 }
 
 exports.getLockStatus = async function getLockStatus(resourceType, resourceId) {

@@ -1,0 +1,262 @@
+{
+  "blockPageContentModel": "block-page",
+  "currentBlockVersion": 1,
+  "supportedBlockTypes": [
+    "hero",
+    "image-text-split",
+    "feature-grid",
+    "rich-text",
+    "image",
+    "cta-band",
+    "testimonials",
+    "image-gallery",
+    "spacer",
+    "directory-embed",
+    "contact-form",
+    "contact-details",
+    "schedule",
+    "rate-table",
+    "group",
+    "row",
+    "two-column-text",
+    "business-list"
+  ],
+  "blockVersions": {
+    "hero": 1,
+    "image-text-split": 1,
+    "feature-grid": 1,
+    "rich-text": 1,
+    "image": 1,
+    "cta-band": 1,
+    "testimonials": 1,
+    "image-gallery": 1,
+    "spacer": 1,
+    "directory-embed": 1,
+    "contact-form": 1,
+    "contact-details": 1,
+    "schedule": 1,
+    "rate-table": 1,
+    "group": 1,
+    "row": 1,
+    "two-column-text": 1,
+    "business-list": 1
+  },
+  "structuralBlockTypes": ["group", "row"],
+  "maxStructuralNestingDepth": 3,
+  "maxRowColumns": 4,
+  "maxRowColumnWidth": 10,
+  "blockStyleOptions": {
+    "align": ["left", "center", "right"],
+    "backgroundFocalPoint": ["center", "top", "bottom", "left", "right", "top-left", "top-right", "bottom-left", "bottom-right"],
+    "backgroundOverlay": ["none", "dark", "light", "brand"],
+    "backgroundType": ["none", "color", "image"],
+    "border": ["none", "thin", "thick"],
+    "borderRadius": ["none", "small", "large"],
+    "spacing": ["none", "small", "medium", "large"],
+    "width": ["full", "contained", "narrow"]
+  },
+  "blockResponsiveOptions": {
+    "previewDevices": ["desktop", "tablet", "mobile"],
+    "rowMobileColumns": ["stack", "preserve"],
+    "visibilityFlags": [
+      { "device": "desktop", "field": "hideOnDesktop", "label": "Desktop" },
+      { "device": "tablet", "field": "hideOnTablet", "label": "Tablet" },
+      { "device": "mobile", "field": "hideOnMobile", "label": "Mobile" }
+    ]
+  },
+  "blockContentSchemas": {
+    "hero": {
+      "title": { "type": "string" },
+      "lead": { "type": "string" },
+      "image": { "type": "image" },
+      "action": {
+        "type": "link",
+        "fields": {
+          "backgroundColor": { "type": "color" },
+          "label": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "image-text-split": {
+      "kicker": { "type": "string" },
+      "title": { "type": "string" },
+      "body": { "type": "string" },
+      "imagePosition": { "type": "enum", "options": ["left", "right"] },
+      "image": { "type": "image" },
+      "action": {
+        "type": "link",
+        "fields": {
+          "label": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "feature-grid": {
+      "title": { "type": "string" },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "kind": { "type": "enum", "options": ["star", "check", "pin", "tag"] },
+            "title": { "type": "string" },
+            "body": { "type": "string" }
+          }
+        }
+      }
+    },
+    "rich-text": {
+      "html": { "type": "string" }
+    },
+    "image": {
+      "caption": { "type": "string" },
+      "image": { "type": "image" }
+    },
+    "cta-band": {
+      "title": { "type": "string" },
+      "body": { "type": "string" },
+      "action": {
+        "type": "link",
+        "fields": {
+          "backgroundColor": { "type": "color" },
+          "label": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "testimonials": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "quote": { "type": "string" },
+            "author": { "type": "string" }
+          }
+        }
+      }
+    },
+    "image-gallery": {
+      "images": { "type": "array", "items": { "type": "image", "requiredId": true } }
+    },
+    "spacer": {
+      "size": { "type": "enum", "options": ["small", "medium", "large"] }
+    },
+    "directory-embed": {
+      "title": { "type": "string" },
+      "source": { "type": "enum", "options": ["properties", "charters"] }
+    },
+    "contact-form": {
+      "title": { "type": "string" },
+      "intro": { "type": "string" }
+    },
+    "contact-details": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "link",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "label": { "type": "string" },
+            "type": { "type": "enum", "options": ["text", "phone", "link"] },
+            "value": { "type": "string" },
+            "href": { "type": "string" }
+          }
+        }
+      }
+    },
+    "schedule": {
+      "title": { "type": "string" },
+      "columns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "heading": { "type": "string" },
+            "times": { "type": "array", "items": { "type": "string" } },
+            "timeIds": { "type": "idArray", "alignedWith": "times" }
+          }
+        }
+      },
+      "notes": { "type": "array", "items": { "type": "string" } },
+      "noteIds": { "type": "idArray", "alignedWith": "notes" }
+    },
+    "rate-table": {
+      "heading": { "type": "string" },
+      "rows": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "label": { "type": "string" },
+            "values": { "type": "array", "items": { "type": "string" } },
+            "valueIds": { "type": "idArray", "alignedWith": "values" }
+          }
+        }
+      },
+      "footer": { "type": "array", "items": { "type": "string" } },
+      "footerIds": { "type": "idArray", "alignedWith": "footer" },
+      "link": {
+        "type": "link",
+        "fields": {
+          "label": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "group": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "title": { "type": "string" },
+            "image": { "type": "image" },
+            "blocks": { "type": "blocks" },
+            "style": { "type": "object", "allowUnknown": true }
+          }
+        }
+      }
+    },
+    "row": {
+      "columns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "width": { "type": "numeric" },
+            "blocks": { "type": "blocks" },
+            "style": { "type": "object", "allowUnknown": true }
+          }
+        }
+      }
+    },
+    "two-column-text": {
+      "left": { "type": "string" },
+      "right": { "type": "string" }
+    },
+    "business-list": {
+      "title": { "type": "string" },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "link",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "name": { "type": "string" },
+            "phones": { "type": "array", "items": { "type": "string" } },
+            "phoneIds": { "type": "idArray", "alignedWith": "phones" },
+            "website": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

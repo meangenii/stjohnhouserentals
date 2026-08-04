@@ -63,6 +63,7 @@ function normalizeStructuredPageDirectory(directory = {}) {
   return {
     source: String(directory?.source ?? 'firestore').trim() || 'firestore',
     checkedAt: directory?.checkedAt ?? null,
+    deletedPages: Array.isArray(directory?.deletedPages) ? directory.deletedPages : [],
     pages: Array.isArray(directory?.pages) ? directory.pages : [],
     inventory: Array.isArray(directory?.inventory) ? directory.inventory : [],
   }
@@ -119,7 +120,35 @@ function normalizeLiveSiteShellPayload(payload = {}) {
 function normalizeAdminStructuredPagePayload(payload = {}) {
   return {
     page: payload?.page ? resolveContentAssets(payload.page) : null,
+    publishedPage: payload?.publishedPage ? resolveContentAssets(payload.publishedPage) : null,
     publication: normalizePublicationState(payload?.publication),
+  }
+}
+
+export function normalizeAdminStructuredPageConflict(payload = {}) {
+  return normalizeAdminStructuredPagePayload(payload?.latest ?? payload)
+}
+
+function normalizeStructuredPageRevisionSummary(revision = {}) {
+  return {
+    action: String(revision.action ?? '').trim() || 'save',
+    actor: String(revision.actor ?? '').trim(),
+    blockCount: Number(revision.blockCount) || 0,
+    createdAt: Number.isFinite(Number(revision.createdAt)) ? Number(revision.createdAt) : null,
+    id: String(revision.id ?? '').trim(),
+    pageKey: String(revision.pageKey ?? '').trim(),
+    pagePath: String(revision.pagePath ?? '').trim(),
+    pageTitle: String(revision.pageTitle ?? '').trim(),
+    restoredFrom: String(revision.restoredFrom ?? '').trim(),
+  }
+}
+
+function normalizeStructuredPageRevisionPayload(payload = {}) {
+  return {
+    checkedAt: payload?.checkedAt ?? null,
+    revisions: Array.isArray(payload?.revisions)
+      ? payload.revisions.map((revision) => normalizeStructuredPageRevisionSummary(revision)).filter((revision) => revision.id)
+      : [],
   }
 }
 
@@ -323,6 +352,29 @@ export async function fetchAdminStructuredPageContent(key, options = {}) {
   )
 }
 
+export async function fetchAdminStructuredPageRevisions(key, options = {}) {
+  requireLiveSiteContentSource()
+  const limit = Number(options.limit)
+  const query = Number.isInteger(limit) && limit > 0 ? `?limit=${encodeURIComponent(limit)}` : ''
+  return getJson(`${getAdminPagePath(key)}/revisions${query}`, options).then((payload) => normalizeStructuredPageRevisionPayload(payload))
+}
+
+export async function fetchAdminStructuredPageRevision(key, revisionId, options = {}) {
+  requireLiveSiteContentSource()
+  const payload = await getJson(
+    `${getAdminPagePath(key)}/revisions/${encodeURIComponent(String(revisionId ?? '').trim())}`,
+    options,
+  )
+  const revision = payload?.revision ?? null
+
+  return revision
+    ? {
+        ...normalizeStructuredPageRevisionSummary(revision),
+        page: revision.page ? resolveContentAssets(revision.page) : null,
+      }
+    : null
+}
+
 export async function fetchAdminStructuredPageDirectory(options = {}) {
   requireLiveSiteContentSource()
   return getJson('/admin/content/pages', options).then((payload) => normalizeStructuredPageDirectory(payload))
@@ -370,7 +422,11 @@ export async function saveAdminStructuredPageContent(key, draft, options = {}) {
   const normalizedKey = String(key ?? '').trim()
   const payload = await postJson(
     getAdminPagePath(normalizedKey),
-    { draft: sanitizeDraftImages(draft), expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    {
+      draft: sanitizeDraftImages(draft),
+      editLeaseId: options.editLeaseId ?? '',
+      expectedUpdatedAt: options.expectedUpdatedAt ?? null,
+    },
     options,
   )
   return normalizeAdminStructuredPagePayload(payload)
@@ -381,7 +437,7 @@ export async function publishAdminStructuredPageContent(key, options = {}) {
   const normalizedKey = String(key ?? '').trim()
   const payload = await postJson(
     `${getAdminPagePath(normalizedKey)}/publish`,
-    { expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    { editLeaseId: options.editLeaseId ?? '', expectedUpdatedAt: options.expectedUpdatedAt ?? null },
     options,
   )
   const normalized = normalizeAdminStructuredPagePayload(payload)
@@ -395,10 +451,30 @@ export async function publishAdminStructuredPageContent(key, options = {}) {
   return normalized
 }
 
+export async function restoreAdminStructuredPageRevision(key, revisionId, options = {}) {
+  requireLiveSiteContentEditing()
+  const normalizedKey = String(key ?? '').trim()
+  const payload = await postJson(
+    `${getAdminPagePath(normalizedKey)}/revisions/${encodeURIComponent(String(revisionId ?? '').trim())}/restore`,
+    { editLeaseId: options.editLeaseId ?? '', expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
+
+  liveStructuredPageDirectoryCache = null
+
+  return normalizeAdminStructuredPagePayload(payload)
+}
+
 export async function resetAdminStructuredPageContent(key, options = {}) {
   requireLiveSiteContentEditing()
   const normalizedKey = String(key ?? '').trim()
-  const payload = await deleteJson(getAdminPagePath(normalizedKey), options)
+  const payload = await deleteJson(getAdminPagePath(normalizedKey), {
+    ...options,
+    body: {
+      editLeaseId: options.editLeaseId ?? '',
+      expectedUpdatedAt: options.expectedUpdatedAt ?? null,
+    },
+  })
 
   if (payload?.page) {
     storeLiveStructuredPageCache(normalizedKey, resolveContentAssets(payload.page))
@@ -406,6 +482,19 @@ export async function resetAdminStructuredPageContent(key, options = {}) {
 
   liveStructuredPageDirectoryCache = null
 
+  return normalizeAdminStructuredPagePayload(payload)
+}
+
+export async function restoreAdminDeletedStructuredPage(key, options = {}) {
+  requireLiveSiteContentEditing()
+  const normalizedKey = String(key ?? '').trim()
+  const payload = await postJson(
+    `${getAdminPagePath(normalizedKey)}/restore-deleted`,
+    { expectedUpdatedAt: options.expectedUpdatedAt ?? null },
+    options,
+  )
+
+  liveStructuredPageDirectoryCache = null
   return normalizeAdminStructuredPagePayload(payload)
 }
 

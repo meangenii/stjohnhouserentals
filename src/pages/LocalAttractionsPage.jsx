@@ -289,6 +289,7 @@ export function LocalAttractionsPage() {
             label={page.map.action.label}
             labelLabel="Map Button Text"
             labelPath={['map', 'action', 'label']}
+            presentation="button"
           />
         </div>
 

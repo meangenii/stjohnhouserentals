@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
-import { BlockList, BlockStyleSettings } from '../BlockList'
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
+import { BlockList } from '../BlockList'
 import { BlockStyleFrame } from '../BlockStyleFrame'
+import { EditorIconButton } from '../EditorIconButton'
 import { CharterDirectorySection } from '../CharterDirectorySection'
 import { EditablePhoneText } from '../EditablePhoneText'
 import { PropertyDirectorySection } from '../PropertyDirectorySection'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableRichHtml, EditableText } from '../AdminInlinePageEdit'
 import { getContentImageSrc } from '../../lib/contentAssets'
+import { createBlockCollectionItem } from '../../lib/blockDefaults'
+import { getBlockImageAltText } from '../../lib/blockImageValue'
+import { getRowMobileColumnOrder, getRowMobileColumnsMode } from '../../lib/blockResponsive'
+import { applyRowLayoutPreset, getRowLayoutPresetId, ROW_LAYOUT_PRESETS } from '../../lib/blockRowLayout'
+import { makeBlockTreeSelectionId } from '../../lib/blockTree'
 import { normalizeSiteHtml } from '../../lib/normalizeSiteHtml'
 import { submitPageInquiry } from '../../lib/pageInquiryApi'
 import { appendPathItem, removePathItem, usePageEditor } from '../../lib/usePageEditor'
@@ -34,6 +41,34 @@ function ensureAlignedIds(ids, length) {
   return aligned
 }
 
+function appendStableStringItem(pageEditor, objectPath, valuesField, idsField, value = '') {
+  pageEditor?.updatePath(objectPath, (currentValue) => {
+    const record = currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue) ? currentValue : {}
+    const values = Array.isArray(record[valuesField]) ? record[valuesField] : []
+    const ids = ensureAlignedIds(record[idsField], values.length)
+
+    return {
+      ...record,
+      [valuesField]: [...values, value],
+      [idsField]: [...ids, makeItemId()],
+    }
+  })
+}
+
+function removeStableStringItem(pageEditor, objectPath, valuesField, idsField, index) {
+  pageEditor?.updatePath(objectPath, (currentValue) => {
+    const record = currentValue && typeof currentValue === 'object' && !Array.isArray(currentValue) ? currentValue : {}
+    const values = Array.isArray(record[valuesField]) ? record[valuesField] : []
+    const ids = ensureAlignedIds(record[idsField], values.length)
+
+    return {
+      ...record,
+      [valuesField]: values.filter((_, itemIndex) => itemIndex !== index),
+      [idsField]: ids.filter((_, itemIndex) => itemIndex !== index),
+    }
+  })
+}
+
 export function RichTextBlockRenderer({ block, path }) {
   const html = normalizeSiteHtml(block.html ?? '').trim()
 
@@ -46,7 +81,7 @@ export function ImageBlockRenderer({ block, path }) {
 
   return (
     <figure className="block-image">
-      <EditableImage alt={image.alt || ''} className="block-image-photo" decoding="async" image={image} loading="lazy" path={[...path, 'image']} src={imageUrl} />
+      <EditableImage alt={getBlockImageAltText(image)} className="block-image-photo" decoding="async" image={image} loading="lazy" path={[...path, 'image']} src={imageUrl} />
       <EditableText as="figcaption" className="block-image-caption" label="Caption" multiline path={[...path, 'caption']} rows={2} value={block.caption ?? ''}>
         {block.caption ?? ''}
       </EditableText>
@@ -58,9 +93,10 @@ export function ImageGalleryBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const images = Array.isArray(block.images) ? block.images : []
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
 
   function addImage() {
-    appendPathItem(pageEditor, [...path, 'images'], images, { id: makeItemId(), kind: 'image', url: '', alt: '', title: '' })
+    appendPathItem(pageEditor, [...path, 'images'], images, createBlockCollectionItem('image-gallery', 'images', { makeId: makeItemId }))
   }
 
   function removeImage(index) {
@@ -72,7 +108,7 @@ export function ImageGalleryBlockRenderer({ block, path }) {
       {images.map((image, index) => (
         <figure className="block-image-gallery-item" key={image?.id ?? index}>
           <EditableImage
-            alt={image?.alt || ''}
+            alt={getBlockImageAltText(image)}
             className="block-image-gallery-image"
             decoding="async"
             image={image}
@@ -85,22 +121,20 @@ export function ImageGalleryBlockRenderer({ block, path }) {
               {image?.title ?? ''}
             </EditableText>
           ) : null}
-          {editable ? (
-            <button
-              className="button-link button-link--ghost block-image-gallery-remove"
+          {controlsVisible ? (
+            <EditorIconButton
+              className="block-image-gallery-remove block-inline-command"
               data-admin-inline-editable="true"
-              type="button"
+              icon={Trash2}
+              label="Remove image"
+              tone="danger"
               onClick={() => removeImage(index)}
-            >
-              Remove image
-            </button>
+            />
           ) : null}
         </figure>
       ))}
-      {editable ? (
-        <button className="button-link button-link--ghost block-image-gallery-add" data-admin-inline-editable="true" type="button" onClick={addImage}>
-          Add image
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-image-gallery-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add image" onClick={addImage} />
       ) : null}
     </section>
   )
@@ -133,6 +167,7 @@ export function CtaBandBlockRenderer({ block, path }) {
           label={action.label ?? ''}
           labelLabel="Button Text"
           labelPath={[...path, 'action', 'label']}
+          presentation="button"
         />
       </div>
     </section>
@@ -202,6 +237,7 @@ export function HeroBannerBlockRenderer({ block, path }) {
           label={action.label ?? ''}
           labelLabel="Button Text"
           labelPath={[...path, 'action', 'label']}
+          presentation="button"
         />
       </div>
     </EditableBackgroundSection>
@@ -219,7 +255,7 @@ export function ImageTextSplitBlockRenderer({ block, path }) {
       <div className="block-split-inner">
         <div className="block-split-media">
           <EditableImage
-            alt={image.alt || ''}
+            alt={getBlockImageAltText(image)}
             className="block-split-image"
             decoding="async"
             image={image}
@@ -325,10 +361,11 @@ function BlockFeatureIcon({ kind }) {
 export function FeatureGridBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const items = Array.isArray(block.items) ? block.items : []
 
   function addItem() {
-    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), kind: 'star', title: 'New feature', body: '' })
+    appendPathItem(pageEditor, [...path, 'items'], items, createBlockCollectionItem('feature-grid', 'items', { makeId: makeItemId }))
   }
 
   function removeItem(index) {
@@ -347,9 +384,9 @@ export function FeatureGridBlockRenderer({ block, path }) {
             <div className="block-feature-grid-icon">
               <BlockFeatureIcon kind={item.kind} />
             </div>
-            {editable ? (
+            {controlsVisible ? (
               <select
-                className="block-feature-grid-icon-select"
+                className="block-feature-grid-icon-select block-inline-setting"
                 data-admin-inline-editable="true"
                 value={item.kind}
                 onChange={(event) => pageEditor?.updatePath([...path, 'items', index, 'kind'], event.target.value)}
@@ -374,19 +411,15 @@ export function FeatureGridBlockRenderer({ block, path }) {
             >
               {item.body ?? ''}
             </EditableText>
-            {editable ? (
-              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
-                Remove feature
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove feature" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
           </article>
         ))}
       </div>
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-feature-grid-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
-          Add feature
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-feature-grid-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add feature" onClick={addItem} />
       ) : null}
     </section>
   )
@@ -395,10 +428,11 @@ export function FeatureGridBlockRenderer({ block, path }) {
 export function TestimonialsBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const items = Array.isArray(block.items) ? block.items : []
 
   function addItem() {
-    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), author: '', quote: '' })
+    appendPathItem(pageEditor, [...path, 'items'], items, createBlockCollectionItem('testimonials', 'items', { makeId: makeItemId }))
   }
 
   function removeItem(index) {
@@ -423,19 +457,15 @@ export function TestimonialsBlockRenderer({ block, path }) {
             <EditableText as="figcaption" label={`Testimonial ${index + 1} Author`} path={[...path, 'items', index, 'author']} value={item.author ?? ''}>
               {item.author ?? ''}
             </EditableText>
-            {editable ? (
-              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
-                Remove testimonial
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove testimonial" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
           </figure>
         ))}
       </div>
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-testimonials-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
-          Add testimonial
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-testimonials-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add testimonial" onClick={addItem} />
       ) : null}
     </section>
   )
@@ -608,10 +638,11 @@ const CONTACT_DETAIL_TYPES = ['text', 'phone', 'link']
 export function ContactDetailsBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const items = Array.isArray(block.items) ? block.items : []
 
   function addItem() {
-    appendPathItem(pageEditor, [...path, 'items'], items, { id: makeItemId(), href: '', label: 'Label', type: 'text', value: '' })
+    appendPathItem(pageEditor, [...path, 'items'], items, createBlockCollectionItem('contact-details', 'items', { makeId: makeItemId }))
   }
 
   function removeItem(index) {
@@ -664,27 +695,23 @@ export function ContactDetailsBlockRenderer({ block, path }) {
                 {item.value ?? ''}
               </ValueComponent>
             )}
-            {editable ? (
+            {controlsVisible ? (
               <>
-                <select data-admin-inline-editable="true" value={item.type ?? 'text'} onChange={(event) => handleTypeChange(index, event)}>
+                <select className="block-inline-setting" data-admin-inline-editable="true" value={item.type ?? 'text'} onChange={(event) => handleTypeChange(index, event)}>
                   {CONTACT_DETAIL_TYPES.map((type) => (
                     <option key={type} value={type}>
                       {type}
                     </option>
                   ))}
                 </select>
-                <button data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
-                  Remove
-                </button>
+                <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove detail ${index + 1}`} tone="danger" onClick={() => removeItem(index)} />
               </>
             ) : null}
           </div>
         )
       })}
-      {editable ? (
-        <button className="button-link button-link--ghost block-contact-details-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
-          Add detail
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-contact-details-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add detail" onClick={addItem} />
       ) : null}
     </div>
   )
@@ -693,11 +720,12 @@ export function ContactDetailsBlockRenderer({ block, path }) {
 export function ScheduleBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const columns = Array.isArray(block.columns) ? block.columns : []
   const notes = Array.isArray(block.notes) ? block.notes : []
 
   function addColumn() {
-    appendPathItem(pageEditor, [...path, 'columns'], columns, { id: makeItemId(), heading: 'New column', times: [] })
+    appendPathItem(pageEditor, [...path, 'columns'], columns, createBlockCollectionItem('schedule', 'columns', { makeId: makeItemId }))
   }
 
   function removeColumn(columnIndex) {
@@ -705,36 +733,24 @@ export function ScheduleBlockRenderer({ block, path }) {
   }
 
   function addTime(columnIndex) {
-    const column = columns[columnIndex]
-    const times = Array.isArray(column?.times) ? column.times : []
-    const timeIds = ensureAlignedIds(column?.timeIds, times.length)
-    appendPathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, '')
-    appendPathItem(pageEditor, [...path, 'columns', columnIndex, 'timeIds'], timeIds, makeItemId())
+    appendStableStringItem(pageEditor, [...path, 'columns', columnIndex], 'times', 'timeIds')
   }
 
   function removeTime(columnIndex, timeIndex) {
-    const column = columns[columnIndex]
-    const times = Array.isArray(column?.times) ? column.times : []
-    const timeIds = ensureAlignedIds(column?.timeIds, times.length)
-    removePathItem(pageEditor, [...path, 'columns', columnIndex, 'times'], times, timeIndex)
-    removePathItem(pageEditor, [...path, 'columns', columnIndex, 'timeIds'], timeIds, timeIndex)
+    removeStableStringItem(pageEditor, [...path, 'columns', columnIndex], 'times', 'timeIds', timeIndex)
   }
 
   function addNote() {
-    const noteIds = ensureAlignedIds(block.noteIds, notes.length)
-    appendPathItem(pageEditor, [...path, 'notes'], notes, '')
-    appendPathItem(pageEditor, [...path, 'noteIds'], noteIds, makeItemId())
+    appendStableStringItem(pageEditor, path, 'notes', 'noteIds')
   }
 
   function removeNote(noteIndex) {
-    const noteIds = ensureAlignedIds(block.noteIds, notes.length)
-    removePathItem(pageEditor, [...path, 'notes'], notes, noteIndex)
-    removePathItem(pageEditor, [...path, 'noteIds'], noteIds, noteIndex)
+    removeStableStringItem(pageEditor, path, 'notes', 'noteIds', noteIndex)
   }
 
   return (
     <section className="block-schedule">
-      <EditableText as="h3" label="Schedule Title" path={[...path, 'title']} value={block.title ?? ''}>
+      <EditableText as="h2" label="Schedule Title" path={[...path, 'title']} value={block.title ?? ''}>
         {block.title ?? ''}
       </EditableText>
 
@@ -742,7 +758,7 @@ export function ScheduleBlockRenderer({ block, path }) {
         {columns.map((column, columnIndex) => (
           <div className="block-schedule-column" key={column.id ?? columnIndex}>
             <EditableText
-              as="h4"
+              as="h3"
               label={`Column ${columnIndex + 1} Heading`}
               path={[...path, 'columns', columnIndex, 'heading']}
               value={column.heading ?? ''}
@@ -761,33 +777,39 @@ export function ScheduleBlockRenderer({ block, path }) {
                   >
                     {time}
                   </EditableText>
-                  {editable ? (
-                    <button data-admin-inline-editable="true" type="button" onClick={() => removeTime(columnIndex, timeIndex)}>
-                      Remove
-                    </button>
+                  {controlsVisible ? (
+                    <EditorIconButton
+                      className="block-inline-command"
+                      data-admin-inline-editable="true"
+                      icon={Trash2}
+                      label={`Remove time ${timeIndex + 1}`}
+                      tone="danger"
+                      onClick={() => removeTime(columnIndex, timeIndex)}
+                    />
                   ) : null}
                 </div>
               ))}
             </div>
 
-            {editable ? (
+            {controlsVisible ? (
               <div className="block-schedule-column-actions">
-                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addTime(columnIndex)}>
-                  Add time
-                </button>
-                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeColumn(columnIndex)}>
-                  Remove column
-                </button>
+                <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add time" onClick={() => addTime(columnIndex)} />
+                <EditorIconButton
+                  className="block-inline-command"
+                  data-admin-inline-editable="true"
+                  icon={Trash2}
+                  label="Remove column"
+                  tone="danger"
+                  onClick={() => removeColumn(columnIndex)}
+                />
               </div>
             ) : null}
           </div>
         ))}
       </div>
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-schedule-add-column" data-admin-inline-editable="true" type="button" onClick={addColumn}>
-          Add column
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-schedule-add-column block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add column" onClick={addColumn} />
       ) : null}
 
       <div className="block-schedule-notes">
@@ -796,17 +818,13 @@ export function ScheduleBlockRenderer({ block, path }) {
             <EditableText as="p" label={`Note ${noteIndex + 1}`} multiline path={[...path, 'notes', noteIndex]} rows={2} value={note}>
               {note}
             </EditableText>
-            {editable ? (
-              <button data-admin-inline-editable="true" type="button" onClick={() => removeNote(noteIndex)}>
-                Remove
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove note ${noteIndex + 1}`} tone="danger" onClick={() => removeNote(noteIndex)} />
             ) : null}
           </div>
         ))}
-        {editable ? (
-          <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={addNote}>
-            Add note
-          </button>
+        {controlsVisible ? (
+          <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add note" onClick={addNote} />
         ) : null}
       </div>
     </section>
@@ -816,12 +834,13 @@ export function ScheduleBlockRenderer({ block, path }) {
 export function RateTableBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const rows = Array.isArray(block.rows) ? block.rows : []
   const footer = Array.isArray(block.footer) ? block.footer : []
   const link = block.link ?? {}
 
   function addRow() {
-    appendPathItem(pageEditor, [...path, 'rows'], rows, { id: makeItemId(), label: '', values: [''], valueIds: [makeItemId()] })
+    appendPathItem(pageEditor, [...path, 'rows'], rows, createBlockCollectionItem('rate-table', 'rows', { makeId: makeItemId }))
   }
 
   function removeRow(rowIndex) {
@@ -829,36 +848,24 @@ export function RateTableBlockRenderer({ block, path }) {
   }
 
   function addValue(rowIndex) {
-    const row = rows[rowIndex]
-    const values = Array.isArray(row?.values) ? row.values : []
-    const valueIds = ensureAlignedIds(row?.valueIds, values.length)
-    appendPathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, '')
-    appendPathItem(pageEditor, [...path, 'rows', rowIndex, 'valueIds'], valueIds, makeItemId())
+    appendStableStringItem(pageEditor, [...path, 'rows', rowIndex], 'values', 'valueIds')
   }
 
   function removeValue(rowIndex, valueIndex) {
-    const row = rows[rowIndex]
-    const values = Array.isArray(row?.values) ? row.values : []
-    const valueIds = ensureAlignedIds(row?.valueIds, values.length)
-    removePathItem(pageEditor, [...path, 'rows', rowIndex, 'values'], values, valueIndex)
-    removePathItem(pageEditor, [...path, 'rows', rowIndex, 'valueIds'], valueIds, valueIndex)
+    removeStableStringItem(pageEditor, [...path, 'rows', rowIndex], 'values', 'valueIds', valueIndex)
   }
 
   function addFooterLine() {
-    const footerIds = ensureAlignedIds(block.footerIds, footer.length)
-    appendPathItem(pageEditor, [...path, 'footer'], footer, '')
-    appendPathItem(pageEditor, [...path, 'footerIds'], footerIds, makeItemId())
+    appendStableStringItem(pageEditor, path, 'footer', 'footerIds')
   }
 
   function removeFooterLine(footerIndex) {
-    const footerIds = ensureAlignedIds(block.footerIds, footer.length)
-    removePathItem(pageEditor, [...path, 'footer'], footer, footerIndex)
-    removePathItem(pageEditor, [...path, 'footerIds'], footerIds, footerIndex)
+    removeStableStringItem(pageEditor, path, 'footer', 'footerIds', footerIndex)
   }
 
   return (
     <section className="block-rate-table">
-      <EditableText as="h3" label="Rate Table Heading" path={[...path, 'heading']} value={block.heading ?? ''}>
+      <EditableText as="h2" label="Rate Table Heading" path={[...path, 'heading']} value={block.heading ?? ''}>
         {block.heading ?? ''}
       </EditableText>
 
@@ -886,33 +893,32 @@ export function RateTableBlockRenderer({ block, path }) {
                   >
                     {value}
                   </EditableText>
-                  {editable ? (
-                    <button data-admin-inline-editable="true" type="button" onClick={() => removeValue(rowIndex, valueIndex)}>
-                      Remove
-                    </button>
+                  {controlsVisible ? (
+                    <EditorIconButton
+                      className="block-inline-command"
+                      data-admin-inline-editable="true"
+                      icon={Trash2}
+                      label={`Remove value ${valueIndex + 1}`}
+                      tone="danger"
+                      onClick={() => removeValue(rowIndex, valueIndex)}
+                    />
                   ) : null}
                 </span>
               ))}
-              {editable ? (
-                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addValue(rowIndex)}>
-                  Add value
-                </button>
+              {controlsVisible ? (
+                <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add value" onClick={() => addValue(rowIndex)} />
               ) : null}
             </div>
 
-            {editable ? (
-              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeRow(rowIndex)}>
-                Remove row
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove row" tone="danger" onClick={() => removeRow(rowIndex)} />
             ) : null}
           </div>
         ))}
       </div>
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-rate-table-add-row" data-admin-inline-editable="true" type="button" onClick={addRow}>
-          Add rate row
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-rate-table-add-row block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add rate row" onClick={addRow} />
       ) : null}
 
       <div className="block-rate-table-footer">
@@ -921,17 +927,13 @@ export function RateTableBlockRenderer({ block, path }) {
             <EditableText as="p" label={`Footer Line ${footerIndex + 1}`} multiline path={[...path, 'footer', footerIndex]} rows={2} value={line}>
               {line}
             </EditableText>
-            {editable ? (
-              <button data-admin-inline-editable="true" type="button" onClick={() => removeFooterLine(footerIndex)}>
-                Remove
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove footer line ${footerIndex + 1}`} tone="danger" onClick={() => removeFooterLine(footerIndex)} />
             ) : null}
           </div>
         ))}
-        {editable ? (
-          <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={addFooterLine}>
-            Add footer line
-          </button>
+        {controlsVisible ? (
+          <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add footer line" onClick={addFooterLine} />
         ) : null}
       </div>
 
@@ -956,14 +958,14 @@ export function RateTableBlockRenderer({ block, path }) {
 export function GroupBlockRenderer({ block, context, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const items = Array.isArray(block.items) ? block.items : []
-  const [selectedCardId, setSelectedCardId] = useState('')
   const nestedContext = { ...context, depth: (context?.depth ?? 0) + 1 }
 
   function addCard() {
-    const newCard = { blocks: [], id: makeItemId(), image: { kind: 'image' }, title: 'New card' }
+    const newCard = createBlockCollectionItem('group', 'items', { makeId: makeItemId })
     appendPathItem(pageEditor, [...path, 'items'], items, newCard)
-    setSelectedCardId(newCard.id)
+    pageEditor?.setSelectedBlockId?.(makeBlockTreeSelectionId('group-item', newCard.id))
   }
 
   function removeCard(index) {
@@ -972,7 +974,7 @@ export function GroupBlockRenderer({ block, context, path }) {
     }
 
     removePathItem(pageEditor, [...path, 'items'], items, index)
-    setSelectedCardId('')
+    pageEditor?.setSelectedBlockId?.('')
   }
 
   function moveCard(index, direction) {
@@ -992,11 +994,13 @@ export function GroupBlockRenderer({ block, context, path }) {
         const imageUrl = getContentImageSrc(image, { height: 900, width: 640 })
         const showMedia = editable || Boolean(imageUrl)
         const cardId = item.id ?? String(index)
-        const isCardSelected = editable && selectedCardId === cardId
+        const selectionId = makeBlockTreeSelectionId('group-item', cardId)
+        const isCardSelected = editable && pageEditor?.selectedBlockId === selectionId
 
         return (
           <article
             className={`block-group-card${editable ? ' block-group-card--editable' : ''}${isCardSelected ? ' block-group-card--selected' : ''}`}
+            data-editor-selection-id={editable ? selectionId : undefined}
             key={item.id ?? index}
             onClick={editable ? (event) => event.stopPropagation() : undefined}
             onClickCapture={
@@ -1006,7 +1010,7 @@ export function GroupBlockRenderer({ block, context, path }) {
                     const nearestCard = target?.closest('.block-group-card')
 
                     if (nearestCard === event.currentTarget) {
-                      setSelectedCardId(cardId)
+                      pageEditor?.setSelectedBlockId?.(selectionId)
                     }
                   }
                 : undefined
@@ -1014,34 +1018,27 @@ export function GroupBlockRenderer({ block, context, path }) {
           >
             {isCardSelected ? (
               <div className="block-group-card-toolbar">
-                <button
-                  className="button-link button-link--ghost"
+                <EditorIconButton
                   data-admin-inline-editable="true"
                   disabled={index === 0}
-                  type="button"
+                  icon={ArrowUp}
+                  label="Move card up"
                   onClick={() => moveCard(index, -1)}
-                >
-                  Move card up
-                </button>
-                <button
-                  className="button-link button-link--ghost"
+                />
+                <EditorIconButton
                   data-admin-inline-editable="true"
                   disabled={index === items.length - 1}
-                  type="button"
+                  icon={ArrowDown}
+                  label="Move card down"
                   onClick={() => moveCard(index, 1)}
-                >
-                  Move card down
-                </button>
-                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeCard(index)}>
-                  Remove card
-                </button>
-              </div>
-            ) : null}
-
-            {isCardSelected ? (
-              <div className="block-group-card-toolbar block-group-card-toolbar--style">
-                <span className="block-toolbar-style-label">Style</span>
-                <BlockStyleSettings block={item} path={[...path, 'items', index]} />
+                />
+                <EditorIconButton
+                  data-admin-inline-editable="true"
+                  icon={Trash2}
+                  label="Remove card"
+                  tone="danger"
+                  onClick={() => removeCard(index)}
+                />
               </div>
             ) : null}
 
@@ -1050,7 +1047,7 @@ export function GroupBlockRenderer({ block, context, path }) {
                 {showMedia ? (
                   <div className="block-group-card-media">
                     <EditableImage
-                      alt={image.alt || ''}
+                      alt={getBlockImageAltText(image)}
                       decoding="async"
                       image={image}
                       loading="lazy"
@@ -1077,76 +1074,39 @@ export function GroupBlockRenderer({ block, context, path }) {
         )
       })}
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-group-add" data-admin-inline-editable="true" type="button" onClick={addCard}>
-          Add card
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-group-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add card" onClick={addCard} />
       ) : null}
     </section>
   )
 }
 
-const ROW_LAYOUT_PRESETS = [
-  { id: '1', label: '1 column', widths: [1] },
-  { id: '2-equal', label: '2 columns (equal)', widths: [1, 1] },
-  { id: '2-narrow-wide', label: '2 columns (1/3 + 2/3)', widths: [1, 2] },
-  { id: '2-wide-narrow', label: '2 columns (2/3 + 1/3)', widths: [2, 1] },
-  { id: '3-equal', label: '3 columns (equal)', widths: [1, 1, 1] },
-  { id: '4-equal', label: '4 columns (equal)', widths: [1, 1, 1, 1] },
-]
-
-function matchRowPresetId(columns) {
-  const widths = columns.map((column) => Number(column.width) || 1)
-  const match = ROW_LAYOUT_PRESETS.find(
-    (preset) => preset.widths.length === widths.length && preset.widths.every((width, index) => width === widths[index]),
-  )
-  return match?.id ?? ''
-}
-
-function RowColumn({ column, columnIndex, nestedContext, path }) {
+function RowColumn({ column, columnIndex, mobileOrder, nestedContext, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
-  const [styleOpen, setStyleOpen] = useState(false)
   const columnPath = [...path, 'columns', columnIndex]
   const columnWidth = Number(column.width) > 0 ? Number(column.width) : 1
+  const selectionId = makeBlockTreeSelectionId('row-column', column.id)
+  const isSelected = editable && pageEditor?.selectedBlockId === selectionId
 
   return (
-    <div className="block-row-column" style={{ flexGrow: columnWidth }}>
-      {editable ? (
-        <div className="block-row-column-toolbar">
-          <span className="block-toolbar-style-label">Column {columnIndex + 1}</span>
-          <label className="block-toolbar-setting">
-            <span>Width ratio</span>
-            <input
-              data-admin-inline-editable="true"
-              max="10"
-              min="1"
-              step="0.5"
-              type="number"
-              value={columnWidth}
-              onChange={(event) => {
-                const nextWidth = Number(event.target.value)
-                pageEditor?.updatePath([...columnPath, 'width'], nextWidth > 0 ? nextWidth : 1)
-              }}
-            />
-          </label>
-          <button
-            className="button-link button-link--ghost"
-            data-admin-inline-editable="true"
-            type="button"
-            onClick={() => setStyleOpen((current) => !current)}
-          >
-            {styleOpen ? 'Hide style' : 'Style'}
-          </button>
-        </div>
-      ) : null}
+    <div
+      className={`block-row-column${isSelected ? ' block-row-column--selected' : ''}`}
+      data-editor-selection-id={editable ? selectionId : undefined}
+      style={{ '--block-row-mobile-order': mobileOrder, flexGrow: columnWidth }}
+      onClickCapture={
+        editable
+          ? (event) => {
+              const target = event.target instanceof Element ? event.target : null
+              const nearestColumn = target?.closest('.block-row-column')
 
-      {styleOpen ? (
-        <div className="block-row-column-toolbar block-row-column-toolbar--style">
-          <BlockStyleSettings block={column} path={columnPath} />
-        </div>
-      ) : null}
-
+              if (nearestColumn === event.currentTarget) {
+                pageEditor?.setSelectedBlockId?.(selectionId)
+              }
+            }
+          : undefined
+      }
+    >
       <BlockStyleFrame block={column}>
         <BlockList
           blocks={Array.isArray(column.blocks) ? column.blocks : []}
@@ -1162,12 +1122,25 @@ function RowColumn({ column, columnIndex, nestedContext, path }) {
 export function RowBlockRenderer({ block, context, path }) {
   const columns = Array.isArray(block.columns) ? block.columns : []
   const nestedContext = { ...context, depth: (context?.depth ?? 0) + 1 }
+  const mobileColumns = getRowMobileColumnsMode(block)
+  const mobileColumnOrder = getRowMobileColumnOrder(block)
 
   return (
-    <div className="block-row">
-      {columns.map((column, columnIndex) => (
-        <RowColumn column={column} columnIndex={columnIndex} key={column.id ?? columnIndex} nestedContext={nestedContext} path={path} />
-      ))}
+    <div className={`block-row block-row--mobile-${mobileColumns}`}>
+      {columns.map((column, columnIndex) => {
+        const configuredOrder = mobileColumnOrder.indexOf(String(column?.id ?? ''))
+
+        return (
+          <RowColumn
+            column={column}
+            columnIndex={columnIndex}
+            key={column.id ?? columnIndex}
+            mobileOrder={configuredOrder >= 0 ? configuredOrder : columnIndex}
+            nestedContext={nestedContext}
+            path={path}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -1175,24 +1148,16 @@ export function RowBlockRenderer({ block, context, path }) {
 export function RowBlockSettings({ block, path }) {
   const pageEditor = usePageEditor()
   const columns = Array.isArray(block.columns) ? block.columns : []
-  const selectedPresetId = matchRowPresetId(columns)
+  const selectedPresetId = getRowLayoutPresetId(columns)
 
   function applyPreset(presetId) {
-    const preset = ROW_LAYOUT_PRESETS.find((entry) => entry.id === presetId)
+    const result = applyRowLayoutPreset(columns, presetId, { makeId: makeItemId })
 
-    if (!preset) {
+    if (!result) {
       return
     }
 
-    const removedColumns = columns.slice(preset.widths.length)
-    const removedColumnsHaveContent = removedColumns.some((column) => Array.isArray(column.blocks) && column.blocks.length > 0)
-
-    if (removedColumnsHaveContent && !window.confirm('Reducing the column count will remove the content in the extra column(s). Continue?')) {
-      return
-    }
-
-    const nextColumns = preset.widths.map((width, index) => (columns[index] ? { ...columns[index], width } : { blocks: [], id: makeItemId(), width }))
-    pageEditor?.updatePath([...path, 'columns'], nextColumns)
+    pageEditor?.updatePath([...path, 'columns'], result.columns)
   }
 
   return (
@@ -1224,16 +1189,11 @@ export function TwoColumnTextBlockRenderer({ block, path }) {
 export function BusinessListBlockRenderer({ block, path }) {
   const pageEditor = usePageEditor()
   const editable = Boolean(pageEditor) && !pageEditor.disabled
+  const controlsVisible = editable && pageEditor.selectedBlockId === block.id
   const items = Array.isArray(block.items) ? block.items : []
 
   function addItem() {
-    appendPathItem(pageEditor, [...path, 'items'], items, {
-      id: makeItemId(),
-      name: 'Business name',
-      phones: [''],
-      phoneIds: [makeItemId()],
-      website: '',
-    })
+    appendPathItem(pageEditor, [...path, 'items'], items, createBlockCollectionItem('business-list', 'items', { makeId: makeItemId }))
   }
 
   function removeItem(index) {
@@ -1241,19 +1201,11 @@ export function BusinessListBlockRenderer({ block, path }) {
   }
 
   function addPhone(itemIndex) {
-    const item = items[itemIndex]
-    const phones = Array.isArray(item?.phones) ? item.phones : []
-    const phoneIds = ensureAlignedIds(item?.phoneIds, phones.length)
-    appendPathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, '')
-    appendPathItem(pageEditor, [...path, 'items', itemIndex, 'phoneIds'], phoneIds, makeItemId())
+    appendStableStringItem(pageEditor, [...path, 'items', itemIndex], 'phones', 'phoneIds')
   }
 
   function removePhone(itemIndex, phoneIndex) {
-    const item = items[itemIndex]
-    const phones = Array.isArray(item?.phones) ? item.phones : []
-    const phoneIds = ensureAlignedIds(item?.phoneIds, phones.length)
-    removePathItem(pageEditor, [...path, 'items', itemIndex, 'phones'], phones, phoneIndex)
-    removePathItem(pageEditor, [...path, 'items', itemIndex, 'phoneIds'], phoneIds, phoneIndex)
+    removeStableStringItem(pageEditor, [...path, 'items', itemIndex], 'phones', 'phoneIds', phoneIndex)
   }
 
   return (
@@ -1290,33 +1242,32 @@ export function BusinessListBlockRenderer({ block, path }) {
               {(item.phones ?? []).map((phone, phoneIndex) => (
                 <span className="block-business-list-phone" key={item.phoneIds?.[phoneIndex] ?? phoneIndex}>
                   <EditablePhoneText label={`Phone ${phoneIndex + 1}`} path={[...path, 'items', index, 'phones', phoneIndex]} value={phone} />
-                  {editable ? (
-                    <button data-admin-inline-editable="true" type="button" onClick={() => removePhone(index, phoneIndex)}>
-                      Remove
-                    </button>
+                  {controlsVisible ? (
+                    <EditorIconButton
+                      className="block-inline-command"
+                      data-admin-inline-editable="true"
+                      icon={Trash2}
+                      label={`Remove phone ${phoneIndex + 1}`}
+                      tone="danger"
+                      onClick={() => removePhone(index, phoneIndex)}
+                    />
                   ) : null}
                 </span>
               ))}
-              {editable ? (
-                <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => addPhone(index)}>
-                  Add phone
-                </button>
+              {controlsVisible ? (
+                <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add phone" onClick={() => addPhone(index)} />
               ) : null}
             </span>
 
-            {editable ? (
-              <button className="button-link button-link--ghost" data-admin-inline-editable="true" type="button" onClick={() => removeItem(index)}>
-                Remove business
-              </button>
+            {controlsVisible ? (
+              <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove business" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
           </div>
         ))}
       </div>
 
-      {editable ? (
-        <button className="button-link button-link--ghost block-business-list-add" data-admin-inline-editable="true" type="button" onClick={addItem}>
-          Add business
-        </button>
+      {controlsVisible ? (
+        <EditorIconButton className="block-business-list-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add business" onClick={addItem} />
       ) : null}
     </section>
   )

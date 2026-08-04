@@ -1,5 +1,10 @@
 const siteContent = require('./generated/siteContent.json')
 const {
+  BLOCK_PAGE_CONTENT_MODEL,
+  formatBlockPageValidationErrors,
+  validateBlockPageDraft,
+} = require('./blockPageSchema')
+const {
   HttpError,
   assertExpectedUpdatedAtMatches,
   getDb,
@@ -9,6 +14,19 @@ const {
   toEpochMillis,
 } = require('./firebaseAdmin')
 const { assertStorageImagesInValue } = require('./imagePolicy')
+const { assertActiveEditLease } = require('./editLockRepository')
+const {
+  MAX_STRUCTURED_PAGE_REVISION_LIMIT,
+  createStructuredPageRevisionRecord,
+  normalizeRevisionLimit,
+  selectStaleStructuredPageRevisions,
+  summarizeStructuredPageRevision,
+} = require('./siteContentRevisionHistory')
+const {
+  findStructuredPageRouteConflict,
+  formatStructuredPageRouteValidationErrors,
+  validateStructuredPageRouteSettings,
+} = require('./structuredPageRoutes')
 
 const SITE_CONTENT_COLLECTION = 'cmsSiteContent'
 const STRUCTURED_PAGE_COLLECTION = 'cmsStructuredPages'
@@ -179,9 +197,12 @@ function normalizeStructuredPageDraft(key, draft) {
   normalized.navLabel = String(normalized.navLabel ?? '').trim()
   normalized.group = String(normalized.group ?? '').trim()
   normalized.contentModel = String(normalized.contentModel ?? '').trim()
-  normalized.routeAliases = Array.isArray(normalized.routeAliases)
-    ? normalized.routeAliases.map((value) => String(value).trim()).filter(Boolean)
-    : []
+  normalized.routeAliases =
+    normalized.contentModel === BLOCK_PAGE_CONTENT_MODEL
+      ? normalized.routeAliases
+      : Array.isArray(normalized.routeAliases)
+        ? normalized.routeAliases.map((value) => String(value).trim()).filter(Boolean)
+        : []
 
   if (!normalized.path) {
     throw createInvalidStructuredPageError('Structured pages require a path.')
@@ -199,51 +220,48 @@ function normalizeStructuredPageDraft(key, draft) {
     throw createInvalidStructuredPageError('Structured pages require a contentModel.')
   }
 
+  if (normalized.contentModel === BLOCK_PAGE_CONTENT_MODEL) {
+    const validation = validateBlockPageDraft(normalized)
+
+    if (!validation.valid) {
+      throw createInvalidStructuredPageError(formatBlockPageValidationErrors(validation.errors))
+    }
+
+    Object.assign(normalized, validation.normalizedPage)
+
+    const routeValidation = validateStructuredPageRouteSettings(normalized)
+
+    if (!routeValidation.valid) {
+      throw createInvalidStructuredPageError(formatStructuredPageRouteValidationErrors(routeValidation.errors))
+    }
+
+    normalized.path = routeValidation.normalizedPage.path
+    normalized.routeAliases = routeValidation.normalizedPage.routeAliases
+  }
+
   assertStorageImagesInValue(normalized, `Structured page ${key} image`)
   return normalized
 }
 
-function normalizeRoutePath(value) {
-  const candidate = String(value ?? '').trim()
-
-  if (!candidate) {
-    return ''
-  }
-
-  const withoutOrigin = candidate.replace(/^[a-z]+:\/\/[^/]+/i, '')
-  const withoutQueryOrHash = withoutOrigin.split(/[?#]/, 1)[0] || '/'
-  const withLeadingSlash = withoutQueryOrHash.startsWith('/') ? withoutQueryOrHash : `/${withoutQueryOrHash}`
-
-  return withLeadingSlash !== '/' ? withLeadingSlash.replace(/\/+$/, '') || '/' : '/'
-}
-
-function collectStructuredPageRoutePaths(page = {}) {
-  return [page.path, ...(Array.isArray(page.routeAliases) ? page.routeAliases : [])]
-    .map((path) => normalizeRoutePath(path))
-    .filter(Boolean)
-}
-
 function assertUniqueStructuredPageRoutes(pageDocuments, nextPage) {
-  const nextKey = String(nextPage?.key ?? '').trim()
-  const nextPaths = new Set(collectStructuredPageRoutePaths(nextPage))
+  const existingPages = [
+    ...getStaticPageInventoryEntries(),
+    ...pageDocuments.flatMap((document) => {
+      if (isDeletedStructuredPageRecord(document.data)) {
+        return []
+      }
 
-  if (nextPaths.size === 0) {
-    return
-  }
+      const envelope = normalizeStoredContentEnvelope(document.data)
 
-  const hasConflict = pageDocuments.some((document) => {
-    if (document.key === nextKey) {
-      return false
-    }
+      return [envelope.draft, envelope.published]
+        .filter(Boolean)
+        .map((candidate) => ({ ...candidate, key: String(candidate.key ?? document.key).trim() }))
+    }),
+  ]
+  const conflict = findStructuredPageRouteConflict(existingPages, nextPage)
 
-    const envelope = normalizeStoredContentEnvelope(document.data)
-    const candidates = [envelope.draft, envelope.published].filter(Boolean)
-
-    return candidates.some((candidate) => collectStructuredPageRoutePaths(candidate).some((path) => nextPaths.has(path)))
-  })
-
-  if (hasConflict) {
-    throw createInvalidStructuredPageError('A structured page already uses that URL. Choose a different one.')
+  if (conflict) {
+    throw createInvalidStructuredPageError(`The URL "${conflict.path}" is already used by another site page.`)
   }
 }
 
@@ -266,7 +284,7 @@ function cloneStructuredContentValue(value) {
 
 function normalizeStoredContentEnvelope(record) {
   const draftSource = hasPublicationEnvelope(record) ? record.draft ?? null : record
-  const publishedSource = hasPublicationEnvelope(record) ? record.published ?? draftSource ?? null : record
+  const publishedSource = hasPublicationEnvelope(record) ? record.published ?? null : record
 
   return {
     draft: cloneStructuredContentValue(draftSource),
@@ -314,7 +332,28 @@ function buildStructuredPageAdminResponse(key, record) {
   const envelope = normalizeStoredContentEnvelope(record)
   return {
     page: normalizeStructuredPageView(key, envelope.draft),
+    publishedPage: normalizeStructuredPageView(key, envelope.published),
     publication: buildPublicationState(envelope),
+  }
+}
+
+function isDeletedStructuredPageRecord(record) {
+  return Boolean(record?.deletedAt)
+}
+
+function buildDeletedStructuredPageSummary(key, record) {
+  const envelope = normalizeStoredContentEnvelope(record)
+  const page = normalizeStructuredPageView(key, envelope.draft)
+
+  if (!page) {
+    return null
+  }
+
+  return {
+    ...buildStructuredPageSummary(page),
+    deletedAt: toEpochMillis(record.deletedAt),
+    deletedBy: String(record.deletedBy ?? '').trim(),
+    savedAt: toEpochMillis(record.updatedAt),
   }
 }
 
@@ -331,6 +370,10 @@ function createStructuredPageConflictError(key, documentData) {
 }
 
 function getStructuredPageView(key, record, mode = 'public') {
+  if (isDeletedStructuredPageRecord(record)) {
+    return null
+  }
+
   const envelope = normalizeStoredContentEnvelope(record)
   return normalizeStructuredPageView(key, mode === 'admin' ? envelope.draft : envelope.published)
 }
@@ -379,6 +422,42 @@ async function getStructuredPageDocument(key) {
 
     throw error
   }
+}
+
+function getStructuredPageRevisionCollection(documentRef) {
+  return documentRef.collection('revisions')
+}
+
+function getStructuredPageRevisionDocument(documentRef, revisionId) {
+  return getStructuredPageRevisionCollection(documentRef).doc(String(revisionId ?? '').trim())
+}
+
+async function pruneStructuredPageRevisions(documentRef) {
+  try {
+    const snapshot = await getStructuredPageRevisionCollection(documentRef).orderBy('createdAt', 'desc').get()
+    const staleDocuments = selectStaleStructuredPageRevisions(snapshot.docs, MAX_STRUCTURED_PAGE_REVISION_LIMIT)
+
+    for (let offset = 0; offset < staleDocuments.length; offset += 500) {
+      const batch = getDb().batch()
+      staleDocuments.slice(offset, offset + 500).forEach((document) => batch.delete(document.ref))
+      await batch.commit()
+    }
+  } catch (error) {
+    console.warn('Unable to prune structured page revision history.', {
+      message: error instanceof Error ? error.message : String(error),
+      pageKey: documentRef.id,
+    })
+  }
+}
+
+function createStructuredPageRevisionWrite({ action, actor, createdAt, page, restoredFrom = '' }) {
+  return createStructuredPageRevisionRecord({
+    action,
+    actor: formatActor(actor),
+    createdAt,
+    page,
+    restoredFrom,
+  })
 }
 
 async function listStructuredPageDocumentsFromFirestore() {
@@ -539,7 +618,7 @@ exports.saveSiteShellContent = async function saveSiteShellContent(draft, actor,
   try {
     await db.runTransaction(async (transaction) => {
       const snapshot = await transaction.get(docRef)
-      const currentData = snapshot.exists ? snapshot.data() : {}
+      const currentData = snapshot.exists ? snapshot.data() : null
       const currentEnvelope = normalizeStoredContentEnvelope(currentData)
 
       if (snapshot.exists) {
@@ -652,7 +731,7 @@ exports.resetSiteShellContentToSeed = async function resetSiteShellContentToSeed
 exports.getStructuredPageContent = async function getStructuredPageContent(key) {
   const snapshot = await getStructuredPageDocument(key)
 
-  if (!snapshot.exists) {
+  if (!snapshot.exists || isDeletedStructuredPageRecord(snapshot.data())) {
     return null
   }
 
@@ -662,14 +741,20 @@ exports.getStructuredPageContent = async function getStructuredPageContent(key) 
 exports.getAdminStructuredPageContent = async function getAdminStructuredPageContent(key) {
   const snapshot = await getStructuredPageDocument(key)
 
-  if (!snapshot.exists) {
+  if (!snapshot.exists || isDeletedStructuredPageRecord(snapshot.data())) {
     return null
   }
 
   return cloneData(buildStructuredPageAdminResponse(key, snapshot.data()))
 }
 
-exports.saveStructuredPageContent = async function saveStructuredPageContent(key, draft, actor, expectedUpdatedAt = null) {
+exports.saveStructuredPageContent = async function saveStructuredPageContent(
+  key,
+  draft,
+  actor,
+  expectedUpdatedAt = null,
+  editLeaseId = '',
+) {
   const normalized = normalizeStructuredPageDraft(String(key ?? '').trim(), draft)
   const db = getDb()
   const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
@@ -682,10 +767,12 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
         key: document.id,
         data: document.data(),
       }))
-      const currentData = snapshot.exists ? snapshot.data() : {}
+      const currentData = snapshot.exists ? snapshot.data() : null
       const currentEnvelope = normalizeStoredContentEnvelope(currentData)
 
       if (snapshot.exists) {
+        await assertActiveEditLease(transaction, 'structuredPage', normalized.key, actor, editLeaseId)
+
         if (!hasExpectedUpdatedAt(expectedUpdatedAt)) {
           throw new HttpError(
             409,
@@ -707,6 +794,8 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
         ? currentData.publishedAt ?? currentData.updatedAt ?? null
         : null
 
+      const revisionRef = getStructuredPageRevisionCollection(docRef).doc()
+
       transaction.set(docRef, {
         draft: normalized,
         published: currentEnvelope.published,
@@ -715,6 +804,15 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
         publishedBy: currentEnvelope.publishedBy || '',
         publishedAt: preservedPublishedAt,
       })
+      transaction.set(
+        revisionRef,
+        createStructuredPageRevisionWrite({
+          action: 'save',
+          actor,
+          createdAt: getServerTimestamp(),
+          page: normalized,
+        }),
+      )
     })
   } catch (error) {
     if (error instanceof HttpError) {
@@ -728,11 +826,17 @@ exports.saveStructuredPageContent = async function saveStructuredPageContent(key
     throw error
   }
 
+  await pruneStructuredPageRevisions(docRef)
   const savedSnapshot = await getStructuredPageDocument(normalized.key)
   return cloneData(buildStructuredPageAdminResponse(normalized.key, savedSnapshot.data()))
 }
 
-exports.publishStructuredPageContent = async function publishStructuredPageContent(key, actor, expectedUpdatedAt = null) {
+exports.publishStructuredPageContent = async function publishStructuredPageContent(
+  key,
+  actor,
+  expectedUpdatedAt = null,
+  editLeaseId = '',
+) {
   const normalizedKey = String(key ?? '').trim()
 
   if (!normalizedKey) {
@@ -740,24 +844,33 @@ exports.publishStructuredPageContent = async function publishStructuredPageConte
   }
 
   const db = getDb()
-  const docRef = db.collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey)
+  const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const docRef = collectionRef.doc(normalizedKey)
   let didPublish
 
   try {
     didPublish = await db.runTransaction(async (transaction) => {
-      const snapshot = await transaction.get(docRef)
+      const [snapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
 
       if (!snapshot.exists) {
         return false
       }
 
       const currentData = snapshot.data()
+      await assertActiveEditLease(transaction, 'structuredPage', normalizedKey, actor, editLeaseId)
       const currentEnvelope = normalizeStoredContentEnvelope(currentData)
       const normalized = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? currentEnvelope.published ?? {})
+      const pageDocuments = collectionSnapshot.docs.map((document) => ({
+        key: document.id,
+        data: document.data(),
+      }))
 
       assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
         createStructuredPageConflictError(normalizedKey, currentData),
       )
+      assertUniqueStructuredPageRoutes(pageDocuments, normalized)
+
+      const revisionRef = getStructuredPageRevisionCollection(docRef).doc()
 
       transaction.set(docRef, {
         draft: normalized,
@@ -767,6 +880,15 @@ exports.publishStructuredPageContent = async function publishStructuredPageConte
         publishedBy: formatActor(actor),
         publishedAt: getServerTimestamp(),
       })
+      transaction.set(
+        revisionRef,
+        createStructuredPageRevisionWrite({
+          action: 'publish',
+          actor,
+          createdAt: getServerTimestamp(),
+          page: normalized,
+        }),
+      )
 
       return true
     })
@@ -786,48 +908,27 @@ exports.publishStructuredPageContent = async function publishStructuredPageConte
     return null
   }
 
+  await pruneStructuredPageRevisions(docRef)
   const savedSnapshot = await getStructuredPageDocument(normalizedKey)
   return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
 }
 
-exports.resetStructuredPageContentToSeed = async function resetStructuredPageContentToSeed(key, actor) {
+exports.listStructuredPageRevisions = async function listStructuredPageRevisions(key, limit = undefined) {
   const normalizedKey = String(key ?? '').trim()
 
   if (!normalizedKey) {
     throw createInvalidStructuredPageError('Structured page key is required.')
   }
 
-  const seedPage = getStructuredPageSeed(normalizedKey)
-
-  if (seedPage) {
-    const normalized = normalizeStructuredPageDraft(normalizedKey, seedPage)
-
-    try {
-      await getDb()
-        .collection(STRUCTURED_PAGE_COLLECTION)
-        .doc(normalizedKey)
-        .set({
-          draft: normalized,
-          published: normalized,
-          updatedBy: formatActor(actor),
-          updatedAt: getServerTimestamp(),
-          publishedBy: formatActor(actor),
-          publishedAt: getServerTimestamp(),
-        })
-    } catch (error) {
-      if (isFirestoreUnavailableError(error)) {
-        throw createSiteContentSetupError()
-      }
-
-      throw error
-    }
-
-    const savedSnapshot = await getStructuredPageDocument(normalizedKey)
-    return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
-  }
+  const docRef = getDb().collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey)
 
   try {
-    await getDb().collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey).delete()
+    const snapshot = await getStructuredPageRevisionCollection(docRef)
+      .orderBy('createdAt', 'desc')
+      .limit(normalizeRevisionLimit(limit))
+      .get()
+
+    return cloneData(snapshot.docs.map((document) => summarizeStructuredPageRevision(document.id, document.data())))
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {
       throw createSiteContentSetupError()
@@ -835,8 +936,312 @@ exports.resetStructuredPageContentToSeed = async function resetStructuredPageCon
 
     throw error
   }
+}
 
-  return null
+exports.getStructuredPageRevision = async function getStructuredPageRevision(key, revisionId) {
+  const normalizedKey = String(key ?? '').trim()
+  const normalizedRevisionId = String(revisionId ?? '').trim()
+
+  if (!normalizedKey || !normalizedRevisionId) {
+    throw createInvalidStructuredPageError('Structured page key and revision id are required.')
+  }
+
+  try {
+    const documentRef = getDb().collection(STRUCTURED_PAGE_COLLECTION).doc(normalizedKey)
+    const snapshot = await getStructuredPageRevisionDocument(documentRef, normalizedRevisionId).get()
+
+    if (!snapshot.exists) {
+      return null
+    }
+
+    const record = snapshot.data()
+    return cloneData({
+      ...summarizeStructuredPageRevision(snapshot.id, record),
+      page: normalizeStructuredPageDraft(normalizedKey, record.page ?? {}),
+    })
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+}
+
+exports.restoreStructuredPageRevision = async function restoreStructuredPageRevision(
+  key,
+  revisionId,
+  actor,
+  expectedUpdatedAt = null,
+  editLeaseId = '',
+) {
+  const normalizedKey = String(key ?? '').trim()
+  const normalizedRevisionId = String(revisionId ?? '').trim()
+
+  if (!normalizedKey) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  if (!normalizedRevisionId) {
+    throw createInvalidStructuredPageError('Structured page revision id is required.')
+  }
+
+  const db = getDb()
+  const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const docRef = collectionRef.doc(normalizedKey)
+  const revisionRef = getStructuredPageRevisionDocument(docRef, normalizedRevisionId)
+
+  try {
+    await db.runTransaction(async (transaction) => {
+      const [snapshot, revisionSnapshot, collectionSnapshot] = await Promise.all([
+        transaction.get(docRef),
+        transaction.get(revisionRef),
+        transaction.get(collectionRef),
+      ])
+
+      if (!snapshot.exists) {
+        throw new HttpError(404, 'Structured page draft not found in siteApi', { key: normalizedKey })
+      }
+
+      if (!revisionSnapshot.exists) {
+        throw new HttpError(404, 'Structured page revision was not found.', {
+          key: normalizedKey,
+          revisionId: normalizedRevisionId,
+        })
+      }
+
+      const currentData = snapshot.data()
+      await assertActiveEditLease(transaction, 'structuredPage', normalizedKey, actor, editLeaseId)
+      assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+        createStructuredPageConflictError(normalizedKey, currentData),
+      )
+
+      const revisionData = revisionSnapshot.data()
+      const normalized = normalizeStructuredPageDraft(normalizedKey, revisionData.page ?? {})
+      const pageDocuments = collectionSnapshot.docs.map((document) => ({
+        key: document.id,
+        data: document.data(),
+      }))
+
+      assertUniqueStructuredPageRoutes(pageDocuments, normalized)
+
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+      const restoredRevisionRef = getStructuredPageRevisionCollection(docRef).doc()
+      const preservedPublishedAt = currentEnvelope.published
+        ? currentData.publishedAt ?? currentData.updatedAt ?? null
+        : null
+
+      transaction.set(docRef, {
+        draft: normalized,
+        published: currentEnvelope.published,
+        updatedBy: formatActor(actor),
+        updatedAt: getServerTimestamp(),
+        publishedBy: currentEnvelope.publishedBy || '',
+        publishedAt: preservedPublishedAt,
+      })
+      transaction.set(
+        restoredRevisionRef,
+        createStructuredPageRevisionWrite({
+          action: 'restore',
+          actor,
+          createdAt: getServerTimestamp(),
+          page: normalized,
+          restoredFrom: normalizedRevisionId,
+        }),
+      )
+    })
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  await pruneStructuredPageRevisions(docRef)
+  const savedSnapshot = await getStructuredPageDocument(normalizedKey)
+  return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
+}
+
+exports.resetStructuredPageContentToSeed = async function resetStructuredPageContentToSeed(
+  key,
+  actor,
+  expectedUpdatedAt = null,
+  editLeaseId = '',
+) {
+  const normalizedKey = String(key ?? '').trim()
+
+  if (!normalizedKey) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  const seedPage = getStructuredPageSeed(normalizedKey)
+  const db = getDb()
+  const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const docRef = collectionRef.doc(normalizedKey)
+
+  try {
+    await db.runTransaction(async (transaction) => {
+      const [snapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
+
+      if (!snapshot.exists || isDeletedStructuredPageRecord(snapshot.data())) {
+        throw new HttpError(404, 'Structured page draft not found in siteApi', { key: normalizedKey })
+      }
+
+      const currentData = snapshot.data()
+      await assertActiveEditLease(transaction, 'structuredPage', normalizedKey, actor, editLeaseId)
+      assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+        createStructuredPageConflictError(normalizedKey, currentData),
+      )
+
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+      const revisionRef = getStructuredPageRevisionCollection(docRef).doc()
+
+      if (seedPage) {
+        const normalized = normalizeStructuredPageDraft(normalizedKey, seedPage)
+        const pageDocuments = collectionSnapshot.docs.map((document) => ({ key: document.id, data: document.data() }))
+        assertUniqueStructuredPageRoutes(pageDocuments, normalized)
+
+        transaction.set(docRef, {
+          draft: normalized,
+          published: normalized,
+          updatedBy: formatActor(actor),
+          updatedAt: getServerTimestamp(),
+          publishedBy: formatActor(actor),
+          publishedAt: getServerTimestamp(),
+        })
+        transaction.set(
+          revisionRef,
+          createStructuredPageRevisionWrite({
+            action: 'reset',
+            actor,
+            createdAt: getServerTimestamp(),
+            page: normalized,
+          }),
+        )
+        return
+      }
+
+      const deletedDraft = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? currentEnvelope.published ?? {})
+      transaction.set(docRef, {
+        deletedAt: getServerTimestamp(),
+        deletedBy: formatActor(actor),
+        draft: deletedDraft,
+        published: null,
+        publishedAt: null,
+        publishedBy: '',
+        updatedAt: getServerTimestamp(),
+        updatedBy: formatActor(actor),
+      })
+      transaction.set(
+        revisionRef,
+        createStructuredPageRevisionWrite({
+          action: 'delete',
+          actor,
+          createdAt: getServerTimestamp(),
+          page: deletedDraft,
+        }),
+      )
+    })
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  await pruneStructuredPageRevisions(docRef)
+  const savedSnapshot = await getStructuredPageDocument(normalizedKey)
+  return seedPage ? cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data())) : null
+}
+
+exports.listDeletedStructuredPages = async function listDeletedStructuredPages() {
+  const records = await listStructuredPageDocumentsFromFirestore()
+  return cloneData(
+    records
+      .filter((record) => isDeletedStructuredPageRecord(record.data))
+      .map((record) => buildDeletedStructuredPageSummary(record.key, record.data))
+      .filter(Boolean)
+      .sort((left, right) => Number(right.deletedAt ?? 0) - Number(left.deletedAt ?? 0)),
+  )
+}
+
+exports.restoreDeletedStructuredPage = async function restoreDeletedStructuredPage(key, actor, expectedUpdatedAt = null) {
+  const normalizedKey = String(key ?? '').trim()
+
+  if (!normalizedKey) {
+    throw createInvalidStructuredPageError('Structured page key is required.')
+  }
+
+  const db = getDb()
+  const collectionRef = db.collection(STRUCTURED_PAGE_COLLECTION)
+  const docRef = collectionRef.doc(normalizedKey)
+
+  try {
+    await db.runTransaction(async (transaction) => {
+      const [snapshot, collectionSnapshot] = await Promise.all([transaction.get(docRef), transaction.get(collectionRef)])
+
+      if (!snapshot.exists || !isDeletedStructuredPageRecord(snapshot.data())) {
+        throw new HttpError(404, 'Deleted structured page was not found.', { key: normalizedKey })
+      }
+
+      const currentData = snapshot.data()
+      assertExpectedUpdatedAtMatches(currentData.updatedAt, expectedUpdatedAt, () =>
+        new HttpError(409, 'This deleted page changed after the trash list was loaded. Refresh the list and try again.'),
+      )
+
+      const currentEnvelope = normalizeStoredContentEnvelope(currentData)
+      const restoredDraft = normalizeStructuredPageDraft(normalizedKey, currentEnvelope.draft ?? {})
+      const pageDocuments = collectionSnapshot.docs.map((document) => ({ key: document.id, data: document.data() }))
+      assertUniqueStructuredPageRoutes(pageDocuments, restoredDraft)
+      const revisionRef = getStructuredPageRevisionCollection(docRef).doc()
+
+      transaction.set(docRef, {
+        draft: restoredDraft,
+        published: null,
+        publishedAt: null,
+        publishedBy: '',
+        updatedAt: getServerTimestamp(),
+        updatedBy: formatActor(actor),
+      })
+      transaction.set(
+        revisionRef,
+        createStructuredPageRevisionWrite({
+          action: 'undelete',
+          actor,
+          createdAt: getServerTimestamp(),
+          page: restoredDraft,
+        }),
+      )
+    })
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
+    if (isFirestoreUnavailableError(error)) {
+      throw createSiteContentSetupError()
+    }
+
+    throw error
+  }
+
+  await pruneStructuredPageRevisions(docRef)
+  const savedSnapshot = await getStructuredPageDocument(normalizedKey)
+  return cloneData(buildStructuredPageAdminResponse(normalizedKey, savedSnapshot.data()))
 }
 
 exports.listStructuredPages = async function listStructuredPages() {

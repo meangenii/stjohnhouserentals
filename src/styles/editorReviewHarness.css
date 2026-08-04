@@ -1,0 +1,53 @@
+.editor-review-harness {
+  background: #eef3f7;
+  color: #172331;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.editor-review-harness > header,
+.editor-review-harness > .admin-page-editor-heading-toolbar,
+.editor-review-harness-tools,
+.editor-review-harness-canvas {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 72rem;
+}
+
+.editor-review-harness > header {
+  margin-bottom: 0.75rem;
+}
+
+.editor-review-harness-tools > .admin-page-editor-review-toolbar {
+  background: #ffffff;
+  border: 1px solid #dbe7f0;
+  margin: 0 0 0.5rem;
+  padding: 0.35rem;
+}
+
+.editor-review-harness > header span {
+  color: #607086;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.editor-review-harness > header h1 {
+  font-size: 1.3rem;
+  margin: 0.15rem 0 0;
+}
+
+.editor-review-harness-canvas {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dbe7f0;
+  display: flex;
+  justify-content: center;
+  min-height: 28rem;
+}
+
+.editor-review-harness-canvas h2 {
+  color: #607086;
+  font-size: 1rem;
+  font-weight: 600;
+}

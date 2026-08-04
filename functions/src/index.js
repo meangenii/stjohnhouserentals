@@ -67,20 +67,30 @@ const {
 const {
   getAdminSiteShellContent,
   getAdminStructuredPageContent,
+  getStructuredPageRevision,
   getSiteShellContent,
   getStructuredPageContent,
   listAdminPageInventory,
   listAdminStructuredPages,
+  listDeletedStructuredPages,
+  listStructuredPageRevisions,
   listPageInventory,
   listStructuredPages,
   publishSiteShellContent,
   publishStructuredPageContent,
   resetSiteShellContentToSeed,
   resetStructuredPageContentToSeed,
+  restoreDeletedStructuredPage,
+  restoreStructuredPageRevision,
   saveSiteShellContent,
   saveStructuredPageContent,
   seedSiteContentRecords,
 } = require('./siteContentRepository')
+const {
+  matchAdminStructuredPageDocumentPath,
+  matchAdminStructuredPagePublishPath,
+  matchAdminStructuredPageRevisionListPath,
+} = require('./siteApiRoutes')
 
 const startedAt = new Date().toISOString()
 
@@ -834,7 +844,12 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/edit-locks/acquire') {
       const adminUser = await requireAdminUser(request)
-      const result = await acquireLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+      const result = await acquireLock(
+        request.body?.resourceType ?? '',
+        request.body?.resourceId ?? '',
+        adminUser,
+        request.body?.leaseId ?? '',
+      )
 
       response.json({
         source: 'firestore',
@@ -846,7 +861,12 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/edit-locks/heartbeat') {
       const adminUser = await requireAdminUser(request)
-      const result = await heartbeatLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+      const result = await heartbeatLock(
+        request.body?.resourceType ?? '',
+        request.body?.resourceId ?? '',
+        adminUser,
+        request.body?.leaseId ?? '',
+      )
 
       response.json({
         source: 'firestore',
@@ -858,7 +878,12 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
 
     if (request.method === 'POST' && path === 'admin/edit-locks/release') {
       const adminUser = await requireAdminUser(request)
-      const result = await releaseLock(request.body?.resourceType ?? '', request.body?.resourceId ?? '', adminUser)
+      const result = await releaseLock(
+        request.body?.resourceType ?? '',
+        request.body?.resourceId ?? '',
+        adminUser,
+        request.body?.leaseId ?? '',
+      )
 
       response.json({
         source: 'firestore',
@@ -920,21 +945,54 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         pages: await listAdminStructuredPages(),
+        deletedPages: await listDeletedStructuredPages(),
         inventory: await listAdminPageInventory(),
       })
       return
     }
 
-    if (request.method === 'GET' && path.startsWith('admin/content/pages/')) {
+    const revisionListPageKey = matchAdminStructuredPageRevisionListPath(path)
+
+    if (request.method === 'GET' && revisionListPageKey) {
       await requireAdminUser(request)
-      const pageKey = path.replace(/^admin\/content\/pages\//, '')
-      const page = await getAdminStructuredPageContent(pageKey)
+      const revisions = await listStructuredPageRevisions(revisionListPageKey, request.query?.limit)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        revisions,
+      })
+      return
+    }
+
+    const revisionDetailMatch = path.match(/^admin\/content\/pages\/([^/]+)\/revisions\/([^/]+)$/)
+
+    if (request.method === 'GET' && revisionDetailMatch) {
+      await requireAdminUser(request)
+      const pageKey = decodeURIComponent(revisionDetailMatch[1])
+      const revisionId = decodeURIComponent(revisionDetailMatch[2])
+      const revision = await getStructuredPageRevision(pageKey, revisionId)
+
+      if (!revision) {
+        response.status(404).json({ error: 'not-found', message: 'Structured page revision was not found.' })
+        return
+      }
+
+      response.json({ source: 'firestore', checkedAt: new Date().toISOString(), revision })
+      return
+    }
+
+    const pageDocumentKey = matchAdminStructuredPageDocumentPath(path)
+
+    if (request.method === 'GET' && pageDocumentKey) {
+      await requireAdminUser(request)
+      const page = await getAdminStructuredPageContent(pageDocumentKey)
 
       if (!page?.page) {
         response.status(404).json({
           error: 'not-found',
           message: 'Structured page draft not found in siteApi',
-          key: pageKey,
+          key: pageDocumentKey,
         })
         return
       }
@@ -947,10 +1005,13 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
-    if (request.method === 'POST' && path.startsWith('admin/content/pages/') && path.endsWith('/publish')) {
+    const revisionRestoreMatch = path.match(/^admin\/content\/pages\/([^/]+)\/revisions\/([^/]+)\/restore$/)
+    const deletedPageRestoreMatch = path.match(/^admin\/content\/pages\/([^/]+)\/restore-deleted$/)
+
+    if (request.method === 'POST' && deletedPageRestoreMatch) {
       const adminUser = await requireAdminUser(request)
-      const pageKey = path.replace(/^admin\/content\/pages\//, '').replace(/\/publish$/, '')
-      const page = await publishStructuredPageContent(pageKey, adminUser, request.body?.expectedUpdatedAt ?? null)
+      const pageKey = decodeURIComponent(deletedPageRestoreMatch[1])
+      const page = await restoreDeletedStructuredPage(pageKey, adminUser, request.body?.expectedUpdatedAt ?? null)
 
       response.json({
         source: 'firestore',
@@ -960,14 +1021,16 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
-    if (request.method === 'POST' && path.startsWith('admin/content/pages/')) {
+    if (request.method === 'POST' && revisionRestoreMatch) {
       const adminUser = await requireAdminUser(request)
-      const pageKey = path.replace(/^admin\/content\/pages\//, '')
-      const page = await saveStructuredPageContent(
+      const pageKey = decodeURIComponent(revisionRestoreMatch[1])
+      const revisionId = decodeURIComponent(revisionRestoreMatch[2])
+      const page = await restoreStructuredPageRevision(
         pageKey,
-        request.body?.draft ?? {},
+        revisionId,
         adminUser,
         request.body?.expectedUpdatedAt ?? null,
+        request.body?.editLeaseId ?? '',
       )
 
       response.json({
@@ -978,10 +1041,51 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
-    if (request.method === 'DELETE' && path.startsWith('admin/content/pages/')) {
+    const publishPageKey = matchAdminStructuredPagePublishPath(path)
+
+    if (request.method === 'POST' && publishPageKey) {
       const adminUser = await requireAdminUser(request)
-      const pageKey = path.replace(/^admin\/content\/pages\//, '')
-      const page = await resetStructuredPageContentToSeed(pageKey, adminUser)
+      const page = await publishStructuredPageContent(
+        publishPageKey,
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+        request.body?.editLeaseId ?? '',
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...page,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && pageDocumentKey) {
+      const adminUser = await requireAdminUser(request)
+      const page = await saveStructuredPageContent(
+        pageDocumentKey,
+        request.body?.draft ?? {},
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+        request.body?.editLeaseId ?? '',
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...page,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && pageDocumentKey) {
+      const adminUser = await requireAdminUser(request)
+      const page = await resetStructuredPageContentToSeed(
+        pageDocumentKey,
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+        request.body?.editLeaseId ?? '',
+      )
 
       response.json({
         source: 'firestore',

@@ -1,8 +1,10 @@
+import { normalizeBlockPreviewDevice } from './blockResponsive.js'
+
 function cloneValue(value) {
   return JSON.parse(JSON.stringify(value))
 }
 
-function updateValueAtPath(root, path, nextValue) {
+export function updateValueAtPath(root, path, nextValue) {
   if (!path.length) {
     return nextValue
   }
@@ -26,13 +28,27 @@ function updateValueAtPath(root, path, nextValue) {
   return nextRoot
 }
 
-export function createInlinePageEditorValue({ activeFieldId, disabled = false, onChange, setActiveFieldId }) {
+export function createInlinePageEditorValue({
+  activeFieldId,
+  device = 'desktop',
+  disabled = false,
+  onChange,
+  selectedBlockId = '',
+  setActiveFieldId,
+  setSelectedBlockId,
+}) {
   return {
     activeFieldId,
+    device: normalizeBlockPreviewDevice(device),
     disabled,
+    selectedBlockId,
     setActiveFieldId,
+    setSelectedBlockId,
     updatePath(path, nextValue) {
-      onChange((currentValue) => updateValueAtPath(currentValue, path, nextValue))
+      onChange((currentValue) => updateValueAtPath(currentValue, path, nextValue), {
+        coalesce: typeof nextValue === 'string' || typeof nextValue === 'number',
+        path,
+      })
     },
   }
 }

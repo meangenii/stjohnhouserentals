@@ -114,6 +114,7 @@ export function HouseRentalsPage() {
                         label={page.directory.actionLabel}
                         labelLabel="Listing Action Label"
                         labelPath={['directory', 'actionLabel']}
+                        presentation="button"
                       />
                     }
                     item={listing.item}

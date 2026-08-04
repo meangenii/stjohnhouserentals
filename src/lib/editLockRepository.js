@@ -25,13 +25,13 @@ export async function listEditLockStatuses(resourceType, options = {}) {
 }
 
 export async function acquireEditLock(resourceType, resourceId, options = {}) {
-  return postJson('/admin/edit-locks/acquire', { resourceType, resourceId }, options)
+  return postJson('/admin/edit-locks/acquire', { leaseId: options.leaseId, resourceType, resourceId }, options)
 }
 
 export async function heartbeatEditLock(resourceType, resourceId, options = {}) {
-  return postJson('/admin/edit-locks/heartbeat', { resourceType, resourceId }, options)
+  return postJson('/admin/edit-locks/heartbeat', { leaseId: options.leaseId, resourceType, resourceId }, options)
 }
 
 export async function releaseEditLock(resourceType, resourceId, options = {}) {
-  return postJson('/admin/edit-locks/release', { resourceType, resourceId }, options)
+  return postJson('/admin/edit-locks/release', { leaseId: options.leaseId, resourceType, resourceId }, options)
 }

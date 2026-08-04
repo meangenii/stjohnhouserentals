@@ -71,7 +71,9 @@ function scanFile({ absolutePath, relativePath }) {
     return null
   }
 
-  const content = buffer.toString('utf8')
+  const content = buffer
+    .toString('utf8')
+    .replace(/^(\s*)"integrity":\s*"[^"]*"/gm, '$1"integrity": ""')
   const match = forbiddenPattern.exec(content)
 
   if (!match) {

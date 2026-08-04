@@ -1,6 +1,7 @@
-import { buildPhoneHref } from './contactLinks'
+import { buildPhoneHref } from './contactLinks.js'
 
 const DEFAULT_EMAIL_BCC = 'stjohnlinks@gmail.com'
+const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
 
 export const LINK_TYPE_OPTIONS = [
   { label: 'Email', value: 'email' },
@@ -30,6 +31,26 @@ function decodeMaybeEncodedValue(value) {
 function normalizeDestinationField(destinationField = 'href') {
   const normalizedField = trimValue(destinationField)
   return normalizedField || 'href'
+}
+
+function normalizeLegacyInternalPath(pathname) {
+  const trimmedPath = trimValue(pathname)
+
+  if (!trimmedPath) {
+    return trimmedPath
+  }
+
+  if (/^\/car-rental-ferry-boat-info\/?$/i.test(trimmedPath)) {
+    return '/car-barge-information'
+  }
+
+  const bedroomAliasMatch = trimmedPath.match(/^\/\d+bedroom\/([^/]+)\/?$/i)
+
+  if (bedroomAliasMatch) {
+    return `/rental-properties/${bedroomAliasMatch[1]}`
+  }
+
+  return trimmedPath
 }
 
 function normalizeLinkObject(link) {
@@ -65,9 +86,32 @@ export function normalizeInternalLinkDestination(value) {
   }
 
   const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
-  const collapsedPath = normalizedPath !== '/' ? normalizedPath.replace(/\/+$/, '') || '/' : '/'
+  const legacyNormalizedPath = normalizeLegacyInternalPath(normalizedPath)
+  const collapsedPath = legacyNormalizedPath !== '/' ? legacyNormalizedPath.replace(/\/+$/, '') || '/' : '/'
 
   return `${collapsedPath}${suffix}`
+}
+
+function normalizeSiteOriginDestination(value = '') {
+  const candidate = trimValue(value)
+
+  if (!/^https?:\/\//i.test(candidate)) {
+    return ''
+  }
+
+  let parsedUrl
+
+  try {
+    parsedUrl = new URL(candidate)
+  } catch {
+    return ''
+  }
+
+  if (!SITE_ORIGIN_PATTERN.test(parsedUrl.origin)) {
+    return ''
+  }
+
+  return normalizeInternalLinkDestination(`${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`)
 }
 
 const ALLOWED_EXTERNAL_LINK_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:'])
@@ -79,11 +123,11 @@ export function normalizeExternalLinkDestination(value) {
     return ''
   }
 
-  if (candidate.startsWith('/') || candidate.startsWith('#') || candidate.startsWith('?')) {
-    return candidate
+  if (candidate.startsWith('//')) {
+    return `https:${candidate}`
   }
 
-  if (candidate.startsWith('//')) {
+  if (candidate.startsWith('/') || candidate.startsWith('#') || candidate.startsWith('?')) {
     return candidate
   }
 
@@ -190,6 +234,10 @@ export function detectLinkType(link, { defaultType = 'external', destinationFiel
     return 'internal'
   }
 
+  if (normalizeSiteOriginDestination(destination)) {
+    return 'internal'
+  }
+
   return 'external'
 }
 
@@ -215,11 +263,12 @@ export function resolveLinkEditorState(link, { defaultType = 'external', destina
   const normalizedLink = normalizeLinkObject(link)
   const type = detectLinkType(normalizedLink, { defaultType, destinationField })
   const destination = getLinkDestination(normalizedLink, { destinationField })
+  const siteOriginDestination = normalizeSiteOriginDestination(destination)
   const emailParts = parseMailtoHref(destination)
 
   return {
     type,
-    internalPath: type === 'internal' ? destination : '',
+    internalPath: type === 'internal' ? siteOriginDestination || destination : '',
     externalUrl: type === 'external' ? destination : '',
     emailAddress: trimValue(normalizedLink.emailAddress) || emailParts.emailAddress,
     emailBcc: trimValue(normalizedLink.emailBcc) || emailParts.emailBcc || DEFAULT_EMAIL_BCC,
@@ -337,7 +386,7 @@ export function resolveLinkRenderConfig(link, { defaultType = 'external', destin
   const state = resolveLinkEditorState(normalizedLink, { defaultType, destinationField })
 
   if (type === 'internal') {
-    const destination = normalizeInternalLinkDestination(state.internalPath)
+    const destination = normalizeSiteOriginDestination(state.internalPath) || normalizeInternalLinkDestination(state.internalPath)
 
     return {
       destination,

@@ -136,6 +136,7 @@ export function HomePage() {
               label={page.trust.action.label}
               labelLabel="Button Text"
               labelPath={['trust', 'action', 'label']}
+              presentation="button"
             />
           </div>
 

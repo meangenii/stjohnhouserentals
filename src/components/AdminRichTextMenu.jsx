@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export function AdminRichTextMenu({
+  currentLabel = '',
   disabled = false,
   footer = null,
   inline = false,
@@ -14,6 +15,12 @@ export function AdminRichTextMenu({
   const [open, setOpen] = useState(false)
   const isOpen = open && !disabled
   const currentOption = useMemo(() => {
+    const normalizedCurrentLabel = String(currentLabel ?? '').trim()
+
+    if (normalizedCurrentLabel) {
+      return { label: normalizedCurrentLabel, value }
+    }
+
     const matchedOption = options.find((option) => option.value === value)
 
     if (matchedOption) {
@@ -25,7 +32,7 @@ export function AdminRichTextMenu({
     }
 
     return options[0] ?? { label: '', value: '' }
-  }, [options, value])
+  }, [currentLabel, options, value])
 
   useEffect(() => {
     if (!isOpen || typeof document === 'undefined') {
@@ -108,6 +115,7 @@ export function AdminRichTextMenu({
         <div className="admin-rich-text-menu-panel" role="listbox" aria-label={label}>
           {options.map((option) => {
             const active = option.value === value
+            const optionLabel = active && currentOption.label ? currentOption.label : option.label
 
             return (
               <button
@@ -119,7 +127,7 @@ export function AdminRichTextMenu({
                 onClick={() => handleOptionClick(option.value)}
                 onMouseDown={handleOptionMouseDown}
               >
-                <span>{option.label}</span>
+                <span>{optionLabel}</span>
                 {active ? (
                   <span aria-hidden="true" className="admin-rich-text-menu-check">
                     Current

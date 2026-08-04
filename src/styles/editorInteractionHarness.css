@@ -1,0 +1,91 @@
+.editor-interaction-harness {
+  --button-ghost-border: #9eb7d9;
+  --button-ghost-text: #174f9f;
+  background: #f4f7fa;
+  color: #17212b;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.editor-interaction-harness-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0 auto 0.75rem;
+  max-width: 112rem;
+}
+
+.editor-interaction-harness-header span {
+  color: #556273;
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.editor-interaction-harness-header h1 {
+  font-size: 1.25rem;
+  margin: 0.15rem 0 0;
+}
+
+.editor-interaction-harness-actions,
+.editor-interaction-harness-devices,
+.editor-interaction-harness-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.editor-interaction-harness-devices {
+  justify-content: flex-end;
+  margin: 0 auto 0.75rem;
+  max-width: 112rem;
+}
+
+.editor-interaction-harness-status {
+  background: #ffffff;
+  border: 1px solid #dbe7f0;
+  border-radius: 0.35rem;
+  color: #556273;
+  font-size: 0.8rem;
+  margin: 0 auto 1rem;
+  max-width: 112rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.editor-interaction-harness-status span + span {
+  border-left: 1px solid #dbe7f0;
+  padding-left: 0.5rem;
+}
+
+.editor-interaction-harness > .admin-page-editor-shell {
+  margin: 0;
+  width: 100%;
+}
+
+.editor-interaction-harness > .admin-page-editor-panel-toolbar {
+  justify-content: flex-end;
+  margin: 0 0 0.5rem;
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .editor-interaction-harness-header {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .editor-interaction-harness-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editor-interaction-harness-actions .admin-action,
+  .editor-interaction-harness-actions .admin-submit {
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
+  }
+}

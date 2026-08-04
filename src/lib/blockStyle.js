@@ -1,9 +1,25 @@
-export const BLOCK_BACKGROUND_TYPES = ['none', 'color', 'image']
-export const BLOCK_WIDTH_OPTIONS = ['full', 'contained', 'narrow']
-export const BLOCK_SPACING_OPTIONS = ['none', 'small', 'medium', 'large']
-export const BLOCK_ALIGN_OPTIONS = ['left', 'center', 'right']
-export const BLOCK_BORDER_OPTIONS = ['none', 'thin', 'thick']
-export const BLOCK_BORDER_RADIUS_OPTIONS = ['none', 'small', 'large']
+import { BLOCK_STYLE_OPTIONS } from './blockContract.js'
+
+export const BLOCK_BACKGROUND_TYPES = BLOCK_STYLE_OPTIONS.backgroundType
+export const BLOCK_WIDTH_OPTIONS = BLOCK_STYLE_OPTIONS.width
+export const BLOCK_SPACING_OPTIONS = BLOCK_STYLE_OPTIONS.spacing
+export const BLOCK_ALIGN_OPTIONS = BLOCK_STYLE_OPTIONS.align
+export const BLOCK_BORDER_OPTIONS = BLOCK_STYLE_OPTIONS.border
+export const BLOCK_BORDER_RADIUS_OPTIONS = BLOCK_STYLE_OPTIONS.borderRadius
+export const BLOCK_BACKGROUND_FOCAL_POINT_OPTIONS = BLOCK_STYLE_OPTIONS.backgroundFocalPoint
+export const BLOCK_BACKGROUND_OVERLAY_OPTIONS = BLOCK_STYLE_OPTIONS.backgroundOverlay
+
+const BLOCK_BACKGROUND_FOCAL_POINT_POSITIONS = {
+  bottom: 'center bottom',
+  'bottom-left': 'left bottom',
+  'bottom-right': 'right bottom',
+  center: 'center',
+  left: 'left center',
+  right: 'right center',
+  top: 'center top',
+  'top-left': 'left top',
+  'top-right': 'right top',
+}
 
 // The site's existing brand/surface palette (mirrors the CSS custom properties in src/index.css),
 // offered as a "pick from what's already used on the site" list instead of a raw color wheel.
@@ -23,7 +39,7 @@ export const BLOCK_COLOR_SWATCHES = [
 
 const DEFAULT_BLOCK_STYLE = {
   align: 'left',
-  background: { color: '', image: null, type: 'none' },
+  background: { color: '', focalPoint: 'center', image: null, overlay: 'none', type: 'none' },
   border: 'none',
   borderRadius: 'none',
   color: '',
@@ -54,7 +70,17 @@ export function normalizeBlockStyle(style, fallbackStyle = DEFAULT_BLOCK_STYLE) 
     align: normalizeOption(style?.align, BLOCK_ALIGN_OPTIONS, normalizeOption(fallback.align, BLOCK_ALIGN_OPTIONS, DEFAULT_BLOCK_STYLE.align)),
     background: {
       color: String(style?.background?.color ?? fallbackBackground.color ?? DEFAULT_BLOCK_STYLE.background.color),
+      focalPoint: normalizeOption(
+        style?.background?.focalPoint,
+        BLOCK_BACKGROUND_FOCAL_POINT_OPTIONS,
+        normalizeOption(fallbackBackground.focalPoint, BLOCK_BACKGROUND_FOCAL_POINT_OPTIONS, DEFAULT_BLOCK_STYLE.background.focalPoint),
+      ),
       image: normalizeBackgroundImage(style?.background?.image ?? fallbackBackground.image),
+      overlay: normalizeOption(
+        style?.background?.overlay,
+        BLOCK_BACKGROUND_OVERLAY_OPTIONS,
+        normalizeOption(fallbackBackground.overlay, BLOCK_BACKGROUND_OVERLAY_OPTIONS, DEFAULT_BLOCK_STYLE.background.overlay),
+      ),
       type: normalizeOption(
         style?.background?.type,
         BLOCK_BACKGROUND_TYPES,
@@ -72,6 +98,10 @@ export function normalizeBlockStyle(style, fallbackStyle = DEFAULT_BLOCK_STYLE) 
     spacing: normalizeOption(style?.spacing, BLOCK_SPACING_OPTIONS, normalizeOption(fallback.spacing, BLOCK_SPACING_OPTIONS, DEFAULT_BLOCK_STYLE.spacing)),
     width: normalizeOption(style?.width, BLOCK_WIDTH_OPTIONS, normalizeOption(fallback.width, BLOCK_WIDTH_OPTIONS, DEFAULT_BLOCK_STYLE.width)),
   }
+}
+
+export function getBlockBackgroundPosition(focalPoint) {
+  return BLOCK_BACKGROUND_FOCAL_POINT_POSITIONS[normalizeOption(focalPoint, BLOCK_BACKGROUND_FOCAL_POINT_OPTIONS, DEFAULT_BLOCK_STYLE.background.focalPoint)]
 }
 
 export function resolveBlockStyle(style, presets = []) {

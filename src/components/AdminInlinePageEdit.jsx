@@ -1,5 +1,6 @@
 import { forwardRef, lazy, Suspense, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal, flushSync } from 'react-dom'
+import { AlignJustify, Bold, Check, CornerDownLeft, Italic, Link as LinkIcon, Paintbrush, RemoveFormatting, Underline, Unlink, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
@@ -24,6 +25,7 @@ import { usePageEditor } from '../lib/usePageEditor'
 import { AdminLinkFields } from './AdminLinkFields'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
 import { AdminRichTextMenu } from './AdminRichTextMenu'
+import { EditorIconButton } from './EditorIconButton'
 import { RichTextFontSizeInput } from './RichTextFontSizeInput'
 
 const AdminMediaManager = lazy(() =>
@@ -149,9 +151,7 @@ function InlinePopover({ active, onClose, title, children }) {
       >
         <div className="admin-inline-popover-header">
           <strong>{title}</strong>
-          <button className="button-link button-link--ghost admin-inline-popover-close" type="button" onClick={onClose}>
-            Done
-          </button>
+          <EditorIconButton className="admin-inline-popover-close" icon={X} label="Close" onClick={onClose} />
         </div>
         <div className="admin-inline-popover-body">{children}</div>
       </div>
@@ -170,17 +170,16 @@ function InlinePopoverContent({ children }) {
   return <Suspense fallback={<p className="admin-note">Loading editor...</p>}>{children}</Suspense>
 }
 
-function InlineToolbarButton({ active = false, children, disabled, onClick }) {
+function InlineToolbarButton({ active = false, disabled, icon, label, onClick }) {
   return (
-    <button
-      className={`button-link button-link--ghost admin-rich-text-button ${active ? 'admin-rich-text-button--active' : ''}`.trim()}
+    <EditorIconButton
+      className={`admin-rich-text-button${active ? ' admin-rich-text-button--active' : ''}`}
       disabled={disabled}
-      type="button"
+      icon={icon}
+      label={label}
       onClick={onClick}
       onMouseDown={(event) => event.preventDefault()}
-    >
-      {children}
-    </button>
+    />
   )
 }
 
@@ -327,6 +326,11 @@ function InlineTextFormattingToolbar({
   const editorStyleSettings = useEditorStyleSettings()
   const blockStyleOptions = getEnabledRichTextBlockOptions(editorStyleSettings)
   const fontSizeOptions = getEnabledRichTextFontSizeOptions(editorStyleSettings)
+  const displayedFontSizeOptions = fontSizeOptions.map((option) =>
+    option.value === 'default' && selectionState.defaultFontSizeLabel
+      ? { ...option, label: selectionState.defaultFontSizeLabel }
+      : option,
+  )
 
   useLayoutEffect(() => {
     if (!active || typeof window === 'undefined') {
@@ -660,45 +664,36 @@ function InlineTextFormattingToolbar({
         />
       ) : null}
       <AdminRichTextMenu
+        currentLabel={selectionState.fontSize === 'default' ? selectionState.defaultFontSizeLabel : ''}
         disabled={disabled}
         footer={<RichTextFontSizeInput disabled={disabled} onApply={handleFontSizeChange} />}
         inline
         label="Size"
         onBeforeOpen={rememberSelection}
         onSelect={handleFontSizeChange}
-        options={fontSizeOptions}
+        options={displayedFontSizeOptions}
         value={selectionState.fontSize}
       />
-      <InlineToolbarButton active={selectionState.bold} disabled={disabled} onClick={() => applyCommand('bold')}>
-        Bold
-      </InlineToolbarButton>
-      <InlineToolbarButton active={selectionState.italic} disabled={disabled} onClick={() => applyCommand('italic')}>
-        Italic
-      </InlineToolbarButton>
-      <InlineToolbarButton active={selectionState.underline} disabled={disabled} onClick={() => applyCommand('underline')}>
-        Underline
-      </InlineToolbarButton>
+      <InlineToolbarButton active={selectionState.bold} disabled={disabled} icon={Bold} label="Bold" onClick={() => applyCommand('bold')} />
+      <InlineToolbarButton active={selectionState.italic} disabled={disabled} icon={Italic} label="Italic" onClick={() => applyCommand('italic')} />
+      <InlineToolbarButton active={selectionState.underline} disabled={disabled} icon={Underline} label="Underline" onClick={() => applyCommand('underline')} />
       {allowLineBreaks ? (
-        <InlineToolbarButton disabled={disabled} onClick={() => applyCommand('insertHTML', '<br />')}>
-          Line Break
-        </InlineToolbarButton>
+        <InlineToolbarButton disabled={disabled} icon={CornerDownLeft} label="Line Break" onClick={() => applyCommand('insertHTML', '<br />')} />
       ) : null}
       {allowLineTightening ? (
-        <InlineToolbarButton disabled={disabled} onClick={tightenSelectedLines}>
-          {selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
-        </InlineToolbarButton>
+        <InlineToolbarButton
+          active={selectionState.tightenedLines}
+          disabled={disabled}
+          icon={AlignJustify}
+          label={selectionState.tightenedLines ? 'Untighten Lines' : 'Tighten Lines'}
+          onClick={tightenSelectedLines}
+        />
       ) : null}
       {allowLinkFormatting ? (
-        <InlineToolbarButton active={Boolean(linkEditorState)} disabled={disabled} onClick={openLinkEditor}>
-          Link
-        </InlineToolbarButton>
+        <InlineToolbarButton active={Boolean(linkEditorState)} disabled={disabled} icon={LinkIcon} label="Link" onClick={openLinkEditor} />
       ) : null}
-      <InlineToolbarButton disabled={disabled} onClick={() => applyCommand('removeFormat')}>
-        Clear
-      </InlineToolbarButton>
-      <InlineToolbarButton disabled={disabled} onClick={onClose}>
-        Done
-      </InlineToolbarButton>
+      <InlineToolbarButton disabled={disabled} icon={RemoveFormatting} label="Clear formatting" onClick={() => applyCommand('removeFormat')} />
+      <InlineToolbarButton disabled={disabled} icon={Check} label="Done" onClick={onClose} />
       {linkEditorState ? (
         <div aria-label="Link" className="admin-inline-format-link-editor" role="dialog">
           <AdminLinkFields
@@ -711,17 +706,11 @@ function InlineTextFormattingToolbar({
             onChange={(nextLink) => setLinkEditorState((currentState) => ({ ...currentState, link: nextLink }))}
           />
           <div className="admin-inline-actions">
-            <InlineToolbarButton disabled={disabled} onClick={applyLinkDraft}>
-              Apply link
-            </InlineToolbarButton>
+            <InlineToolbarButton disabled={disabled} icon={Check} label="Apply link" onClick={applyLinkDraft} />
             {linkEditorState.hasExistingLink ? (
-              <InlineToolbarButton disabled={disabled} onClick={removeLink}>
-                Remove link
-              </InlineToolbarButton>
+              <InlineToolbarButton disabled={disabled} icon={Unlink} label="Remove link" onClick={removeLink} />
             ) : null}
-            <InlineToolbarButton disabled={disabled} onClick={() => setLinkEditorState(null)}>
-              Cancel
-            </InlineToolbarButton>
+            <InlineToolbarButton disabled={disabled} icon={X} label="Cancel" onClick={() => setLinkEditorState(null)} />
           </div>
         </div>
       ) : null}
@@ -880,6 +869,9 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
 
     if (!active) {
       activationModeRef.current = 'preserve-selection'
+      if (isInteractiveElement) {
+        event.preventDefault()
+      }
       event.stopPropagation()
       flushSync(() => {
         onActivate?.()
@@ -892,6 +884,24 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
     }
 
     event.stopPropagation()
+  }
+
+  function handlePointerDown(event) {
+    if (disabled || !isInteractiveElement) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (active) {
+      return
+    }
+
+    activationModeRef.current = 'preserve-selection'
+    flushSync(() => {
+      onActivate?.()
+    })
   }
 
   function handleInput(event) {
@@ -980,6 +990,7 @@ const InlineTextEditableElement = forwardRef(function InlineTextEditableElement(
       onClick={handleClick}
       onDrop={active ? handleDrop : undefined}
       onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
       onInput={active ? handleInput : undefined}
       onKeyDown={active ? handleKeyDown : undefined}
       onPaste={active ? handlePaste : undefined}
@@ -1303,6 +1314,7 @@ export function EditableLink({
   link = null,
   linkPath,
   labelPath,
+  presentation = 'inline',
   style,
   target = undefined,
   ...rest
@@ -1343,6 +1355,8 @@ export function EditableLink({
   const isActive = field.isActive
   const shouldRenderExternalLink = !renderConfig.isInternal
   const linkStyle = buttonColorPath && normalizedButtonColor ? { ...style, backgroundColor: normalizedButtonColor } : style
+  const presentationClassName = presentation === 'button' ? 'site-button-link' : 'site-inline-link'
+  const resolvedClassName = [className, presentationClassName].filter(Boolean).join(' ')
   const Component = field.isEnabled ? 'a' : shouldRenderExternalLink ? 'a' : Link
   const publishValueRef = useRef(null)
   const linkProps = field.isEnabled
@@ -1389,7 +1403,7 @@ export function EditableLink({
         as={Component}
         {...linkProps}
         {...rest}
-        className={buildEditableClassName(className, field.isEnabled, isActive)}
+        className={buildEditableClassName(resolvedClassName, field.isEnabled, isActive)}
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         disabled={!field.isEnabled || field.disabled}
         label={labelLabel}
@@ -1832,21 +1846,18 @@ export function EditableBackgroundSection({
       >
         {field.isEnabled ? (
           <div className="admin-inline-background-controls">
-            <button
-              className={`button-link button-link--ghost admin-inline-background-button${
-                isActive ? ' admin-inline-background-button--active' : ''
-              }`.trim()}
+            <EditorIconButton
+              className={`admin-inline-background-button${isActive ? ' admin-inline-background-button--active' : ''}`}
               data-admin-inline-editable="true"
               disabled={field.disabled}
-              type="button"
+              icon={Paintbrush}
+              label="Edit background"
               onClick={handleActivate}
               onMouseDown={(event) => {
                 event.preventDefault()
                 event.stopPropagation()
               }}
-            >
-              Edit background
-            </button>
+            />
           </div>
         ) : null}
         {children}

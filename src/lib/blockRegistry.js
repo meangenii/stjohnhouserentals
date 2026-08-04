@@ -22,10 +22,18 @@ import {
   TestimonialsBlockRenderer,
   TwoColumnTextBlockRenderer,
 } from '../components/blocks/BlockRenderers'
+import {
+  assertExactBlockTypeKeys,
+  BLOCK_TYPES,
+  getBlockDefinitionVersion,
+  MAX_STRUCTURAL_NESTING_DEPTH,
+  STRUCTURAL_BLOCK_TYPES,
+} from './blockContract'
+import { createBlockDefaultData, createBlockRecord, makeBlockId } from './blockDefaults'
+import { getBlockInspectorSchema } from './blockInspectorSchema'
+import { migrateBlockRecord } from './blockMigrations'
 
-export function makeBlockId() {
-  return `block-${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
+export { createBlockRecord, makeBlockId, MAX_STRUCTURAL_NESTING_DEPTH, STRUCTURAL_BLOCK_TYPES }
 
 export const blockCategories = [
   { key: 'layout', label: 'Layout' },
@@ -34,138 +42,154 @@ export const blockCategories = [
   { key: 'dynamic', label: 'Dynamic' },
 ]
 
-// Block types that create a nested BlockList (a card, a column, ...). Nesting these inside
-// each other is allowed up to MAX_STRUCTURAL_NESTING_DEPTH so pages can compose freely without
-// letting the tree grow unbounded.
-export const STRUCTURAL_BLOCK_TYPES = ['group', 'row']
-export const MAX_STRUCTURAL_NESTING_DEPTH = 3
-
-export const blockDefinitions = {
+const blockRendererDefinitions = {
   hero: {
     category: 'layout',
-    defaultData: () => ({ action: { backgroundColor: '', label: '', path: '/' }, image: { kind: 'image' }, lead: '', title: 'New hero banner' }),
     label: 'Hero Banner',
+    layout: 'bleed',
     Renderer: HeroBannerBlockRenderer,
+    schema: getBlockInspectorSchema('hero'),
   },
   'image-text-split': {
     category: 'layout',
-    defaultData: () => ({
-      action: { label: '', path: '/' },
-      body: '<p>Add your text here…</p>',
-      image: { kind: 'image' },
-      imagePosition: 'left',
-      kicker: '',
-      title: 'New section',
-    }),
     label: 'Image + Text Split',
+    layout: 'contained',
     Renderer: ImageTextSplitBlockRenderer,
+    schema: getBlockInspectorSchema('image-text-split'),
     Settings: ImageTextSplitBlockSettings,
   },
   'feature-grid': {
     category: 'content',
-    defaultData: () => ({ items: [], title: 'Why choose us' }),
     label: 'Feature Grid',
+    layout: 'contained',
     Renderer: FeatureGridBlockRenderer,
+    schema: getBlockInspectorSchema('feature-grid'),
   },
   'rich-text': {
     category: 'content',
-    defaultData: () => ({ html: '<p>Add your text here…</p>' }),
     label: 'Rich Text',
+    layout: 'contained',
     Renderer: RichTextBlockRenderer,
+    schema: getBlockInspectorSchema('rich-text'),
   },
   image: {
     category: 'media',
-    defaultData: () => ({ caption: '', image: { kind: 'image' } }),
     label: 'Image',
+    layout: 'contained',
     Renderer: ImageBlockRenderer,
+    schema: getBlockInspectorSchema('image'),
   },
   'cta-band': {
     category: 'content',
-    defaultData: () => ({ action: { backgroundColor: '', label: 'Learn More', path: '/' }, body: '', title: 'Call to action' }),
     label: 'Call-to-Action Band',
+    layout: 'bleed',
     Renderer: CtaBandBlockRenderer,
+    schema: getBlockInspectorSchema('cta-band'),
   },
   testimonials: {
     category: 'content',
-    defaultData: () => ({ items: [] }),
     label: 'Testimonials / Reviews',
+    layout: 'contained',
     Renderer: TestimonialsBlockRenderer,
+    schema: getBlockInspectorSchema('testimonials'),
   },
   'image-gallery': {
     category: 'media',
-    defaultData: () => ({ images: [] }),
     label: 'Image Gallery',
+    layout: 'contained',
     Renderer: ImageGalleryBlockRenderer,
+    schema: getBlockInspectorSchema('image-gallery'),
   },
   spacer: {
     category: 'layout',
-    defaultData: () => ({ size: 'medium' }),
     label: 'Spacer / Divider',
+    layout: 'bleed',
     Renderer: SpacerBlockRenderer,
+    schema: getBlockInspectorSchema('spacer'),
     Settings: SpacerBlockSettings,
   },
   'directory-embed': {
     category: 'dynamic',
-    defaultData: () => ({ source: 'properties', title: 'Available Now' }),
     label: 'Property / Charter Directory',
+    layout: 'bleed',
     Renderer: DirectoryEmbedBlockRenderer,
+    schema: getBlockInspectorSchema('directory-embed'),
     Settings: DirectoryEmbedBlockSettings,
   },
   'contact-form': {
     category: 'dynamic',
-    defaultData: () => ({ intro: 'We’ll get back to you soon.', title: 'Get in Touch' }),
     label: 'Contact / Inquiry Form',
+    layout: 'contained',
     Renderer: ContactFormBlockRenderer,
+    schema: getBlockInspectorSchema('contact-form'),
   },
   'contact-details': {
     category: 'content',
-    defaultData: () => ({ items: [] }),
     label: 'Contact Details',
+    layout: 'contained',
     Renderer: ContactDetailsBlockRenderer,
+    schema: getBlockInspectorSchema('contact-details'),
   },
   schedule: {
     category: 'content',
-    defaultData: () => ({ columns: [], notes: [], title: 'Schedule' }),
     label: 'Schedule / Timetable',
+    layout: 'contained',
     Renderer: ScheduleBlockRenderer,
+    schema: getBlockInspectorSchema('schedule'),
   },
   'rate-table': {
     category: 'content',
-    defaultData: () => ({ footer: [], heading: 'Rates', link: { label: '', path: '' }, rows: [] }),
     label: 'Rate Table',
+    layout: 'contained',
     Renderer: RateTableBlockRenderer,
+    schema: getBlockInspectorSchema('rate-table'),
   },
   group: {
     category: 'layout',
-    defaultData: () => ({ items: [] }),
     label: 'Repeating Cards',
+    layout: 'contained',
     Renderer: GroupBlockRenderer,
+    schema: getBlockInspectorSchema('group'),
   },
   row: {
     category: 'layout',
-    defaultData: () => ({
-      columns: [
-        { blocks: [], id: makeBlockId(), width: 1 },
-        { blocks: [], id: makeBlockId(), width: 1 },
-      ],
-    }),
     label: 'Columns',
+    layout: 'contained',
     Renderer: RowBlockRenderer,
+    schema: getBlockInspectorSchema('row'),
     Settings: RowBlockSettings,
   },
   'two-column-text': {
     category: 'layout',
-    defaultData: () => ({ left: '<p>Add your text here…</p>', right: '<p>Add your text here…</p>' }),
     label: 'Two-Column Text',
+    layout: 'contained',
     Renderer: TwoColumnTextBlockRenderer,
+    schema: getBlockInspectorSchema('two-column-text'),
   },
   'business-list': {
     category: 'content',
-    defaultData: () => ({ items: [], title: 'Local Businesses' }),
     label: 'Business / Contact List',
+    layout: 'contained',
     Renderer: BusinessListBlockRenderer,
+    schema: getBlockInspectorSchema('business-list'),
   },
 }
+
+assertExactBlockTypeKeys(Object.keys(blockRendererDefinitions), 'Block renderer definitions')
+
+export const blockDefinitions = Object.fromEntries(
+  BLOCK_TYPES.map((type) => [
+    type,
+    {
+      ...blockRendererDefinitions[type],
+      defaultData: (options = {}) => createBlockDefaultData(type, options),
+      migrate: (block) => migrateBlockRecord(block, { expectedType: type }).block,
+      schema: getBlockInspectorSchema(type),
+      type,
+      version: getBlockDefinitionVersion(type),
+    },
+  ]),
+)
 
 export function getBlockDefinition(type) {
   return blockDefinitions[type] ?? null
