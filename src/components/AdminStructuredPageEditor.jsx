@@ -351,6 +351,60 @@ function LinkFields({
   )
 }
 
+function escapeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replace(/&(?!(?:[a-z]+|#\d+|#x[0-9a-f]+);)/gi, '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
+
+function buildCarBargeFeeParagraphs(portAuthorityFees = []) {
+  return (Array.isArray(portAuthorityFees) ? portAuthorityFees : [])
+    .map((fee) => {
+      const feeRecord = fee && typeof fee === 'object' && !Array.isArray(fee) ? fee : {}
+      const feeLabel = richTextValueToInlineHtml(feeRecord.label ?? '').trim()
+      const feeValue = richTextValueToInlineHtml(feeRecord.value ?? '').trim()
+
+      if (!feeLabel && !feeValue) {
+        return ''
+      }
+
+      return [feeLabel ? `<strong>${feeLabel}</strong>` : '', feeValue].filter(Boolean).join(' ')
+    })
+    .filter(Boolean)
+}
+
+function buildCarBargeIntroLeftHtml(intro = {}) {
+  const leftParagraphs = Array.isArray(intro.leftParagraphs) ? intro.leftParagraphs : []
+  const firstParagraph = String(leftParagraphs[0] ?? '').trim()
+  const fallbackParagraphs = [
+    firstParagraph,
+    ...buildCarBargeFeeParagraphs(intro.portAuthorityFees),
+    ...leftParagraphs.slice(1),
+  ].filter((paragraph) => String(paragraph ?? '').trim())
+
+  return String(intro.left ?? '').trim() || richTextLinesToHtml(fallbackParagraphs)
+}
+
+function buildCarBargeIntroRightHtml(intro = {}) {
+  const rightParagraphs = Array.isArray(intro.rightParagraphs)
+    ? intro.rightParagraphs.filter((paragraph) => String(paragraph ?? '').trim())
+    : []
+  const referenceLink = intro.referenceLink && typeof intro.referenceLink === 'object' && !Array.isArray(intro.referenceLink)
+    ? intro.referenceLink
+    : {}
+  const referenceHref = String(referenceLink.href || referenceLink.path || '').trim()
+  const referenceLabel = String(referenceLink.label ?? '').trim() || (referenceHref ? 'Link for information is here.' : '')
+  const fallbackHtml = richTextLinesToHtml(rightParagraphs)
+  const referenceHtml =
+    referenceHref || referenceLabel
+      ? `<p>VI Now has more information. <a href="${escapeHtmlAttribute(referenceHref)}">${richTextValueToInlineHtml(referenceLabel)}</a></p>`
+      : ''
+
+  return String(intro.right ?? '').trim() || `${fallbackHtml}${referenceHtml}`
+}
+
 function mergeImageFallback(fallbackImage, image) {
   if (!image) {
     return fallbackImage
@@ -976,42 +1030,22 @@ function renderCarBargeEditor(page, helpers) {
         </Field>
       </SectionCard>
 
-      <SectionCard description="This section controls the fee rows and the two intro columns beneath the hero." title="Intro And Fees">
+      <SectionCard description="This section controls the two rich text columns beneath the hero." title="Intro And Fees">
         <Field wide>
-          <RepeatingSection
-            addLabel="Add Fee Row"
+          <HtmlField
             disabled={disabled}
-            itemLabel="fee row"
-            items={page.intro?.portAuthorityFees ?? []}
-            onAdd={() => helpers.addItem(['intro', 'portAuthorityFees'], { label: '', value: '' })}
-            renderItem={(fee, index) => (
-              <ItemCard
-                canMoveDown={index < (page.intro?.portAuthorityFees?.length ?? 0) - 1}
-                canMoveUp={index > 0}
-                disabled={disabled}
-                key={fee?.id ?? `port-fee-${index}`}
-                onMoveDown={() => helpers.moveItem(['intro', 'portAuthorityFees'], index, 1)}
-                onMoveUp={() => helpers.moveItem(['intro', 'portAuthorityFees'], index, -1)}
-                onRemove={() => helpers.removeItem(['intro', 'portAuthorityFees'], index)}
-                title={fee?.label || `Fee Row ${index + 1}`}
-              >
-                <TextField disabled={disabled} label="Fee Label" onChange={(value) => setPath(['intro', 'portAuthorityFees', index, 'label'], value)} value={fee?.label ?? ''} />
-                <TextField disabled={disabled} label="Fee Value" onChange={(value) => setPath(['intro', 'portAuthorityFees', index, 'value'], value)} value={fee?.value ?? ''} />
-              </ItemCard>
-            )}
-            title="Port Authority Fee Rows"
+            label="Left Column Rich Text"
+            onChange={(value) => setPath(['intro', 'left'], value)}
+            value={buildCarBargeIntroLeftHtml(page.intro)}
           />
         </Field>
 
-        <RichParagraphsField disabled={disabled} label="Left Column Paragraphs" onChange={(value) => setPath(['intro', 'leftParagraphs'], value)} value={page.intro?.leftParagraphs ?? []} />
-        <RichParagraphsField disabled={disabled} label="Right Column Paragraphs" onChange={(value) => setPath(['intro', 'rightParagraphs'], value)} value={page.intro?.rightParagraphs ?? []} />
         <Field wide>
-          <LinkFields
+          <HtmlField
             disabled={disabled}
-            label="Reference Link"
-            link={page.intro?.referenceLink}
-            onHrefChange={(value) => setPath(['intro', 'referenceLink', 'href'], value)}
-            onLabelChange={(value) => setPath(['intro', 'referenceLink', 'label'], value)}
+            label="Right Column Rich Text"
+            onChange={(value) => setPath(['intro', 'right'], value)}
+            value={buildCarBargeIntroRightHtml(page.intro)}
           />
         </Field>
       </SectionCard>

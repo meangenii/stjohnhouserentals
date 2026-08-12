@@ -464,6 +464,10 @@ const structuredSitePages = {
       },
     },
     intro: {
+      left:
+        '<p>Before you get onto the car barge heading to St. John, in Red Hook, make sure to stop at the small booth at the entrance to pay the Port Authority Fee of $5.</p><p>Get your ticket and drive into the large parking lot. An employee will guide you to your parking spot. You will wait in this spot until it is your turn to load onto the barge.</p><p>When you are called by the barge employee, note that you must back your vehicle onto the barge.</p>',
+      right:
+        '<p>One-way or round-trip tickets are purchased after you are on the barge. Tickets are not interchangeable between the three car barge companies. If you purchase a round-trip ticket, it is only good for the company that issued it.</p><p>The Red Hook ferry location services both passenger ferries and car barges at separate well-marked entrances. Arrive as early as possible before the car barge departure time you hope to catch. It fills up fast.</p><p>VI Now has more information. <a href="https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/">Link for information is here.</a></p>',
       portAuthorityFees: [
         { label: 'Small Vehicles', value: '$3' },
         { label: 'Large Vehicles', value: '$4' },

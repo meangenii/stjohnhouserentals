@@ -2263,6 +2263,18 @@ img {
   align-items: start;
 }
 
+.car-barge-intro .block-two-column {
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.car-barge-intro .block-two-column-side {
+  align-content: start;
+  align-items: start;
+  display: grid;
+  gap: 0.65rem;
+}
+
 .car-barge-intro-copy,
 .car-barge-schedule-column,
 .car-barge-note,
@@ -2280,6 +2292,8 @@ img {
 }
 
 .car-barge-intro-copy p,
+.car-barge-intro .block-two-column-side,
+.car-barge-intro .block-two-column-side p,
 .car-barge-schedule-column p,
 .car-barge-schedule-notes p,
 .car-barge-rates-footer p,
@@ -2307,6 +2321,7 @@ img {
 }
 
 .car-barge-inline-link,
+.car-barge-intro .block-two-column-side a,
 .car-barge-rates-footer a {
   width: fit-content;
   color: #ffffff;
@@ -2316,6 +2331,8 @@ img {
 
 .car-barge-inline-link:hover,
 .car-barge-inline-link:focus-visible,
+.car-barge-intro .block-two-column-side a:hover,
+.car-barge-intro .block-two-column-side a:focus-visible,
 .car-barge-rates-footer a:hover,
 .car-barge-rates-footer a:focus-visible {
   color: #d9e7ff;
@@ -8818,8 +8835,9 @@ button.admin-auth-badge {
 }
 
 .admin-inline-editable-target[data-admin-inline-editing='true'] {
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(22, 88, 176, 0.14);
   box-shadow: inset 0 0 0 1px rgba(22, 88, 176, 0.12);
+  caret-color: currentColor;
   cursor: text;
   text-transform: none !important;
   font-variant-caps: normal !important;

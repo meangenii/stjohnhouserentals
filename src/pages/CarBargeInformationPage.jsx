@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { EditablePhoneText } from '../components/EditablePhoneText'
 import { PageLoadingState } from '../components/PageLoadingState'
+import { TwoColumnTextBlockRenderer } from '../components/blocks/BlockRenderers'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { richTextLinesToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
 const CAR_BARGE_HERO_BOTTOM_PEEK_FALLBACK_PX = 105
@@ -23,6 +25,59 @@ function asObject(value) {
 
 function asText(value) {
   return value == null ? '' : String(value)
+}
+
+function escapeHtmlAttribute(value) {
+  return String(value ?? '')
+    .replace(/&(?!(?:[a-z]+|#\d+|#x[0-9a-f]+);)/gi, '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
+
+function buildCarBargeFeeParagraphs(portAuthorityFees) {
+  return portAuthorityFees
+    .map((fee) => {
+      const feeRecord = asObject(fee)
+      const feeLabel = richTextValueToInlineHtml(feeRecord.label ?? '').trim()
+      const feeValue = richTextValueToInlineHtml(feeRecord.value ?? '').trim()
+
+      if (!feeLabel && !feeValue) {
+        return ''
+      }
+
+      return [feeLabel ? `<strong>${feeLabel}</strong>` : '', feeValue].filter(Boolean).join(' ')
+    })
+    .filter(Boolean)
+}
+
+function buildIntroLeftHtml(intro) {
+  const leftParagraphs = asArray(intro.leftParagraphs)
+  const portAuthorityFees = asArray(intro.portAuthorityFees)
+  const firstParagraph = asText(leftParagraphs[0]).trim()
+  const remainingParagraphs = leftParagraphs.slice(1)
+  const fallbackParagraphs = [
+    firstParagraph,
+    ...buildCarBargeFeeParagraphs(portAuthorityFees),
+    ...remainingParagraphs,
+  ].filter((paragraph) => asText(paragraph).trim())
+
+  return asText(intro.left).trim() || richTextLinesToHtml(fallbackParagraphs)
+}
+
+function buildIntroRightHtml(intro) {
+  const rightParagraphs = asArray(intro.rightParagraphs).filter((paragraph) => asText(paragraph).trim())
+  const referenceLink = asObject(intro.referenceLink)
+  const referenceHref = asText(referenceLink.href || referenceLink.path).trim()
+  const referenceLabel = asText(referenceLink.label).trim() || (referenceHref ? 'Link for information is here.' : '')
+  const fallbackParagraphs = [...rightParagraphs]
+  const fallbackHtml = richTextLinesToHtml(fallbackParagraphs)
+  const referenceHtml =
+    referenceHref || referenceLabel
+      ? `<p>VI Now has more information. <a href="${escapeHtmlAttribute(referenceHref)}">${richTextValueToInlineHtml(referenceLabel)}</a></p>`
+      : ''
+
+  return asText(intro.right).trim() || `${fallbackHtml}${referenceHtml}`
 }
 
 function getOperatorRates(operatorTitle, rates) {
@@ -549,16 +604,15 @@ export function CarBargeInformationPage() {
   const hero = asObject(page.hero)
   const heroImage = asObject(hero.image)
   const intro = asObject(page.intro)
-  const leftParagraphs = asArray(intro.leftParagraphs)
-  const rightParagraphs = asArray(intro.rightParagraphs)
-  const portAuthorityFees = asArray(intro.portAuthorityFees)
-  const referenceLink = asObject(intro.referenceLink)
-  const referenceHref = asText(referenceLink.href)
-  const referenceLabel = asText(referenceLink.label) || (referenceHref ? 'Link for information is here.' : '')
   const note = asText(page.note)
   const heroTitle = asText(hero.title) || asText(page.title) || 'Car Barge Information'
   const heroImageUrl = getContentImageSrc(heroImage, { width: 1920, height: 720 })
-  const firstLeftParagraph = asText(leftParagraphs[0])
+  const introRichTextBlock = {
+    id: 'car-barge-general-info-copy',
+    left: buildIntroLeftHtml(intro),
+    right: buildIntroRightHtml(intro),
+    type: 'two-column-text',
+  }
 
   return (
     <article className="car-barge-page">
@@ -588,74 +642,7 @@ export function CarBargeInformationPage() {
 
       <div className="car-barge-page-inner">
         <section className="car-barge-intro" id="general-info">
-          <div className="car-barge-intro-grid">
-            <div className="car-barge-intro-copy">
-              <EditableText as="p" label="Left Paragraph 1" multiline path={['intro', 'leftParagraphs', 0]} rows={5} value={firstLeftParagraph}>
-                {firstLeftParagraph}
-              </EditableText>
-
-              {portAuthorityFees.length ? (
-                <div className="car-barge-fee-list">
-                  {portAuthorityFees.map((fee, feeIndex) => {
-                    const feeRecord = asObject(fee)
-                    const feeLabel = asText(feeRecord.label)
-                    const feeValue = asText(feeRecord.value)
-
-                    return (
-                      <div className="car-barge-fee-row" key={feeIndex}>
-                        <EditableText as="span" label={`Port Fee ${feeIndex + 1} Label`} path={['intro', 'portAuthorityFees', feeIndex, 'label']} value={feeLabel}>
-                          {feeLabel}
-                        </EditableText>
-                        <EditableText as="span" label={`Port Fee ${feeIndex + 1} Value`} path={['intro', 'portAuthorityFees', feeIndex, 'value']} value={feeValue}>
-                          {feeValue}
-                        </EditableText>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : null}
-
-              {leftParagraphs.slice(1).map((paragraph, index) => {
-                const paragraphText = asText(paragraph)
-
-                return (
-                  <EditableText as="p" key={index} label={`Left Paragraph ${index + 2}`} multiline path={['intro', 'leftParagraphs', index + 1]} rows={5} value={paragraphText}>
-                    {paragraphText}
-                  </EditableText>
-                )
-              })}
-            </div>
-
-            <div className="car-barge-intro-copy">
-              {rightParagraphs.map((paragraph, index) => {
-                const paragraphText = asText(paragraph)
-
-                return (
-                  <EditableText as="p" key={index} label={`Right Paragraph ${index + 1}`} multiline path={['intro', 'rightParagraphs', index]} rows={5} value={paragraphText}>
-                    {paragraphText}
-                  </EditableText>
-                )
-              })}
-
-              {referenceHref || referenceLabel ? (
-                <p>
-                  VI Now has more information.{' '}
-                  <EditableLink
-                    className="car-barge-inline-link"
-                    destination={referenceHref}
-                    destinationLabel="Reference Link"
-                    destinationPath={['intro', 'referenceLink', 'href']}
-                    external
-                    link={referenceLink}
-                    linkPath={['intro', 'referenceLink']}
-                    label={referenceLabel}
-                    labelLabel="Reference Label"
-                    labelPath={['intro', 'referenceLink', 'label']}
-                  />
-                </p>
-              ) : null}
-            </div>
-          </div>
+          <TwoColumnTextBlockRenderer block={introRichTextBlock} path={['intro']} />
 
           {note ? (
             <section className="car-barge-note">
