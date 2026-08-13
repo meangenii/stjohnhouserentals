@@ -643,19 +643,19 @@ export function CarBargeInformationPage() {
       <div className="car-barge-page-inner">
         <section className="car-barge-intro" id="general-info">
           <TwoColumnTextBlockRenderer block={introRichTextBlock} path={['intro']} />
-
-          {note ? (
-            <section className="car-barge-note">
-              <EditableText as="p" label="Page Note" multiline path={['note']} rows={4} value={note}>
-                {note}
-              </EditableText>
-            </section>
-          ) : null}
         </section>
 
         {operators.map((operator, operatorIndex) => (
           <BargeOperatorSection key={operatorIndex} operator={operator} operatorIndex={operatorIndex} />
         ))}
+
+        {note ? (
+          <section className="car-barge-note">
+            <EditableText as="p" label="Page Note" multiline path={['note']} rows={4} value={note}>
+              {note}
+            </EditableText>
+          </section>
+        ) : null}
       </div>
     </article>
   )
