@@ -11,6 +11,7 @@ import {
   MAX_STRUCTURAL_NESTING_DEPTH,
   STRUCTURAL_BLOCK_TYPES,
 } from './blockContract.js'
+import { getBlockElementStyleTargetIds } from './blockElementStyleTargets.js'
 import { migrateBlockPageDraft } from './blockMigrations.js'
 import { BLOCK_VISIBILITY_FLAGS, ROW_MOBILE_COLUMN_OPTIONS } from './blockResponsive.js'
 import {
@@ -30,6 +31,7 @@ export { BLOCK_PAGE_CONTENT_MODEL }
 const SPACER_SIZE_OPTIONS = BLOCK_CONTENT_SCHEMAS.spacer.size.options
 const IMAGE_TEXT_POSITIONS = BLOCK_CONTENT_SCHEMAS['image-text-split'].imagePosition.options
 const DIRECTORY_EMBED_SOURCES = BLOCK_CONTENT_SCHEMAS['directory-embed'].source.options
+const READINESS_HERO_BLOCK_TYPES = new Set(['hero', 'car-barge-hero'])
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -134,18 +136,18 @@ function validateBlockResponsive(responsive, block, errors, warnings, path) {
   }
 }
 
-function validateStyle(style, errors, warnings, path) {
+function validateStyle(style, errors, warnings, path, label = 'Block style') {
   if (style == null) {
     return
   }
 
   if (!isPlainObject(style)) {
-    addIssue(errors, path, 'Block style must be an object.', 'invalid-style')
+    addIssue(errors, path, `${label} must be an object.`, 'invalid-style')
     return
   }
 
   if (style.background != null && !isPlainObject(style.background)) {
-    addIssue(errors, [...path, 'background'], 'Block style background must be an object.', 'invalid-style')
+    addIssue(errors, [...path, 'background'], `${label} background must be an object.`, 'invalid-style')
   }
 
   validateOption(style.align, BLOCK_ALIGN_OPTIONS, warnings, [...path, 'align'], 'Block alignment')
@@ -177,6 +179,35 @@ function validateStyle(style, errors, warnings, path) {
   ) {
     addIssue(warnings, [...path, 'background', 'overlay'], 'Background images should use an overlay to preserve text readability.', 'background-image-no-overlay')
   }
+}
+
+function validateElementStyles(elementStyles, type, errors, warnings, path) {
+  if (elementStyles == null) {
+    return
+  }
+
+  if (!isPlainObject(elementStyles)) {
+    addIssue(errors, path, 'Element styles must be an object keyed by style target.', 'invalid-element-styles')
+    return
+  }
+
+  const supportedTargets = new Set(getBlockElementStyleTargetIds(type))
+
+  Object.entries(elementStyles).forEach(([targetId, style]) => {
+    const normalizedTargetId = String(targetId ?? '').trim()
+    const targetPath = [...path, targetId]
+
+    if (!normalizedTargetId) {
+      addIssue(errors, targetPath, 'Element style targets require a non-empty id.', 'invalid-element-style-target')
+      return
+    }
+
+    if (!supportedTargets.has(normalizedTargetId)) {
+      addIssue(warnings, targetPath, `Element style target "${normalizedTargetId}" is not supported by ${type || 'this block'}.`, 'unsupported-element-style-target')
+    }
+
+    validateStyle(style, errors, warnings, targetPath)
+  })
 }
 
 function validateBlockArray(blocks, path, depth, errors, warnings, collectedBlocks) {
@@ -239,6 +270,25 @@ function validateRowColumns(columns, path, depth, errors, warnings, collectedBlo
   })
 }
 
+function validateTabItems(items, path, depth, errors, warnings, collectedBlocks) {
+  if (!Array.isArray(items)) {
+    addIssue(errors, path, 'Tabs blocks require an items array.', 'invalid-tabs-items')
+    return
+  }
+
+  items.forEach((item, index) => {
+    const itemPath = [...path, index]
+
+    if (!isPlainObject(item)) {
+      addIssue(errors, itemPath, 'Tab item must be an object.', 'invalid-tabs-item')
+      return
+    }
+
+    validateStableId(item.id, errors, [...itemPath, 'id'], 'Tab item')
+    validateBlockArray(item.blocks, [...itemPath, 'blocks'], depth + 1, errors, warnings, collectedBlocks)
+  })
+}
+
 function validateBlock(block, path, depth, errors, warnings, collectedBlocks) {
   if (!isPlainObject(block)) {
     addIssue(errors, path, 'Block must be an object.', 'invalid-block')
@@ -263,6 +313,7 @@ function validateBlock(block, path, depth, errors, warnings, collectedBlocks) {
   validateBlockResponsive(block.responsive, block, errors, warnings, [...path, 'responsive'])
   validateBlockVisibility(block.visibility, errors, warnings, [...path, 'visibility'])
   validateStyle(block.style, errors, warnings, [...path, 'style'])
+  validateElementStyles(block.elementStyles, type, errors, warnings, [...path, 'elementStyles'])
 
   if (BLOCK_TYPES.includes(type)) {
     const contentValidation = validateBlockContentRecord(block, type)
@@ -276,6 +327,10 @@ function validateBlock(block, path, depth, errors, warnings, collectedBlocks) {
 
   if (type === 'row') {
     validateRowColumns(block.columns, [...path, 'columns'], depth, errors, warnings, collectedBlocks)
+  }
+
+  if (type === 'tabs') {
+    validateTabItems(block.items, [...path, 'items'], depth, errors, warnings, collectedBlocks)
   }
 
   if (type === 'spacer') {
@@ -300,7 +355,7 @@ function addPublishReadinessWarnings(page, blocks, warnings) {
     addIssue(warnings, ['metaDescription'], 'Meta description is missing.', 'missing-meta-description')
   }
 
-  if (!blocks.some((block) => block?.type === 'hero')) {
+  if (!blocks.some((block) => READINESS_HERO_BLOCK_TYPES.has(block?.type))) {
     addIssue(warnings, ['blocks'], 'Page has no hero block.', 'missing-hero')
   }
 
@@ -327,6 +382,7 @@ export function validateEditorBlockPageDraft(page, options = {}) {
   const migration = migrateBlockPageDraft(page)
   const migratedPage = migration.page
   migration.errors.forEach((issue) => addIssue(errors, issue.pathSegments, issue.message, issue.code))
+  validateStyle(migratedPage.style, errors, warnings, ['style'], 'Page style')
   validateBlockArray(migratedPage.blocks, ['blocks'], 0, errors, warnings, collectedBlocks)
   validateBlockAnchorSettings(migratedPage.blocks).forEach((issue) => addIssue(errors, issue.path, issue.message, issue.code))
   const routeValidation = validatePageRouteSettings(migratedPage, options)

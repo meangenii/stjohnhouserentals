@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from '../lib/router'
 import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { getAdminIdToken } from '../lib/adminAuth'

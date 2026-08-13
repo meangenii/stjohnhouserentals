@@ -10,23 +10,58 @@ async function readBlockCount(page) {
 }
 
 async function openContextView(page, name) {
-  const launcher = page.getByRole('button', { name: `Open ${name}`, exact: true })
+  if (name === 'Layers') {
+    return
+  }
 
-  if ((await launcher.getAttribute('aria-pressed')) !== 'true') {
-    await launcher.click()
+  if (name === 'Layout') {
+    const layoutButton = page.getByRole('button', { name: 'Layout', exact: true })
+
+    if ((await layoutButton.getAttribute('aria-pressed')) !== 'true') {
+      await layoutButton.click()
+    }
+
+    return
+  }
+
+  if (name === 'Inspector') {
+    const visualButton = page.getByRole('button', { name: 'Visual', exact: true })
+
+    if ((await visualButton.count()) > 0 && (await visualButton.getAttribute('aria-pressed')) !== 'true') {
+      await visualButton.click()
+    }
+
+    const inspector = page.getByRole('complementary', { name: 'Inspector' })
+    // The selection inspector floats over the selected block and only appears once its
+    // position has been measured on a requestAnimationFrame after the Visual/Layout
+    // toggle re-render, so an immediate count() races that measurement. Give it a moment
+    // before assuming no block is selected and falling back to Page settings.
+    const inspectorAppeared = await inspector
+      .first()
+      .waitFor({ state: 'attached', timeout: 2000 })
+      .then(() => true)
+      .catch(() => false)
+
+    if (!inspectorAppeared) {
+      const settingsButton = page.locator('.admin-page-editor-canvas-toolbar').getByRole('button', { name: 'Page settings', exact: true })
+
+      if ((await settingsButton.count()) > 0 && (await settingsButton.getAttribute('aria-pressed')) !== 'true') {
+        await settingsButton.click()
+      }
+    }
   }
 }
 
 async function readLayerLabels(page) {
   await openContextView(page, 'Layers')
-  const labels = await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-item-label').allTextContents()
+  const labels = await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-list .block-outline-item-label').allTextContents()
   await openContextView(page, 'Inspector')
   return labels
 }
 
 async function readHiddenLayerCount(page) {
   await openContextView(page, 'Layers')
-  const count = await page.getByRole('region', { name: 'Page layers' }).getByText('Hidden', { exact: true }).count()
+  const count = await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-list').getByText('Hidden', { exact: true }).count()
   await openContextView(page, 'Inspector')
   return count
 }
@@ -58,6 +93,11 @@ try {
 
   await page.getByRole('button', { name: 'New page', exact: true }).click()
   assert.equal(await readBlockCount(page), 0, 'A new page should start with an empty block tree.')
+  const pageBodyLayer = page.getByRole('region', { name: 'Page layers' }).getByRole('button', { name: 'Page', exact: true })
+  await pageBodyLayer.click()
+  await page.getByRole('complementary', { name: 'Inspector' }).getByRole('tab', { name: 'Style', exact: true }).waitFor()
+  assert.equal(await pageBodyLayer.getAttribute('aria-pressed'), 'true', 'The page body layer should select overall page properties.')
+  await page.getByRole('button', { name: 'Visual', exact: true }).click()
 
   await page.getByRole('button', { name: '+ Add block', exact: true }).click()
   await page.getByRole('button', { name: 'Hero Banner', exact: true }).click()
@@ -71,10 +111,21 @@ try {
   await inspector.locator('label:has(> span:text-is("Title")) textarea').fill('Browser-tested hero')
   await page.getByRole('heading', { name: 'Browser-tested hero', exact: true }).waitFor()
 
+  // The hero CTA button only renders once it has real button text/link and is explicitly enabled.
+  await inspector.getByLabel('Button text', { exact: true }).fill('Contact us')
+  await inspector.getByLabel('Button link Path', { exact: true }).fill('/contact-us')
+  await inspector.getByLabel('Show CTA button', { exact: true }).check()
+  await page.locator('.block-hero-button').first().waitFor()
+
   const heroCta = page.locator('.block-hero-button').first()
   await heroCta.click()
   await page.locator('.admin-inline-format-toolbar').waitFor({ state: 'visible' })
   await page.locator('.admin-inline-link-settings').waitFor({ state: 'visible' })
+  assert.equal(
+    await page.locator('.admin-inline-format-toolbar .admin-rich-text-menu-label').count(),
+    0,
+    'Inline text formatting menus should not show separate Tag or Size labels.',
+  )
   assert.equal(
     await heroCta.getAttribute('data-admin-inline-editing'),
     'true',
@@ -83,9 +134,39 @@ try {
   await page.locator('.admin-inline-format-toolbar').getByRole('button', { name: 'Done', exact: true }).click()
   await page.locator('.admin-inline-format-toolbar').waitFor({ state: 'detached' })
 
+  await inspector.getByRole('tab', { name: 'Style', exact: true }).click()
+  await inspector.getByLabel('Title style', { exact: true }).selectOption('feature-card')
+  const styledHeroTitle = page.locator('.block-hero h1[data-block-element-style-target="title"]').first()
+  await styledHeroTitle.waitFor()
+  const styledHeroTitleClassName = await styledHeroTitle.getAttribute('class')
+  assert.match(styledHeroTitleClassName, /block-element-style-target/, 'Element style presets should apply to selected block elements.')
+  assert.match(styledHeroTitleClassName, /block-style-frame--radius-large/, 'Element style preset classes should render on the styled element.')
+  await inspector.getByRole('tab', { name: 'Content', exact: true }).click()
+
   await page.getByRole('button', { name: '+ Insert below', exact: true }).click()
   await page.getByRole('button', { name: 'Rich Text', exact: true }).click()
   assert.equal(await readBlockCount(page), 2, 'Inserting below should preserve the existing hero.')
+
+  const richTextToolbar = inspector.locator('.admin-rich-text-toolbar').first()
+  const richTextCanvas = inspector.locator('.admin-rich-text-canvas').first()
+  await richTextCanvas.click()
+  await richTextToolbar.waitFor({ state: 'visible' })
+  assert.equal(
+    await richTextToolbar.locator('.admin-rich-text-menu-label').count(),
+    0,
+    'Rich text toolbar Tag and Size menus should not render separate labels.',
+  )
+  assert.equal(await richTextToolbar.getByRole('button', { name: 'Add Row', exact: true }).count(), 0)
+  assert.equal(await richTextToolbar.getByRole('button', { name: 'Add Column', exact: true }).count(), 0)
+  assert.equal(await richTextToolbar.getByRole('button', { name: 'Delete Row', exact: true }).count(), 0)
+  assert.equal(await richTextToolbar.getByRole('button', { name: 'Delete Column', exact: true }).count(), 0)
+  await richTextToolbar.getByRole('button', { name: 'Insert Table', exact: true }).click()
+  assert.equal(await richTextToolbar.getByRole('button', { name: 'Add Row', exact: true }).count(), 0)
+  await richTextCanvas.locator('td, th').first().click()
+  await richTextToolbar.getByRole('button', { name: 'Add Row', exact: true }).waitFor()
+  await richTextToolbar.getByRole('button', { name: 'Add Column', exact: true }).waitFor()
+  await richTextToolbar.getByRole('button', { name: 'Delete Row', exact: true }).waitFor()
+  await richTextToolbar.getByRole('button', { name: 'Delete Column', exact: true }).waitFor()
 
   await inspector.getByRole('tab', { name: 'Settings', exact: true }).click()
   await inspector.getByLabel('Editor label', { exact: true }).fill('Body text')
@@ -126,12 +207,16 @@ try {
 
   await page.getByRole('button', { name: 'Save fixture', exact: true }).click()
   await page.getByTestId('fixture-status').getByText('Saved for this test session', { exact: true }).waitFor()
-  await page.getByRole('button', { name: 'Page settings', exact: true }).click()
+  const savedStyledPage = await page.evaluate((storageKey) => JSON.parse(window.sessionStorage.getItem(storageKey)), STORAGE_KEY)
+  assert.equal(savedStyledPage.blocks[0].elementStyles.title.presetId, 'feature-card', 'Element style preset choices should persist in page data.')
+  await page.locator('.editor-interaction-harness-actions').getByRole('button', { name: 'Page settings', exact: true }).click()
+  await inspector.getByRole('tab', { name: 'Settings', exact: true }).click()
   await inspector.getByLabel('Page title', { exact: true }).fill('Changed after save')
   assert.equal(await page.getByTestId('fixture-dirty-state').textContent(), 'Unsaved')
 
   await page.getByRole('button', { name: 'Reload saved', exact: true }).click()
   await openContextView(page, 'Inspector')
+  await inspector.getByRole('tab', { name: 'Settings', exact: true }).click()
   assert.equal(await inspector.getByLabel('Page title', { exact: true }).inputValue(), 'Untitled Page')
 
   await page.reload()
@@ -166,7 +251,7 @@ try {
   await page.reload()
   await page.getByRole('alert').filter({ hasText: 'retired-promo is not registered' }).waitFor()
   await openContextView(page, 'Layers')
-  await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-button').click()
+  await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-list .block-outline-button').click()
   await page.getByRole('complementary', { name: 'Inspector' }).getByRole('alert').waitFor()
 
   await page.getByRole('button', { name: 'Preview', exact: true }).click()

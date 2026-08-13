@@ -4,7 +4,7 @@ import { blockInspectorSchemas, getBlockInspectorFields } from '../src/lib/block
 
 const require = createRequire(import.meta.url)
 const { SUPPORTED_BLOCK_TYPES } = require('../functions/src/blockPageSchema.js')
-const SUPPORTED_WIDGETS = new Set(['color', 'enum', 'image', 'link', 'objectList', 'richHtml', 'stringList', 'text'])
+const SUPPORTED_WIDGETS = new Set(['boolean', 'color', 'enum', 'image', 'link', 'objectList', 'richHtml', 'stringList', 'text'])
 
 function formatPath(path) {
   return Array.isArray(path) ? path.join('.') : ''

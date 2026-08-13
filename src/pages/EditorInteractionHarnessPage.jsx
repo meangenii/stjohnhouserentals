@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
+import { Eye, LayoutPanelTop, SlidersHorizontal } from 'lucide-react'
 import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
+import { AdminPreviewModeSplitButton } from '../components/AdminPreviewModeSplitButton'
 import { BlockInspectorPanel } from '../components/BlockInspectorPanel'
 import { BlockLayoutOutline, BlockOutline } from '../components/BlockOutline'
-import { EditorContextPanel, EditorContextToolbar } from '../components/EditorContextPanel'
+import { EditorIconButton } from '../components/EditorIconButton'
 import { validateEditorBlockPageDraft } from '../lib/blockPageValidation'
 import { collectBlockOutlineEntries } from '../lib/blockTree'
 import {
@@ -94,6 +96,8 @@ export function EditorInteractionHarnessPage() {
   const historyStatus = getPageEditorHistoryStatus(history, HARNESS_PAGE_KEY)
   const blockCount = collectBlockOutlineEntries(page.blocks).filter((entry) => entry.kind === 'block').length
   const dirty = JSON.stringify(page) !== savedSnapshot
+  const canvasView = contextView === 'layout' ? 'layout' : 'visual'
+  const pageSettingsOpen = contextView === 'settings'
 
   function applyDraftChange(nextDraftOrUpdater) {
     const previousDraft = pageRef.current
@@ -167,12 +171,17 @@ export function EditorInteractionHarnessPage() {
 
   function handleSelectionChange(selectionId) {
     setSelectedBlockId(selectionId)
-    setContextView((currentView) => (selectionId ? (currentView === 'layers' ? 'inspector' : currentView) : ''))
+    setContextView((currentView) => (selectionId ? (currentView === 'layout' ? 'layout' : '') : ''))
   }
 
   function openPageSettings() {
     setSelectedBlockId('')
-    setContextView('inspector')
+    setContextView('settings')
+  }
+
+  function clearSelection() {
+    setSelectedBlockId('')
+    setContextView('')
   }
 
   function handleUndo() {
@@ -209,9 +218,12 @@ export function EditorInteractionHarnessPage() {
           <button className="button-link button-link--ghost admin-action" type="button" onClick={openPageSettings}>
             Page settings
           </button>
-          <button className="button-link button-link--ghost admin-action" type="button" onClick={() => setPreviewMode((current) => !current)}>
-            {previewMode ? 'Edit' : 'Preview'}
-          </button>
+          <AdminPreviewModeSplitButton
+            device={previewDevice}
+            mode={previewMode ? 'preview' : 'edit'}
+            onDeviceChange={setPreviewDevice}
+            onModeChange={(nextMode) => setPreviewMode(nextMode === 'preview')}
+          />
           <button className="button-link button-link--ghost admin-action" disabled={!historyStatus.canUndo} type="button" onClick={handleUndo}>
             Undo
           </button>
@@ -226,20 +238,6 @@ export function EditorInteractionHarnessPage() {
           </button>
         </div>
       </header>
-
-      <div className="editor-interaction-harness-devices" aria-label="Preview device" role="group">
-        {['desktop', 'tablet', 'mobile'].map((device) => (
-          <button
-            aria-pressed={previewDevice === device}
-            className={`button-link admin-action ${previewDevice === device ? 'button-link--secondary' : 'button-link--ghost'}`}
-            key={device}
-            type="button"
-            onClick={() => setPreviewDevice(device)}
-          >
-            {device[0].toUpperCase() + device.slice(1)}
-          </button>
-        ))}
-      </div>
 
       <div className="editor-interaction-harness-status" role="status">
         <span data-testid="fixture-status">{status}</span>
@@ -256,56 +254,112 @@ export function EditorInteractionHarnessPage() {
           </div>
         </div>
       ) : (
-        <>
-          <EditorContextToolbar activeView={contextView} onViewChange={setContextView} />
-          <div className="admin-page-editor-shell">
-            <EditorContextPanel activeView={contextView} onViewChange={setContextView}>
-              <div className="admin-page-editor-layers-rail admin-page-editor-rail--active" hidden={contextView !== 'layers'}>
-                <BlockOutline
-                  blocks={page.blocks}
-                  headingLevel={2}
-                  selectedBlockId={selectedBlockId}
-                  validation={validation}
-                  onBlocksChange={(nextBlocks) => updateDraftPath(['blocks'], nextBlocks)}
-                  onSelectBlock={handleSelectionChange}
-                />
+        <div className="admin-page-editor-shell">
+          <aside className="admin-page-editor-layers-rail" aria-label="Page layers">
+            <BlockOutline
+              blocks={page.blocks}
+              headingLevel={2}
+              pageSelected={pageSettingsOpen}
+              selectedBlockId={selectedBlockId}
+              validation={validation}
+              onBlocksChange={(nextBlocks) => updateDraftPath(['blocks'], nextBlocks)}
+              onSelectBlock={handleSelectionChange}
+              onSelectPage={openPageSettings}
+            />
+          </aside>
+
+          <div className="admin-page-editor-main">
+            <div className="admin-page-editor-canvas-toolbar">
+              <div aria-label="Canvas view" className="admin-page-editor-view-toggle" role="group">
+                <button
+                  aria-pressed={canvasView === 'visual'}
+                  className={`admin-page-editor-view-toggle-button${
+                    canvasView === 'visual' ? ' admin-page-editor-view-toggle-button--active' : ''
+                  }`}
+                  type="button"
+                  onClick={() => setContextView('')}
+                >
+                  <Eye aria-hidden="true" size={16} strokeWidth={2} />
+                  <span>Visual</span>
+                </button>
+                <button
+                  aria-pressed={canvasView === 'layout'}
+                  className={`admin-page-editor-view-toggle-button${
+                    canvasView === 'layout' ? ' admin-page-editor-view-toggle-button--active' : ''
+                  }`}
+                  type="button"
+                  onClick={() => setContextView('layout')}
+                >
+                  <LayoutPanelTop aria-hidden="true" size={16} strokeWidth={2} />
+                  <span>Layout</span>
+                </button>
               </div>
-              <div className="admin-page-editor-layout-rail admin-page-editor-rail--active" hidden={contextView !== 'layout'}>
-                <BlockLayoutOutline
-                  blocks={page.blocks}
-                  headingLevel={2}
-                  layoutMetrics={layoutMetrics}
-                  selectedBlockId={selectedBlockId}
-                  onSelectBlock={handleSelectionChange}
-                />
-              </div>
-              <div className="admin-page-editor-inspector-rail admin-page-editor-rail--active" hidden={contextView !== 'inspector'}>
+              <EditorIconButton
+                aria-pressed={pageSettingsOpen}
+                className={pageSettingsOpen ? 'editor-icon-button--active' : ''}
+                icon={SlidersHorizontal}
+                label="Page settings"
+                onClick={() => {
+                  if (pageSettingsOpen) {
+                    setContextView('')
+                  } else {
+                    openPageSettings()
+                  }
+                }}
+              />
+            </div>
+
+            {pageSettingsOpen ? (
+              <div className="admin-page-editor-page-settings">
                 <BlockInspectorPanel
                   headingLevel={2}
                   page={page}
-                  selectedBlockId={selectedBlockId}
+                  selectedBlockId=""
                   siteShell={HARNESS_SITE_SHELL}
                   validation={validation}
-                  onClearSelection={openPageSettings}
+                  onClearSelection={clearSelection}
                   onUpdatePath={updateDraftPath}
                 />
               </div>
-            </EditorContextPanel>
+            ) : null}
 
             <div className="admin-page-editor-canvas">
-              <AdminPageEditorCanvas
-                device={previewDevice}
-                onChange={applyDraftChange}
-                onLayoutMetricsChange={setLayoutMetrics}
-                onSelectedBlockIdChange={handleSelectionChange}
-                page={page}
-                pageKey={HARNESS_PAGE_KEY}
-                selectedBlockId={selectedBlockId}
-                siteShell={HARNESS_SITE_SHELL}
-              />
+              {canvasView === 'layout' ? (
+                <div className="admin-page-editor-layout-view">
+                  <BlockLayoutOutline
+                    blocks={page.blocks}
+                    headingLevel={2}
+                    layoutMetrics={layoutMetrics}
+                    selectedBlockId={selectedBlockId}
+                    onSelectBlock={handleSelectionChange}
+                  />
+                </div>
+              ) : (
+                <AdminPageEditorCanvas
+                  device={previewDevice}
+                  renderSelectionInspector={(selectionId) => (
+                    <BlockInspectorPanel
+                      headingLevel={2}
+                      page={page}
+                      selectedBlockId={selectionId}
+                      siteShell={HARNESS_SITE_SHELL}
+                      validation={validation}
+                      onClearSelection={clearSelection}
+                      onUpdatePath={updateDraftPath}
+                    />
+                  )}
+                  onChange={applyDraftChange}
+                  onLayoutMetricsChange={setLayoutMetrics}
+                  onSelectedBlockIdChange={handleSelectionChange}
+                  page={page}
+                  pageKey={HARNESS_PAGE_KEY}
+                  selectedBlockId={selectedBlockId}
+                  siteShell={HARNESS_SITE_SHELL}
+                />
+              )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </main>
   )

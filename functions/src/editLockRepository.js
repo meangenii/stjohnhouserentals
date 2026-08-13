@@ -1,7 +1,6 @@
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
 
 const EDIT_LOCK_COLLECTION = 'cmsEditLocks'
-const LOCK_TTL_MS = 45000
 
 function normalizeResourceType(resourceType) {
   const type = String(resourceType ?? '').trim()
@@ -37,16 +36,6 @@ function buildLockDocId(resourceType, resourceId) {
   return `${resourceType}:${encodeURIComponent(resourceId)}`
 }
 
-function isLockExpired(lockData) {
-  const lastHeartbeat = lockData?.lastHeartbeat
-
-  if (!lastHeartbeat || typeof lastHeartbeat.toMillis !== 'function') {
-    return true
-  }
-
-  return Date.now() - lastHeartbeat.toMillis() > LOCK_TTL_MS
-}
-
 function serializeLock(lockData) {
   if (!lockData) {
     return null
@@ -79,10 +68,15 @@ exports.acquireLock = async function acquireLock(resourceType, resourceId, admin
     return await getDb().runTransaction(async (transaction) => {
       const snapshot = await transaction.get(docRef)
       const existing = snapshot.exists ? snapshot.data() : null
-      const heldByRequester = existing?.lockedBy === adminUser.uid && existing?.leaseId === normalizedLeaseId
+      const heldByRequesterSession = existing?.lockedBy === adminUser.uid && existing?.leaseId === normalizedLeaseId
 
-      if (existing && !heldByRequester && !isLockExpired(existing)) {
-        throw new HttpError(409, `This ${type} is currently being edited by ${existing.lockedByEmail || 'another admin'}.`, {
+      if (existing && !heldByRequesterSession) {
+        const ownerLabel =
+          existing.lockedBy === adminUser.uid
+            ? 'another tab under your account'
+            : existing.lockedByEmail || 'another admin'
+
+        throw new HttpError(409, `This ${type} is currently being edited by ${ownerLabel}.`, {
           lock: serializeLock(existing),
         })
       }
@@ -94,7 +88,7 @@ exports.acquireLock = async function acquireLock(resourceType, resourceId, admin
         lockedBy: adminUser.uid,
         lockedByEmail: adminUser.email || '',
         leaseId: normalizedLeaseId,
-        lockedAt: heldByRequester ? existing.lockedAt || now : now,
+        lockedAt: heldByRequesterSession ? existing.lockedAt || now : now,
         lastHeartbeat: now,
       }
 
@@ -107,7 +101,59 @@ exports.acquireLock = async function acquireLock(resourceType, resourceId, admin
           resourceId: id,
           lockedBy: nextLock.lockedBy,
           lockedByEmail: nextLock.lockedByEmail,
-          lockedAt: heldByRequester ? serializeLock(existing)?.lockedAt ?? Date.now() : Date.now(),
+          lockedAt: heldByRequesterSession ? serializeLock(existing)?.lockedAt ?? Date.now() : Date.now(),
+          lastHeartbeat: Date.now(),
+        },
+      }
+    })
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error
+    }
+
+    if (isFirestoreUnavailableError(error)) {
+      throw createLockUnavailableError()
+    }
+
+    throw error
+  }
+}
+
+exports.takeOverLock = async function takeOverLock(resourceType, resourceId, adminUser, leaseId) {
+  const type = normalizeResourceType(resourceType)
+  const id = normalizeResourceId(resourceId)
+  const normalizedLeaseId = normalizeLeaseId(leaseId)
+  const docRef = getDb().collection(EDIT_LOCK_COLLECTION).doc(buildLockDocId(type, id))
+
+  try {
+    return await getDb().runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(docRef)
+      const existing = snapshot.exists ? snapshot.data() : null
+      const heldByRequesterSession = existing?.lockedBy === adminUser.uid && existing?.leaseId === normalizedLeaseId
+      const now = getServerTimestamp()
+      const nextLock = {
+        resourceType: type,
+        resourceId: id,
+        lockedBy: adminUser.uid,
+        lockedByEmail: adminUser.email || '',
+        leaseId: normalizedLeaseId,
+        lockedAt: heldByRequesterSession ? existing.lockedAt || now : now,
+        lastHeartbeat: now,
+        takenOverAt: heldByRequesterSession ? existing.takenOverAt || null : now,
+        takenOverFrom: heldByRequesterSession ? existing.takenOverFrom || null : serializeLock(existing),
+      }
+
+      transaction.set(docRef, nextLock)
+
+      return {
+        locked: true,
+        previousLock: heldByRequesterSession ? null : serializeLock(existing),
+        lock: {
+          resourceType: type,
+          resourceId: id,
+          lockedBy: nextLock.lockedBy,
+          lockedByEmail: nextLock.lockedByEmail,
+          lockedAt: heldByRequesterSession ? serializeLock(existing)?.lockedAt ?? Date.now() : Date.now(),
           lastHeartbeat: Date.now(),
         },
       }
@@ -135,20 +181,16 @@ exports.heartbeatLock = async function heartbeatLock(resourceType, resourceId, a
     return await getDb().runTransaction(async (transaction) => {
       const snapshot = await transaction.get(docRef)
       const existing = snapshot.exists ? snapshot.data() : null
+      const heldByRequesterSession = existing?.lockedBy === adminUser.uid && existing?.leaseId === normalizedLeaseId
 
-      if (
-        !existing ||
-        existing.lockedBy !== adminUser.uid ||
-        existing.leaseId !== normalizedLeaseId ||
-        isLockExpired(existing)
-      ) {
-        if (existing && !isLockExpired(existing)) {
-          throw new HttpError(409, `This ${type} is now being edited by ${existing.lockedByEmail || 'another admin'}.`, {
-            lock: serializeLock(existing),
-          })
-        }
+      if (!existing) {
+        throw new HttpError(409, 'Your edit lock is no longer active. Take over editing to continue.', { lock: null })
+      }
 
-        throw new HttpError(409, 'Your edit lock expired. Reload to check the latest status.', { lock: null })
+      if (!heldByRequesterSession) {
+        throw new HttpError(409, `Editing was taken over by ${existing.lockedByEmail || 'another admin'}.`, {
+          lock: serializeLock(existing),
+        })
       }
 
       transaction.update(docRef, { lastHeartbeat: getServerTimestamp() })
@@ -221,14 +263,13 @@ exports.assertActiveEditLease = async function assertActiveEditLease(
   const owned =
     existing &&
     existing.lockedBy === adminUser.uid &&
-    existing.leaseId === normalizedLeaseId &&
-    !isLockExpired(existing)
+    existing.leaseId === normalizedLeaseId
 
   if (!owned) {
-    const activeLock = existing && !isLockExpired(existing) ? existing : null
+    const activeLock = existing || null
     const message = activeLock
       ? `This ${type} is currently being edited by ${activeLock.lockedByEmail || 'another admin'}.`
-      : 'Your edit lock expired. Reload the editor before making more changes.'
+      : 'Your edit lock is no longer active. Take over editing before making more changes.'
 
     throw new HttpError(409, message, { lock: serializeLock(activeLock) })
   }
@@ -249,13 +290,7 @@ exports.getLockStatus = async function getLockStatus(resourceType, resourceId) {
       return { locked: false, lock: null }
     }
 
-    const data = snapshot.data()
-
-    if (isLockExpired(data)) {
-      return { locked: false, lock: null }
-    }
-
-    return { locked: true, lock: serializeLock(data) }
+    return { locked: true, lock: serializeLock(snapshot.data()) }
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {
       return { locked: false, lock: null }
@@ -273,7 +308,6 @@ exports.listLockStatuses = async function listLockStatuses(resourceType) {
 
     return snapshot.docs
       .map((document) => document.data())
-      .filter((data) => !isLockExpired(data))
       .map((data) => serializeLock(data))
   } catch (error) {
     if (isFirestoreUnavailableError(error)) {

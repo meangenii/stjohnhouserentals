@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '../lib/router'
 
 const DEFAULT_PROPERTY_RETURN_PATH = '/for-rent'
 

@@ -1,9 +1,13 @@
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
 const { getEmailConfig, getEmailTransport } = require('./emailTransport')
 const { getSiteShellContent } = require('./siteContentRepository')
+const { createHash } = require('node:crypto')
 
 const ADVERTISE_INQUIRY_COLLECTION = 'advertiseInquiries'
+const ADVERTISE_INQUIRY_RATE_LIMIT_COLLECTION = 'advertiseInquiryRateLimits'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000
+const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 5
 
 function normalizeTimestampValue(value) {
   if (!value) {
@@ -127,6 +131,85 @@ function getClientMetadata(request) {
   }
 }
 
+function normalizePositiveInteger(value, fallback) {
+  const number = Number(value)
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return fallback
+  }
+
+  return Math.floor(number)
+}
+
+function getInquiryRateLimitConfig() {
+  return {
+    maxRequests: normalizePositiveInteger(process.env.ADVERTISE_INQUIRY_RATE_LIMIT_MAX, DEFAULT_RATE_LIMIT_MAX_REQUESTS),
+    windowMs: normalizePositiveInteger(process.env.ADVERTISE_INQUIRY_RATE_LIMIT_WINDOW_MS, DEFAULT_RATE_LIMIT_WINDOW_MS),
+  }
+}
+
+function hashRateLimitKey(scope, value) {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+
+  if (!normalizedValue) {
+    return ''
+  }
+
+  return `${scope}:${createHash('sha256').update(`${scope}:${normalizedValue}`).digest('hex')}`
+}
+
+async function assertAdvertiseInquiryRateLimit(inquiry, metadata) {
+  const config = getInquiryRateLimitConfig()
+  const rateLimitKeys = [
+    hashRateLimitKey('ip', metadata.ip),
+    hashRateLimitKey('email', inquiry.email),
+  ].filter(Boolean)
+
+  if (rateLimitKeys.length === 0) {
+    return
+  }
+
+  const uniqueRateLimitKeys = [...new Set(rateLimitKeys)]
+  const db = getDb()
+  const refs = uniqueRateLimitKeys.map((key) => db.collection(ADVERTISE_INQUIRY_RATE_LIMIT_COLLECTION).doc(key))
+  const now = Date.now()
+
+  await db.runTransaction(async (transaction) => {
+    const snapshots = await Promise.all(refs.map((ref) => transaction.get(ref)))
+    const blocked = snapshots.some((snapshot) => {
+      const data = snapshot.exists ? snapshot.data() : null
+      const windowStartedAtMs = Number(data?.windowStartedAtMs) || 0
+      const count = Number(data?.count) || 0
+      const withinWindow = windowStartedAtMs > 0 && now - windowStartedAtMs < config.windowMs
+
+      return withinWindow && count >= config.maxRequests
+    })
+
+    if (blocked) {
+      throw new HttpError(429, 'Too many inquiry submissions. Please wait a few minutes and try again.')
+    }
+
+    refs.forEach((ref, index) => {
+      const data = snapshots[index].exists ? snapshots[index].data() : null
+      const windowStartedAtMs = Number(data?.windowStartedAtMs) || 0
+      const count = Number(data?.count) || 0
+      const withinWindow = windowStartedAtMs > 0 && now - windowStartedAtMs < config.windowMs
+
+      transaction.set(
+        ref,
+        {
+          count: withinWindow ? count + 1 : 1,
+          lastRequestAtMs: now,
+          updatedAt: getServerTimestamp(),
+          windowMs: config.windowMs,
+          windowStartedAtMs: withinWindow ? windowStartedAtMs : now,
+        },
+        { merge: true },
+      )
+    })
+  })
+}
+
 async function getInquiryRecipientEmail() {
   try {
     const siteShell = await getSiteShellContent()
@@ -211,6 +294,8 @@ async function saveAdvertiseInquiry(payload, request) {
   }
 
   try {
+    await assertAdvertiseInquiryRateLimit(inquiry, metadata)
+
     const inquiryRef = getDb().collection(ADVERTISE_INQUIRY_COLLECTION).doc()
     const recipientEmail = await getInquiryRecipientEmail()
     const emailConfig = getEmailConfig()

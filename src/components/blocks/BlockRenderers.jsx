@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import { BlockList } from '../BlockList'
@@ -14,6 +14,7 @@ import { getBlockImageAltText } from '../../lib/blockImageValue'
 import { getRowMobileColumnOrder, getRowMobileColumnsMode } from '../../lib/blockResponsive'
 import { applyRowLayoutPreset, getRowLayoutPresetId, ROW_LAYOUT_PRESETS } from '../../lib/blockRowLayout'
 import { makeBlockTreeSelectionId } from '../../lib/blockTree'
+import { useBlockElementStyleProps } from '../../lib/blockElementStyles'
 import { normalizeSiteHtml } from '../../lib/normalizeSiteHtml'
 import { submitPageInquiry } from '../../lib/pageInquiryApi'
 import { appendPathItem, removePathItem, usePageEditor } from '../../lib/usePageEditor'
@@ -21,6 +22,48 @@ import { useSiteShellContent } from '../../lib/useSiteContent'
 
 function makeItemId() {
   return `item-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : []
+}
+
+function asObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+function asText(value) {
+  return value == null ? '' : String(value)
+}
+
+function ElementBox({ as: Component = 'div', block, className = '', style, styleTarget, ...props }) {
+  const styleProps = useBlockElementStyleProps(block, styleTarget, { className, style })
+
+  return <Component {...props} {...styleProps} />
+}
+
+function ElementEditableText({ block, className = '', style, styleTarget, ...props }) {
+  const styleProps = useBlockElementStyleProps(block, styleTarget, { className, style })
+
+  return <EditableText {...props} {...styleProps} />
+}
+
+function ElementEditableRichHtml({ block, className = '', style, styleTarget, ...props }) {
+  const styleProps = useBlockElementStyleProps(block, styleTarget, { className, style })
+
+  return <EditableRichHtml {...props} {...styleProps} />
+}
+
+function ElementEditableImage({ block, className = '', style, styleTarget, ...props }) {
+  const styleProps = useBlockElementStyleProps(block, styleTarget, { className, style })
+
+  return <EditableImage {...props} {...styleProps} />
+}
+
+function ElementEditableLink({ block, className = '', style, styleTarget, ...props }) {
+  const styleProps = useBlockElementStyleProps(block, styleTarget, { className, style })
+
+  return <EditableLink {...props} {...styleProps} />
 }
 
 // Fields like a schedule column's times, a rate row's values, or a business's phone
@@ -72,7 +115,7 @@ function removeStableStringItem(pageEditor, objectPath, valuesField, idsField, i
 export function RichTextBlockRenderer({ block, path }) {
   const html = normalizeSiteHtml(block.html ?? '').trim()
 
-  return <EditableRichHtml className="block-rich-text" html={html} path={[...path, 'html']} title="Block Text" />
+  return <ElementEditableRichHtml block={block} className="block-rich-text" html={html} path={[...path, 'html']} styleTarget="text" title="Block Text" />
 }
 
 export function ImageBlockRenderer({ block, path }) {
@@ -80,12 +123,32 @@ export function ImageBlockRenderer({ block, path }) {
   const imageUrl = getContentImageSrc(image, { width: 1200 })
 
   return (
-    <figure className="block-image">
-      <EditableImage alt={getBlockImageAltText(image)} className="block-image-photo" decoding="async" image={image} loading="lazy" path={[...path, 'image']} src={imageUrl} />
-      <EditableText as="figcaption" className="block-image-caption" label="Caption" multiline path={[...path, 'caption']} rows={2} value={block.caption ?? ''}>
+    <ElementBox as="figure" block={block} className="block-image" styleTarget="figure">
+      <ElementEditableImage
+        alt={getBlockImageAltText(image)}
+        block={block}
+        className="block-image-photo"
+        decoding="async"
+        image={image}
+        loading="lazy"
+        path={[...path, 'image']}
+        src={imageUrl}
+        styleTarget="image"
+      />
+      <ElementEditableText
+        as="figcaption"
+        block={block}
+        className="block-image-caption"
+        label="Caption"
+        multiline
+        path={[...path, 'caption']}
+        rows={2}
+        styleTarget="caption"
+        value={block.caption ?? ''}
+      >
         {block.caption ?? ''}
-      </EditableText>
-    </figure>
+      </ElementEditableText>
+    </ElementBox>
   )
 }
 
@@ -104,22 +167,32 @@ export function ImageGalleryBlockRenderer({ block, path }) {
   }
 
   return (
-    <section aria-label="Image gallery" className="block-image-gallery">
+    <ElementBox aria-label="Image gallery" as="section" block={block} className="block-image-gallery" styleTarget="grid">
       {images.map((image, index) => (
-        <figure className="block-image-gallery-item" key={image?.id ?? index}>
-          <EditableImage
+        <ElementBox as="figure" block={block} className="block-image-gallery-item" key={image?.id ?? index} styleTarget="item">
+          <ElementEditableImage
             alt={getBlockImageAltText(image)}
+            block={block}
             className="block-image-gallery-image"
             decoding="async"
             image={image}
             loading="lazy"
             path={[...path, 'images', index]}
             src={getContentImageSrc(image, { height: 720, width: 960 })}
+            styleTarget="image"
           />
           {String(image?.title ?? '').trim() ? (
-            <EditableText as="figcaption" className="block-image-gallery-caption" label={`Image ${index + 1} Title`} path={[...path, 'images', index, 'title']} value={image?.title ?? ''}>
+            <ElementEditableText
+              as="figcaption"
+              block={block}
+              className="block-image-gallery-caption"
+              label={`Image ${index + 1} Title`}
+              path={[...path, 'images', index, 'title']}
+              styleTarget="caption"
+              value={image?.title ?? ''}
+            >
               {image?.title ?? ''}
-            </EditableText>
+            </ElementEditableText>
           ) : null}
           {controlsVisible ? (
             <EditorIconButton
@@ -131,12 +204,12 @@ export function ImageGalleryBlockRenderer({ block, path }) {
               onClick={() => removeImage(index)}
             />
           ) : null}
-        </figure>
+        </ElementBox>
       ))}
       {controlsVisible ? (
         <EditorIconButton className="block-image-gallery-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add image" onClick={addImage} />
       ) : null}
-    </section>
+    </ElementBox>
   )
 }
 
@@ -145,16 +218,17 @@ export function CtaBandBlockRenderer({ block, path }) {
 
   return (
     <section className="block-cta-band">
-      <div className="block-cta-band-inner">
-        <EditableText as="h2" label="CTA Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+      <ElementBox block={block} className="block-cta-band-inner" styleTarget="content">
+        <ElementEditableText as="h2" block={block} label="CTA Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
           {block.title ?? ''}
-        </EditableText>
-        <EditableText as="p" label="CTA Body" multiline path={[...path, 'body']} rows={4} value={block.body ?? ''}>
+        </ElementEditableText>
+        <ElementEditableText as="p" block={block} label="CTA Body" multiline path={[...path, 'body']} rows={4} styleTarget="body" value={block.body ?? ''}>
           {block.body ?? ''}
-        </EditableText>
-        <EditableLink
+        </ElementEditableText>
+        <ElementEditableLink
           allowExternalUrl
           allowRouteSelection
+          block={block}
           buttonColor={action.backgroundColor}
           buttonColorPath={[...path, 'action', 'backgroundColor']}
           className="block-cta-band-button"
@@ -168,8 +242,9 @@ export function CtaBandBlockRenderer({ block, path }) {
           labelLabel="Button Text"
           labelPath={[...path, 'action', 'label']}
           presentation="button"
+          styleTarget="action"
         />
-      </div>
+      </ElementBox>
     </section>
   )
 }
@@ -206,6 +281,10 @@ export function HeroBannerBlockRenderer({ block, path }) {
   const image = block.image ?? { kind: 'image' }
   const heroImageUrl = getContentImageSrc(image, { height: 900, width: 1920 })
   const action = block.action ?? {}
+  // Older hero blocks predate the enabled toggle: a real label + path already means the
+  // admin configured the button, so only an explicit `enabled: false` hides it for them.
+  const hasCtaProperties = String(action.label ?? '').trim() !== '' && String(action.path ?? '').trim() !== ''
+  const showCtaButton = hasCtaProperties && action.enabled !== false
 
   return (
     <EditableBackgroundSection
@@ -215,31 +294,35 @@ export function HeroBannerBlockRenderer({ block, path }) {
       path={[...path, 'image']}
       style={heroImageUrl ? { backgroundImage: `url(${heroImageUrl})` } : undefined}
     >
-      <div className="block-hero-inner">
-        <EditableText as="h1" label="Hero Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+      <ElementBox block={block} className="block-hero-inner" styleTarget="content">
+        <ElementEditableText as="h1" block={block} label="Hero Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
           {block.title ?? ''}
-        </EditableText>
-        <EditableText as="p" label="Hero Lead" multiline path={[...path, 'lead']} rows={3} value={block.lead ?? ''}>
+        </ElementEditableText>
+        <ElementEditableText as="p" block={block} label="Hero Lead" multiline path={[...path, 'lead']} rows={3} styleTarget="lead" value={block.lead ?? ''}>
           {block.lead ?? ''}
-        </EditableText>
-        <EditableLink
-          allowExternalUrl
-          allowRouteSelection
-          buttonColor={action.backgroundColor}
-          buttonColorPath={[...path, 'action', 'backgroundColor']}
-          className="block-hero-button"
-          destination={action.path ?? ''}
-          destinationField="path"
-          destinationLabel="Button Link"
-          destinationPath={[...path, 'action', 'path']}
-          link={action}
-          linkPath={[...path, 'action']}
-          label={action.label ?? ''}
-          labelLabel="Button Text"
-          labelPath={[...path, 'action', 'label']}
-          presentation="button"
-        />
-      </div>
+        </ElementEditableText>
+        {showCtaButton ? (
+          <ElementEditableLink
+            allowExternalUrl
+            allowRouteSelection
+            block={block}
+            buttonColor={action.backgroundColor}
+            buttonColorPath={[...path, 'action', 'backgroundColor']}
+            className="block-hero-button"
+            destination={action.path ?? ''}
+            destinationField="path"
+            destinationLabel="Button Link"
+            destinationPath={[...path, 'action', 'path']}
+            link={action}
+            linkPath={[...path, 'action']}
+            label={action.label ?? ''}
+            labelLabel="Button Text"
+            labelPath={[...path, 'action', 'label']}
+            presentation="button"
+            styleTarget="action"
+          />
+        ) : null}
+      </ElementBox>
     </EditableBackgroundSection>
   )
 }
@@ -253,28 +336,31 @@ export function ImageTextSplitBlockRenderer({ block, path }) {
   return (
     <section className={`block-split block-split--image-${imagePosition}`}>
       <div className="block-split-inner">
-        <div className="block-split-media">
-          <EditableImage
+        <ElementBox block={block} className="block-split-media" styleTarget="media">
+          <ElementEditableImage
             alt={getBlockImageAltText(image)}
+            block={block}
             className="block-split-image"
             decoding="async"
             image={image}
             loading="lazy"
             path={[...path, 'image']}
             src={imageUrl}
+            styleTarget="image"
           />
-        </div>
-        <div className="block-split-copy">
-          <EditableText as="p" className="block-split-kicker" label="Kicker" path={[...path, 'kicker']} value={block.kicker ?? ''}>
+        </ElementBox>
+        <ElementBox block={block} className="block-split-copy" styleTarget="copy">
+          <ElementEditableText as="p" block={block} className="block-split-kicker" label="Kicker" path={[...path, 'kicker']} styleTarget="kicker" value={block.kicker ?? ''}>
             {block.kicker ?? ''}
-          </EditableText>
-          <EditableText as="h2" label="Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+          </ElementEditableText>
+          <ElementEditableText as="h2" block={block} label="Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
             {block.title ?? ''}
-          </EditableText>
-          <EditableRichHtml className="block-split-body" html={normalizeSiteHtml(block.body ?? '').trim()} path={[...path, 'body']} title="Body Text" />
-          <EditableLink
+          </ElementEditableText>
+          <ElementEditableRichHtml block={block} className="block-split-body" html={normalizeSiteHtml(block.body ?? '').trim()} path={[...path, 'body']} styleTarget="body" title="Body Text" />
+          <ElementEditableLink
             allowExternalUrl
             allowRouteSelection
+            block={block}
             className="block-split-link"
             destination={action.path ?? ''}
             destinationField="path"
@@ -285,8 +371,9 @@ export function ImageTextSplitBlockRenderer({ block, path }) {
             label={action.label ?? ''}
             labelLabel="Link Text"
             labelPath={[...path, 'action', 'label']}
+            styleTarget="action"
           />
-        </div>
+        </ElementBox>
       </div>
     </section>
   )
@@ -374,16 +461,16 @@ export function FeatureGridBlockRenderer({ block, path }) {
 
   return (
     <section className="block-feature-grid">
-      <EditableText as="h2" label="Feature Grid Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+      <ElementEditableText as="h2" block={block} label="Feature Grid Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
         {block.title ?? ''}
-      </EditableText>
+      </ElementEditableText>
 
-      <div className="block-feature-grid-items">
+      <ElementBox block={block} className="block-feature-grid-items" styleTarget="items">
         {items.map((item, index) => (
-          <article className="block-feature-grid-item" key={item.id ?? index}>
-            <div className="block-feature-grid-icon">
+          <ElementBox as="article" block={block} className="block-feature-grid-item" key={item.id ?? index} styleTarget="item">
+            <ElementBox block={block} className="block-feature-grid-icon" styleTarget="itemIcon">
               <BlockFeatureIcon kind={item.kind} />
-            </div>
+            </ElementBox>
             {controlsVisible ? (
               <select
                 className="block-feature-grid-icon-select block-inline-setting"
@@ -398,25 +485,34 @@ export function FeatureGridBlockRenderer({ block, path }) {
                 ))}
               </select>
             ) : null}
-            <EditableText as="h3" label={`Feature ${index + 1} Title`} path={[...path, 'items', index, 'title']} value={item.title ?? ''}>
+            <ElementEditableText
+              as="h3"
+              block={block}
+              label={`Feature ${index + 1} Title`}
+              path={[...path, 'items', index, 'title']}
+              styleTarget="itemTitle"
+              value={item.title ?? ''}
+            >
               {item.title ?? ''}
-            </EditableText>
-            <EditableText
+            </ElementEditableText>
+            <ElementEditableText
               as="p"
+              block={block}
               label={`Feature ${index + 1} Description`}
               multiline
               path={[...path, 'items', index, 'body']}
               rows={4}
+              styleTarget="itemBody"
               value={item.body ?? ''}
             >
               {item.body ?? ''}
-            </EditableText>
+            </ElementEditableText>
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove feature" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
-          </article>
+          </ElementBox>
         ))}
-      </div>
+      </ElementBox>
 
       {controlsVisible ? (
         <EditorIconButton className="block-feature-grid-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add feature" onClick={addItem} />
@@ -441,28 +537,37 @@ export function TestimonialsBlockRenderer({ block, path }) {
 
   return (
     <section className="block-testimonials">
-      <div className="block-testimonials-grid">
+      <ElementBox block={block} className="block-testimonials-grid" styleTarget="grid">
         {items.map((item, index) => (
-          <figure className="block-testimonials-item" key={item.id ?? index}>
-            <EditableText
+          <ElementBox as="figure" block={block} className="block-testimonials-item" key={item.id ?? index} styleTarget="item">
+            <ElementEditableText
               as="blockquote"
+              block={block}
               label={`Testimonial ${index + 1} Quote`}
               multiline
               path={[...path, 'items', index, 'quote']}
               rows={4}
+              styleTarget="quote"
               value={item.quote ?? ''}
             >
               {item.quote ?? ''}
-            </EditableText>
-            <EditableText as="figcaption" label={`Testimonial ${index + 1} Author`} path={[...path, 'items', index, 'author']} value={item.author ?? ''}>
+            </ElementEditableText>
+            <ElementEditableText
+              as="figcaption"
+              block={block}
+              label={`Testimonial ${index + 1} Author`}
+              path={[...path, 'items', index, 'author']}
+              styleTarget="author"
+              value={item.author ?? ''}
+            >
               {item.author ?? ''}
-            </EditableText>
+            </ElementEditableText>
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove testimonial" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
-          </figure>
+          </ElementBox>
         ))}
-      </div>
+      </ElementBox>
 
       {controlsVisible ? (
         <EditorIconButton className="block-testimonials-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add testimonial" onClick={addItem} />
@@ -540,15 +645,15 @@ export function ContactFormBlockRenderer({ block, context = {}, path }) {
 
   return (
     <section className="block-contact-form">
-      <div className="block-contact-form-inner">
-        <EditableText as="h2" label="Form Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+      <ElementBox block={block} className="block-contact-form-inner" styleTarget="content">
+        <ElementEditableText as="h2" block={block} label="Form Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
           {block.title ?? ''}
-        </EditableText>
-        <EditableText as="p" label="Form Intro" multiline path={[...path, 'intro']} rows={4} value={block.intro ?? ''}>
+        </ElementEditableText>
+        <ElementEditableText as="p" block={block} label="Form Intro" multiline path={[...path, 'intro']} rows={4} styleTarget="intro" value={block.intro ?? ''}>
           {block.intro ?? ''}
-        </EditableText>
+        </ElementEditableText>
 
-        <form className="block-contact-form-fields" data-admin-inline-editable="true" onSubmit={handleSubmit}>
+        <ElementBox as="form" block={block} className="block-contact-form-fields" data-admin-inline-editable="true" styleTarget="form" onSubmit={handleSubmit}>
           <label aria-hidden="true" className="block-contact-form-honeypot" htmlFor={`website-${block.id ?? page?.key ?? 'page'}`}>
             <span>Website</span>
             <input autoComplete="off" id={`website-${block.id ?? page?.key ?? 'page'}`} name="website" tabIndex={-1} type="text" />
@@ -573,9 +678,16 @@ export function ContactFormBlockRenderer({ block, context = {}, path }) {
             </label>
           </div>
 
-          <button className="button-link button-link--primary block-contact-form-submit" disabled={editable || submitStatus === 'submitting'} type="submit">
+          <ElementBox
+            as="button"
+            block={block}
+            className="button-link button-link--primary block-contact-form-submit"
+            disabled={editable || submitStatus === 'submitting'}
+            styleTarget="submit"
+            type="submit"
+          >
             {submitStatus === 'submitting' ? 'Sending...' : 'Send Message'}
-          </button>
+          </ElementBox>
 
           {submitMessage ? (
             <p aria-live="polite" className={`block-contact-form-feedback block-contact-form-feedback--${submitStatus === 'error' ? 'error' : 'success'}`}>
@@ -589,8 +701,8 @@ export function ContactFormBlockRenderer({ block, context = {}, path }) {
               <a href={manualSubmitHref}>Send your message</a>.
             </p>
           ) : null}
-        </form>
-      </div>
+        </ElementBox>
+      </ElementBox>
     </section>
   )
 }
@@ -602,9 +714,9 @@ export function DirectoryEmbedBlockRenderer({ block, path }) {
 
   const titleNode =
     pageEditor || hasTitleText ? (
-      <EditableText as="span" label="Directory Title" path={[...path, 'title']} value={block.title ?? ''}>
+      <ElementEditableText as="span" block={block} label="Directory Title" path={[...path, 'title']} styleTarget="title" value={block.title ?? ''}>
         {block.title ?? ''}
-      </EditableText>
+      </ElementEditableText>
     ) : null
 
   return (
@@ -655,61 +767,74 @@ export function ContactDetailsBlockRenderer({ block, path }) {
 
   return (
     <div className="block-contact-details">
-      {items.map((item, index) => {
-        const ValueComponent = item.type === 'phone' ? EditablePhoneText : EditableText
-
-        return (
-          <div className="block-contact-details-row" key={item.id ?? index}>
-            <EditableText
+      {items.map((item, index) => (
+        <ElementBox block={block} className="block-contact-details-row" key={item.id ?? index} styleTarget="item">
+          <ElementEditableText
+            as="span"
+            block={block}
+            className="block-contact-details-label"
+            label={`Detail ${index + 1} Label`}
+            path={[...path, 'items', index, 'label']}
+            styleTarget="label"
+            value={item.label ?? ''}
+          >
+            {item.label ?? ''}
+          </ElementEditableText>
+          {item.type === 'link' ? (
+            <ElementEditableLink
+              allowExternalUrl
+              block={block}
+              className="block-contact-details-value"
+              destination={item.href ?? ''}
+              destinationField="href"
+              destinationLabel={`Detail ${index + 1} Link URL`}
+              destinationPath={[...path, 'items', index, 'href']}
+              external
+              link={item}
+              linkPath={[...path, 'items', index]}
+              label={item.value ?? ''}
+              labelLabel={`Detail ${index + 1} Link Text`}
+              labelPath={[...path, 'items', index, 'value']}
+              styleTarget="value"
+            />
+          ) : item.type === 'phone' ? (
+            <ElementBox as="span" block={block} className="block-contact-details-value" styleTarget="value">
+              <EditablePhoneText label={`Detail ${index + 1} Value`} path={[...path, 'items', index, 'value']} value={item.value ?? ''} />
+            </ElementBox>
+          ) : (
+            <ElementEditableText
               as="span"
-              className="block-contact-details-label"
-              label={`Detail ${index + 1} Label`}
-              path={[...path, 'items', index, 'label']}
-              value={item.label ?? ''}
+              block={block}
+              className="block-contact-details-value"
+              label={`Detail ${index + 1} Value`}
+              path={[...path, 'items', index, 'value']}
+              styleTarget="value"
+              value={item.value ?? ''}
             >
-              {item.label ?? ''}
-            </EditableText>
-            {item.type === 'link' ? (
-              <EditableLink
-                allowExternalUrl
-                className="block-contact-details-value"
-                destination={item.href ?? ''}
-                destinationField="href"
-                destinationLabel={`Detail ${index + 1} Link URL`}
-                destinationPath={[...path, 'items', index, 'href']}
-                external
-                link={item}
-                linkPath={[...path, 'items', index]}
-                label={item.value ?? ''}
-                labelLabel={`Detail ${index + 1} Link Text`}
-                labelPath={[...path, 'items', index, 'value']}
+              {item.value ?? ''}
+            </ElementEditableText>
+          )}
+          {controlsVisible ? (
+            <>
+              <select className="block-inline-setting" data-admin-inline-editable="true" value={item.type ?? 'text'} onChange={(event) => handleTypeChange(index, event)}>
+                {CONTACT_DETAIL_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              <EditorIconButton
+                className="block-inline-command"
+                data-admin-inline-editable="true"
+                icon={Trash2}
+                label={`Remove detail ${index + 1}`}
+                tone="danger"
+                onClick={() => removeItem(index)}
               />
-            ) : (
-              <ValueComponent
-                as="span"
-                className="block-contact-details-value"
-                label={`Detail ${index + 1} Value`}
-                path={[...path, 'items', index, 'value']}
-                value={item.value ?? ''}
-              >
-                {item.value ?? ''}
-              </ValueComponent>
-            )}
-            {controlsVisible ? (
-              <>
-                <select className="block-inline-setting" data-admin-inline-editable="true" value={item.type ?? 'text'} onChange={(event) => handleTypeChange(index, event)}>
-                  {CONTACT_DETAIL_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-                <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove detail ${index + 1}`} tone="danger" onClick={() => removeItem(index)} />
-              </>
-            ) : null}
-          </div>
-        )
-      })}
+            </>
+          ) : null}
+        </ElementBox>
+      ))}
       {controlsVisible ? (
         <EditorIconButton className="block-contact-details-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add detail" onClick={addItem} />
       ) : null}
@@ -750,33 +875,38 @@ export function ScheduleBlockRenderer({ block, path }) {
 
   return (
     <section className="block-schedule">
-      <EditableText as="h2" label="Schedule Title" path={[...path, 'title']} value={block.title ?? ''}>
+      <ElementEditableText as="h2" block={block} label="Schedule Title" path={[...path, 'title']} styleTarget="title" value={block.title ?? ''}>
         {block.title ?? ''}
-      </EditableText>
+      </ElementEditableText>
 
-      <div className="block-schedule-columns">
+      <ElementBox block={block} className="block-schedule-columns" styleTarget="columns">
         {columns.map((column, columnIndex) => (
-          <div className="block-schedule-column" key={column.id ?? columnIndex}>
-            <EditableText
+          <ElementBox block={block} className="block-schedule-column" key={column.id ?? columnIndex} styleTarget="column">
+            <ElementEditableText
               as="h3"
+              block={block}
               label={`Column ${columnIndex + 1} Heading`}
               path={[...path, 'columns', columnIndex, 'heading']}
+              styleTarget="columnHeading"
               value={column.heading ?? ''}
             >
               {column.heading ?? ''}
-            </EditableText>
+            </ElementEditableText>
 
             <div className="block-schedule-time-list">
               {(column.times ?? []).map((time, timeIndex) => (
                 <div className="block-schedule-time-row" key={column.timeIds?.[timeIndex] ?? timeIndex}>
-                  <EditableText
+                  <ElementEditableText
                     as="span"
+                    block={block}
+                    className="block-schedule-time-value"
                     label={`Column ${columnIndex + 1} Time ${timeIndex + 1}`}
                     path={[...path, 'columns', columnIndex, 'times', timeIndex]}
+                    styleTarget="time"
                     value={time}
                   >
                     {time}
-                  </EditableText>
+                  </ElementEditableText>
                   {controlsVisible ? (
                     <EditorIconButton
                       className="block-inline-command"
@@ -804,20 +934,20 @@ export function ScheduleBlockRenderer({ block, path }) {
                 />
               </div>
             ) : null}
-          </div>
+          </ElementBox>
         ))}
-      </div>
+      </ElementBox>
 
       {controlsVisible ? (
         <EditorIconButton className="block-schedule-add-column block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add column" onClick={addColumn} />
       ) : null}
 
-      <div className="block-schedule-notes">
+      <ElementBox block={block} className="block-schedule-notes" styleTarget="notes">
         {notes.map((note, noteIndex) => (
           <div className="block-schedule-note-row" key={block.noteIds?.[noteIndex] ?? noteIndex}>
-            <EditableText as="p" label={`Note ${noteIndex + 1}`} multiline path={[...path, 'notes', noteIndex]} rows={2} value={note}>
+            <ElementEditableText as="p" block={block} label={`Note ${noteIndex + 1}`} multiline path={[...path, 'notes', noteIndex]} rows={2} styleTarget="note" value={note}>
               {note}
-            </EditableText>
+            </ElementEditableText>
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove note ${noteIndex + 1}`} tone="danger" onClick={() => removeNote(noteIndex)} />
             ) : null}
@@ -826,7 +956,7 @@ export function ScheduleBlockRenderer({ block, path }) {
         {controlsVisible ? (
           <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add note" onClick={addNote} />
         ) : null}
-      </div>
+      </ElementBox>
     </section>
   )
 }
@@ -865,34 +995,38 @@ export function RateTableBlockRenderer({ block, path }) {
 
   return (
     <section className="block-rate-table">
-      <EditableText as="h2" label="Rate Table Heading" path={[...path, 'heading']} value={block.heading ?? ''}>
+      <ElementEditableText as="h2" block={block} label="Rate Table Heading" path={[...path, 'heading']} styleTarget="heading" value={block.heading ?? ''}>
         {block.heading ?? ''}
-      </EditableText>
+      </ElementEditableText>
 
-      <div className="block-rate-table-rows">
+      <ElementBox block={block} className="block-rate-table-rows" styleTarget="rows">
         {rows.map((row, rowIndex) => (
-          <div className="block-rate-table-row" key={row.id ?? rowIndex}>
-            <EditableText
+          <ElementBox block={block} className="block-rate-table-row" key={row.id ?? rowIndex} styleTarget="row">
+            <ElementEditableText
               as="span"
+              block={block}
               className="block-rate-table-label"
               label={`Row ${rowIndex + 1} Label`}
               path={[...path, 'rows', rowIndex, 'label']}
+              styleTarget="rowLabel"
               value={row.label ?? ''}
             >
               {row.label ?? ''}
-            </EditableText>
+            </ElementEditableText>
 
             <div className="block-rate-table-values">
               {(row.values ?? []).map((value, valueIndex) => (
                 <span className="block-rate-table-value" key={row.valueIds?.[valueIndex] ?? valueIndex}>
-                  <EditableText
+                  <ElementEditableText
                     as="span"
+                    block={block}
                     label={`Row ${rowIndex + 1} Value ${valueIndex + 1}`}
                     path={[...path, 'rows', rowIndex, 'values', valueIndex]}
+                    styleTarget="rowValue"
                     value={value}
                   >
                     {value}
-                  </EditableText>
+                  </ElementEditableText>
                   {controlsVisible ? (
                     <EditorIconButton
                       className="block-inline-command"
@@ -913,20 +1047,29 @@ export function RateTableBlockRenderer({ block, path }) {
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove row" tone="danger" onClick={() => removeRow(rowIndex)} />
             ) : null}
-          </div>
+          </ElementBox>
         ))}
-      </div>
+      </ElementBox>
 
       {controlsVisible ? (
         <EditorIconButton className="block-rate-table-add-row block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add rate row" onClick={addRow} />
       ) : null}
 
-      <div className="block-rate-table-footer">
+      <ElementBox block={block} className="block-rate-table-footer" styleTarget="footer">
         {footer.map((line, footerIndex) => (
           <div className="block-rate-table-footer-row" key={block.footerIds?.[footerIndex] ?? footerIndex}>
-            <EditableText as="p" label={`Footer Line ${footerIndex + 1}`} multiline path={[...path, 'footer', footerIndex]} rows={2} value={line}>
+            <ElementEditableText
+              as="p"
+              block={block}
+              label={`Footer Line ${footerIndex + 1}`}
+              multiline
+              path={[...path, 'footer', footerIndex]}
+              rows={2}
+              styleTarget="footerLine"
+              value={line}
+            >
               {line}
-            </EditableText>
+            </ElementEditableText>
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label={`Remove footer line ${footerIndex + 1}`} tone="danger" onClick={() => removeFooterLine(footerIndex)} />
             ) : null}
@@ -935,10 +1078,11 @@ export function RateTableBlockRenderer({ block, path }) {
         {controlsVisible ? (
           <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add footer line" onClick={addFooterLine} />
         ) : null}
-      </div>
+      </ElementBox>
 
-      <EditableLink
+      <ElementEditableLink
         allowExternalUrl
+        block={block}
         className="block-rate-table-link"
         destination={link.path ?? ''}
         destinationField="path"
@@ -950,7 +1094,602 @@ export function RateTableBlockRenderer({ block, path }) {
         label={link.label ?? ''}
         labelLabel="Link Text"
         labelPath={[...path, 'link', 'label']}
+        styleTarget="link"
       />
+    </section>
+  )
+}
+
+const CAR_BARGE_HERO_BOTTOM_PEEK_FALLBACK_PX = 105
+
+function getCarBargeStickySelectionOffset() {
+  const pillNavElement = document.querySelector('.block-car-barge-hero-pills')
+
+  return pillNavElement ? pillNavElement.getBoundingClientRect().height + 32 : Math.round(window.innerHeight * 0.24)
+}
+
+function useCarBargeScrollSpy(ids, defaultId) {
+  const [activeId, setActiveId] = useState(defaultId)
+  const idsKey = ids.join('|')
+
+  useEffect(() => {
+    if (!idsKey) {
+      return undefined
+    }
+
+    let frameId = 0
+    const sectionIds = idsKey.split('|').filter(Boolean)
+
+    function updateActiveSection() {
+      frameId = 0
+
+      const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean)
+
+      if (!sections.length) {
+        setActiveId(defaultId)
+        return
+      }
+
+      const selectionY = window.scrollY + getCarBargeStickySelectionOffset()
+      const activeSection = sections.reduce((currentActive, section) => {
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY
+
+        return sectionTop <= selectionY ? section : currentActive
+      }, sections[0])
+
+      setActiveId((currentActiveId) => (currentActiveId === activeSection.id ? currentActiveId : activeSection.id))
+    }
+
+    function scheduleActiveSectionUpdate() {
+      if (frameId) {
+        return
+      }
+
+      frameId = window.requestAnimationFrame(updateActiveSection)
+    }
+
+    scheduleActiveSectionUpdate()
+    window.addEventListener('scroll', scheduleActiveSectionUpdate, { passive: true })
+    window.addEventListener('resize', scheduleActiveSectionUpdate)
+
+    return () => {
+      window.removeEventListener('scroll', scheduleActiveSectionUpdate)
+      window.removeEventListener('resize', scheduleActiveSectionUpdate)
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [defaultId, idsKey])
+
+  return activeId
+}
+
+function getCarBargeHeroBottomPeek(pillNavElement) {
+  const pillNavMarginTop = pillNavElement
+    ? Number.parseFloat(window.getComputedStyle(pillNavElement).marginTop)
+    : Number.NaN
+
+  return Number.isFinite(pillNavMarginTop) && pillNavMarginTop < 0
+    ? Math.abs(pillNavMarginTop)
+    : CAR_BARGE_HERO_BOTTOM_PEEK_FALLBACK_PX
+}
+
+function getCarBargeScrollBehavior() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+}
+
+function scrollToCarBargeHeroBottom() {
+  const heroElement = document.querySelector('.block-car-barge-hero')
+  const pillNavElement = document.querySelector('.block-car-barge-hero-pills')
+
+  if (!heroElement) {
+    return
+  }
+
+  const heroBottom = heroElement.getBoundingClientRect().bottom + window.scrollY
+  const targetTop = Math.max(0, Math.round(heroBottom - getCarBargeHeroBottomPeek(pillNavElement)))
+
+  window.scrollTo({
+    top: targetTop,
+    left: 0,
+    behavior: getCarBargeScrollBehavior(),
+  })
+}
+
+function scrollToCarBargeSection(sectionId) {
+  if (sectionId === 'cbtest-general-info' || sectionId === 'general-info') {
+    scrollToCarBargeHeroBottom()
+    return
+  }
+
+  const targetElement = document.getElementById(sectionId)
+
+  if (!targetElement) {
+    return
+  }
+
+  const pillNavElement = document.querySelector('.block-car-barge-hero-pills')
+  const stickyOffset = pillNavElement ? pillNavElement.getBoundingClientRect().height + 16 : 24
+  const targetTop = Math.max(0, Math.round(targetElement.getBoundingClientRect().top + window.scrollY - stickyOffset))
+
+  window.scrollTo({
+    top: targetTop,
+    left: 0,
+    behavior: getCarBargeScrollBehavior(),
+  })
+}
+
+function handleCarBargeQuickNavClick(event, sectionId) {
+  event.preventDefault()
+  scrollToCarBargeSection(sectionId)
+}
+
+export function CarBargeHeroBlockRenderer({ block, path }) {
+  const image = asObject(block.image)
+  const navItems = asArray(block.navItems)
+  const heroImageUrl = getContentImageSrc(image, { height: 720, width: 1920 })
+  const activeSectionId = useCarBargeScrollSpy(
+    navItems.map((item) => asText(asObject(item).targetId)).filter(Boolean),
+    asText(asObject(navItems[0]).targetId),
+  )
+
+  return (
+    <>
+      <section className="block-car-barge-hero">
+        <div className="block-car-barge-hero-media">
+          <div className="block-car-barge-hero-image-crop">
+            {heroImageUrl ? (
+              <ElementEditableImage
+                alt={getBlockImageAltText(image) || asText(block.title)}
+                block={block}
+                decoding="async"
+                fetchPriority="high"
+                image={image}
+                path={[...path, 'image']}
+                src={heroImageUrl}
+                styleTarget="image"
+              />
+            ) : null}
+          </div>
+        </div>
+        <ElementBox block={block} className="block-car-barge-hero-overlay" styleTarget="title">
+          <ElementEditableText
+            as="h1"
+            block={block}
+            className="block-car-barge-hero-title"
+            label="Hero title"
+            multiline
+            path={[...path, 'title']}
+            rows={3}
+            styleTarget="title"
+            value={asText(block.title)}
+          >
+            {asText(block.title)}
+          </ElementEditableText>
+        </ElementBox>
+      </section>
+
+      {navItems.length > 0 ? (
+        <ElementBox as="nav" aria-label="Jump to section" block={block} className="block-car-barge-hero-pills" styleTarget="nav">
+          {navItems.map((item, itemIndex) => {
+            const navItem = asObject(item)
+            const targetId = asText(navItem.targetId)
+            const label = asText(navItem.label)
+
+            return (
+              <a
+                className={`block-car-barge-hero-pill${targetId && targetId === activeSectionId ? ' is-active' : ''}`}
+                href={targetId ? `#${targetId}` : '#'}
+                key={navItem.id ?? itemIndex}
+                onClick={(event) => handleCarBargeQuickNavClick(event, targetId)}
+              >
+                <ElementEditableText
+                  as="span"
+                  block={block}
+                  label={`Nav item ${itemIndex + 1}`}
+                  path={[...path, 'navItems', itemIndex, 'label']}
+                  styleTarget="nav"
+                  value={label}
+                >
+                  {label}
+                </ElementEditableText>
+              </a>
+            )
+          })}
+        </ElementBox>
+      ) : null}
+    </>
+  )
+}
+
+export function CarBargeIntroBlockRenderer({ block, path }) {
+  const leftParagraphs = asArray(block.leftParagraphs)
+  const rightParagraphs = asArray(block.rightParagraphs)
+  const portAuthorityFees = asArray(block.portAuthorityFees).filter((fee) => {
+    const feeRecord = asObject(fee)
+    return asText(feeRecord.label).replace(/<br\s*\/?>/gi, '').trim() || asText(feeRecord.value).replace(/<br\s*\/?>/gi, '').trim()
+  })
+  const referenceLink = asObject(block.referenceLink)
+  const referenceHref = asText(referenceLink.path || referenceLink.href)
+  const referenceLabel = asText(referenceLink.label) || (referenceHref ? 'Link for information is here.' : '')
+
+  return (
+    <section className="block-car-barge-intro">
+      <div className="block-car-barge-intro-grid">
+        <div className="block-car-barge-intro-copy">
+          {leftParagraphs.map((paragraph, paragraphIndex) => (
+            <ElementEditableText
+              as="p"
+              block={block}
+              key={block.leftParagraphIds?.[paragraphIndex] ?? paragraphIndex}
+              label={`Left paragraph ${paragraphIndex + 1}`}
+              multiline
+              path={[...path, 'leftParagraphs', paragraphIndex]}
+              rows={5}
+              styleTarget="left"
+              value={asText(paragraph)}
+            >
+              {asText(paragraph)}
+            </ElementEditableText>
+          ))}
+
+          {portAuthorityFees.length > 0 ? (
+            <ElementBox block={block} className="block-car-barge-fee-list" styleTarget="fees">
+              {portAuthorityFees.map((fee, feeIndex) => {
+                const feeRecord = asObject(fee)
+
+                return (
+                  <div className="block-car-barge-fee-row" key={feeRecord.id ?? feeIndex}>
+                    <ElementEditableText as="span" block={block} label="Port fee label" path={[...path, 'portAuthorityFees', feeIndex, 'label']} styleTarget="fees" value={asText(feeRecord.label)}>
+                      {asText(feeRecord.label)}
+                    </ElementEditableText>
+                    <ElementEditableText as="span" block={block} label="Port fee value" path={[...path, 'portAuthorityFees', feeIndex, 'value']} styleTarget="fees" value={asText(feeRecord.value)}>
+                      {asText(feeRecord.value)}
+                    </ElementEditableText>
+                  </div>
+                )
+              })}
+            </ElementBox>
+          ) : null}
+        </div>
+
+        <div className="block-car-barge-intro-copy">
+          {rightParagraphs.map((paragraph, paragraphIndex) => (
+            <ElementEditableText
+              as="p"
+              block={block}
+              key={block.rightParagraphIds?.[paragraphIndex] ?? paragraphIndex}
+              label={`Right paragraph ${paragraphIndex + 1}`}
+              multiline
+              path={[...path, 'rightParagraphs', paragraphIndex]}
+              rows={5}
+              styleTarget="right"
+              value={asText(paragraph)}
+            >
+              {asText(paragraph)}
+            </ElementEditableText>
+          ))}
+
+          {referenceHref || referenceLabel ? (
+            <p>
+              VI Now has more information.{' '}
+              <ElementEditableLink
+                allowExternalUrl
+                block={block}
+                className="block-car-barge-inline-link"
+                destination={referenceHref}
+                destinationField="path"
+                destinationLabel="Reference link"
+                destinationPath={[...path, 'referenceLink', 'path']}
+                external
+                link={referenceLink}
+                linkPath={[...path, 'referenceLink']}
+                label={referenceLabel}
+                labelLabel="Reference label"
+                labelPath={[...path, 'referenceLink', 'label']}
+                styleTarget="right"
+              />
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {asText(block.note) ? (
+        <ElementBox as="section" block={block} className="block-car-barge-note" styleTarget="note">
+          <ElementEditableText
+            as="p"
+            block={block}
+            label="Page note"
+            multiline
+            path={[...path, 'note']}
+            rows={4}
+            styleTarget="note"
+            value={asText(block.note)}
+          >
+            {asText(block.note)}
+          </ElementEditableText>
+        </ElementBox>
+      ) : null}
+    </section>
+  )
+}
+
+function getCarBargeScheduleTabLabel(title, index) {
+  const scheduleTitle = asText(title).trim()
+
+  if (/monday\W*friday|weekday/i.test(scheduleTitle)) {
+    return 'Weekdays'
+  }
+
+  if (/saturday|sunday|weekend|holiday/i.test(scheduleTitle)) {
+    return 'Weekend'
+  }
+
+  if (/monday\W*sunday|daily|every\s+day/i.test(scheduleTitle)) {
+    return 'Daily'
+  }
+
+  return scheduleTitle || `Schedule ${index + 1}`
+}
+
+function CarBargeSchedulePanel({ block, operatorPath, schedule, scheduleIndex }) {
+  const scheduleRecord = asObject(schedule)
+  const columns = asArray(scheduleRecord.columns)
+  const notes = asArray(scheduleRecord.notes)
+  const schedulePath = [...operatorPath, 'schedules', scheduleIndex]
+
+  return (
+    <section className="block-car-barge-schedule">
+      <ElementEditableText
+        as="h3"
+        block={block}
+        label="Schedule title"
+        path={[...schedulePath, 'title']}
+        styleTarget="schedule"
+        value={asText(scheduleRecord.title)}
+      >
+        {asText(scheduleRecord.title)}
+      </ElementEditableText>
+
+      <div className="block-car-barge-schedule-columns">
+        {columns.map((column, columnIndex) => {
+          const columnRecord = asObject(column)
+          const columnPath = [...schedulePath, 'columns', columnIndex]
+          const times = asArray(columnRecord.times)
+
+          return (
+            <div className="block-car-barge-schedule-column" key={columnRecord.id ?? columnIndex}>
+              <ElementEditableText
+                as="h4"
+                block={block}
+                label="Schedule column heading"
+                path={[...columnPath, 'heading']}
+                styleTarget="schedule"
+                value={asText(columnRecord.heading)}
+              >
+                {asText(columnRecord.heading)}
+              </ElementEditableText>
+
+              <div className="block-car-barge-time-list">
+                {times.map((time, timeIndex) => (
+                  <ElementEditableText
+                    as="p"
+                    block={block}
+                    className="block-car-barge-time-entry"
+                    key={columnRecord.timeIds?.[timeIndex] ?? timeIndex}
+                    label={`Schedule time ${timeIndex + 1}`}
+                    path={[...columnPath, 'times', timeIndex]}
+                    styleTarget="schedule"
+                    value={asText(time)}
+                  >
+                    {asText(time)}
+                  </ElementEditableText>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {notes.length > 0 ? (
+        <div className="block-car-barge-schedule-notes">
+          {notes.map((note, noteIndex) => (
+            <ElementEditableText
+              as="p"
+              block={block}
+              key={scheduleRecord.noteIds?.[noteIndex] ?? noteIndex}
+              label={`Schedule note ${noteIndex + 1}`}
+              path={[...schedulePath, 'notes', noteIndex]}
+              styleTarget="schedule"
+              value={asText(note)}
+            >
+              {asText(note)}
+            </ElementEditableText>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function CarBargeRatesStrip({ block, path }) {
+  const rates = asObject(block.rates)
+  const rows = asArray(rates.rows)
+  const footer = asArray(rates.footer)
+  const link = asObject(rates.link)
+  const isStacked = asText(rates.layout) === 'stacked'
+
+  if (!rows.length && !footer.length && !asText(link.path)) {
+    return null
+  }
+
+  return (
+    <section className={`block-car-barge-rates${isStacked ? ' block-car-barge-rates--stacked' : ''}`} aria-label={asText(rates.heading) || 'Car barge rates'}>
+      <div className="block-car-barge-rates-copy">
+        {rows.map((row, rowIndex) => {
+          const rowRecord = asObject(row)
+          const values = asArray(rowRecord.values)
+
+          return (
+            <div className={`block-car-barge-rates-row${asText(rowRecord.label) ? '' : ' is-values-only'}`} key={rowRecord.id ?? rowIndex}>
+              {asText(rowRecord.label) ? (
+                <ElementEditableText
+                  as="span"
+                  block={block}
+                  className="block-car-barge-rates-row-label"
+                  label="Rate label"
+                  path={[...path, 'rates', 'rows', rowIndex, 'label']}
+                  styleTarget="rates"
+                  value={asText(rowRecord.label)}
+                >
+                  {asText(rowRecord.label)}
+                </ElementEditableText>
+              ) : null}
+
+              <div className="block-car-barge-rates-row-values">
+                {values.map((value, valueIndex) => (
+                  <ElementEditableText
+                    as="span"
+                    block={block}
+                    key={rowRecord.valueIds?.[valueIndex] ?? valueIndex}
+                    label="Rate value"
+                    path={[...path, 'rates', 'rows', rowIndex, 'values', valueIndex]}
+                    styleTarget="rates"
+                    value={asText(value)}
+                  >
+                    {asText(value)}
+                  </ElementEditableText>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        <div className="block-car-barge-rates-footer">
+          {footer.map((line, footerIndex) => (
+            <ElementEditableText
+              as="p"
+              block={block}
+              key={rates.footerIds?.[footerIndex] ?? footerIndex}
+              label="Rates footer"
+              path={[...path, 'rates', 'footer', footerIndex]}
+              styleTarget="rates"
+              value={asText(line)}
+            >
+              {asText(line)}
+            </ElementEditableText>
+          ))}
+
+          {asText(link.path) || asText(link.label) ? (
+            <ElementEditableLink
+              allowExternalUrl
+              block={block}
+              className="block-car-barge-rates-link"
+              destination={asText(link.path)}
+              destinationField="path"
+              destinationLabel="Rates website URL"
+              destinationPath={[...path, 'rates', 'link', 'path']}
+              external
+              link={link}
+              linkPath={[...path, 'rates', 'link']}
+              label={asText(link.label) || 'Visit operator website'}
+              labelLabel="Rates website link text"
+              labelPath={[...path, 'rates', 'link', 'label']}
+              styleTarget="rates"
+            />
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export function CarBargeOperatorBlockRenderer({ block, path }) {
+  const [activeScheduleIndex, setActiveScheduleIndex] = useState(0)
+  const schedules = asArray(block.schedules)
+  const selectedScheduleIndex = activeScheduleIndex >= 0 && activeScheduleIndex < schedules.length ? activeScheduleIndex : 0
+  const selectedSchedule = schedules[selectedScheduleIndex]
+  const image = asObject(block.image)
+  const imageUrl = getContentImageSrc(image, { height: 1240, width: 820 })
+  const meta = asObject(block.meta)
+
+  return (
+    <section className="block-car-barge-operator">
+      <div className="block-car-barge-operator-header">
+        <ElementEditableText as="h2" block={block} label="Operator title" path={[...path, 'title']} styleTarget="title" value={asText(block.title)}>
+          {asText(block.title)}
+        </ElementEditableText>
+
+        <ElementBox as="dl" block={block} className="block-car-barge-operator-meta" styleTarget="meta">
+          <div className="block-car-barge-operator-meta-card">
+            <dt>Barge Names</dt>
+            <dd>
+              <ElementEditableText as="span" block={block} label="Barge names" path={[...path, 'meta', 'names']} styleTarget="meta" value={asText(meta.names)}>
+                {asText(meta.names)}
+              </ElementEditableText>
+            </dd>
+          </div>
+          <div className="block-car-barge-operator-meta-card">
+            <dt>Telephone</dt>
+            <dd>
+              <EditablePhoneText label="Operator phone" path={[...path, 'meta', 'phone']} value={asText(meta.phone)} />
+            </dd>
+          </div>
+          <div className="block-car-barge-operator-meta-card">
+            <dt>Travel Time</dt>
+            <dd>
+              <ElementEditableText as="span" block={block} label="Travel time" path={[...path, 'meta', 'travelTime']} styleTarget="meta" value={asText(meta.travelTime)}>
+                {asText(meta.travelTime)}
+              </ElementEditableText>
+            </dd>
+          </div>
+        </ElementBox>
+
+        <CarBargeRatesStrip block={block} path={path} />
+      </div>
+
+      <div className="block-car-barge-operator-grid">
+        <ElementBox block={block} className="block-car-barge-operator-media" styleTarget="image">
+          {imageUrl ? (
+            <ElementEditableImage
+              alt={getBlockImageAltText(image) || asText(block.title)}
+              block={block}
+              decoding="async"
+              image={image}
+              loading="lazy"
+              path={[...path, 'image']}
+              src={imageUrl}
+              styleTarget="image"
+            />
+          ) : null}
+        </ElementBox>
+
+        <div className="block-car-barge-operator-content">
+          {schedules.length > 1 ? (
+            <ElementBox as="div" block={block} className="block-car-barge-schedule-tab-list" role="tablist" styleTarget="tabs">
+              {schedules.map((schedule, scheduleIndex) => {
+                const isSelected = scheduleIndex === selectedScheduleIndex
+
+                return (
+                  <button
+                    aria-selected={isSelected}
+                    className={`block-car-barge-schedule-tab${isSelected ? ' is-active' : ''}`}
+                    data-admin-inline-editable="true"
+                    key={asObject(schedule).id ?? scheduleIndex}
+                    role="tab"
+                    type="button"
+                    onClick={() => setActiveScheduleIndex(scheduleIndex)}
+                  >
+                    {getCarBargeScheduleTabLabel(asObject(schedule).title, scheduleIndex)}
+                  </button>
+                )
+              })}
+            </ElementBox>
+          ) : null}
+
+          {selectedSchedule ? (
+            <CarBargeSchedulePanel block={block} operatorPath={path} schedule={selectedSchedule} scheduleIndex={selectedScheduleIndex} />
+          ) : null}
+        </div>
+      </div>
     </section>
   )
 }
@@ -1043,9 +1782,9 @@ export function GroupBlockRenderer({ block, context, path }) {
             ) : null}
 
             <BlockStyleFrame block={item}>
-              <div className={`block-group-card-grid${showMedia ? '' : ' block-group-card-grid--no-media'}`}>
+              <ElementBox block={block} className={`block-group-card-grid${showMedia ? '' : ' block-group-card-grid--no-media'}`} styleTarget="cardGrid">
                 {showMedia ? (
-                  <div className="block-group-card-media">
+                  <ElementBox block={block} className="block-group-card-media" styleTarget="cardMedia">
                     <EditableImage
                       alt={getBlockImageAltText(image)}
                       decoding="async"
@@ -1054,21 +1793,21 @@ export function GroupBlockRenderer({ block, context, path }) {
                       path={[...path, 'items', index, 'image']}
                       src={imageUrl}
                     />
-                  </div>
+                  </ElementBox>
                 ) : null}
 
-                <div className="block-group-card-content">
-                  <EditableText as="h2" label={`Card ${index + 1} Title`} path={[...path, 'items', index, 'title']} value={item.title ?? ''}>
+                <ElementBox block={block} className="block-group-card-content" styleTarget="cardContent">
+                  <ElementEditableText as="h2" block={block} label={`Card ${index + 1} Title`} path={[...path, 'items', index, 'title']} styleTarget="cardTitle" value={item.title ?? ''}>
                     {item.title ?? ''}
-                  </EditableText>
+                  </ElementEditableText>
 
                   <BlockList
                     blocks={Array.isArray(item.blocks) ? item.blocks : []}
                     context={nestedContext}
                     path={[...path, 'items', index, 'blocks']}
                   />
-                </div>
-              </div>
+                </ElementBox>
+              </ElementBox>
             </BlockStyleFrame>
           </article>
         )
@@ -1077,6 +1816,115 @@ export function GroupBlockRenderer({ block, context, path }) {
       {controlsVisible ? (
         <EditorIconButton className="block-group-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add card" onClick={addCard} />
       ) : null}
+    </section>
+  )
+}
+
+function getTabId(blockId, itemId) {
+  return `${blockId || 'tabs'}-${itemId || 'item'}-tab`
+}
+
+function getTabPanelId(blockId, itemId) {
+  return `${blockId || 'tabs'}-${itemId || 'item'}-panel`
+}
+
+function getNextTabIndex(key, currentIndex, itemCount) {
+  if (key === 'Home') {
+    return 0
+  }
+
+  if (key === 'End') {
+    return itemCount - 1
+  }
+
+  if (key === 'ArrowRight') {
+    return (currentIndex + 1) % itemCount
+  }
+
+  if (key === 'ArrowLeft') {
+    return (currentIndex - 1 + itemCount) % itemCount
+  }
+
+  return currentIndex
+}
+
+export function TabsBlockRenderer({ block, context, path }) {
+  const items = asArray(block.items).map(asObject)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const selectedIndex = activeIndex >= 0 && activeIndex < items.length ? activeIndex : 0
+  const selectedItem = items[selectedIndex]
+  const nestedContext = { ...context, depth: (context?.depth ?? 0) + 1 }
+
+  if (!items.length) {
+    return null
+  }
+
+  function handleTabKeyDown(event, itemIndex) {
+    const nextIndex = getNextTabIndex(event.key, itemIndex, items.length)
+
+    if (nextIndex === itemIndex) {
+      return
+    }
+
+    event.preventDefault()
+    setActiveIndex(nextIndex)
+    window.requestAnimationFrame(() => {
+      document.getElementById(getTabId(block.id, items[nextIndex]?.id ?? nextIndex))?.focus()
+    })
+  }
+
+  return (
+    <section className="block-tabs">
+      <ElementBox as="div" block={block} className="block-tabs-list" role="tablist" styleTarget="tabList">
+        {items.map((item, itemIndex) => {
+          const itemId = item.id ?? itemIndex
+          const isSelected = itemIndex === selectedIndex
+
+          return (
+            <button
+              aria-controls={getTabPanelId(block.id, itemId)}
+              aria-selected={isSelected}
+              className={`block-tabs-tab${isSelected ? ' is-active' : ''}`}
+              data-admin-inline-editable="true"
+              id={getTabId(block.id, itemId)}
+              key={itemId}
+              role="tab"
+              tabIndex={isSelected ? 0 : -1}
+              type="button"
+              onClick={() => setActiveIndex(itemIndex)}
+              onKeyDown={(event) => handleTabKeyDown(event, itemIndex)}
+            >
+              <ElementEditableText
+                as="span"
+                block={block}
+                label={`Tab ${itemIndex + 1} label`}
+                path={[...path, 'items', itemIndex, 'title']}
+                styleTarget="tab"
+                value={asText(item.title)}
+              >
+                {asText(item.title) || `Tab ${itemIndex + 1}`}
+              </ElementEditableText>
+            </button>
+          )
+        })}
+      </ElementBox>
+
+      <ElementBox
+        as="div"
+        aria-labelledby={getTabId(block.id, selectedItem?.id ?? selectedIndex)}
+        block={block}
+        className="block-tabs-panel"
+        id={getTabPanelId(block.id, selectedItem?.id ?? selectedIndex)}
+        role="tabpanel"
+        styleTarget="panel"
+      >
+        <BlockList
+          blocks={Array.isArray(selectedItem?.blocks) ? selectedItem.blocks : []}
+          context={nestedContext}
+          emptyMessage="Empty tab."
+          path={[...path, 'items', selectedIndex, 'blocks']}
+        />
+      </ElementBox>
     </section>
   )
 }
@@ -1180,8 +2028,8 @@ export function RowBlockSettings({ block, path }) {
 export function TwoColumnTextBlockRenderer({ block, path }) {
   return (
     <section className="block-two-column">
-      <EditableRichHtml className="block-two-column-side" html={normalizeSiteHtml(block.left ?? '').trim()} path={[...path, 'left']} title="Left Column" />
-      <EditableRichHtml className="block-two-column-side" html={normalizeSiteHtml(block.right ?? '').trim()} path={[...path, 'right']} title="Right Column" />
+      <ElementEditableRichHtml block={block} className="block-two-column-side" html={normalizeSiteHtml(block.left ?? '').trim()} path={[...path, 'left']} styleTarget="left" title="Left Column" />
+      <ElementEditableRichHtml block={block} className="block-two-column-side" html={normalizeSiteHtml(block.right ?? '').trim()} path={[...path, 'right']} styleTarget="right" title="Right Column" />
     </section>
   )
 }
@@ -1210,16 +2058,17 @@ export function BusinessListBlockRenderer({ block, path }) {
 
   return (
     <section className="block-business-list">
-      <EditableText as="h2" label="List Title" multiline path={[...path, 'title']} rows={3} value={block.title ?? ''}>
+      <ElementEditableText as="h2" block={block} label="List Title" multiline path={[...path, 'title']} rows={3} styleTarget="title" value={block.title ?? ''}>
         {block.title ?? ''}
-      </EditableText>
+      </ElementEditableText>
 
-      <div className="block-business-list-items">
+      <ElementBox block={block} className="block-business-list-items" styleTarget="items">
         {items.map((item, index) => (
-          <div className="block-business-list-item" key={item.id ?? index}>
+          <ElementBox block={block} className="block-business-list-item" key={item.id ?? index} styleTarget="item">
             {item.website || editable ? (
-              <EditableLink
+              <ElementEditableLink
                 allowExternalUrl
+                block={block}
                 className="block-business-list-name"
                 destination={item.website ?? ''}
                 destinationField="website"
@@ -1231,17 +2080,28 @@ export function BusinessListBlockRenderer({ block, path }) {
                 label={item.name ?? ''}
                 labelLabel="Business Name"
                 labelPath={[...path, 'items', index, 'name']}
+                styleTarget="name"
               />
             ) : (
-              <EditableText as="span" className="block-business-list-name" label="Business Name" path={[...path, 'items', index, 'name']} value={item.name ?? ''}>
+              <ElementEditableText
+                as="span"
+                block={block}
+                className="block-business-list-name"
+                label="Business Name"
+                path={[...path, 'items', index, 'name']}
+                styleTarget="name"
+                value={item.name ?? ''}
+              >
                 {item.name ?? ''}
-              </EditableText>
+              </ElementEditableText>
             )}
 
-            <span className="block-business-list-phones">
+            <ElementBox as="span" block={block} className="block-business-list-phones" styleTarget="phones">
               {(item.phones ?? []).map((phone, phoneIndex) => (
                 <span className="block-business-list-phone" key={item.phoneIds?.[phoneIndex] ?? phoneIndex}>
-                  <EditablePhoneText label={`Phone ${phoneIndex + 1}`} path={[...path, 'items', index, 'phones', phoneIndex]} value={phone} />
+                  <ElementBox as="span" block={block} styleTarget="phone">
+                    <EditablePhoneText label={`Phone ${phoneIndex + 1}`} path={[...path, 'items', index, 'phones', phoneIndex]} value={phone} />
+                  </ElementBox>
                   {controlsVisible ? (
                     <EditorIconButton
                       className="block-inline-command"
@@ -1257,14 +2117,14 @@ export function BusinessListBlockRenderer({ block, path }) {
               {controlsVisible ? (
                 <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add phone" onClick={() => addPhone(index)} />
               ) : null}
-            </span>
+            </ElementBox>
 
             {controlsVisible ? (
               <EditorIconButton className="block-inline-command" data-admin-inline-editable="true" icon={Trash2} label="Remove business" tone="danger" onClick={() => removeItem(index)} />
             ) : null}
-          </div>
+          </ElementBox>
         ))}
-      </div>
+      </ElementBox>
 
       {controlsVisible ? (
         <EditorIconButton className="block-business-list-add block-inline-command" data-admin-inline-editable="true" icon={Plus} label="Add business" onClick={addItem} />

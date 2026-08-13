@@ -16,6 +16,10 @@
     "contact-details",
     "schedule",
     "rate-table",
+    "car-barge-hero",
+    "car-barge-intro",
+    "car-barge-operator",
+    "tabs",
     "group",
     "row",
     "two-column-text",
@@ -36,12 +40,145 @@
     "contact-details": 1,
     "schedule": 1,
     "rate-table": 1,
+    "car-barge-hero": 1,
+    "car-barge-intro": 1,
+    "car-barge-operator": 1,
+    "tabs": 1,
     "group": 1,
     "row": 1,
     "two-column-text": 1,
     "business-list": 1
   },
-  "structuralBlockTypes": ["group", "row"],
+  "blockElementStyleTargets": {
+    "hero": [
+      { "id": "content", "label": "Content group" },
+      { "id": "title", "label": "Title" },
+      { "id": "lead", "label": "Lead" },
+      { "id": "action", "label": "Button" }
+    ],
+    "image-text-split": [
+      { "id": "media", "label": "Media column" },
+      { "id": "image", "label": "Image" },
+      { "id": "copy", "label": "Copy column" },
+      { "id": "kicker", "label": "Kicker" },
+      { "id": "title", "label": "Title" },
+      { "id": "body", "label": "Body" },
+      { "id": "action", "label": "Link" }
+    ],
+    "feature-grid": [
+      { "id": "title", "label": "Title" },
+      { "id": "items", "label": "Items grid" },
+      { "id": "item", "label": "Feature item" },
+      { "id": "itemIcon", "label": "Feature icon" },
+      { "id": "itemTitle", "label": "Feature title" },
+      { "id": "itemBody", "label": "Feature description" }
+    ],
+    "rich-text": [
+      { "id": "text", "label": "Text" }
+    ],
+    "image": [
+      { "id": "figure", "label": "Figure" },
+      { "id": "image", "label": "Image" },
+      { "id": "caption", "label": "Caption" }
+    ],
+    "cta-band": [
+      { "id": "content", "label": "Content group" },
+      { "id": "title", "label": "Title" },
+      { "id": "body", "label": "Body" },
+      { "id": "action", "label": "Button" }
+    ],
+    "testimonials": [
+      { "id": "grid", "label": "Testimonials grid" },
+      { "id": "item", "label": "Testimonial" },
+      { "id": "quote", "label": "Quote" },
+      { "id": "author", "label": "Author" }
+    ],
+    "image-gallery": [
+      { "id": "grid", "label": "Gallery grid" },
+      { "id": "item", "label": "Gallery item" },
+      { "id": "image", "label": "Gallery image" },
+      { "id": "caption", "label": "Image caption" }
+    ],
+    "spacer": [],
+    "directory-embed": [
+      { "id": "title", "label": "Title" }
+    ],
+    "contact-form": [
+      { "id": "content", "label": "Content group" },
+      { "id": "title", "label": "Title" },
+      { "id": "intro", "label": "Intro" },
+      { "id": "form", "label": "Form" },
+      { "id": "submit", "label": "Submit button" }
+    ],
+    "contact-details": [
+      { "id": "item", "label": "Detail row" },
+      { "id": "label", "label": "Detail label" },
+      { "id": "value", "label": "Detail value" }
+    ],
+    "schedule": [
+      { "id": "title", "label": "Title" },
+      { "id": "columns", "label": "Columns group" },
+      { "id": "column", "label": "Column" },
+      { "id": "columnHeading", "label": "Column heading" },
+      { "id": "time", "label": "Time" },
+      { "id": "notes", "label": "Notes group" },
+      { "id": "note", "label": "Note" }
+    ],
+    "rate-table": [
+      { "id": "heading", "label": "Heading" },
+      { "id": "rows", "label": "Rows group" },
+      { "id": "row", "label": "Row" },
+      { "id": "rowLabel", "label": "Row label" },
+      { "id": "rowValue", "label": "Row value" },
+      { "id": "footer", "label": "Footer group" },
+      { "id": "footerLine", "label": "Footer line" },
+      { "id": "link", "label": "Link" }
+    ],
+    "car-barge-hero": [
+      { "id": "title", "label": "Hero title" },
+      { "id": "image", "label": "Hero image" },
+      { "id": "nav", "label": "Section navigation" }
+    ],
+    "car-barge-intro": [
+      { "id": "left", "label": "Left column" },
+      { "id": "fees", "label": "Port Authority fees" },
+      { "id": "right", "label": "Right column" },
+      { "id": "note", "label": "Rate note" }
+    ],
+    "car-barge-operator": [
+      { "id": "title", "label": "Operator title" },
+      { "id": "meta", "label": "Operator details" },
+      { "id": "rates", "label": "Rates strip" },
+      { "id": "image", "label": "Operator image" },
+      { "id": "tabs", "label": "Schedule tabs" },
+      { "id": "schedule", "label": "Schedule panel" }
+    ],
+    "tabs": [
+      { "id": "tabList", "label": "Tab list" },
+      { "id": "tab", "label": "Tab" },
+      { "id": "panel", "label": "Panel" }
+    ],
+    "group": [
+      { "id": "cardGrid", "label": "Card layout" },
+      { "id": "cardMedia", "label": "Card media" },
+      { "id": "cardTitle", "label": "Card title" },
+      { "id": "cardContent", "label": "Card content" }
+    ],
+    "row": [],
+    "two-column-text": [
+      { "id": "left", "label": "Left column" },
+      { "id": "right", "label": "Right column" }
+    ],
+    "business-list": [
+      { "id": "title", "label": "Title" },
+      { "id": "items", "label": "Businesses group" },
+      { "id": "item", "label": "Business row" },
+      { "id": "name", "label": "Business name" },
+      { "id": "phones", "label": "Phone group" },
+      { "id": "phone", "label": "Phone number" }
+    ]
+  },
+  "structuralBlockTypes": ["group", "row", "tabs"],
   "maxStructuralNestingDepth": 3,
   "maxRowColumns": 4,
   "maxRowColumnWidth": 10,
@@ -73,6 +210,7 @@
         "type": "link",
         "fields": {
           "backgroundColor": { "type": "color" },
+          "enabled": { "type": "boolean" },
           "label": { "type": "string" },
           "path": { "type": "string" }
         }
@@ -206,6 +344,123 @@
         "fields": {
           "label": { "type": "string" },
           "path": { "type": "string" }
+        }
+      }
+    },
+    "car-barge-hero": {
+      "title": { "type": "string" },
+      "image": { "type": "image" },
+      "navItems": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "targetId": { "type": "string" },
+            "label": { "type": "string" }
+          }
+        }
+      }
+    },
+    "car-barge-intro": {
+      "leftParagraphs": { "type": "array", "items": { "type": "string" } },
+      "leftParagraphIds": { "type": "idArray", "alignedWith": "leftParagraphs" },
+      "portAuthorityFees": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "label": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      },
+      "rightParagraphs": { "type": "array", "items": { "type": "string" } },
+      "rightParagraphIds": { "type": "idArray", "alignedWith": "rightParagraphs" },
+      "referenceLink": {
+        "type": "link",
+        "fields": {
+          "label": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      },
+      "note": { "type": "string" }
+    },
+    "car-barge-operator": {
+      "title": { "type": "string" },
+      "meta": {
+        "type": "object",
+        "fields": {
+          "names": { "type": "string" },
+          "phone": { "type": "string" },
+          "travelTime": { "type": "string" }
+        }
+      },
+      "image": { "type": "image" },
+      "schedules": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "title": { "type": "string" },
+            "columns": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "fields": {
+                  "id": { "type": "id", "required": true },
+                  "heading": { "type": "string" },
+                  "times": { "type": "array", "items": { "type": "string" } },
+                  "timeIds": { "type": "idArray", "alignedWith": "times" }
+                }
+              }
+            },
+            "notes": { "type": "array", "items": { "type": "string" } },
+            "noteIds": { "type": "idArray", "alignedWith": "notes" }
+          }
+        }
+      },
+      "rates": {
+        "type": "object",
+        "fields": {
+          "heading": { "type": "string" },
+          "layout": { "type": "string" },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "fields": {
+                "id": { "type": "id", "required": true },
+                "label": { "type": "string" },
+                "values": { "type": "array", "items": { "type": "string" } },
+                "valueIds": { "type": "idArray", "alignedWith": "values" }
+              }
+            }
+          },
+          "footer": { "type": "array", "items": { "type": "string" } },
+          "footerIds": { "type": "idArray", "alignedWith": "footer" },
+          "link": {
+            "type": "link",
+            "fields": {
+              "label": { "type": "string" },
+              "path": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "tabs": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "fields": {
+            "id": { "type": "id", "required": true },
+            "title": { "type": "string" },
+            "blocks": { "type": "blocks" }
+          }
         }
       }
     },

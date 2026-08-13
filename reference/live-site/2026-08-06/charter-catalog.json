@@ -1,0 +1,123 @@
+{
+  "capturedAt": "2026-08-06T14:47:24.022Z",
+  "snapshotDate": "2026-08-06",
+  "source": "https://www.stjohnhouserentals.com/api/charters",
+  "charterCount": 5,
+  "charters": [
+    {
+      "path": "/charter-boat-rentals/boat-bvi",
+      "pageTitle": "Boat BVI | St. John Charter Boat | St. John House Rentals",
+      "contentHtml": "",
+      "active": true,
+      "slug": "boat-bvi",
+      "phoneNumber": "",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fcharters%2Fboat-bvi%2Fboat-bvi-hero.jpg?alt=media&token=6a80d58a-c965-4776-ab84-41b53a53969a",
+        "alt": "",
+        "title": "Boat BVI.jpg",
+        "width": null,
+        "height": null,
+        "originalWidth": null,
+        "originalHeight": null
+      },
+      "website": "",
+      "name": "Boat BVI | St. John Charter Boat | St. John House Rentals",
+      "externalLinks": [],
+      "id": "boat-bvi",
+      "shortDescription": "The British Virgin Islands has always been and continues to be recognized as a world leader of great places to go sailing. Since it became a major charter sailing destination in the early 70s, you'd think that other cool new locations would have taken its place by now. Not so. The answer lies in its privileged geography and friendly people.",
+      "email": ""
+    },
+    {
+      "id": "flyaway-charters-vi",
+      "email": "",
+      "shortDescription": "Every charter at FlyAway Charters is private and customized. We pride ourselves on providing a unique experience bolstered by our extensive local knowledge to provide the perfect experience for you.",
+      "website": "",
+      "externalLinks": [],
+      "name": "FlyAway Charters VI | St. John Charter Boat | St. John House Rentals",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fcharters%2Fflyaway-charters-vi%2Fflyaway-charters-vi-hero.jpg?alt=media&token=69af6352-a492-4ff5-ab58-6496b167735e",
+        "alt": "",
+        "title": "FlyAway Charters VI.jpg",
+        "width": null,
+        "height": null,
+        "originalWidth": null,
+        "originalHeight": null
+      },
+      "phoneNumber": "",
+      "slug": "flyaway-charters-vi",
+      "active": true,
+      "contentHtml": "",
+      "pageTitle": "FlyAway Charters VI | St. John Charter Boat | St. John House Rentals",
+      "path": "/charter-boat-rentals/flyaway-charters-vi"
+    },
+    {
+      "path": "/charter-boat-rentals/island-roots",
+      "pageTitle": "Island Roots | St. John Charter Boat | St. John House Rentals",
+      "contentHtml": "",
+      "active": true,
+      "slug": "island-roots",
+      "phoneNumber": "",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fcharters%2Fisland-roots%2Fisland-roots-hero.jpg?alt=media&token=0c59ddb8-1773-41a9-959a-edef9e84dbf5",
+        "alt": "",
+        "title": "Island Roots.jpg",
+        "width": null,
+        "height": null,
+        "originalWidth": null,
+        "originalHeight": null
+      },
+      "website": "",
+      "name": "Island Roots | St. John Charter Boat | St. John House Rentals",
+      "externalLinks": [],
+      "id": "island-roots",
+      "email": "",
+      "shortDescription": "Let us know of any questions or requests. We are always happy to learn how we can make it your best day on the water."
+    },
+    {
+      "email": "",
+      "shortDescription": "Discover the US & British Virgin Islands on Salty Viking- Premier choice for luxury boat charters",
+      "id": "private-luxury-power-catamaran-adventures",
+      "externalLinks": [],
+      "name": "Salty Viking | St. John Charter Boat | St. John House Rentals",
+      "website": "",
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fcharters%2Fprivate-luxury-power-catamaran-adventures%2Fprivate-luxury-power-catamaran-adventures-hero.webp?alt=media&token=d269d142-0cac-4ea4-9ae0-1f2166fa10db",
+        "alt": "",
+        "title": "rs=w_1280,h_800.webp",
+        "width": null,
+        "height": null,
+        "originalWidth": null,
+        "originalHeight": null
+      },
+      "phoneNumber": "",
+      "slug": "private-luxury-power-catamaran-adventures",
+      "active": true,
+      "contentHtml": "",
+      "pageTitle": "Salty Viking | St. John Charter Boat | St. John House Rentals",
+      "path": "/charter-boat-rentals/private-luxury-power-catamaran-adventures"
+    },
+    {
+      "heroImage": {
+        "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fcharters%2Ftacoboatstjohn%2Ftacoboatstjohn-hero.png?alt=media&token=efa28005-8a75-48fd-857a-ef875523ae92",
+        "alt": "",
+        "title": "Captain-Johnny-Cakes.png",
+        "width": null,
+        "height": null,
+        "originalWidth": null,
+        "originalHeight": null
+      },
+      "name": "Tacoboatstjohn | St. John Charter Boat | St. John House Rentals",
+      "externalLinks": [],
+      "website": "",
+      "shortDescription": "If you book the 11:00 time slot, please plan to arrive at 10:15 so chances are better for a spot. Please note that the Lime Out does not accept reservations. Refer to their website before you head out.",
+      "email": "",
+      "id": "tacoboatstjohn",
+      "path": "/charter-boat-rentals/tacoboatstjohn",
+      "pageTitle": "Tacoboatstjohn | St. John Charter Boat | St. John House Rentals",
+      "contentHtml": "",
+      "active": true,
+      "slug": "tacoboatstjohn",
+      "phoneNumber": ""
+    }
+  ]
+}

@@ -13,7 +13,7 @@ function makeStableId(makeId) {
 
 const blockDefaultFactories = {
   hero: () => ({
-    action: { backgroundColor: '', label: '', path: '/' },
+    action: { backgroundColor: '', enabled: false, label: '', path: '/' },
     image: { kind: 'image' },
     lead: '',
     title: 'New hero banner',
@@ -42,6 +42,33 @@ const blockDefaultFactories = {
   'contact-details': () => ({ items: [] }),
   schedule: () => ({ columns: [], notes: [], title: 'Schedule' }),
   'rate-table': () => ({ footer: [], heading: 'Rates', link: { label: '', path: '' }, rows: [] }),
+  'car-barge-hero': () => ({
+    image: { kind: 'image' },
+    navItems: [],
+    title: 'Car Barge Information',
+  }),
+  'car-barge-intro': () => ({
+    leftParagraphIds: [],
+    leftParagraphs: [],
+    note: '',
+    portAuthorityFees: [],
+    referenceLink: { label: '', path: '' },
+    rightParagraphIds: [],
+    rightParagraphs: [],
+  }),
+  'car-barge-operator': () => ({
+    image: { kind: 'image' },
+    meta: { names: '', phone: '', travelTime: '' },
+    rates: { footer: [], footerIds: [], heading: 'Rates', layout: '', link: { label: '', path: '' }, rows: [] },
+    schedules: [],
+    title: 'Car Barge Operator',
+  }),
+  tabs: ({ makeId } = {}) => ({
+    items: [
+      { blocks: [], id: makeStableId(makeId), title: 'Tab 1' },
+      { blocks: [], id: makeStableId(makeId), title: 'Tab 2' },
+    ],
+  }),
   group: () => ({ items: [] }),
   row: ({ makeId } = {}) => ({
     columns: [
@@ -72,6 +99,17 @@ const blockCollectionItemFactories = {
     valueIds: [makeStableId(makeId)],
     values: [''],
   }),
+  'car-barge-hero.navItems': ({ makeId }) => ({
+    id: makeStableId(makeId),
+    label: 'Section',
+    targetId: '',
+  }),
+  'car-barge-intro.portAuthorityFees': ({ makeId }) => ({
+    id: makeStableId(makeId),
+    label: 'Vehicle',
+    value: '',
+  }),
+  'tabs.items': ({ makeId }) => ({ blocks: [], id: makeStableId(makeId), title: 'New tab' }),
   'group.items': ({ makeId }) => ({ blocks: [], id: makeStableId(makeId), image: { kind: 'image' }, title: 'New card' }),
   'business-list.items': ({ makeId }) => ({
     id: makeStableId(makeId),

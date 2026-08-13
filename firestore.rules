@@ -32,6 +32,26 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /cmsClients/{document} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    match /cmsClientPayments/{document} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    match /cmsClientInvoices/{document} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    match /cmsClientInvoiceCounters/{document} {
+      allow read: if false;
+      allow write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

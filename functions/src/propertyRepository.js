@@ -15,6 +15,47 @@ const DEFAULT_PROPERTY_TEMPLATE_VARIANT = 'fully-sectioned'
 const PROPERTY_TEMPLATE_VARIANTS = new Set(['source-stack', 'supplemental-sections', 'fully-sectioned'])
 const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
 const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
+const LISTING_FEE_INTERVALS = new Set(['monthly', 'annual', 'one-time'])
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+function normalizeListingFeeInterval(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return LISTING_FEE_INTERVALS.has(normalized) ? normalized : ''
+}
+
+function normalizeDateOnlyValue(value) {
+  const normalized = String(value ?? '').trim().slice(0, 10)
+
+  if (!DATE_ONLY_PATTERN.test(normalized)) {
+    return ''
+  }
+
+  const [year, month, day] = normalized.split('-').map((part) => Number(part))
+  const parsedDate = new Date(Date.UTC(year, month - 1, day))
+  const isValidCalendarDate =
+    parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day
+
+  return isValidCalendarDate ? normalized : ''
+}
+
+function addIntervalToDateOnlyValue(dateOnlyValue, interval) {
+  const normalizedDate = normalizeDateOnlyValue(dateOnlyValue)
+
+  if (!normalizedDate || !LISTING_FEE_INTERVALS.has(interval) || interval === 'one-time') {
+    return ''
+  }
+
+  const [year, month, day] = normalizedDate.split('-').map((part) => Number(part))
+  const nextDate = new Date(Date.UTC(year, month - 1, day))
+
+  if (interval === 'monthly') {
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + 1)
+  } else {
+    nextDate.setUTCFullYear(nextDate.getUTCFullYear() + 1)
+  }
+
+  return nextDate.toISOString().slice(0, 10)
+}
 
 function cloneData(value) {
   return JSON.parse(JSON.stringify(value))
@@ -740,6 +781,11 @@ function normalizePropertyRecord(record) {
     bedroomLabel: formatBedroomLabel(bedrooms),
     location: String(record.location ?? '').trim(),
     calendarUrl: String(record.calendarUrl ?? '').trim(),
+    clientId: String(record.clientId ?? '').trim(),
+    listingFeeAmount: String(record.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: normalizeListingFeeInterval(record.listingFeeInterval),
+    lastPaidAt: normalizeDateOnlyValue(record.lastPaidAt),
+    renewalDueAt: normalizeDateOnlyValue(record.renewalDueAt),
     descriptionHtml,
     hasStructuredDescriptionSections,
     enabledDescriptionSections,
@@ -808,6 +854,11 @@ function buildPropertyViewFromStoredRecord(record, documentId = '', { mode = 'pu
     property.active = selectedRecord.active !== false && envelope.draft?.active !== false
     delete property.adminOriginalSlug
     delete property.publication
+    delete property.clientId
+    delete property.listingFeeAmount
+    delete property.listingFeeInterval
+    delete property.lastPaidAt
+    delete property.renewalDueAt
   }
 
   return property
@@ -1075,6 +1126,11 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     shortDescription,
     location: String(draft?.location ?? '').trim(),
     calendarUrl: String(draft?.calendarUrl ?? '').trim(),
+    clientId: String(draft?.clientId ?? '').trim(),
+    listingFeeAmount: String(draft?.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: normalizeListingFeeInterval(draft?.listingFeeInterval),
+    lastPaidAt: normalizeDateOnlyValue(draft?.lastPaidAt),
+    renewalDueAt: normalizeDateOnlyValue(draft?.renewalDueAt),
     hasStructuredDescriptionSections: true,
     enabledDescriptionSections,
     descriptionHtml:
@@ -1466,6 +1522,125 @@ exports.setPropertyActiveState = async function setPropertyActiveState(originalS
 
   const savedSnapshot = await collectionRef.doc(documentId).get()
   return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
+}
+
+// Shared by applyPropertyFieldPatch (self-contained transaction) and
+// preparePropertyPaymentBillingPatch (participates in a caller-owned transaction so a
+// payment record and its property billing update can commit or fail together).
+async function readPropertyFieldPatchForTransaction(transaction, docRef, fieldPatch, adminUser) {
+  const documentId = docRef.id
+  const snapshot = await transaction.get(docRef)
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'Property record not found.')
+  }
+
+  const currentData = snapshot.data()
+  const currentEnvelope = normalizeStoredPropertyEnvelope(currentData, documentId)
+  const nextDraftSource = currentEnvelope.draft ?? currentEnvelope.published
+
+  if (!nextDraftSource) {
+    throw new HttpError(400, 'Property draft is missing and cannot be updated.')
+  }
+
+  const nextDraft = {
+    ...nextDraftSource,
+    ...fieldPatch,
+    adminOriginalSlug: nextDraftSource.adminOriginalSlug || nextDraftSource.slug || documentId,
+  }
+
+  const nextPublished = currentEnvelope.published
+    ? {
+        ...currentEnvelope.published,
+        ...fieldPatch,
+        adminOriginalSlug: currentEnvelope.published.adminOriginalSlug || currentEnvelope.published.slug || documentId,
+      }
+    : null
+
+  return {
+    draft: nextDraft,
+    published: nextPublished,
+    updatedBy: adminUser.email || adminUser.uid,
+    updatedAt: getServerTimestamp(),
+    publishedBy: currentEnvelope.publishedBy || '',
+    publishedAt: currentData.publishedAt ?? null,
+  }
+}
+
+async function applyPropertyFieldPatch(originalSlug, fieldPatch, adminUser) {
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Property identifier is required to update this property.')
+  }
+
+  const db = getDb()
+  const collectionRef = db.collection(PROPERTY_COLLECTION)
+  const docRef = collectionRef.doc(documentId)
+
+  await db.runTransaction(async (transaction) => {
+    const patchedRecord = await readPropertyFieldPatchForTransaction(transaction, docRef, fieldPatch, adminUser)
+    transaction.set(docRef, patchedRecord)
+  })
+
+  const savedSnapshot = await collectionRef.doc(documentId).get()
+  return cloneData(buildPropertyViewFromStoredRecord(savedSnapshot.data(), documentId, { mode: 'admin' }))
+}
+
+exports.setPropertyClientId = async function setPropertyClientId(originalSlug, clientId, adminUser) {
+  return applyPropertyFieldPatch(originalSlug, { clientId: String(clientId ?? '').trim() }, adminUser)
+}
+
+exports.setPropertyBillingInfo = async function setPropertyBillingInfo(originalSlug, billing, adminUser) {
+  return applyPropertyFieldPatch(
+    originalSlug,
+    {
+      listingFeeAmount: String(billing?.listingFeeAmount ?? '').trim(),
+      listingFeeInterval: normalizeListingFeeInterval(billing?.listingFeeInterval),
+      lastPaidAt: normalizeDateOnlyValue(billing?.lastPaidAt),
+      renewalDueAt: normalizeDateOnlyValue(billing?.renewalDueAt),
+    },
+    adminUser,
+  )
+}
+
+exports.recordPropertyPaymentBilling = async function recordPropertyPaymentBilling(originalSlug, { paidAt, listingFeeInterval }, adminUser) {
+  const normalizedPaidAt = normalizeDateOnlyValue(paidAt) || new Date().toISOString().slice(0, 10)
+
+  return applyPropertyFieldPatch(
+    originalSlug,
+    {
+      lastPaidAt: normalizedPaidAt,
+      renewalDueAt: addIntervalToDateOnlyValue(normalizedPaidAt, normalizeListingFeeInterval(listingFeeInterval)),
+    },
+    adminUser,
+  )
+}
+
+// Lets a caller (paymentRepository.recordPayment) fold the property billing update into its
+// own transaction, so the payment record and the property patch commit or fail together
+// instead of the payment silently persisting when the property lookup fails.
+exports.preparePropertyPaymentBillingPatch = async function preparePropertyPaymentBillingPatch(
+  transaction,
+  originalSlug,
+  { paidAt, listingFeeInterval },
+  adminUser,
+) {
+  const documentId = String(originalSlug ?? '').trim()
+
+  if (!documentId) {
+    throw new HttpError(400, 'Property identifier is required to update this property.')
+  }
+
+  const docRef = getDb().collection(PROPERTY_COLLECTION).doc(documentId)
+  const normalizedPaidAt = normalizeDateOnlyValue(paidAt) || new Date().toISOString().slice(0, 10)
+  const fieldPatch = {
+    lastPaidAt: normalizedPaidAt,
+    renewalDueAt: addIntervalToDateOnlyValue(normalizedPaidAt, normalizeListingFeeInterval(listingFeeInterval)),
+  }
+
+  const patchedRecord = await readPropertyFieldPatchForTransaction(transaction, docRef, fieldPatch, adminUser)
+  return { docRef, patchedRecord }
 }
 
 exports.deletePropertyRecord = async function deletePropertyRecord(originalSlug, adminUser) {

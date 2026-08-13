@@ -11,6 +11,10 @@ const {
   getBackupWorkspaceStatus,
   switchPublicSiteTarget,
 } = require('./backupAdminRepository')
+const { archiveClient, getClient, importClientsFromProperties, listClients, saveClient } = require('./clientRepository')
+const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
+const { createInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
+const { getPropertyAnalyticsReport } = require('./analyticsRepository')
 const {
   getCharterBySlug,
   listAllCharters,
@@ -26,6 +30,7 @@ const {
   getStagingFirestoreDatabaseId,
   isDefaultFirestoreDatabaseId,
   requireAdminUser,
+  requireOwnerUser,
   runWithRuntimeContext,
 } = require('./firebaseAdmin')
 const {
@@ -40,6 +45,8 @@ const {
   resetPropertyRecordsToSeed,
   savePropertyRecord,
   setPropertyActiveState,
+  setPropertyBillingInfo,
+  setPropertyClientId,
   seedPropertyRecords,
 } = require('./propertyRepository')
 const {
@@ -53,7 +60,7 @@ const {
   moveMediaAssets,
   uploadMediaAsset,
 } = require('./mediaRepository')
-const { acquireLock, getLockStatus, heartbeatLock, listLockStatuses, releaseLock } = require('./editLockRepository')
+const { acquireLock, getLockStatus, heartbeatLock, listLockStatuses, releaseLock, takeOverLock } = require('./editLockRepository')
 const {
   buildRobotsTxt,
   buildSitemap,
@@ -122,9 +129,27 @@ const publicSiteConfig = {
 
 const PUBLIC_AVAILABILITY_CACHE_CONTROL = 'public, max-age=300, s-maxage=300, stale-while-revalidate=1800'
 const PUBLIC_SEO_CACHE_CONTROL = 'no-store'
+const DEFAULT_SITE_API_CORS_ORIGINS = [
+  /^http:\/\/localhost(?::\d+)?$/i,
+  /^http:\/\/127\.0\.0\.1(?::\d+)?$/i,
+  'https://stjohnhouserentals.com',
+  'https://www.stjohnhouserentals.com',
+  'https://st-john-house-rentals.firebaseapp.com',
+  'https://st-john-house-rentals.web.app',
+]
+
+function getSiteApiCorsOrigins() {
+  const configuredOrigins = String(process.env.SITE_API_CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+
+  return [...DEFAULT_SITE_API_CORS_ORIGINS, ...configuredOrigins]
+}
+
 const SITE_API_FUNCTION_OPTIONS = {
   region: 'us-central1',
-  cors: true,
+  cors: getSiteApiCorsOrigins(),
   memory: '1GiB',
   timeoutSeconds: 540,
 }
@@ -487,7 +512,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'GET' && path === 'admin/backups/status') {
-      await requireAdminUser(request)
+      await requireOwnerUser(request)
       response.json({
         source: 'firestore-admin',
         checkedAt: new Date().toISOString(),
@@ -497,7 +522,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/backups/export') {
-      const adminUser = await requireAdminUser(request)
+      const adminUser = await requireOwnerUser(request)
       const backup = await createManagedBackupExport(request.body ?? {}, adminUser)
 
       response.status(202).json({
@@ -509,7 +534,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/backups/clone') {
-      const adminUser = await requireAdminUser(request)
+      const adminUser = await requireOwnerUser(request)
       const clone = await createStagingClone(request.body ?? {}, adminUser)
 
       response.status(202).json({
@@ -521,7 +546,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/backups/staging-preview') {
-      const adminUser = await requireAdminUser(request)
+      const adminUser = await requireOwnerUser(request)
       const preview = await deployStagingPreview(adminUser)
 
       response.json({
@@ -533,7 +558,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/backups/cutover') {
-      const adminUser = await requireAdminUser(request)
+      const adminUser = await requireOwnerUser(request)
       const cutover = await switchPublicSiteTarget(request.body ?? {}, adminUser)
 
       response.json({
@@ -545,7 +570,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/backups/operations/status') {
-      await requireAdminUser(request)
+      await requireOwnerUser(request)
       response.json({
         source: 'firestore-admin',
         checkedAt: new Date().toISOString(),
@@ -604,6 +629,30 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'POST' && path === 'admin/properties/billing') {
+      const adminUser = await requireAdminUser(request)
+      const property = await setPropertyBillingInfo(request.body?.originalSlug ?? '', request.body?.billing ?? {}, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/properties/client') {
+      const adminUser = await requireAdminUser(request)
+      const property = await setPropertyClientId(request.body?.originalSlug ?? '', request.body?.clientId ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        property,
+      })
+      return
+    }
+
     if (request.method === 'DELETE' && path === 'admin/properties') {
       const adminUser = await requireAdminUser(request)
       const deletedProperty = await deletePropertyRecord(request.body?.originalSlug ?? '', adminUser)
@@ -649,12 +698,170 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'DELETE' && path === 'admin/properties/overrides') {
-      await requireAdminUser(request)
+      await requireOwnerUser(request)
       const result = await resetPropertyRecordsToSeed()
       response.json({
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         reset: result,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/analytics\/properties\/[^/]+$/.test(path)) {
+      await requireAdminUser(request)
+      const slug = decodeURIComponent(path.replace(/^admin\/analytics\/properties\//, ''))
+      const property = await getAdminPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in admin catalog',
+          slug,
+        })
+        return
+      }
+
+      response.json({
+        source: 'google-analytics',
+        checkedAt: new Date().toISOString(),
+        analytics: await getPropertyAnalyticsReport(property),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/clients') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        clients: await listClients(),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/clients') {
+      const adminUser = await requireAdminUser(request)
+      const savedClient = await saveClient(
+        request.body?.draft ?? {},
+        request.body?.id ?? '',
+        adminUser,
+        request.body?.expectedUpdatedAt ?? null,
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        client: savedClient,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/clients/archive') {
+      const adminUser = await requireAdminUser(request)
+      await archiveClient(request.body?.id ?? '', adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/clients/import-from-properties') {
+      const adminUser = await requireAdminUser(request)
+      const result = await importClientsFromProperties(adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        import: result,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/clients\/[^/]+\/payments$/.test(path)) {
+      await requireAdminUser(request)
+      const clientId = decodeURIComponent(path.split('/')[2])
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        payments: await listPaymentsForClient(clientId),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/clients\/[^/]+\/payments$/.test(path)) {
+      const adminUser = await requireAdminUser(request)
+      const clientId = decodeURIComponent(path.split('/')[2])
+      const payment = await recordPayment({ ...request.body, clientId }, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        payment,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && path === 'admin/clients/payments') {
+      await requireAdminUser(request)
+      await deletePayment(request.body?.id ?? '')
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/clients\/[^/]+\/invoices$/.test(path)) {
+      await requireAdminUser(request)
+      const clientId = decodeURIComponent(path.split('/')[2])
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        invoices: await listInvoicesForClient(clientId),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/clients\/[^/]+\/invoices$/.test(path)) {
+      const adminUser = await requireAdminUser(request)
+      const clientId = decodeURIComponent(path.split('/')[2])
+      const invoice = await createInvoice({ ...request.body, clientId }, adminUser)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        invoice,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/clients\/invoices\/[^/]+\/status$/.test(path)) {
+      await requireAdminUser(request)
+      const invoiceId = decodeURIComponent(path.split('/')[3])
+      const invoice = await updateInvoiceStatus(invoiceId, request.body?.status ?? '')
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        invoice,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path.startsWith('admin/clients/')) {
+      await requireAdminUser(request)
+      const id = decodeURIComponent(path.replace(/^admin\/clients\//, ''))
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        client: await getClient(id),
       })
       return
     }
@@ -703,7 +910,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'DELETE' && path === 'admin/charters/overrides') {
-      await requireAdminUser(request)
+      await requireOwnerUser(request)
       const result = await resetCharterRecordsToSeed()
       response.json({
         source: 'firestore',
@@ -862,6 +1069,23 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     if (request.method === 'POST' && path === 'admin/edit-locks/heartbeat') {
       const adminUser = await requireAdminUser(request)
       const result = await heartbeatLock(
+        request.body?.resourceType ?? '',
+        request.body?.resourceId ?? '',
+        adminUser,
+        request.body?.leaseId ?? '',
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/edit-locks/take-over') {
+      const adminUser = await requireAdminUser(request)
+      const result = await takeOverLock(
         request.body?.resourceType ?? '',
         request.body?.resourceId ?? '',
         adminUser,
@@ -1096,7 +1320,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'POST' && path === 'admin/seed-firestore') {
-      await requireAdminUser(request)
+      await requireOwnerUser(request)
       const replace = request.body?.replace === true
       const [siteContent, properties, charters] = await Promise.all([
         seedSiteContentRecords({ replace, actor: 'admin-seed' }),

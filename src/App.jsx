@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, RouteParamsProvider, useLocation } from './lib/router'
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { SiteLayout } from './components/SiteLayout'
 import { DEFAULT_SITE_DESCRIPTION, SITE_TITLE, useDocumentMeta } from './lib/documentMeta'
@@ -406,6 +406,127 @@ function SiteContentRouteGate({ children }) {
 
 normalizeHashRoute()
 
+function decodeRouteParam(value = '') {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+function getSingleSegmentAfterPrefix(pathname, prefix) {
+  const normalizedPathname = String(pathname ?? '').replace(/\/+$/, '') || '/'
+  const normalizedPrefix = String(prefix ?? '').replace(/\/+$/, '')
+
+  if (!normalizedPathname.startsWith(`${normalizedPrefix}/`)) {
+    return ''
+  }
+
+  const slug = normalizedPathname.slice(normalizedPrefix.length + 1)
+
+  return slug && !slug.includes('/') ? decodeRouteParam(slug) : ''
+}
+
+function withRouteParams(element, params) {
+  return <RouteParamsProvider params={params}>{element}</RouteParamsProvider>
+}
+
+function resolvePublicRouteElement(pathname) {
+  const normalizedPathname = String(pathname ?? '').replace(/\/+$/, '') || '/'
+
+  if (normalizedPathname === '/') {
+    return <HomePage />
+  }
+
+  if (normalizedPathname === '/about-us') {
+    return <AboutUsPage />
+  }
+
+  if (normalizedPathname === '/st-john-rentals') {
+    return <Navigate replace to="/for-rent" />
+  }
+
+  if (normalizedPathname === '/for-rent') {
+    return <RentalAccommodationsPage />
+  }
+
+  if (normalizedPathname === '/for-sale' || normalizedPathname === '/property-for-sale') {
+    return <PropertyForSalePage />
+  }
+
+  if (normalizedPathname === '/car-rental-ferry-boat-info' || normalizedPathname === '/car-barge-information') {
+    return <CarBargeInformationPage />
+  }
+
+  if (normalizedPathname === '/passenger-ferry' || normalizedPathname === '/ferrys') {
+    return <PassengerFerryPage />
+  }
+
+  if (normalizedPathname === '/cars') {
+    return <StJohnCarRentalsPage />
+  }
+
+  if (normalizedPathname === '/boats') {
+    return <CharterBoatsPage />
+  }
+
+  if (normalizedPathname === '/map') {
+    return <LocalAttractionsPage />
+  }
+
+  if (normalizedPathname === '/advertise') {
+    return <AdvertisePage />
+  }
+
+  if (normalizedPathname === '/privacy-policy') {
+    return <PrivacyPolicyPage />
+  }
+
+  if (normalizedPathname === '/terms-of-agreement') {
+    return <TermsOfAgreementPage />
+  }
+
+  if (normalizedPathname === '/blog') {
+    return <BlogPage />
+  }
+
+  if (normalizedPathname === '/jewelry') {
+    return <JewelryPage />
+  }
+
+  if (normalizedPathname === '/links') {
+    return <LinksPage />
+  }
+
+  if (normalizedPathname === '/st-john-book') {
+    return <StJohnBookPage />
+  }
+
+  if (normalizedPathname === '/art') {
+    return <ArtPage />
+  }
+
+  const legacyPropertySlug = getSingleSegmentAfterPrefix(normalizedPathname, '/1bedroom')
+
+  if (legacyPropertySlug) {
+    return withRouteParams(<PropertyDetailPage />, { slug: legacyPropertySlug })
+  }
+
+  const propertySlug = getSingleSegmentAfterPrefix(normalizedPathname, '/rental-properties')
+
+  if (propertySlug) {
+    return withRouteParams(<PropertyDetailPage />, { slug: propertySlug })
+  }
+
+  const charterSlug = getSingleSegmentAfterPrefix(normalizedPathname, '/charter-boat-rentals')
+
+  if (charterSlug) {
+    return withRouteParams(<CharterBoatDetailPage />, { slug: charterSlug })
+  }
+
+  return <DynamicStructuredPageRoute />
+}
+
 function AppRoutes() {
   const location = useLocation()
 
@@ -441,40 +562,13 @@ function AppRoutes() {
     )
   }
 
+  const routeElement = resolvePublicRouteElement(location.pathname)
+
   return (
     <RouteErrorBoundary locationKey={location.pathname}>
       <SiteContentRouteGate>
         <Suspense fallback={<RouteLoadingFallback />}>
-          <Routes>
-            <Route element={<SiteLayout />}>
-              <Route index element={<HomePage />} />
-              <Route path="admin" element={<AdminPage />} />
-              <Route path="about-us" element={<AboutUsPage />} />
-              <Route path="st-john-rentals" element={<Navigate replace to="/for-rent" />} />
-              <Route path="1bedroom/:slug" element={<PropertyDetailPage />} />
-              <Route path="for-rent" element={<RentalAccommodationsPage />} />
-              <Route path="for-sale" element={<PropertyForSalePage />} />
-              <Route path="property-for-sale" element={<PropertyForSalePage />} />
-              <Route path="car-rental-ferry-boat-info" element={<CarBargeInformationPage />} />
-              <Route path="car-barge-information" element={<CarBargeInformationPage />} />
-              <Route path="passenger-ferry" element={<PassengerFerryPage />} />
-              <Route path="ferrys" element={<PassengerFerryPage />} />
-              <Route path="cars" element={<StJohnCarRentalsPage />} />
-              <Route path="boats" element={<CharterBoatsPage />} />
-              <Route path="map" element={<LocalAttractionsPage />} />
-              <Route path="advertise" element={<AdvertisePage />} />
-              <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
-              <Route path="terms-of-agreement" element={<TermsOfAgreementPage />} />
-              <Route path="blog" element={<BlogPage />} />
-              <Route path="jewelry" element={<JewelryPage />} />
-              <Route path="links" element={<LinksPage />} />
-              <Route path="st-john-book" element={<StJohnBookPage />} />
-              <Route path="art" element={<ArtPage />} />
-              <Route path="rental-properties/:slug" element={<PropertyDetailPage />} />
-              <Route path="charter-boat-rentals/:slug" element={<CharterBoatDetailPage />} />
-              <Route path="*" element={<DynamicStructuredPageRoute />} />
-            </Route>
-          </Routes>
+          <SiteLayout>{routeElement}</SiteLayout>
         </Suspense>
       </SiteContentRouteGate>
     </RouteErrorBoundary>

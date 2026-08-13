@@ -144,6 +144,17 @@ function auditBlock(block, path, warnings) {
     auditLink(warnings, block.action, [...path, 'action'], 'Hero button', { defaultType: 'internal', destinationField: 'path' })
   }
 
+  if (type === 'car-barge-hero') {
+    auditText(warnings, block.title, [...path, 'title'], 'Car barge hero title', 'missing-heading-text')
+    auditImage(warnings, block.image, [...path, 'image'], 'Car barge hero image')
+    auditObjectList(warnings, block.navItems, [...path, 'navItems'], 'Car barge navigation')
+  }
+
+  if (type === 'car-barge-intro') {
+    auditText(warnings, [...(block.leftParagraphs ?? []), ...(block.rightParagraphs ?? [])].join(' '), path, 'Car barge intro copy')
+    auditText(warnings, block.note, [...path, 'note'], 'Car barge note')
+  }
+
   if (type === 'image-text-split') {
     auditText(warnings, block.title, [...path, 'title'], 'Image text split title', 'missing-heading-text')
     auditText(warnings, block.body, [...path, 'body'], 'Image text split body')
@@ -242,6 +253,22 @@ function auditBlock(block, path, warnings) {
       }
 
       auditBlocks(columnBlocks, [...path, 'columns', index, 'blocks'], warnings)
+    })
+  }
+
+  if (type === 'tabs') {
+    const items = auditObjectList(warnings, block.items, [...path, 'items'], 'Tabs block')
+    items.forEach((item, index) => {
+      const itemPath = [...path, 'items', index]
+      const itemBlocks = Array.isArray(item?.blocks) ? item.blocks : []
+
+      auditText(warnings, item?.title, [...itemPath, 'title'], `Tab ${index + 1} label`, 'missing-heading-text')
+
+      if (itemBlocks.length === 0) {
+        addWarning(warnings, [...itemPath, 'blocks'], 'empty-container', `Tab ${index + 1} is empty.`)
+      }
+
+      auditBlocks(itemBlocks, [...itemPath, 'blocks'], warnings)
     })
   }
 

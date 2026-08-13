@@ -102,8 +102,12 @@ function collectBlockHeadings(block, path, device, headings, warnings) {
 
   const type = String(block.type ?? '').trim()
 
-  if (type === 'hero') {
+  if (type === 'hero' || type === 'car-barge-hero') {
     addHeading(headings, 1, block.title, [...path, 'title'])
+  }
+
+  if (type === 'car-barge-operator') {
+    addHeading(headings, 2, block.name, [...path, 'name'])
   }
 
   if (['business-list', 'contact-form', 'cta-band', 'directory-embed', 'feature-grid', 'image-text-split'].includes(type)) {
@@ -142,6 +146,13 @@ function collectBlockHeadings(block, path, device, headings, warnings) {
     const columns = Array.isArray(block.columns) ? block.columns : []
     columns.forEach((column, index) => {
       collectBlocks(column?.blocks, [...path, 'columns', index, 'blocks'], device, headings, warnings)
+    })
+  }
+
+  if (type === 'tabs') {
+    const items = Array.isArray(block.items) ? block.items : []
+    items.forEach((item, index) => {
+      collectBlocks(item?.blocks, [...path, 'items', index, 'blocks'], device, headings, warnings)
     })
   }
 

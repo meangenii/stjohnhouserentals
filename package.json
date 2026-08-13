@@ -10,7 +10,7 @@
     "dev": "npm run content:generate && vite",
     "seo:generate": "node ./scripts/generate-seo-files.mjs",
     "build": "npm run content:generate && vite build && npm run seo:generate",
-    "check": "npm run lint && npm run test:block-contract && npm run test:block-content-contract && npm run test:block-schema && npm run test:block-defaults && npm run test:block-migrations && npm run test:block-tree && npm run test:block-anchors && npm run test:server-block-anchors && npm run test:block-row-layout && npm run test:block-style && npm run test:block-responsive && npm run test:block-inspector-schema && npm run test:block-inspector-interactions && npm run test:block-authoring-coverage && npm run test:block-image-value && npm run test:block-content-audit && npm run test:block-accessibility && npm run test:rich-text-sanitizer && npm run test:link-records && npm run test:page-routes && npm run test:server-page-routes && npm run test:page-diff && npm run test:page-revisions && npm run test:page-editor-history && npm run test:page-editor-validation && npm run test:page-validation-issues && npm run test:editor-interactions && npm run test:editor-visual && npm run build && npm run lint:functions && npm run assert:no-legacy-vendor",
+    "check": "npm run lint && npm run test:block-contract && npm run test:block-content-contract && npm run test:block-schema && npm run test:block-defaults && npm run test:block-migrations && npm run test:block-tree && npm run test:block-anchors && npm run test:server-block-anchors && npm run test:block-row-layout && npm run test:block-style && npm run test:block-responsive && npm run test:block-inspector-schema && npm run test:block-inspector-interactions && npm run test:block-authoring-coverage && npm run test:block-image-value && npm run test:block-content-audit && npm run test:block-accessibility && npm run test:rich-text-sanitizer && npm run test:link-records && npm run test:page-routes && npm run test:server-page-routes && npm run test:edit-locks && npm run test:page-diff && npm run test:page-revisions && npm run test:page-editor-history && npm run test:page-editor-validation && npm run test:page-validation-issues && npm run test:editor-interactions && npm run test:editor-visual && npm run build && npm run lint:functions && npm run assert:no-legacy-vendor",
     "check:editor-release": "npm run check && npm run test:editor-api-emulator",
     "deploy": "npm run build && firebase deploy --only hosting,functions",
     "deploy:functions": "npm run content:generate && firebase deploy --only functions",
@@ -42,6 +42,7 @@
     "test:link-records": "node ./scripts/test-link-records.mjs",
     "test:page-routes": "node ./scripts/test-page-route-settings.mjs",
     "test:server-page-routes": "node ./functions/scripts/test-structured-page-routes.js",
+    "test:edit-locks": "node ./functions/scripts/test-edit-lock-repository.js",
     "test:page-diff": "node ./scripts/test-page-diff.mjs",
     "test:page-revisions": "node ./functions/scripts/test-site-content-revision-history.js",
     "test:page-editor-history": "node ./scripts/test-page-editor-history.mjs",
@@ -70,8 +71,7 @@
     "firebase": "^12.14.0",
     "lucide-react": "^1.28.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router-dom": "^7.15.0"
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",

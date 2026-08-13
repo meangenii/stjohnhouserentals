@@ -2,18 +2,16 @@
 
 ## Current Phase
 
-This repo is in phase one:
+This repo is past the initial public-site rebuild and is now in Firebase-backed CMS hardening:
 
-- Rebuild the public St. John House Rentals site in React
+- Preserve the public St. John House Rentals React site and route parity
 - Use Firebase Hosting for the frontend
-- Use Cloud Functions for public API and later privileged CMS actions
-- Keep content editable in code for now
-
-Do not start the admin editor, Firestore schemas, or custom block builder unless the task explicitly asks for it.
+- Use Cloud Functions for public API, admin CMS actions, and recovery operations
+- Keep the existing structured admin editor maintainable; do not introduce a freeform page-builder model
 
 ## Product Intent
 
-The long-term product is a focused CMS for content-driven rental sites. The short-term goal is simpler: ship a clean React version of the current public site, then replace hard-coded content with managed content later.
+The product is a focused CMS for content-driven rental sites. The current goal is to keep the public site production-clean while hardening the Firebase-backed admin, structured content, media, property, charter, client, and recovery workflows.
 
 ## Source Of Truth
 
@@ -36,15 +34,16 @@ The long-term product is a focused CMS for content-driven rental sites. The shor
 
 1. Preserve route parity before adding new product ideas.
 2. Prefer snapshot-driven content over hand-written placeholder copy.
-3. Keep functions small and public-safe; anything privileged should be designed for auth from the start.
-4. Avoid a freeform page builder in code. The future CMS should use structured sections and controlled block types.
+3. Keep functions small and public-safe; privileged operations must be authenticated and role-scoped.
+4. Avoid a freeform page builder in code. The CMS should use structured sections and controlled block types.
 5. Maintain responsive behavior on desktop and mobile with no dark-mode requirement unless asked.
 6. Never directly save, edit, restore, seed, import, export, or otherwise mutate CMS/property/Firestore/live data unless the user explicitly authorizes that exact data operation in the current turn. Data inspection for debugging must stay read-only; recovery guidance should be given as steps or text for the user to apply through the admin UI.
 
-## Definition Of Done For Phase One
+## Definition Of Done
 
 - Public routes are in React
 - Layout is production-clean, not starter-template quality
 - Firebase deploy path is documented
-- Cloud Functions baseline exists and lints
+- Cloud Functions public and admin APIs lint and pass release checks
+- Admin/recovery actions have explicit auth and owner boundaries
 - Docs stay updated when structure changes

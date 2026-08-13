@@ -18,13 +18,17 @@
   },
   "description": "",
   "dependencies": {
-    "firebase-admin": "^13.9.0",
-    "firebase-functions": "^7.2.5",
+    "firebase-admin": "14.2.0",
+    "firebase-functions": "7.3.2",
+    "genericcms": "file:..",
     "google-auth-library": "^10.6.2",
     "nodemailer": "^9.0.0",
     "sharp": "^0.35.1"
   },
   "devDependencies": {
     "eslint": "^10.3.0"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   }
 }

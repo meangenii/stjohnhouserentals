@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from '../lib/router'
 import { RichTextValue } from '../components/RichTextValue'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'

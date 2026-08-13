@@ -219,6 +219,19 @@ function migrateBlockArray(blocks, path, report) {
       })
     }
 
+    if (migratedBlock.type === 'tabs' && Array.isArray(migratedBlock.items)) {
+      migratedBlock.items = migratedBlock.items.map((item, itemIndex) => {
+        if (!isPlainObject(item)) {
+          return item
+        }
+
+        return {
+          ...item,
+          blocks: migrateBlockArray(item.blocks, [...blockPath, 'items', itemIndex, 'blocks'], report),
+        }
+      })
+    }
+
     return migratedBlock
   })
 }

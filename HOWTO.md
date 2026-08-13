@@ -21,18 +21,20 @@ cd ..
 
 1. Fill in `.env` using `.env.example`.
 2. Set the Firebase project id in `.firebaserc`.
-3. If you want shared live editing, copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
+3. If you want shared live editing, copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`. Set `ADMIN_OWNER_EMAILS` for the smaller group allowed to run backup, cutover, and seed-reset operations.
 4. If you want local scripts to target a non-default Firestore database, set `FIRESTORE_DATABASE_ID` in `functions/.env` and optionally set `FIRESTORE_ENFORCE_NON_DEFAULT=true`.
 5. If you want a staging-only deployed API that reads/writes a cloned Firestore database while the public live site continues serving the live default database, set `FIRESTORE_STAGING_DATABASE_ID` in `functions/.env` to the clone database id. The deployed `siteApiStaging` function refuses to start against `(default)`.
-6. If you want the admin Backups tab to start managed exports from the browser, set `FIRESTORE_BACKUP_OUTPUT_URI` in `functions/.env` to a Cloud Storage destination such as `gs://your-bucket/genericcms-firestore`.
+6. If you want the owner-only admin Backups tab to start managed exports from the browser, set `FIRESTORE_BACKUP_OUTPUT_URI` in `functions/.env` to a Cloud Storage destination such as `gs://your-bucket/genericcms-firestore`.
 7. If you want the Advertise form to send real email from the deployed site, also set the `SMTP_*` values in `functions/.env`. By default the form emails the public contact address from the live site shell content. `ADVERTISE_INQUIRY_TO_EMAIL` is only a backup recipient if that public address is unavailable.
-8. For a live Firebase project, enable Cloud Firestore, create the default Firestore database, and enable Firebase Authentication with the Email/Password provider.
+8. Optionally set `SITE_API_CORS_ORIGINS` as a comma-separated list of additional allowed direct API origins. Known production domains and localhost are allowed by default.
+9. Optionally tune public inquiry throttling with `ADVERTISE_INQUIRY_RATE_LIMIT_MAX` and `ADVERTISE_INQUIRY_RATE_LIMIT_WINDOW_MS`.
+10. For a live Firebase project, enable Cloud Firestore, create the default Firestore database, and enable Firebase Authentication with the Email/Password provider.
 
 Required for the default local frontend flow:
 
 - `VITE_API_BASE_URL=/api`
 
-In `npm run dev`, `/api` is proxied to the local Functions emulator. If you want localhost to call a deployed Firebase API instead, set `VITE_API_BASE_URL` to the deployed API origin instead of `/api`.
+In `npm run dev`, `/api` is proxied through the deployed Firebase Hosting `/api` rewrite by default. Set `VITE_USE_FUNCTIONS_EMULATOR=true` while running `npm run emulators` when you want localhost to call the local Functions emulator instead.
 
 Optional:
 
@@ -45,6 +47,7 @@ Optional:
 - `VITE_ADMIN_AUTO_LOGIN_EMAIL` and `VITE_ADMIN_AUTO_LOGIN_PASSWORD` for localhost-only admin auto sign-in when you do not want to manually sign in on `/admin`
 - `VITE_FIREBASE_MEASUREMENT_ID` enables Firebase/Google Analytics pageview tracking outside localhost
 - `VITE_ENABLE_ANALYTICS_IN_DEV=true` allows analytics from localhost for intentional testing
+- `GOOGLE_ANALYTICS_PROPERTY_ID` enables admin property analytics reports through the GA4 Data API. This is the numeric GA4 property id, and the Functions service account needs Analytics Viewer access to that property.
 
 The Firebase client values are required for Firebase-backed admin sign-in and live editing.
 
@@ -198,7 +201,7 @@ For end-to-end live editing in local development:
 
 1. Set `VITE_PROPERTY_DATA_SOURCE=firebase` and/or `VITE_CHARTER_DATA_SOURCE=firebase`.
 2. Fill in the Firebase client config values in `.env`.
-3. Copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`.
+3. Copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`. Set `ADMIN_OWNER_EMAILS` too if you want to exercise owner-only backup and seed-reset operations locally.
 4. If you want local or deployed Advertise-form submissions to send real email, also set the `SMTP_*` values in `functions/.env`. The recipient defaults to the public site contact email; `ADVERTISE_INQUIRY_TO_EMAIL` is only a fallback.
 5. Start the emulators with `npm run emulators`.
 6. Create an email/password user in the Auth emulator UI.
@@ -263,7 +266,7 @@ The staging API also blocks destructive media deletes so preview testing cannot 
 
 `deploy:staging` also refuses to run if `VITE_API_BASE_URL` is anything other than `/api`, because an absolute API base URL would bypass the preview rewrite and hit the live API instead.
 
-The admin workspace now also includes a `Backups` tab. That tab only exposes safe operations:
+The admin workspace now also includes an owner-only `Backups` tab. That tab exposes recovery operations that avoid direct restore-over-live writes:
 
 - create a managed Firestore export to `FIRESTORE_BACKUP_OUTPUT_URI`
 - clone the live database into the configured staging database id

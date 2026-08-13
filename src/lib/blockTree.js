@@ -193,6 +193,27 @@ function collectFromBlockArray(blocks, options, path, depth, entries) {
         collectFromBlockArray(childBlocks, options, [...columnPath, 'blocks'], depth + 2, entries)
       })
     }
+
+    if (block.type === 'tabs' && Array.isArray(block.items)) {
+      block.items.forEach((item, itemIndex) => {
+        const itemPath = [...blockPath, 'items', itemIndex]
+        const itemId = typeof item?.id === 'string' ? item.id.trim() : ''
+        const itemLabel = getTextSummary(item?.title) || `Tab ${itemIndex + 1}`
+        const childBlocks = Array.isArray(item?.blocks) ? item.blocks : []
+
+        entries.push({
+          childCount: childBlocks.length,
+          depth: depth + 1,
+          id: getEntryKey('tab-item', itemPath, item?.id),
+          kind: 'tab-item',
+          label: itemLabel,
+          nodeId: itemId,
+          path: itemPath,
+          selectionId: makeBlockTreeSelectionId('tab-item', itemId),
+        })
+        collectFromBlockArray(childBlocks, options, [...itemPath, 'blocks'], depth + 2, entries)
+      })
+    }
   })
 
   return entries

@@ -2,6 +2,7 @@ import { BLOCK_CONTENT_SCHEMAS } from './blockContract.js'
 
 const COMMON_BLOCK_FIELDS = new Set([
   'anchorId',
+  'elementStyles',
   'editorLabel',
   'hidden',
   'id',

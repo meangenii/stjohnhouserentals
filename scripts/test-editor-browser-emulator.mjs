@@ -153,8 +153,8 @@ try {
 
   await page.getByRole('button', { name: '+ Add block', exact: true }).click()
   await page.getByRole('button', { name: 'Hero Banner', exact: true }).click()
-  await page.getByRole('button', { name: 'Open Inspector', exact: true }).click()
   const inspector = page.getByRole('complementary', { name: 'Inspector' })
+  await inspector.waitFor()
   await inspector.locator('label:has(> span:text-is("Title")) textarea').fill('Authenticated browser editor')
   await page.getByRole('heading', { name: 'Authenticated browser editor', exact: true }).waitFor()
 

@@ -28,7 +28,17 @@
       "PowerShell(Stop-Process -Id 30920 -Force)",
       "Bash(git log *)",
       "Read(//tmp/**)",
-      "Bash(cat /tmp/gitlog_full.txt)"
+      "Bash(cat /tmp/gitlog_full.txt)",
+      "Bash(node functions/scripts/test-block-page-schema.js)",
+      "Bash(node functions/scripts/test-page-editor-agents.js)",
+      "Bash(node scripts/test-page-editor-validation.mjs)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(node -e \"console.log\\(require\\('playwright/package.json'\\).version\\)\")",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -sf http://localhost:5174)",
+      "Bash(node \"C:\\\\Users\\\\j_luc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-j-luc-OneDrive-Desktop-GenericCMS\\\\b32e9122-f2b6-4164-89c4-1dfee7b7edf4\\\\scratchpad\\\\drive-editor.mjs\")",
+      "Bash(cp \"C:\\\\Users\\\\j_luc\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-j-luc-OneDrive-Desktop-GenericCMS\\\\b32e9122-f2b6-4164-89c4-1dfee7b7edf4\\\\scratchpad\\\\drive-editor.mjs\" \"C:\\\\Users\\\\j_luc\\\\OneDrive\\\\Desktop\\\\GenericCMS\\\\scripts\\\\tmp-drive-editor.mjs\")",
+      "Bash(node ./scripts/tmp-drive-editor.mjs)"
     ]
   }
 }

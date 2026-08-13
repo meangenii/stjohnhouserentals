@@ -54,6 +54,16 @@ export function findPageShareImage(blocks) {
         }
       }
     }
+
+    if (block?.type === 'tabs' && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        const nestedImage = findPageShareImage(item?.blocks)
+
+        if (nestedImage) {
+          return nestedImage
+        }
+      }
+    }
   }
 
   return null

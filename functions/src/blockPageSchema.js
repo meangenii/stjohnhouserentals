@@ -2,6 +2,7 @@ const { validateBlockAnchorSettings } = require('./blockAnchors')
 const {
   BLOCK_DEFINITION_VERSION: CURRENT_BLOCK_VERSION,
   BLOCK_CONTENT_SCHEMAS,
+  BLOCK_ELEMENT_STYLE_TARGETS,
   BLOCK_PAGE_CONTENT_MODEL,
   BLOCK_RESPONSIVE_OPTIONS,
   BLOCK_STYLE_OPTIONS,
@@ -94,13 +95,13 @@ function normalizeBackgroundImage(image) {
   return isPlainObject(image) ? image : null
 }
 
-function normalizeBlockStyle(style, issues, warnings, path) {
+function normalizeBlockStyle(style, issues, warnings, path, label = 'Block style') {
   if (style == null) {
     return undefined
   }
 
   if (!isPlainObject(style)) {
-    addIssue(issues, path, 'Block style must be an object.', 'invalid-style')
+    addIssue(issues, path, `${label} must be an object.`, 'invalid-style')
     return undefined
   }
 
@@ -108,7 +109,7 @@ function normalizeBlockStyle(style, issues, warnings, path) {
   const background = style.background
 
   if (background != null && !isPlainObject(background)) {
-    addIssue(issues, [...path, 'background'], 'Block style background must be an object.', 'invalid-style')
+    addIssue(issues, [...path, 'background'], `${label} background must be an object.`, 'invalid-style')
   }
 
   const normalizedStyle = {
@@ -168,6 +169,51 @@ function normalizeBlockStyle(style, issues, warnings, path) {
   }
 
   return normalizedStyle
+}
+
+function getBlockElementStyleTargetIds(type) {
+  return (BLOCK_ELEMENT_STYLE_TARGETS[String(type ?? '').trim()] ?? []).map((target) => target.id)
+}
+
+function normalizeElementStyles(elementStyles, type, issues, warnings, path) {
+  if (elementStyles == null) {
+    return undefined
+  }
+
+  if (!isPlainObject(elementStyles)) {
+    addIssue(issues, path, 'Element styles must be an object keyed by style target.', 'invalid-element-styles')
+    return undefined
+  }
+
+  const supportedTargets = new Set(getBlockElementStyleTargetIds(type))
+  const normalizedElementStyles = {}
+
+  Object.entries(elementStyles).forEach(([targetId, style]) => {
+    const normalizedTargetId = String(targetId ?? '').trim()
+    const targetPath = [...path, targetId]
+
+    if (!normalizedTargetId) {
+      addIssue(issues, targetPath, 'Element style targets require a non-empty id.', 'invalid-element-style-target')
+      return
+    }
+
+    if (!supportedTargets.has(normalizedTargetId)) {
+      addIssue(
+        warnings,
+        targetPath,
+        `Element style target "${normalizedTargetId}" is not supported by ${type || 'this block'}.`,
+        'unsupported-element-style-target',
+      )
+    }
+
+    const normalizedStyle = normalizeBlockStyle(style, issues, warnings, targetPath)
+
+    if (normalizedStyle) {
+      normalizedElementStyles[normalizedTargetId] = normalizedStyle
+    }
+  })
+
+  return normalizedElementStyles
 }
 
 function validateStableId(value, issues, path, label) {
@@ -356,6 +402,28 @@ function normalizeRowColumns(columns, path, depth, issues, warnings) {
   })
 }
 
+function normalizeTabItems(items, path, depth, issues, warnings) {
+  if (!Array.isArray(items)) {
+    addIssue(issues, path, 'Tabs blocks require an items array.', 'invalid-tabs-items')
+    return []
+  }
+
+  return items.map((item, index) => {
+    const itemPath = [...path, index]
+
+    if (!isPlainObject(item)) {
+      addIssue(issues, itemPath, 'Tab item must be an object.', 'invalid-tabs-item')
+      return { blocks: [], id: '', title: '' }
+    }
+
+    const normalizedItem = { ...item }
+    normalizedItem.id = validateStableId(item.id, issues, [...itemPath, 'id'], 'Tab item')
+    normalizedItem.title = typeof item.title === 'string' ? item.title : ''
+    normalizedItem.blocks = normalizeBlockArray(item.blocks, [...itemPath, 'blocks'], depth + 1, issues, warnings)
+    return normalizedItem
+  })
+}
+
 function normalizeBlock(block, path, depth, issues, warnings) {
   if (!isPlainObject(block)) {
     addIssue(issues, path, 'Block must be an object.', 'invalid-block')
@@ -432,6 +500,14 @@ function normalizeBlock(block, path, depth, issues, warnings) {
     }
   }
 
+  if (Object.prototype.hasOwnProperty.call(block, 'elementStyles')) {
+    const normalizedElementStyles = normalizeElementStyles(block.elementStyles, type, issues, warnings, [...path, 'elementStyles'])
+
+    if (normalizedElementStyles) {
+      normalizedBlock.elementStyles = normalizedElementStyles
+    }
+  }
+
   if (SUPPORTED_BLOCK_TYPES.includes(type)) {
     const contentValidation = validateBlockContentRecord(block, type)
     contentValidation.errors.forEach((issue) => addIssue(issues, [...path, ...issue.pathSegments], issue.message, issue.code))
@@ -444,6 +520,10 @@ function normalizeBlock(block, path, depth, issues, warnings) {
 
   if (type === 'row') {
     normalizedBlock.columns = normalizeRowColumns(block.columns, [...path, 'columns'], depth, issues, warnings)
+  }
+
+  if (type === 'tabs') {
+    normalizedBlock.items = normalizeTabItems(block.items, [...path, 'items'], depth, issues, warnings)
   }
 
   if (type === 'spacer') {
@@ -500,6 +580,17 @@ function validateBlockPageDraft(page) {
   normalizedPage = migration.page
   migration.errors.forEach((issue) => addIssue(errors, issue.pathSegments, issue.message, issue.code))
   validateBlockAnchorSettings(normalizedPage.blocks).forEach((issue) => addIssue(errors, issue.path, issue.message, issue.code))
+
+  if (Object.prototype.hasOwnProperty.call(normalizedPage, 'style')) {
+    const normalizedStyle = normalizeBlockStyle(normalizedPage.style, errors, warnings, ['style'], 'Page style')
+
+    if (normalizedStyle) {
+      normalizedPage.style = normalizedStyle
+    } else {
+      delete normalizedPage.style
+    }
+  }
+
   normalizedPage.blocks = normalizeBlockArray(normalizedPage.blocks, ['blocks'], 0, errors, warnings)
 
   return {

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from '../lib/router'
 import { PropertyAvailabilityFallback } from '../components/PropertyAvailabilityFallback'
 import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'

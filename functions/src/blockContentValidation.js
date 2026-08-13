@@ -2,6 +2,7 @@ const { BLOCK_CONTENT_SCHEMAS } = require('./blockContract')
 
 const COMMON_BLOCK_FIELDS = new Set([
   'anchorId',
+  'elementStyles',
   'editorLabel',
   'hidden',
   'id',

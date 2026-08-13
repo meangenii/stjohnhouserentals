@@ -181,6 +181,44 @@ const extraFieldValidation = assertParity(extraFieldBlock, 'unsupported field fi
 assert.ok(extraFieldValidation.warnings.some((issue) => issue.code === 'unsupported-content-field'))
 assert.equal(JSON.stringify(extraFieldBlock), extraFieldSnapshot, 'Content validation must never mutate authored content.')
 
+const elementStylesPage = {
+  blocks: [
+    {
+      elementStyles: {
+        retiredTarget: { presetId: 'feature-card' },
+        title: {
+          background: { color: '#ffffff', type: 'color' },
+          presetId: 'feature-card',
+          spacing: 'wide',
+        },
+      },
+      id: 'styled-hero',
+      title: 'Styled hero',
+      type: 'hero',
+    },
+  ],
+  contentModel: 'block-page',
+  group: 'custom',
+  metaDescription: 'Element style fixture.',
+  navLabel: 'Element Style Fixture',
+  path: '/element-style-fixture',
+  routeAliases: [],
+  title: 'Element Style Fixture',
+}
+const clientElementStylesValidation = validateEditorBlockPageDraft(elementStylesPage)
+const serverElementStylesValidation = validateBlockPageDraft(elementStylesPage)
+assert.equal(clientElementStylesValidation.valid, true)
+assert.equal(serverElementStylesValidation.valid, true)
+assert.ok(
+  !clientElementStylesValidation.warnings.some(
+    (issue) => issue.code === 'unsupported-content-field' && issue.path.includes('elementStyles'),
+  ),
+  'elementStyles must be recognized as a common block field.',
+)
+assert.ok(clientElementStylesValidation.warnings.some((issue) => issue.code === 'unsupported-element-style-target'))
+assert.ok(serverElementStylesValidation.warnings.some((issue) => issue.code === 'unsupported-element-style-target'))
+assert.equal(serverElementStylesValidation.normalizedPage.blocks[0].elementStyles.title.spacing, 'none')
+
 const invalidColor = assertParity(
   { action: { backgroundColor: 'url(javascript:alert(1))', label: 'Contact', path: '/contact' }, id: 'hero', type: 'hero' },
   'invalid button color',

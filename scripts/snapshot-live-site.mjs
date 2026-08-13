@@ -732,6 +732,10 @@ function makePagePayload(route, $, relativeHtmlFile) {
     page.rentalListings = extractListingCards($, '/rental-properties/')
   }
 
+  if (route.path === '/boats') {
+    page.charterListings = extractListingCards($, '/charter-boat-rentals/')
+  }
+
   return page
 }
 
@@ -815,6 +819,27 @@ function normalizeCharterRecord(record) {
   }
 }
 
+function normalizeCharterRouteRecord(routePath) {
+  const slug = cleanText(routePath).replace(/^\/charter-boat-rentals\//, '').trim()
+
+  if (!slug) {
+    return null
+  }
+
+  return {
+    id: slug,
+    slug,
+    path: `/charter-boat-rentals/${slug}`,
+    name: titleizePath(slug),
+    shortDescription: '',
+    phoneNumber: '',
+    email: '',
+    website: '',
+    heroImage: null,
+    externalLinks: [],
+  }
+}
+
 function extractPropertyCatalog(homeHtml, snapshotDate) {
   const warmupData = parseLegacyWarmupData(homeHtml)
   const records = Object.values(
@@ -845,13 +870,16 @@ function extractPropertyCatalog(homeHtml, snapshotDate) {
   }
 }
 
-function extractCharterCatalog(boatsHtml, snapshotDate) {
+function extractCharterCatalog(boatsHtml, snapshotDate, fallbackRoutePaths = []) {
   const warmupData = parseLegacyWarmupData(boatsHtml)
   const records = Object.values(
     warmupData?.appsWarmupData?.dataBinding?.dataStore?.recordsByCollectionId?.CharterBoatRentals ?? {},
   )
-  const charters = records
-    .map((record) => normalizeCharterRecord(record))
+  const sourceRecords =
+    records.length > 0
+      ? records.map((record) => normalizeCharterRecord(record))
+      : fallbackRoutePaths.map((routePath) => normalizeCharterRouteRecord(routePath))
+  const charters = sourceRecords
     .filter((charter) => charter.slug && charter.name)
     .sort((left, right) => {
       if (left.sortValue && right.sortValue && left.sortValue !== right.sortValue) {
@@ -865,7 +893,7 @@ function extractCharterCatalog(boatsHtml, snapshotDate) {
   return {
     capturedAt: new Date().toISOString(),
     snapshotDate,
-    source: `${BASE_URL}/boats`,
+    source: records.length > 0 ? `${BASE_URL}/boats` : `${BASE_URL}/sitemap.xml`,
     charterCount: charters.length,
     charters,
   }
@@ -888,6 +916,78 @@ function buildPropertySummaryCatalog(propertyCatalog) {
       facts: property.facts,
       heroImage: property.heroImage,
     })),
+  }
+}
+
+function normalizeApiPropertyRecord(record) {
+  const slug = cleanText(record?.slug ?? record?.id ?? '')
+  const name = cleanText(record?.name ?? record?.title ?? '')
+
+  if (!slug || !name) {
+    return null
+  }
+
+  return {
+    ...record,
+    id: cleanText(record?.id ?? slug),
+    slug,
+    path: cleanText(record?.path ?? `/rental-properties/${slug}`),
+    name,
+    facts: Array.isArray(record?.facts) ? record.facts : extractFactLines(record?.shortDescription ?? ''),
+  }
+}
+
+function normalizeApiCharterRecord(record) {
+  const slug = cleanText(record?.slug ?? record?.id ?? '')
+  const name = cleanText(record?.name ?? record?.title ?? '')
+
+  if (!slug || !name) {
+    return null
+  }
+
+  const charter = {
+    ...record,
+    id: cleanText(record?.id ?? slug),
+    slug,
+    path: cleanText(record?.path ?? `/charter-boat-rentals/${slug}`),
+    name,
+  }
+
+  delete charter.adminOriginalSlug
+  delete charter.publication
+  delete charter.updatedAt
+  delete charter.updatedBy
+  delete charter.publishedAt
+  delete charter.publishedBy
+
+  return charter
+}
+
+function buildApiPropertyCatalog(payload, snapshotDate) {
+  const properties = Array.isArray(payload?.properties)
+    ? payload.properties.map((property) => normalizeApiPropertyRecord(property)).filter(Boolean)
+    : []
+
+  return {
+    capturedAt: new Date().toISOString(),
+    snapshotDate,
+    source: `${BASE_URL}/api/properties/catalog`,
+    propertyCount: properties.length,
+    properties,
+  }
+}
+
+function buildApiCharterCatalog(payload, snapshotDate) {
+  const charters = Array.isArray(payload?.charters)
+    ? payload.charters.map((charter) => normalizeApiCharterRecord(charter)).filter(Boolean)
+    : []
+
+  return {
+    capturedAt: new Date().toISOString(),
+    snapshotDate,
+    source: `${BASE_URL}/api/charters`,
+    charterCount: charters.length,
+    charters,
   }
 }
 
@@ -915,6 +1015,26 @@ async function fetchText(url) {
   }
 
   throw lastError
+}
+
+async function fetchJson(url) {
+  const text = await fetchText(url)
+
+  return JSON.parse(text)
+}
+
+async function fetchPublicApiCatalogs(snapshotDate) {
+  const [propertyResult, charterResult] = await Promise.allSettled([
+    fetchJson(`${BASE_URL}/api/properties/catalog`),
+    fetchJson(`${BASE_URL}/api/charters`),
+  ])
+
+  return {
+    propertyCatalog:
+      propertyResult.status === 'fulfilled' ? buildApiPropertyCatalog(propertyResult.value, snapshotDate) : null,
+    charterCatalog:
+      charterResult.status === 'fulfilled' ? buildApiCharterCatalog(charterResult.value, snapshotDate) : null,
+  }
 }
 
 async function fetchHtml(routePath) {
@@ -951,7 +1071,7 @@ function sortStaticPaths(paths) {
 async function getLiveRouteInventory() {
   const sitemapIndex = await fetchText(`${BASE_URL}/sitemap.xml`)
   const sitemapUrls = extractLocs(sitemapIndex)
-  const staticPaths = new Set(['/passenger-ferry'])
+  const staticPaths = new Set(STATIC_ROUTE_CONFIG.map((route) => route.path))
   const rentalPaths = new Set()
   const charterPaths = new Set()
 
@@ -1035,12 +1155,52 @@ function mergePropertyDetails(property, details) {
 }
 
 function mergeCharterDetails(charter, details) {
+  const detailName = cleanText(details.name ?? '')
+  const detailSummary = cleanText(details.shortDescription ?? '')
+
   return {
     ...charter,
+    name: detailName || charter.name,
+    shortDescription: charter.shortDescription || detailSummary,
+    heroImage: charter.heroImage ?? details.heroImage ?? null,
     pageTitle: details.pageTitle,
     contentHtml: details.contentHtml,
     externalLinks: details.externalLinks,
   }
+}
+
+function isCharterBoilerplateText(text, charterName) {
+  const normalizedText = cleanText(text).toLowerCase()
+  const normalizedName = cleanText(charterName).toLowerCase()
+
+  return (
+    !normalizedText ||
+    normalizedText === normalizedName ||
+    normalizedText === 'available charter / boats' ||
+    normalizedText === 'learn more' ||
+    normalizedText === 'contact us' ||
+    normalizedText.startsWith('we\u2019re here to help you find your perfect home') ||
+    normalizedText.startsWith("we're here to help you find your perfect home") ||
+    normalizedText.startsWith('to book direct') ||
+    normalizedText.startsWith('filter by') ||
+    /^1-800|^340-/.test(normalizedText)
+  )
+}
+
+function extractCharterSummaryFromBlocks(blocks, charterName) {
+  return (
+    blocks
+      .map((block) => block.text)
+      .find((text) => cleanText(text).length >= 40 && !isCharterBoilerplateText(text, charterName)) ?? ''
+  )
+}
+
+function extractCharterHeroImage($) {
+  return (
+    sanitizeSnapshotImages(
+      extractMainImages($).filter((image) => !/page header/i.test(`${image.alt ?? ''} ${image.title ?? ''}`)),
+    ).at(0) ?? null
+  )
 }
 
 async function main() {
@@ -1076,9 +1236,25 @@ async function main() {
 
   const homeHtml = htmlByRouteKey.get('home') ?? ''
   const boatsHtml = htmlByRouteKey.get('charterBoats') ?? ''
+  const fallbackCharterPaths =
+    routeInventory.charterPaths.length > 0
+      ? routeInventory.charterPaths
+      : (pages.charterBoats?.charterListings ?? []).map((listing) => listing.path).filter(Boolean)
 
-  const propertyCatalog = extractPropertyCatalog(homeHtml, snapshotDate)
-  const charterCatalog = extractCharterCatalog(boatsHtml, snapshotDate)
+  let propertyCatalog = extractPropertyCatalog(homeHtml, snapshotDate)
+  let charterCatalog = extractCharterCatalog(boatsHtml, snapshotDate, fallbackCharterPaths)
+
+  if (propertyCatalog.propertyCount === 0 || charterCatalog.charterCount === 0) {
+    const apiCatalogs = await fetchPublicApiCatalogs(snapshotDate)
+
+    if (propertyCatalog.propertyCount === 0 && apiCatalogs.propertyCatalog?.propertyCount > 0) {
+      propertyCatalog = apiCatalogs.propertyCatalog
+    }
+
+    if (charterCatalog.charterCount === 0 && apiCatalogs.charterCatalog?.charterCount > 0) {
+      charterCatalog = apiCatalogs.charterCatalog
+    }
+  }
 
   const propertyDetailPages = await mapWithConcurrency(
     propertyCatalog.properties,
@@ -1103,11 +1279,19 @@ async function main() {
       const html = await fetchHtml(charter.path)
       await writeRouteHtml(referenceDir, charter.path, html)
       const $ = cheerio.load(html)
+      const contentBlocks = extractContentBlocks($)
+      const detailName =
+        cleanText($('main h1').first().text()) ||
+        cleanText($('h1').first().text()) ||
+        cleanText($('title').first().text()).replace(/\s*\|\s*St John House Rental$/i, '')
 
       return {
         slug: charter.slug,
         pageTitle: cleanText($('title').first().text()),
-        contentHtml: extractContentBlocks($)
+        name: detailName,
+        shortDescription: extractCharterSummaryFromBlocks(contentBlocks, detailName || charter.name),
+        heroImage: extractCharterHeroImage($),
+        contentHtml: contentBlocks
           .map((block) => block.html)
           .filter(Boolean)
           .join('\n'),
@@ -1126,6 +1310,14 @@ async function main() {
     mergeCharterDetails(charter, charterDetailsBySlug.get(charter.slug) ?? {}),
   )
   const propertySummaryCatalog = buildPropertySummaryCatalog(propertyCatalog)
+  const snapshotRentalPaths =
+    routeInventory.rentalPaths.length > 0
+      ? routeInventory.rentalPaths
+      : propertyCatalog.properties.map((property) => property.path).filter(Boolean).sort((left, right) => left.localeCompare(right))
+  const snapshotCharterPaths =
+    routeInventory.charterPaths.length > 0
+      ? routeInventory.charterPaths
+      : charterCatalog.charters.map((charter) => charter.path).filter(Boolean).sort((left, right) => left.localeCompare(right))
 
   const auxiliaryAssets = await Promise.all(
     AUXILIARY_PUBLIC_ASSETS.map(async (asset) => {
@@ -1143,13 +1335,15 @@ async function main() {
     }),
   )
 
-  pages.charterBoats.charterListings = charterCatalog.charters.map((charter) => ({
-    name: charter.name,
-    summary: truncateText(charter.shortDescription, 220),
-    path: charter.path,
-    href: `${BASE_URL}${charter.path}`,
-    image: charter.heroImage,
-  }))
+  if (pages.charterBoats) {
+    pages.charterBoats.charterListings = charterCatalog.charters.map((charter) => ({
+      name: charter.name,
+      summary: truncateText(charter.shortDescription, 220),
+      path: charter.path,
+      href: `${BASE_URL}${charter.path}`,
+      image: charter.heroImage,
+    }))
+  }
 
   const navigation = buildNavigation(staticRoutes)
   const snapshot = {
@@ -1161,8 +1355,8 @@ async function main() {
       rentalPropertyCount: propertyCatalog.propertyCount,
       charterRouteCount: charterCatalog.charterCount,
       staticPaths: routeInventory.staticPaths,
-      rentalPaths: routeInventory.rentalPaths,
-      charterPaths: routeInventory.charterPaths,
+      rentalPaths: snapshotRentalPaths,
+      charterPaths: snapshotCharterPaths,
       auxiliaryPaths: auxiliaryAssets.map((asset) => asset.routePath),
     },
     ...navigation,

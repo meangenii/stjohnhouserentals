@@ -1,12 +1,15 @@
 import { forwardRef, lazy, Suspense, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import { AlignJustify, Bold, Check, CornerDownLeft, Italic, Link as LinkIcon, Paintbrush, RemoveFormatting, Underline, Unlink, X } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from '../lib/router'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { buildRouteOptions, resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getClipboardRichTextHtml, richTextValueToHtml, richTextValueToInlineHtml } from '../lib/richTextValue'
 import {
+  RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS,
+  applyRichTextColor,
+  applyRichTextHorizontalAlign,
   applyRichTextFontSize,
   captureCaretOffset,
   captureRichTextSelectionRange,
@@ -18,6 +21,7 @@ import {
   readRichTextSelectionState,
   tightenOrUntightenSelectedLines,
 } from '../lib/richTextFormatting'
+import { RICH_TEXT_COLOR_OPTIONS } from '../lib/richTextColorOptions'
 import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
 import { useEditorStyleSettings } from '../lib/useEditorStyleSettings'
@@ -249,6 +253,28 @@ function getColorInputValue(value, fallback = '#ffffff') {
   return expandHexColor(value) || fallback
 }
 
+function RichTextColorInput({ disabled, onApply }) {
+  const [customColor, setCustomColor] = useState('#111111')
+
+  return (
+    <div className="admin-rich-text-menu-custom-color">
+      <label>
+        <span>Custom</span>
+        <input disabled={disabled} type="color" value={getColorInputValue(customColor, '#111111')} onChange={(event) => setCustomColor(event.target.value)} />
+      </label>
+      <button
+        className="admin-rich-text-menu-custom-size-apply"
+        disabled={disabled}
+        type="button"
+        onClick={() => onApply(customColor)}
+        onMouseDown={(event) => event.preventDefault()}
+      >
+        Apply
+      </button>
+    </div>
+  )
+}
+
 function focusEditableElementAtEnd(element) {
   if (!element || typeof window === 'undefined') {
     return
@@ -314,7 +340,9 @@ function InlineTextFormattingToolbar({
   const [selectionState, setSelectionState] = useState(() => ({
     blockTag: fixedBlockTag || 'p',
     bold: false,
+    color: 'default',
     fontSize: 'default',
+    horizontalAlign: 'left',
     italic: false,
     tightenedLines: false,
     underline: false,
@@ -632,6 +660,30 @@ function InlineTextFormattingToolbar({
     }
   }
 
+  function handleColorChange(nextValue) {
+    const anchor = anchorRef?.current
+
+    if (disabled || !anchor || !focusAnchorSelection()) {
+      return
+    }
+
+    if (applyRichTextColor(anchor, nextValue, { collapsedBehavior: 'root' })) {
+      syncCurrentValue()
+    }
+  }
+
+  function handleHorizontalAlignChange(nextValue) {
+    const anchor = anchorRef?.current
+
+    if (disabled || !anchor || !focusAnchorSelection()) {
+      return
+    }
+
+    if (applyRichTextHorizontalAlign(anchor, nextValue)) {
+      syncCurrentValue()
+    }
+  }
+
   function handleBlockTagChange(nextValue) {
     const nextTag = String(nextValue ?? 'p').trim().toLowerCase()
 
@@ -656,10 +708,11 @@ function InlineTextFormattingToolbar({
         <AdminRichTextMenu
           disabled={disabled}
           inline
-          label="Tag"
+          label="Style"
           onBeforeOpen={rememberSelection}
           onSelect={handleBlockTagChange}
           options={blockStyleOptions}
+          showLabel={false}
           value={selectionState.blockTag}
         />
       ) : null}
@@ -672,8 +725,32 @@ function InlineTextFormattingToolbar({
         onBeforeOpen={rememberSelection}
         onSelect={handleFontSizeChange}
         options={displayedFontSizeOptions}
+        showLabel={false}
         value={selectionState.fontSize}
       />
+      <AdminRichTextMenu
+        disabled={disabled}
+        footer={<RichTextColorInput disabled={disabled} onApply={handleColorChange} />}
+        inline
+        label="Color"
+        onBeforeOpen={rememberSelection}
+        onSelect={handleColorChange}
+        options={RICH_TEXT_COLOR_OPTIONS}
+        showLabel={false}
+        value={selectionState.color}
+      />
+      {allowBlockFormatting && !fixedBlockTag ? (
+        <AdminRichTextMenu
+          disabled={disabled}
+          inline
+          label="Horizontal align"
+          onBeforeOpen={rememberSelection}
+          onSelect={handleHorizontalAlignChange}
+          options={RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS}
+          showLabel={false}
+          value={selectionState.horizontalAlign}
+        />
+      ) : null}
       <InlineToolbarButton active={selectionState.bold} disabled={disabled} icon={Bold} label="Bold" onClick={() => applyCommand('bold')} />
       <InlineToolbarButton active={selectionState.italic} disabled={disabled} icon={Italic} label="Italic" onClick={() => applyCommand('italic')} />
       <InlineToolbarButton active={selectionState.underline} disabled={disabled} icon={Underline} label="Underline" onClick={() => applyCommand('underline')} />
@@ -1872,7 +1949,7 @@ export function EditableBackgroundSection({
   )
 }
 
-export function EditableRichHtml({ className = '', html = '', path, title = 'Body HTML' }) {
+export function EditableRichHtml({ className = '', html = '', path, title = 'Body HTML', ...rest }) {
   const anchorRef = useRef(null)
   const publishValueRef = useRef(null)
   const field = useEditableField(path)
@@ -1894,6 +1971,7 @@ export function EditableRichHtml({ className = '', html = '', path, title = 'Bod
         ref={anchorRef}
         active={isActive}
         as="div"
+        {...rest}
         className={buildEditableClassName(className, field.isEnabled, isActive)}
         data-admin-inline-editable={field.isEnabled ? 'true' : undefined}
         disabled={!field.isEnabled || field.disabled}

@@ -84,6 +84,12 @@ function collectAnchorIssues(blocks, path, issues, seenAnchors) {
         collectAnchorIssues(column?.blocks, [...blockPath, 'columns', columnIndex, 'blocks'], issues, seenAnchors)
       })
     }
+
+    if (block.type === 'tabs' && Array.isArray(block.items)) {
+      block.items.forEach((item, itemIndex) => {
+        collectAnchorIssues(item?.blocks, [...blockPath, 'items', itemIndex, 'blocks'], issues, seenAnchors)
+      })
+    }
   })
 }
 

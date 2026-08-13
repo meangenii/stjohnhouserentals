@@ -582,6 +582,497 @@ const structuredSitePages = {
     note:
       'Note: about St. Thomas-St. John Car Barge Rates: All rates included above are for cars, small trucks, and SUVs, unless otherwise stated. Other types of vehicles, including commercial vehicles, should call the barge companies to discuss rates and fees for your particular needs.',
   },
+  cbtest: {
+      "key": "cbtest",
+      "path": "/cbtest",
+      "navLabel": "CB Test",
+      "title": "Car Barge Information",
+      "group": "travel",
+      "source": "structured",
+      "contentModel": "block-page",
+      "metaDescription": "Get St. Thomas to St. John car barge information, schedules, rates, and travel tips for rental vehicles.",
+      "routeAliases": [],
+      "blocks": [
+          {
+              "id": "cbtest-hero",
+              "image": {
+                  "kind": "image",
+                  "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-hero.avif?alt=media&token=3399e572-c1b0-433d-a8d7-6d7f175bbf5c",
+                  "alt": "Car barges lined up at the dock"
+              },
+              "lead": "",
+              "title": "Car Barge Information",
+              "type": "hero",
+              "version": 1
+          },
+          {
+              "id": "cbtest-section-nav",
+              "html": "<p><a href=\"#cbtest-general-info\">General Info &amp; Fees</a><a href=\"#cbtest-love-city\">LOVE CITY CAR FERRIES</a><a href=\"#cbtest-big-red\">BIG RED BARGE CO.</a></p>",
+              "type": "rich-text",
+              "version": 1,
+              "anchorId": "cbtest-section-nav"
+          },
+          {
+              "anchorId": "cbtest-general-info",
+              "id": "cbtest-general-info-copy",
+              "left": "<p>Before you get onto the car barge heading to St. John, in Red Hook, make sure to stop at the small booth at the entrance to pay the Port Authority Fee of $5.</p><p>Get your ticket and drive into the large parking lot. An employee will guide you to your parking spot. You will wait in this spot until it is your turn to load onto the barge.</p><p>When you are called by the barge employee, note that you must back your vehicle onto the barge.</p>",
+              "right": "<p>One-way or round-trip tickets are purchased after you are on the barge. Tickets are not interchangeable between the three car barge companies. If you purchase a round-trip ticket, it is only good for the company that issued it.</p><p>The Red Hook ferry location services both passenger ferries and car barges at separate well-marked entrances. Arrive as early as possible before the car barge departure time you hope to catch. It fills up fast.</p><p>VI Now has more information. <a href=\"https://www.vinow.com/stjohn/getting_there/car-ferry-st-thomas-and-st-john/\">Link for information is here.</a></p>",
+              "type": "two-column-text",
+              "version": 1
+          },
+          {
+              "id": "cbtest-rate-note",
+              "html": "<p>Note: about St. Thomas-St. John Car Barge Rates: All rates included above are for cars, small trucks, and SUVs, unless otherwise stated. Other types of vehicles, including commercial vehicles, should call the barge companies to discuss rates and fees for your particular needs.</p>",
+              "type": "rich-text",
+              "version": 1,
+              "anchorId": "cbtest-rate-note"
+          },
+          {
+              "id": "cbtest-love-city-heading",
+              "html": "<h2>LOVE CITY CAR FERRIES</h2>",
+              "type": "rich-text",
+              "version": 1,
+              "anchorId": "cbtest-love-city"
+          },
+          {
+              "id": "cbtest-love-city-meta",
+              "columns": [
+                  {
+                      "id": "cbtest-love-city-meta-names",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-love-city-names",
+                              "html": "<p><strong>BARGE NAMES</strong><br>M/V Grand Vic and M/V Capt Vic</p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-love-city-meta-phone",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-love-city-phone",
+                              "html": "<p><strong>TELEPHONE</strong><br><a href=\"tel:3407794000\">340-779-4000</a></p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-love-city-meta-travel",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-love-city-travel",
+                              "html": "<p><strong>TRAVEL TIME</strong><br>30 minutes</p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  }
+              ],
+              "type": "row",
+              "version": 1,
+              "anchorId": "cbtest-love-city-meta"
+          },
+          {
+              "id": "cbtest-love-city-rates",
+              "footer": [
+                  "Last Updated: 4/13/2026"
+              ],
+              "footerIds": [
+                  "cbtest-love-city-rate-footer-1"
+              ],
+              "heading": "LOVE CITY CAR FERRY RATES",
+              "link": {
+                  "label": "Visit operator website",
+                  "path": "https://www.lovecitycarferries.com/"
+              },
+              "rows": [
+                  {
+                      "id": "cbtest-love-city-rate-one-way",
+                      "label": "One-way",
+                      "valueIds": [
+                          "cbtest-love-city-rate-one-way-1"
+                      ],
+                      "values": [
+                          "$65"
+                      ]
+                  },
+                  {
+                      "id": "cbtest-love-city-rate-round-trip",
+                      "label": "Round Trip",
+                      "valueIds": [
+                          "cbtest-love-city-rate-round-trip-1"
+                      ],
+                      "values": [
+                          "$80"
+                      ]
+                  }
+              ],
+              "type": "rate-table",
+              "version": 1,
+              "anchorId": "cbtest-love-city-rates"
+          },
+          {
+              "id": "cbtest-love-city-grid",
+              "columns": [
+                  {
+                      "id": "cbtest-love-city-image-column",
+                      "width": 0.45,
+                      "blocks": [
+                          {
+                              "id": "cbtest-love-city-image",
+                              "caption": "",
+                              "image": {
+                                  "kind": "image",
+                                  "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-0.avif?alt=media&token=17cd8a66-278c-4f07-84f1-27e42d961160",
+                                  "alt": "Love City car ferry"
+                              },
+                              "type": "image",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-love-city-schedule-column",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "anchorId": "cbtest-love-city-tabs",
+                              "id": "cbtest-love-city-tabs",
+                              "items": [
+                                  {
+                                      "blocks": [
+                                          {
+                                              "id": "cbtest-love-city-weekday-schedule",
+                                              "title": "Monday-Friday",
+                                              "columns": [
+                                                  {
+                                                      "heading": "Enighed Pond (St. John) -> Red Hook (St. Thomas)",
+                                                      "id": "cbtest-love-city-weekday-stj",
+                                                      "timeIds": [
+                                                          "cbtest-love-city-weekday-stj-1",
+                                                          "cbtest-love-city-weekday-stj-2",
+                                                          "cbtest-love-city-weekday-stj-3",
+                                                          "cbtest-love-city-weekday-stj-4",
+                                                          "cbtest-love-city-weekday-stj-5",
+                                                          "cbtest-love-city-weekday-stj-6",
+                                                          "cbtest-love-city-weekday-stj-7"
+                                                      ],
+                                                      "times": [
+                                                          "**6:15 AM - *6:30 AM",
+                                                          "8:00 AM - 8:30 AM",
+                                                          "10:00 AM - 10:30 AM",
+                                                          "Noon - 12:30 PM",
+                                                          "2:00 PM - 2:30 PM",
+                                                          "4:00 PM - *4:30 PM",
+                                                          "6:15 PM - *6:30 PM"
+                                                      ]
+                                                  },
+                                                  {
+                                                      "heading": "Red Hook (St. Thomas) -> Enighed Pond (St. John)",
+                                                      "id": "cbtest-love-city-weekday-stt",
+                                                      "timeIds": [
+                                                          "cbtest-love-city-weekday-stt-1",
+                                                          "cbtest-love-city-weekday-stt-2",
+                                                          "cbtest-love-city-weekday-stt-3",
+                                                          "cbtest-love-city-weekday-stt-4",
+                                                          "cbtest-love-city-weekday-stt-5",
+                                                          "cbtest-love-city-weekday-stt-6",
+                                                          "cbtest-love-city-weekday-stt-7"
+                                                      ],
+                                                      "times": [
+                                                          "**7:00 AM - *7:30 AM",
+                                                          "9:00 AM - 9:30 AM",
+                                                          "11:00 AM - 11:30 AM",
+                                                          "1:00 PM - 1:30 PM",
+                                                          "3:00 PM - 3:30 PM",
+                                                          "5:00 PM - *5:30 PM",
+                                                          "7:00 PM - *7:30 PM"
+                                                      ]
+                                                  }
+                                              ],
+                                              "notes": [
+                                                  "*Seasonal",
+                                                  "**Not on Weekends or Holidays"
+                                              ],
+                                              "noteIds": [
+                                                  "cbtest-love-city-weekday-note-1",
+                                                  "cbtest-love-city-weekday-note-2"
+                                              ],
+                                              "type": "schedule",
+                                              "version": 1
+                                          }
+                                      ],
+                                      "id": "cbtest-love-city-weekday-tab",
+                                      "title": "Weekdays"
+                                  },
+                                  {
+                                      "blocks": [
+                                          {
+                                              "id": "cbtest-love-city-weekend-schedule",
+                                              "title": "Saturday-Sunday & Holidays",
+                                              "columns": [
+                                                  {
+                                                      "heading": "Enighed Pond (St. John) -> Red Hook (St. Thomas)",
+                                                      "id": "cbtest-love-city-weekend-stj",
+                                                      "timeIds": [
+                                                          "cbtest-love-city-weekend-stj-1",
+                                                          "cbtest-love-city-weekend-stj-2",
+                                                          "cbtest-love-city-weekend-stj-3",
+                                                          "cbtest-love-city-weekend-stj-4",
+                                                          "cbtest-love-city-weekend-stj-5",
+                                                          "cbtest-love-city-weekend-stj-6"
+                                                      ],
+                                                      "times": [
+                                                          "8:00 AM",
+                                                          "10:00 AM",
+                                                          "Noon",
+                                                          "2:00 PM",
+                                                          "4:00 PM",
+                                                          "6:15 PM"
+                                                      ]
+                                                  },
+                                                  {
+                                                      "heading": "Red Hook (St. Thomas) -> Enighed Pond (St. John)",
+                                                      "id": "cbtest-love-city-weekend-stt",
+                                                      "timeIds": [
+                                                          "cbtest-love-city-weekend-stt-1",
+                                                          "cbtest-love-city-weekend-stt-2",
+                                                          "cbtest-love-city-weekend-stt-3",
+                                                          "cbtest-love-city-weekend-stt-4",
+                                                          "cbtest-love-city-weekend-stt-5",
+                                                          "cbtest-love-city-weekend-stt-6"
+                                                      ],
+                                                      "times": [
+                                                          "9:00 AM",
+                                                          "11:00 AM",
+                                                          "1:00 PM",
+                                                          "3:00 PM",
+                                                          "5:00 PM",
+                                                          "7:00 PM"
+                                                      ]
+                                                  }
+                                              ],
+                                              "notes": [],
+                                              "noteIds": [],
+                                              "type": "schedule",
+                                              "version": 1
+                                          }
+                                      ],
+                                      "id": "cbtest-love-city-weekend-tab",
+                                      "title": "Weekend"
+                                  }
+                              ],
+                              "type": "tabs",
+                              "version": 1
+                          }
+                      ]
+                  }
+              ],
+              "type": "row",
+              "version": 1,
+              "anchorId": "cbtest-love-city-grid"
+          },
+          {
+              "id": "cbtest-big-red-heading",
+              "html": "<h2>BIG RED BARGE CO.</h2>",
+              "type": "rich-text",
+              "version": 1,
+              "anchorId": "cbtest-big-red"
+          },
+          {
+              "id": "cbtest-big-red-meta",
+              "columns": [
+                  {
+                      "id": "cbtest-big-red-meta-names",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-big-red-names",
+                              "html": "<p><strong>BARGE NAMES</strong><br>M/V Todd G. and M/V Virginia Pride</p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-big-red-meta-phone",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-big-red-phone",
+                              "html": "<p><strong>TELEPHONE</strong><br><a href=\"tel:3402270918\">340-227-0918</a></p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-big-red-meta-travel",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "id": "cbtest-big-red-travel",
+                              "html": "<p><strong>TRAVEL TIME</strong><br>30 minutes</p>",
+                              "type": "rich-text",
+                              "version": 1
+                          }
+                      ]
+                  }
+              ],
+              "type": "row",
+              "version": 1,
+              "anchorId": "cbtest-big-red-meta"
+          },
+          {
+              "id": "cbtest-big-red-rates",
+              "footer": [
+                  "* Round trip return tickets do not expire."
+              ],
+              "footerIds": [
+                  "cbtest-big-red-rate-footer-1"
+              ],
+              "heading": "BIG RED BARGE CO. RATES",
+              "link": {
+                  "label": "Visit Big Red Barge rates page",
+                  "path": "https://www.bigredbarge.co/rates"
+              },
+              "rows": [
+                  {
+                      "id": "cbtest-big-red-rate-car",
+                      "label": "Car, Small Truck or SUV",
+                      "valueIds": [
+                          "cbtest-big-red-rate-car-1",
+                          "cbtest-big-red-rate-car-2"
+                      ],
+                      "values": [
+                          "One Way $65",
+                          "Round Trip $80"
+                      ]
+                  },
+                  {
+                      "id": "cbtest-big-red-rate-motorcycle",
+                      "label": "Motorcycles",
+                      "valueIds": [
+                          "cbtest-big-red-rate-motorcycle-1",
+                          "cbtest-big-red-rate-motorcycle-2"
+                      ],
+                      "values": [
+                          "One Way $15",
+                          "Round Trip $25"
+                      ]
+                  }
+              ],
+              "type": "rate-table",
+              "version": 1,
+              "anchorId": "cbtest-big-red-rates"
+          },
+          {
+              "id": "cbtest-big-red-grid",
+              "columns": [
+                  {
+                      "id": "cbtest-big-red-image-column",
+                      "width": 0.45,
+                      "blocks": [
+                          {
+                              "id": "cbtest-big-red-image",
+                              "caption": "",
+                              "image": {
+                                  "kind": "image",
+                                  "url": "https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fcarbargeinformation%2Fcarbargeinformation-operators-1.avif?alt=media&token=a69d42aa-fce7-4893-a98b-2f96b4437423",
+                                  "alt": "Big Red Barge"
+                              },
+                              "type": "image",
+                              "version": 1
+                          }
+                      ]
+                  },
+                  {
+                      "id": "cbtest-big-red-schedule-column",
+                      "width": 1,
+                      "blocks": [
+                          {
+                              "anchorId": "cbtest-big-red-tabs",
+                              "id": "cbtest-big-red-tabs",
+                              "items": [
+                                  {
+                                      "blocks": [
+                                          {
+                                              "id": "cbtest-big-red-daily-schedule",
+                                              "title": "Monday-Sunday",
+                                              "columns": [
+                                                  {
+                                                      "heading": "Departing from Cruz Bay, St. John:",
+                                                      "id": "cbtest-big-red-stj",
+                                                      "timeIds": [
+                                                          "cbtest-big-red-stj-1",
+                                                          "cbtest-big-red-stj-2",
+                                                          "cbtest-big-red-stj-3",
+                                                          "cbtest-big-red-stj-4",
+                                                          "cbtest-big-red-stj-5",
+                                                          "cbtest-big-red-stj-6",
+                                                          "cbtest-big-red-stj-7"
+                                                      ],
+                                                      "times": [
+                                                          "6:00 AM",
+                                                          "7:30 AM",
+                                                          "9:30 AM",
+                                                          "11:30 AM",
+                                                          "1:30 PM",
+                                                          "3:30 PM",
+                                                          "5:30 PM"
+                                                      ]
+                                                  },
+                                                  {
+                                                      "heading": "Departing from Red Hook, St. Thomas:",
+                                                      "id": "cbtest-big-red-stt",
+                                                      "timeIds": [
+                                                          "cbtest-big-red-stt-1",
+                                                          "cbtest-big-red-stt-2",
+                                                          "cbtest-big-red-stt-3",
+                                                          "cbtest-big-red-stt-4",
+                                                          "cbtest-big-red-stt-5",
+                                                          "cbtest-big-red-stt-6",
+                                                          "cbtest-big-red-stt-7"
+                                                      ],
+                                                      "times": [
+                                                          "6:30 AM",
+                                                          "8:30 AM",
+                                                          "10:30 AM",
+                                                          "12:30 PM",
+                                                          "2:30 PM",
+                                                          "4:30 PM",
+                                                          "6:30 PM"
+                                                      ]
+                                                  }
+                                              ],
+                                              "notes": [],
+                                              "noteIds": [],
+                                              "type": "schedule",
+                                              "version": 1
+                                          }
+                                      ],
+                                      "id": "cbtest-big-red-daily-tab",
+                                      "title": "Daily"
+                                  }
+                              ],
+                              "type": "tabs",
+                              "version": 1
+                          }
+                      ]
+                  }
+              ],
+              "type": "row",
+              "version": 1,
+              "anchorId": "cbtest-big-red-grid"
+          }
+      ]
+  },
   passengerFerry: {
     key: 'passengerFerry',
     path: '/passenger-ferry',
@@ -826,7 +1317,7 @@ export const siteShellContent = {
     primaryNav: primaryNavItems,
     legalNav: legalNavItems,
     copyright: 'Copyright 2026 St John Houses Rentals',
-    designCredit: 'Design By S9 Consulting',
+    designCredit: 'Develement by Johnny Luce',
   },
 }
 

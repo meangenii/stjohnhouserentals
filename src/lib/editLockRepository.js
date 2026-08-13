@@ -32,6 +32,10 @@ export async function heartbeatEditLock(resourceType, resourceId, options = {}) 
   return postJson('/admin/edit-locks/heartbeat', { leaseId: options.leaseId, resourceType, resourceId }, options)
 }
 
+export async function takeOverEditLock(resourceType, resourceId, options = {}) {
+  return postJson('/admin/edit-locks/take-over', { leaseId: options.leaseId, resourceType, resourceId }, options)
+}
+
 export async function releaseEditLock(resourceType, resourceId, options = {}) {
   return postJson('/admin/edit-locks/release', { leaseId: options.leaseId, resourceType, resourceId }, options)
 }

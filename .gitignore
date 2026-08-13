@@ -14,12 +14,19 @@ test-results
 *.local
 .firebase
 .firebaserc
+.env
+.env.*
+!.env.example
 .env.local
 functions/.env
+functions/.env.*
+!functions/.env.example
 firebase-debug.log
 functions/node_modules
 functions/src/generated/siteContent.json
 backups/
+invoices/
+tmp-*.png
 
 # Editor directories and files
 .vscode/*
@@ -32,5 +39,4 @@ backups/
 *.sln
 *.sw?
 tmp-live-properties.json
-.claude/settings.local.json
 .claude/settings.local.json

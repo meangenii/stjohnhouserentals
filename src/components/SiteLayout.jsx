@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
+import { Link, useLocation } from '../lib/router'
 import { resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getSiteThemeCssProperties, getSiteThemeRuleOverrideCssText } from '../lib/siteThemeSettings'
 import { useAdminSession } from '../lib/useAdminSession'
@@ -584,7 +584,7 @@ export function SiteFrame({ children, interactive = true, pathname, siteShell })
   )
 }
 
-export function SiteLayout() {
+export function SiteLayout({ children }) {
   const location = useLocation()
   const siteShell = useSiteShellContent()
 
@@ -598,7 +598,7 @@ export function SiteLayout() {
 
   return (
     <SiteFrame pathname={location.pathname} siteShell={siteShell}>
-      <Outlet />
+      {children}
     </SiteFrame>
   )
 }

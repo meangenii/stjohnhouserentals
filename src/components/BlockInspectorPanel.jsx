@@ -27,6 +27,7 @@ import {
   resolveBlockStyle,
 } from '../lib/blockStyle'
 import { collectBlockOutlineEntries, findBlockOutlineEntry, getBlockValueAtPath } from '../lib/blockTree'
+import { getBlockElementStyleTargets } from '../lib/blockElementStyleTargets'
 import { clearBlockImageSource, selectManagedBlockImage } from '../lib/blockImageValue'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { updateValueAtPath } from '../lib/inlinePageEditor'
@@ -73,6 +74,11 @@ const GROUP_ITEM_INSPECTOR_TABS = [
 
 const ROW_COLUMN_INSPECTOR_TABS = [
   { id: 'layout', label: 'Layout' },
+  { id: 'style', label: 'Style' },
+  { id: 'settings', label: 'Settings' },
+]
+
+const PAGE_INSPECTOR_TABS = [
   { id: 'style', label: 'Style' },
   { id: 'settings', label: 'Settings' },
 ]
@@ -278,6 +284,7 @@ function InspectorTabs({ activeTab, blockType, onChange, tabs = BLOCK_INSPECTOR_
           role="tab"
           tabIndex={activeTab === tab.id ? 0 : -1}
           type="button"
+          onMouseDown={(event) => event.preventDefault()}
           onKeyDown={(event) => handleKeyDown(event, index)}
           onClick={() => onChange(tab.id)}
         >
@@ -336,8 +343,8 @@ function ColorSwatchPicker({ disabled = false, label, onChange, onReset, value }
   )
 }
 
-function BlockStyleInspectorFields({ block, disabled, entry, onUpdatePath, siteShell }) {
-  const stylePath = [...entry.path, 'style']
+function BlockStyleInspectorFields({ block, disabled, entry, label = 'Site style', onUpdatePath, siteShell, stylePath }) {
+  const resolvedStylePath = stylePath ?? [...entry.path, 'style']
   const rawStyle = getPlainObject(block?.style)
   const rawBackground = getPlainObject(rawStyle.background)
   const stylePresets = getSiteThemeElementStylePresets(siteShell?.theme).filter((preset) => preset.enabled !== false)
@@ -346,7 +353,7 @@ function BlockStyleInspectorFields({ block, disabled, entry, onUpdatePath, siteS
   const hasCustomStyle = !isDefaultBlockStyle(rawStyle)
 
   function replaceStyle(nextStyle) {
-    onUpdatePath(stylePath, nextStyle)
+    onUpdatePath(resolvedStylePath, nextStyle)
   }
 
   function updateStyle(patch) {
@@ -371,7 +378,7 @@ function BlockStyleInspectorFields({ block, disabled, entry, onUpdatePath, siteS
   return (
     <div className="block-inspector-style-fields">
       <label className="admin-field">
-        <span>Site style</span>
+        <span>{label}</span>
         <select disabled={disabled} value={selectedPresetId} onChange={(event) => handlePresetChange(event.target.value)}>
           <option value="">Custom</option>
           {stylePresets.map((preset) => (
@@ -480,7 +487,81 @@ function BlockStyleInspectorFields({ block, disabled, entry, onUpdatePath, siteS
       <button className="button-link button-link--ghost admin-action" disabled={disabled || !hasCustomStyle} type="button" onClick={() => replaceStyle({})}>
         Reset style
       </button>
+
+      {entry?.kind === 'block' ? (
+        <BlockElementStylePresetFields
+          block={block}
+          disabled={disabled}
+          entry={entry}
+          siteShell={siteShell}
+          stylePresets={stylePresets}
+          onUpdatePath={onUpdatePath}
+        />
+      ) : null}
     </div>
+  )
+}
+
+function BlockElementStylePresetFields({ block, disabled, entry, onUpdatePath, siteShell, stylePresets: providedStylePresets }) {
+  const targets = getBlockElementStyleTargets(entry.type)
+  const stylePresets = providedStylePresets ?? getSiteThemeElementStylePresets(siteShell?.theme).filter((preset) => preset.enabled !== false)
+  const elementStyles = getPlainObject(block?.elementStyles)
+
+  if (targets.length === 0) {
+    return null
+  }
+
+  function updateTargetPreset(targetId, presetId) {
+    onUpdatePath([...entry.path, 'elementStyles'], (currentValue) => {
+      const nextElementStyles = { ...getPlainObject(currentValue) }
+
+      if (!presetId) {
+        delete nextElementStyles[targetId]
+        return nextElementStyles
+      }
+
+      nextElementStyles[targetId] = { presetId }
+      return nextElementStyles
+    })
+  }
+
+  return (
+    <fieldset className="block-inspector-fieldset block-inspector-element-styles">
+      <legend>Element styles</legend>
+      {targets.map((target) => {
+        const targetStyle = getPlainObject(elementStyles[target.id])
+        const selectedPresetId = String(targetStyle.presetId ?? '').trim()
+        const hasTargetStyle = !isDefaultBlockStyle(targetStyle)
+
+        return (
+          <div className="block-inspector-element-style-row" key={target.id}>
+            <label className="admin-field">
+              <span>{target.label}</span>
+              <select
+                aria-label={`${target.label} style`}
+                disabled={disabled}
+                value={selectedPresetId}
+                onChange={(event) => updateTargetPreset(target.id, event.target.value)}
+              >
+                <option value="">None</option>
+                {stylePresets.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <EditorIconButton
+              disabled={disabled || !hasTargetStyle}
+              icon={Trash2}
+              label={`Clear ${target.label} style`}
+              tone="danger"
+              onClick={() => updateTargetPreset(target.id, '')}
+            />
+          </div>
+        )
+      })}
+    </fieldset>
   )
 }
 
@@ -727,6 +808,28 @@ function ColorInspectorField({ basePath, data, disabled, field, issues, onUpdate
         onChange={(nextValue) => onUpdatePath(fieldPath, nextValue)}
         onReset={() => onUpdatePath(fieldPath, '')}
       />
+      <InspectorFieldIssues issues={fieldState.fieldIssues} />
+    </div>
+  )
+}
+
+function BooleanInspectorField({ basePath, data, disabled, field, issues, onUpdatePath }) {
+  const fieldPath = appendPath(basePath, field.path)
+  const value = getValueAtPath(data, field.path) === true
+  const fieldState = getInspectorFieldState(issues, fieldPath)
+
+  return (
+    <div className={`block-inspector-fieldset${fieldState.className}`}>
+      <label className="admin-checkbox-field">
+        <input
+          aria-invalid={fieldState.hasError || undefined}
+          checked={value}
+          disabled={disabled}
+          type="checkbox"
+          onChange={(event) => onUpdatePath(fieldPath, event.target.checked)}
+        />
+        <span>{field.label}</span>
+      </label>
       <InspectorFieldIssues issues={fieldState.fieldIssues} />
     </div>
   )
@@ -1063,6 +1166,10 @@ function InspectorSchemaField({ basePath, data, disabled, field, issues, onUpdat
     return <ColorInspectorField basePath={basePath} data={data} disabled={disabled} field={field} issues={issues} onUpdatePath={onUpdatePath} />
   }
 
+  if (field.widget === 'boolean') {
+    return <BooleanInspectorField basePath={basePath} data={data} disabled={disabled} field={field} issues={issues} onUpdatePath={onUpdatePath} />
+  }
+
   if (field.widget === 'enum') {
     return <EnumInspectorField basePath={basePath} data={data} disabled={disabled} field={field} issues={issues} onUpdatePath={onUpdatePath} />
   }
@@ -1248,7 +1355,7 @@ function ContainerInspectorFields({ activeTab, disabled, entry, issues, onClearS
   )
 }
 
-function PageInspectorFields({ disabled, issues, page, routeInventory, onUpdatePath }) {
+function PageInspectorFields({ activeTab, disabled, issues, onTabChange, onUpdatePath, page, routeInventory, siteShell }) {
   const routeAliases = Array.isArray(page?.routeAliases) ? page.routeAliases : []
   const groupOptions = Array.from(
     new Set([
@@ -1281,94 +1388,111 @@ function PageInspectorFields({ disabled, issues, page, routeInventory, onUpdateP
 
   return (
     <div className="block-inspector-fields">
-      <fieldset className="block-inspector-fieldset">
-        <legend>Routing</legend>
-        <label className={`admin-field${pathState.className}`}>
-          <span>Page URL</span>
-          <input
-            aria-invalid={pathState.hasError || undefined}
-            disabled={disabled}
-            inputMode="url"
-            type="text"
-            value={page?.path ?? ''}
-            onBlur={(event) => onUpdatePath(['path'], normalizePageRoutePath(event.target.value))}
-            onChange={(event) => onUpdatePath(['path'], event.target.value)}
-          />
-          <InspectorFieldIssues issues={pathState.fieldIssues} />
-        </label>
+      <InspectorTabs activeTab={activeTab} onChange={onTabChange} tabs={PAGE_INSPECTOR_TABS} />
 
-        <div className="block-inspector-route-aliases">
-          <div className="block-inspector-list-header">
-            <span>URL aliases</span>
-            <button
-              className="button-link button-link--ghost admin-action"
-              disabled={disabled || routeAliases.length >= MAX_PAGE_ROUTE_ALIASES}
-              type="button"
-              onClick={() => onUpdatePath(['routeAliases'], [...routeAliases, ''])}
-            >
-              Add alias
-            </button>
-          </div>
-          {routeAliases.map((alias, index) => {
-            const aliasState = getInspectorFieldState(issues, ['routeAliases', index])
+      {activeTab === 'style' ? (
+        <BlockStyleInspectorFields
+          block={page}
+          disabled={disabled}
+          label="Page style"
+          siteShell={siteShell}
+          stylePath={['style']}
+          onUpdatePath={onUpdatePath}
+        />
+      ) : null}
 
-            return (
-              <div className="block-inspector-route-alias" key={index}>
-              <label className={`admin-field${aliasState.className}`}>
-                <span>Alias {index + 1}</span>
-                <input
-                  aria-invalid={aliasState.hasError || undefined}
-                  disabled={disabled}
-                  inputMode="url"
-                  type="text"
-                  value={alias}
-                  onBlur={(event) => updateAlias(index, normalizePageRoutePath(event.target.value))}
-                  onChange={(event) => updateAlias(index, event.target.value)}
-                />
-                <InspectorFieldIssues issues={aliasState.fieldIssues} />
-              </label>
-              <EditorIconButton disabled={disabled} icon={Trash2} label={`Remove alias ${index + 1}`} tone="danger" onClick={() => removeAlias(index)} />
+      {activeTab === 'settings' ? (
+        <>
+          <fieldset className="block-inspector-fieldset">
+            <legend>Routing</legend>
+            <label className={`admin-field${pathState.className}`}>
+              <span>Page URL</span>
+              <input
+                aria-invalid={pathState.hasError || undefined}
+                disabled={disabled}
+                inputMode="url"
+                type="text"
+                value={page?.path ?? ''}
+                onBlur={(event) => onUpdatePath(['path'], normalizePageRoutePath(event.target.value))}
+                onChange={(event) => onUpdatePath(['path'], event.target.value)}
+              />
+              <InspectorFieldIssues issues={pathState.fieldIssues} />
+            </label>
+
+            <div className="block-inspector-route-aliases">
+              <div className="block-inspector-list-header">
+                <span>URL aliases</span>
+                <button
+                  className="button-link button-link--ghost admin-action"
+                  disabled={disabled || routeAliases.length >= MAX_PAGE_ROUTE_ALIASES}
+                  type="button"
+                  onClick={() => onUpdatePath(['routeAliases'], [...routeAliases, ''])}
+                >
+                  Add alias
+                </button>
               </div>
-            )
-          })}
-        </div>
-      </fieldset>
+              {routeAliases.map((alias, index) => {
+                const aliasState = getInspectorFieldState(issues, ['routeAliases', index])
 
-      <fieldset className="block-inspector-fieldset">
-        <legend>Navigation and SEO</legend>
-        <label className={`admin-field${titleState.className}`}>
-          <span>Page title</span>
-          <input aria-invalid={titleState.hasError || undefined} disabled={disabled} type="text" value={page?.title ?? ''} onChange={(event) => onUpdatePath(['title'], event.target.value)} />
-          <InspectorFieldIssues issues={titleState.fieldIssues} />
-        </label>
-        <label className={`admin-field${navLabelState.className}`}>
-          <span>Navigation label</span>
-          <input aria-invalid={navLabelState.hasError || undefined} disabled={disabled} type="text" value={page?.navLabel ?? ''} onChange={(event) => onUpdatePath(['navLabel'], event.target.value)} />
-          <InspectorFieldIssues issues={navLabelState.fieldIssues} />
-        </label>
-        <label className={`admin-field${groupState.className}`}>
-          <span>Navigation group</span>
-          <select aria-invalid={groupState.hasError || undefined} disabled={disabled} value={page?.group ?? 'custom'} onChange={(event) => onUpdatePath(['group'], event.target.value)}>
-            {groupOptions.map((group) => (
-              <option key={group} value={group}>
-                {group.replace(/(^|-)([a-z])/g, (_, separator, letter) => `${separator ? ' ' : ''}${letter.toUpperCase()}`)}
-              </option>
-            ))}
-          </select>
-          <InspectorFieldIssues issues={groupState.fieldIssues} />
-        </label>
-        <label className={`admin-field${descriptionState.className}`}>
-          <span>Search description</span>
-          <textarea
-            aria-invalid={descriptionState.hasError || undefined}
-            disabled={disabled}
-            rows={5}
-            value={page?.metaDescription ?? ''}
-            onChange={(event) => onUpdatePath(['metaDescription'], event.target.value)}
-          />
-          <InspectorFieldIssues issues={descriptionState.fieldIssues} />
-        </label>
-      </fieldset>
+                return (
+                  <div className="block-inspector-route-alias" key={index}>
+                    <label className={`admin-field${aliasState.className}`}>
+                      <span>Alias {index + 1}</span>
+                      <input
+                        aria-invalid={aliasState.hasError || undefined}
+                        disabled={disabled}
+                        inputMode="url"
+                        type="text"
+                        value={alias}
+                        onBlur={(event) => updateAlias(index, normalizePageRoutePath(event.target.value))}
+                        onChange={(event) => updateAlias(index, event.target.value)}
+                      />
+                      <InspectorFieldIssues issues={aliasState.fieldIssues} />
+                    </label>
+                    <EditorIconButton disabled={disabled} icon={Trash2} label={`Remove alias ${index + 1}`} tone="danger" onClick={() => removeAlias(index)} />
+                  </div>
+                )
+              })}
+            </div>
+          </fieldset>
+
+          <fieldset className="block-inspector-fieldset">
+            <legend>Navigation and SEO</legend>
+            <label className={`admin-field${titleState.className}`}>
+              <span>Page title</span>
+              <input aria-invalid={titleState.hasError || undefined} disabled={disabled} type="text" value={page?.title ?? ''} onChange={(event) => onUpdatePath(['title'], event.target.value)} />
+              <InspectorFieldIssues issues={titleState.fieldIssues} />
+            </label>
+            <label className={`admin-field${navLabelState.className}`}>
+              <span>Navigation label</span>
+              <input aria-invalid={navLabelState.hasError || undefined} disabled={disabled} type="text" value={page?.navLabel ?? ''} onChange={(event) => onUpdatePath(['navLabel'], event.target.value)} />
+              <InspectorFieldIssues issues={navLabelState.fieldIssues} />
+            </label>
+            <label className={`admin-field${groupState.className}`}>
+              <span>Navigation group</span>
+              <select aria-invalid={groupState.hasError || undefined} disabled={disabled} value={page?.group ?? 'custom'} onChange={(event) => onUpdatePath(['group'], event.target.value)}>
+                {groupOptions.map((group) => (
+                  <option key={group} value={group}>
+                    {group.replace(/(^|-)([a-z])/g, (_, separator, letter) => `${separator ? ' ' : ''}${letter.toUpperCase()}`)}
+                  </option>
+                ))}
+              </select>
+              <InspectorFieldIssues issues={groupState.fieldIssues} />
+            </label>
+            <label className={`admin-field${descriptionState.className}`}>
+              <span>Search description</span>
+              <textarea
+                aria-invalid={descriptionState.hasError || undefined}
+                disabled={disabled}
+                rows={5}
+                value={page?.metaDescription ?? ''}
+                onChange={(event) => onUpdatePath(['metaDescription'], event.target.value)}
+              />
+              <InspectorFieldIssues issues={descriptionState.fieldIssues} />
+            </label>
+          </fieldset>
+        </>
+      ) : null}
     </div>
   )
 }
@@ -1515,8 +1639,9 @@ export function BlockInspectorPanel({
   const selectedEntry = findBlockOutlineEntry(entries, selectedBlockId)
   const selectedValue = selectedEntry ? getBlockValueAtPath(page, selectedEntry.path) : null
   const routeOptions = buildRouteOptions(routeInventory)
-  const defaultActiveTab = selectedEntry?.kind === 'row-column' ? 'layout' : 'content'
-  const activeTab = tabState.selectedBlockId === selectedBlockId ? tabState.activeTab : defaultActiveTab
+  const defaultActiveTab = selectedEntry ? (selectedEntry.kind === 'row-column' ? 'layout' : 'content') : 'style'
+  const requestedActiveTab = tabState.selectedBlockId === selectedBlockId ? tabState.activeTab : defaultActiveTab
+  const activeTab = selectedEntry || PAGE_INSPECTOR_TABS.some((tab) => tab.id === requestedActiveTab) ? requestedActiveTab : defaultActiveTab
   const selectedIssues = selectedEntry
     ? [...(issueMap.get(selectedEntry.selectionId)?.errors ?? []), ...(issueMap.get(selectedEntry.selectionId)?.warnings ?? [])]
     : getPageLevelValidationIssues(validation, entries)
@@ -1579,7 +1704,16 @@ export function BlockInspectorPanel({
         <>
           <InspectorHeader eyebrow="Page" headingTag={inspectorHeadingTag} title={page?.title || page?.navLabel || 'Untitled page'} />
           <InspectorIssueSummary issues={selectedIssues} />
-          <PageInspectorFields disabled={disabled} issues={selectedIssues} page={page} routeInventory={routeInventory} onUpdatePath={onUpdatePath} />
+          <PageInspectorFields
+            activeTab={activeTab}
+            disabled={disabled}
+            issues={selectedIssues}
+            page={page}
+            routeInventory={routeInventory}
+            siteShell={siteShell}
+            onTabChange={(nextTab) => setTabState({ activeTab: nextTab, selectedBlockId })}
+            onUpdatePath={onUpdatePath}
+          />
         </>
       )}
     </aside>

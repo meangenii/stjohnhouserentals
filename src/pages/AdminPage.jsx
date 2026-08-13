@@ -1,15 +1,15 @@
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Redo2, RefreshCw, Trash2, Undo2 } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from '../lib/router'
+import { Eye, LayoutPanelTop, Plus, Redo2, RefreshCw, SlidersHorizontal, Trash2, Undo2 } from 'lucide-react'
 import { AdminAdvertiseInquiriesPanel } from '../components/AdminAdvertiseInquiriesPanel'
 import { AdminBackupManager } from '../components/AdminBackupManager'
-import { AdminViewLiveButton } from '../components/AdminViewLiveButton'
+import { AdminClientsPanel } from '../components/AdminClientsPanel'
+import { AdminBackToSiteButton, AdminViewLiveButton } from '../components/AdminViewLiveButton'
 import { getAdminIdToken, observeAdminUser, signInAdminWithGoogle, signOutAdmin } from '../lib/adminAuth'
-import { ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, observeAdminFloatingStackOffset, setAdminFloatingStackOffset } from '../lib/adminFloatingLayout'
 import { AdminPageEditorCanvas, AdminPagePreview } from '../components/AdminPagePreview'
+import { AdminPreviewModeSplitButton } from '../components/AdminPreviewModeSplitButton'
 import { BlockInspectorPanel } from '../components/BlockInspectorPanel'
 import { BlockLayoutOutline, BlockOutline } from '../components/BlockOutline'
-import { EditorContextPanel, EditorContextToolbar } from '../components/EditorContextPanel'
 import { EditorIconButton } from '../components/EditorIconButton'
 import { EditorReviewToolbar } from '../components/EditorReviewToolbar'
 import { PageChangeSummaryPanel } from '../components/PageChangeSummaryPanel'
@@ -235,7 +235,20 @@ const DEFAULT_ADMIN_EDITOR_LOCATION = {
   charterMode: 'create',
   charterSlug: '',
 }
-const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'styles', 'properties', 'charters', 'media', 'submissions', 'backups'])
+const STRUCTURED_PAGE_EDITOR_FORM_ID = 'admin-structured-page-editor-form'
+const PROPERTY_EDITOR_FORM_ID = 'admin-property-editor-form'
+const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'styles', 'properties', 'charters', 'media', 'clients', 'submissions', 'backups'])
+const ADMIN_EDITOR_TAB_OPTIONS = [
+  { label: 'Header & Footer', value: 'site-shell' },
+  { label: 'Pages', value: 'pages' },
+  { label: 'Styles', value: 'styles' },
+  { label: 'Properties', value: 'properties' },
+  { label: 'Charters', value: 'charters' },
+  { label: 'Media', value: 'media' },
+  { label: 'Clients', value: 'clients' },
+  { label: 'Advertise', value: 'submissions' },
+  { label: 'Backups', value: 'backups' },
+]
 
 function normalizeAdminEditorTab(value = '') {
   const candidate = String(value ?? '').trim()
@@ -680,6 +693,11 @@ function createEmptyFormState() {
     price: '',
     shortDescription: '',
     calendarUrl: '',
+    clientId: '',
+    listingFeeAmount: '',
+    listingFeeInterval: '',
+    lastPaidAt: '',
+    renewalDueAt: '',
     descriptionHtml: '',
     ratesHtml: '',
     ratesTableHtml: '',
@@ -856,6 +874,11 @@ function createFormState(property) {
     price: repairSnapshotText(property.price ?? ''),
     shortDescription: repairSnapshotText(property.shortDescription ?? ''),
     calendarUrl: repairSnapshotText(property.calendarUrl ?? ''),
+    clientId: String(property.clientId ?? '').trim(),
+    listingFeeAmount: String(property.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: String(property.listingFeeInterval ?? '').trim(),
+    lastPaidAt: String(property.lastPaidAt ?? '').trim(),
+    renewalDueAt: String(property.renewalDueAt ?? '').trim(),
     descriptionHtml: descriptionSections.descriptionHtml,
     ratesHtml: descriptionSections.ratesHtml,
     ratesTableHtml: descriptionSections.ratesTableHtml,
@@ -922,6 +945,11 @@ function buildPropertyDraft(formState) {
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
     calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
+    clientId: String(formState.clientId ?? '').trim(),
+    listingFeeAmount: String(formState.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: String(formState.listingFeeInterval ?? '').trim(),
+    lastPaidAt: String(formState.lastPaidAt ?? '').trim(),
+    renewalDueAt: String(formState.renewalDueAt ?? '').trim(),
     hasStructuredDescriptionSections: true,
     descriptionHtml: descriptionSections.descriptionHtml,
     ratesHtml: descriptionSections.ratesHtml,
@@ -1023,6 +1051,11 @@ function buildPropertyPreviewModel(formState) {
     price: repairSnapshotText(formState.price).trim(),
     shortDescription: repairSnapshotText(richTextValueToPlainLineText(formState.shortDescription)).trim(),
     calendarUrl: repairSnapshotText(formState.calendarUrl).trim(),
+    clientId: String(formState.clientId ?? '').trim(),
+    listingFeeAmount: String(formState.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: String(formState.listingFeeInterval ?? '').trim(),
+    lastPaidAt: String(formState.lastPaidAt ?? '').trim(),
+    renewalDueAt: String(formState.renewalDueAt ?? '').trim(),
     hasStructuredDescriptionSections: true,
     descriptionHtml: descriptionSections.descriptionHtml,
     ratesHtml: descriptionSections.ratesHtml,
@@ -1147,37 +1180,33 @@ function formatCharterSelectorLabel(charter) {
   return `${name} | ${charter?.active !== false ? 'Active' : 'Hidden'}`
 }
 
-function AdminTabButton({ active, label, onClick }) {
+function AdminSectionSelect({ activeTab, onChange }) {
   return (
-    <button
-      className={`admin-tab-button ${active ? 'admin-tab-button--active' : ''}`.trim()}
-      type="button"
-      onClick={onClick}
-    >
-      {label}
-    </button>
-  )
-}
-
-function AdminPreviewDeviceButton({ active, label, onClick }) {
-  return (
-    <button
-      className={`button-link button-link--ghost admin-preview-device ${active ? 'admin-preview-device--active' : ''}`.trim()}
-      type="button"
-      onClick={onClick}
-    >
-      {label}
-    </button>
+    <label className="admin-section-select">
+      <span className="visually-hidden">Admin section</span>
+      <select value={activeTab} onChange={(event) => onChange?.(event.target.value)}>
+        {ADMIN_EDITOR_TAB_OPTIONS.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 
 function AdminEditLockNotice({ lock, resourceLabel }) {
   if (lock.status === 'locked-by-other') {
     return (
-      <p className="admin-feedback admin-feedback--warning" role="status">
-        This {resourceLabel} is currently being edited by {lock.lockedByEmail || 'another admin'}. You can look around, but editing is
-        disabled until they finish.
-      </p>
+      <div className="admin-feedback admin-feedback--warning" role="status">
+        <span>
+          {lock.message || `This ${resourceLabel} is currently being edited by ${lock.lockedByEmail || 'another admin'}.`} You can look
+          around, or take over editing if you need control.
+        </span>
+        <button className="button-link button-link--primary" type="button" onClick={lock.takeOver}>
+          Take Over Editing
+        </button>
+      </div>
     )
   }
 
@@ -1186,6 +1215,17 @@ function AdminEditLockNotice({ lock, resourceLabel }) {
       <p className="admin-note" role="status">
         Securing exclusive edit access to this {resourceLabel}...
       </p>
+    )
+  }
+
+  if (lock.status === 'expired') {
+    return (
+      <div className="admin-feedback admin-feedback--warning" role="status">
+        <span>{lock.message || 'Your edit lock is no longer active.'}</span>
+        <button className="button-link button-link--primary" type="button" onClick={lock.takeOver}>
+          Take Over Editing
+        </button>
+      </div>
     )
   }
 
@@ -1371,7 +1411,6 @@ export function AdminPage() {
   const [pageReviewView, setPageReviewView] = useState('')
   const [pageHistoryState, setPageHistoryState] = useState(() => resetPageEditorHistory(preferredPageKey))
   const pageDraftRef = useRef(null)
-  const propertyFloatingSaveRef = useRef(null)
 
   const siteContentEditingEnabled = isSiteContentEditingEnabled()
   const requiresAdminSignIn = propertyUsesFirebase || charterUsesFirebase || siteContentEditingEnabled
@@ -1437,9 +1476,22 @@ export function AdminPage() {
 
       const nextLocks = {}
 
+      const currentUserEmail = String(authState.user?.email ?? '').trim().toLowerCase()
+      const currentUserId = String(authState.user?.uid ?? '').trim()
+
       results.flat().forEach((lock) => {
         if (lock?.resourceType && lock?.resourceId) {
-          nextLocks[`${lock.resourceType}:${lock.resourceId}`] = lock.lockedByEmail || ''
+          const lockedByEmail = String(lock.lockedByEmail ?? '').trim()
+          const lockedByUserId = String(lock.lockedBy ?? '').trim()
+
+          if (
+            (currentUserId && lockedByUserId === currentUserId) ||
+            (currentUserEmail && lockedByEmail.toLowerCase() === currentUserEmail)
+          ) {
+            return
+          }
+
+          nextLocks[`${lock.resourceType}:${lock.resourceId}`] = lockedByEmail || ''
         }
       })
 
@@ -2843,17 +2895,22 @@ export function AdminPage() {
 
     setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'edit' })
     setSelectedPageBlockId(owner?.selectionId ?? '')
-    setPageContextView('inspector')
+    setPageContextView(owner?.selectionId ? '' : 'settings')
   }
 
   function handlePageEditorNodeSelection(selectionId) {
     setSelectedPageBlockId(selectionId)
-    setPageContextView((currentView) => (selectionId ? (currentView === 'layers' ? 'inspector' : currentView) : ''))
+    setPageContextView((currentView) => (selectionId ? (currentView === 'layout' ? 'layout' : '') : ''))
   }
 
   function openStructuredPageSettings() {
     setSelectedPageBlockId('')
-    setPageContextView('inspector')
+    setPageContextView('settings')
+  }
+
+  function clearStructuredPageSelection() {
+    setSelectedPageBlockId('')
+    setPageContextView('')
   }
 
 
@@ -3534,19 +3591,6 @@ export function AdminPage() {
   const pageSaveEnabled = pageAuthenticatedSaveEnabled && !pageHasBlockingValidationErrors
   const siteShellHasPendingPublication = hasPendingPublication(siteShellPublication)
   const showSiteShellPublishAction = siteShellHasPendingPublication && siteShellEditedSinceLoad && !siteShellDirty
-  const propertyFloatingSaveVisible = propertyPreviewToggleVisible || propertyDirty || propertyPublishVisible || propertyActionBusy
-
-  useLayoutEffect(() => {
-    if (activeTab !== 'properties' || !propertyFloatingSaveVisible) {
-      setAdminFloatingStackOffset(ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, 0)
-
-      return () => {
-        setAdminFloatingStackOffset(ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR, 0)
-      }
-    }
-
-    return observeAdminFloatingStackOffset(propertyFloatingSaveRef.current, ADMIN_FLOATING_SAVE_STACK_OFFSET_VAR)
-  }, [activeTab, propertyFloatingSaveVisible])
   const pageHasPendingPublication = hasPendingPublication(pagePublication)
   const pageDraftDiff = buildPageDiff(pageEditorState.savedDraft, deferredPageDraft)
   const pagePublishDiff = buildPageDiff(pageEditorState.publishedPage, pageEditorState.savedDraft)
@@ -3563,19 +3607,57 @@ export function AdminPage() {
   const pageReviewIssueCount = (pageValidation.errors?.length ?? 0) + (pageValidation.warnings?.length ?? 0)
   const pagePreviewModeKey = `${activeTab === 'pages' ? 'pages' : 'hidden'}:${pageEditorState.activeKey}`
   const pagePreviewMode = pagePreviewViewState.key === pagePreviewModeKey ? pagePreviewViewState.mode : 'edit'
+  const pageCanvasView = pageContextView === 'layout' ? 'layout' : 'visual'
+  const pageSettingsOpen = pageContextView === 'settings'
   const pageHistoryStatus = getPageEditorHistoryStatus(pageHistoryState, pageEditorState.activeKey)
   const pageHistoryActionsDisabled =
     !selectedStructuredPageIsBlockPage || pagePreviewMode !== 'edit' || !pageDraftEditingEnabled || Boolean(pageRevisionPreview.id)
   const pageUndoEnabled = !pageHistoryActionsDisabled && pageHistoryStatus.canUndo
   const pageRedoEnabled = !pageHistoryActionsDisabled && pageHistoryStatus.canRedo
+  const activeLivePageButtonVisible =
+    (activeTab === 'pages' && Boolean(selectedStructuredPage?.path)) ||
+    (activeTab === 'properties' && editorState.mode === 'edit' && Boolean(editorState.activeSlug)) ||
+    (activeTab === 'charters' && charterEditorState.mode === 'edit' && Boolean(charterEditorState.activeSlug))
   const showGoogleSignInButton = authState.status === 'signed-out'
   const isGoogleSignInBusy = authState.status === 'loading' || authFeedbackStatus === 'saving'
   const requiresAuthenticationScreen = requiresAdminSignIn && !authState.user
+  const adminToolbarContextSelector =
+    activeTab === 'pages' && pageWorkspaceState.status === 'ready' && structuredPages.length > 0 ? (
+      <label className="admin-field admin-selector-field">
+        <span className="visually-hidden">Page</span>
+        <select value={pageEditorState.activeKey || ''} onChange={handleStructuredPageSelectionChange}>
+          {structuredPages.map((page) => (
+            <option key={page.key} value={page.key}>
+              {formatPageSelectorLabel(page)}
+              {lockBadgeSuffix('structuredPage', page.key)}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : activeTab === 'properties' && workspaceState.status === 'ready' ? (
+      <label className="admin-field admin-selector-field">
+        <span className="visually-hidden">Property</span>
+        <select disabled={propertyActionBusy} value={editorState.mode === 'edit' ? editorState.activeSlug : ''} onChange={handlePropertySelectionChange}>
+          <option disabled hidden value="">
+            {editorState.mode === 'create' ? 'New property draft' : 'Select a property'}
+          </option>
+          {properties.map((property) => (
+            <option key={property.slug} value={property.slug}>
+              {formatPropertySelectorLabel(property)}
+              {lockBadgeSuffix('property', property.adminOriginalSlug || property.slug)}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : (
+      <span className="admin-page-editor-heading-spacer" />
+    )
 
   if (requiresAuthenticationScreen) {
     return (
       <article className="admin-page">
         <h1 className="visually-hidden">Site administration</h1>
+        <AdminBackToSiteButton />
         <section className="page-section admin-header admin-header--auth-only">
           <div className="admin-auth-shell">
             <div className="admin-auth-shell-header">
@@ -3614,57 +3696,247 @@ export function AdminPage() {
   }
 
   return (
-    <article className={`admin-page${activeTab === 'pages' ? ' admin-page--editor-workspace' : ''}`}>
+    <article className={`admin-page admin-page--app-shell${activeTab === 'pages' ? ' admin-page--editor-workspace' : ''}`}>
       <h1 className="visually-hidden">Site administration</h1>
-      <section className="page-section admin-header">
-        <div className="admin-tab-row admin-tab-row--with-account">
-          <div className="admin-tab-row-tabs">
-            <AdminTabButton
-              active={activeTab === 'site-shell'}
-              label="Header & Footer"
-              onClick={() => setActiveTab('site-shell')}
-            />
-            <AdminTabButton
-              active={activeTab === 'pages'}
-              label="Pages"
-              onClick={() => setActiveTab('pages')}
-            />
-            <AdminTabButton
-              active={activeTab === 'styles'}
-              label="Styles"
-              onClick={() => setActiveTab('styles')}
-            />
-            <AdminTabButton
-              active={activeTab === 'properties'}
-              label="Properties"
-              onClick={() => setActiveTab('properties')}
-            />
-            <AdminTabButton
-              active={activeTab === 'charters'}
-              label="Charters"
-              onClick={() => setActiveTab('charters')}
-            />
-            <AdminTabButton
-              active={activeTab === 'media'}
-              label="Media"
-              onClick={() => setActiveTab('media')}
-            />
-            <AdminTabButton
-              active={activeTab === 'submissions'}
-              label="Advertise"
-              onClick={() => setActiveTab('submissions')}
-            />
-            <AdminTabButton
-              active={activeTab === 'backups'}
-              label="Backups"
-              onClick={() => setActiveTab('backups')}
-            />
+      {!activeLivePageButtonVisible ? <AdminBackToSiteButton onBeforeNavigate={confirmLivePageNavigation} /> : null}
+
+      <section className="page-section admin-command-bar" aria-label="Admin toolbar">
+        <div className="admin-page-editor-heading-toolbar">
+          <AdminSectionSelect activeTab={activeTab} onChange={setActiveTab} />
+          {adminToolbarContextSelector}
+
+          <div className="admin-page-editor-heading-actions">
+            {activeTab === 'site-shell' ? (
+              <div className="admin-page-editor-heading-tool-group">
+                <EditorIconButton icon={RefreshCw} label="Refresh site shell" onClick={handleReloadSiteShell} />
+              </div>
+            ) : null}
+
+            {activeTab === 'pages' ? (
+              <>
+                <div className="admin-page-editor-heading-tool-group">
+                  {selectedStructuredPage ? (
+                    <>
+                      <EditorIconButton icon={RefreshCw} label="Refresh page" onClick={() => handleReloadStructuredPage(selectedStructuredPage.key)} />
+                      {selectedStructuredPage.contentModel === 'block-page' ? (
+                        <EditorIconButton
+                          disabled={pageDeleteStatus === 'saving' || pageDirty || !pageLock.isReady}
+                          icon={Trash2}
+                          label={
+                            pageDeleteStatus === 'saving'
+                              ? selectedStructuredPage.group === 'custom'
+                                ? 'Moving page to trash'
+                                : 'Resetting page'
+                              : selectedStructuredPage.group === 'custom'
+                                ? 'Delete page'
+                                : 'Reset page'
+                          }
+                          tone="danger"
+                          onClick={handleDeleteStructuredPage}
+                        />
+                      ) : null}
+                    </>
+                  ) : null}
+                  {siteContentEditingEnabled ? <EditorIconButton icon={Plus} label="New page" onClick={openNewPageForm} /> : null}
+                </div>
+
+                {selectedStructuredPage ? (
+                  <div className="admin-page-editor-heading-tool-group admin-page-editor-heading-tool-group--page">
+                    {selectedStructuredPage?.path ? (
+                      <Link
+                        className="button-link button-link--ghost admin-action"
+                        to={selectedStructuredPage.path}
+                        onClick={(event) => {
+                          if (!confirmLivePageNavigation()) {
+                            event.preventDefault()
+                          }
+                        }}
+                      >
+                        View on site
+                      </Link>
+                    ) : null}
+                    {selectedStructuredPageIsBlockPage ? (
+                      <>
+                        <EditorIconButton disabled={!pageUndoEnabled} icon={Undo2} label="Undo" onClick={handleUndoStructuredPageEdit} />
+                        <EditorIconButton disabled={!pageRedoEnabled} icon={Redo2} label="Redo" onClick={handleRedoStructuredPageEdit} />
+                        <EditorReviewToolbar
+                          activeView={pageReviewView}
+                          changeCount={pageReviewDiff?.totalChanges ?? 0}
+                          changesAvailable={Boolean(pageReviewDiff && !pageReviewDiff.empty)}
+                          disabled={pageEditorState.status !== 'ready'}
+                          issueCount={pageReviewIssueCount}
+                          revisionsCount={pageRevisionState.revisions.length}
+                          onViewChange={handlePageReviewViewChange}
+                        />
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="admin-page-editor-heading-save-actions">
+                  {selectedStructuredPage ? (
+                    <>
+                      <AdminPreviewModeSplitButton
+                        device={pagePreviewDevice}
+                        mode={pagePreviewMode}
+                        onDeviceChange={setPagePreviewDevice}
+                        onModeChange={(nextMode) => setPagePreviewViewState({ key: pagePreviewModeKey, mode: nextMode })}
+                      />
+
+                      {pageDirty ? (
+                        <button
+                          className="button-link button-link--ghost admin-action"
+                          disabled={pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                          type="button"
+                          onClick={handleDiscardStructuredPageChanges}
+                        >
+                          Reset
+                        </button>
+                      ) : null}
+
+                      {pageDirty ? (
+                        <button
+                          className="button-link button-link--primary admin-submit"
+                          disabled={!pageSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                          form={STRUCTURED_PAGE_EDITOR_FORM_ID}
+                          type="submit"
+                        >
+                          {pageSaveStatus === 'saving' ? 'Saving...' : 'Save draft'}
+                        </button>
+                      ) : null}
+
+                      {pageHasPendingPublication ? (
+                        <button
+                          className="button-link button-link--secondary admin-submit"
+                          disabled={!pageSaveEnabled || pageDirty || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
+                          title={pageDirty ? 'Save the current draft before publishing.' : undefined}
+                          type="button"
+                          onClick={handlePublishStructuredPage}
+                        >
+                          {pageSaveStatus === 'publishing' ? 'Publishing...' : 'Publish saved draft'}
+                        </button>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+
+            {activeTab === 'properties' ? (
+              <>
+                <div className="admin-page-editor-heading-tool-group">
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={propertyActionBusy}
+                    type="button"
+                    onClick={handleNewPropertyClick}
+                  >
+                    New property
+                  </button>
+                </div>
+
+                <div className="admin-page-editor-heading-tool-group admin-page-editor-heading-tool-group--page">
+                  {editorState.mode === 'edit' && editorState.activeSlug ? (
+                    <Link
+                      className="button-link button-link--ghost admin-action"
+                      to={`/rental-properties/${editorState.activeSlug}`}
+                      onClick={(event) => {
+                        if (!confirmLivePageNavigation()) {
+                          event.preventDefault()
+                        }
+                      }}
+                    >
+                      View on site
+                    </Link>
+                  ) : null}
+                  {editorState.mode === 'edit' && formState.originalSlug ? (
+                    <button
+                      className="button-link button-link--ghost admin-action"
+                      disabled={!propertySaveEnabled || propertyActionBusy}
+                      type="button"
+                      onClick={handleDeleteProperty}
+                    >
+                      Delete property
+                    </button>
+                  ) : null}
+                  <button
+                    className="button-link button-link--ghost admin-action"
+                    disabled={!propertySaveEnabled || propertyActionBusy}
+                    type="button"
+                    onClick={handlePropertyVisibilityToggle}
+                  >
+                    {editorState.mode === 'edit'
+                      ? formState.active !== false
+                        ? 'Deactivate property'
+                        : 'Activate property'
+                      : formState.active !== false
+                        ? 'Set draft inactive'
+                        : 'Set draft active'}
+                  </button>
+                </div>
+
+                <div className="admin-page-editor-heading-save-actions">
+                  {propertyPreviewToggleVisible ? (
+                    <div aria-label="Property editor view" className="admin-property-preview-mode-toggle" role="group">
+                      <button
+                        aria-pressed={propertyPreviewMode === 'edit'}
+                        className={`button-link admin-action ${propertyPreviewMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                        type="button"
+                        onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'edit' })}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        aria-pressed={propertyPreviewMode === 'preview'}
+                        className={`button-link admin-action ${propertyPreviewMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
+                        type="button"
+                        onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'preview' })}
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {propertyDirty ? (
+                    <button className="button-link button-link--ghost admin-action" disabled={propertyActionBusy} type="button" onClick={handleDiscardPropertyChanges}>
+                      Reset
+                    </button>
+                  ) : null}
+
+                  {propertyPublishVisible ? (
+                    <button
+                      className="button-link button-link--secondary admin-submit"
+                      disabled={!propertyPublishEnabled}
+                      title={propertyDirty ? 'Save the draft before publishing it live.' : 'Publish the saved draft live.'}
+                      type="button"
+                      onClick={handlePublishProperty}
+                    >
+                      {saveStatus === 'publishing' ? 'Publishing...' : 'Publish draft'}
+                    </button>
+                  ) : null}
+
+                  {propertyDirty || saveStatus === 'saving' ? (
+                    <button
+                      className="button-link button-link--primary admin-submit"
+                      disabled={!propertySaveEnabled || propertyActionBusy}
+                      form={PROPERTY_EDITOR_FORM_ID}
+                      type="submit"
+                    >
+                      {saveStatus === 'saving' ? 'Saving...' : 'Save draft'}
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+
+            {requiresAdminSignIn ? (
+              <div className="admin-page-editor-heading-save-actions admin-page-editor-heading-save-actions--persistent">
+                <button className="button-link button-link--ghost admin-action admin-sign-out-action" type="button" onClick={handleAdminSignOut}>
+                  Sign out
+                </button>
+              </div>
+            ) : null}
           </div>
-          {requiresAdminSignIn ? (
-            <button className="button-link button-link--ghost admin-action admin-sign-out-action" type="button" onClick={handleAdminSignOut}>
-              Sign out
-            </button>
-          ) : null}
         </div>
       </section>
 
@@ -3735,53 +4007,7 @@ export function AdminPage() {
           ) : null}
 
           {activeTab === 'pages' ? (
-            <section className="admin-panel">
-              <div className="admin-page-editor-heading-toolbar">
-                <h2>Page Editor</h2>
-
-                {pageWorkspaceState.status === 'ready' && structuredPages.length > 0 ? (
-                  <label className="admin-field admin-selector-field">
-                    <span className="visually-hidden">Page</span>
-                    <select value={pageEditorState.activeKey || ''} onChange={handleStructuredPageSelectionChange}>
-                      {structuredPages.map((page) => (
-                        <option key={page.key} value={page.key}>
-                          {formatPageSelectorLabel(page)}
-                          {lockBadgeSuffix('structuredPage', page.key)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : (
-                  <span className="admin-page-editor-heading-spacer" />
-                )}
-
-                <div className="admin-page-editor-heading-actions">
-                  {selectedStructuredPage ? (
-                    <>
-                      <EditorIconButton icon={RefreshCw} label="Refresh page" onClick={() => handleReloadStructuredPage(selectedStructuredPage.key)} />
-                      {selectedStructuredPage.contentModel === 'block-page' ? (
-                        <EditorIconButton
-                          disabled={pageDeleteStatus === 'saving' || pageDirty || !pageLock.isReady}
-                          icon={Trash2}
-                          label={
-                            pageDeleteStatus === 'saving'
-                              ? selectedStructuredPage.group === 'custom'
-                                ? 'Moving page to trash'
-                                : 'Resetting page'
-                              : selectedStructuredPage.group === 'custom'
-                                ? 'Delete page'
-                                : 'Reset page'
-                          }
-                          tone="danger"
-                          onClick={handleDeleteStructuredPage}
-                        />
-                      ) : null}
-                    </>
-                  ) : null}
-                  {siteContentEditingEnabled ? <EditorIconButton icon={Plus} label="New page" onClick={openNewPageForm} /> : null}
-                </div>
-              </div>
-
+            <section className="admin-panel admin-panel--page-editor">
               {!siteContentEditingEnabled ? (
                 <p className="admin-note">Page editing is not available in the current content mode.</p>
               ) : null}
@@ -3848,10 +4074,6 @@ export function AdminPage() {
               ) : null}
 
               <div className="admin-editor admin-editor--page">
-                {selectedStructuredPage?.path ? (
-                  <AdminViewLiveButton path={selectedStructuredPage.path} onBeforeNavigate={confirmLivePageNavigation} />
-                ) : null}
-
                 {pageFeedback ? <p className={`admin-feedback admin-feedback--${getFeedbackStatusTone(pageSaveStatus)}`}>{pageFeedback}</p> : null}
 
                 {pageConflict ? (
@@ -3895,48 +4117,7 @@ export function AdminPage() {
                 <AdminEditLockNotice lock={pageLock} resourceLabel="page" />
 
                 {pageEditorState.status !== 'loading' && selectedStructuredPage ? (
-                  <form className="admin-form admin-form--flush" onSubmit={handleStructuredPageSubmit}>
-                    <div className="admin-toolbar-row admin-toolbar-row--sticky">
-                      <div className="admin-inline-actions">
-                        {selectedStructuredPage?.path ? (
-                          <Link className="button-link button-link--ghost admin-action" to={selectedStructuredPage.path}>
-                            View on site
-                          </Link>
-                        ) : null}
-                        <AdminPreviewDeviceButton active={pagePreviewDevice === 'desktop'} label="Desktop" onClick={() => setPagePreviewDevice('desktop')} />
-                        <AdminPreviewDeviceButton active={pagePreviewDevice === 'tablet'} label="Tablet" onClick={() => setPagePreviewDevice('tablet')} />
-                        <AdminPreviewDeviceButton active={pagePreviewDevice === 'mobile'} label="Mobile" onClick={() => setPagePreviewDevice('mobile')} />
-                        {selectedStructuredPageIsBlockPage ? (
-                          <>
-                            <EditorIconButton
-                              disabled={!pageUndoEnabled}
-                              icon={Undo2}
-                              label="Undo"
-                              onClick={handleUndoStructuredPageEdit}
-                            />
-                            <EditorIconButton
-                              disabled={!pageRedoEnabled}
-                              icon={Redo2}
-                              label="Redo"
-                              onClick={handleRedoStructuredPageEdit}
-                            />
-                            <EditorReviewToolbar
-                              activeView={pageReviewView}
-                              changeCount={pageReviewDiff?.totalChanges ?? 0}
-                              changesAvailable={Boolean(pageReviewDiff && !pageReviewDiff.empty)}
-                              disabled={pageEditorState.status !== 'ready'}
-                              issueCount={pageReviewIssueCount}
-                              revisionsCount={pageRevisionState.revisions.length}
-                              onViewChange={handlePageReviewViewChange}
-                            />
-                            {pagePreviewMode === 'edit' && !pageRevisionPreview.id ? (
-                              <EditorContextToolbar activeView={pageContextView} onViewChange={setPageContextView} />
-                            ) : null}
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-
+                  <form className="admin-form admin-form--flush" id={STRUCTURED_PAGE_EDITOR_FORM_ID} onSubmit={handleStructuredPageSubmit}>
                     {selectedStructuredPageIsBlockPage && pageReviewView ? (
                       <div className="admin-page-editor-review-view">
                         {pageReviewView === 'checks' ? (
@@ -3969,60 +4150,6 @@ export function AdminPage() {
                     ) : null}
 
                     <div className="admin-floating-save-shell">
-                      <div className="admin-floating-save">
-                        <div aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group">
-                          <button
-                            aria-pressed={pagePreviewMode === 'edit'}
-                            className={`button-link admin-action ${pagePreviewMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                            type="button"
-                            onClick={() => setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'edit' })}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            aria-pressed={pagePreviewMode === 'preview'}
-                            className={`button-link admin-action ${pagePreviewMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                            type="button"
-                            onClick={() => setPagePreviewViewState({ key: pagePreviewModeKey, mode: 'preview' })}
-                          >
-                            Preview
-                          </button>
-                        </div>
-
-                        {pageDirty ? (
-                          <button
-                            className="button-link button-link--ghost admin-action"
-                            disabled={pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
-                            type="button"
-                            onClick={handleDiscardStructuredPageChanges}
-                          >
-                            Reset
-                          </button>
-                        ) : null}
-
-                        {pageDirty ? (
-                          <button
-                            className="button-link button-link--primary admin-submit"
-                            disabled={!pageSaveEnabled || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
-                            type="submit"
-                          >
-                            {pageSaveStatus === 'saving' ? 'Saving...' : 'Save draft'}
-                          </button>
-                        ) : null}
-
-                        {pageHasPendingPublication ? (
-                          <button
-                            className="button-link button-link--secondary admin-submit"
-                            disabled={!pageSaveEnabled || pageDirty || pageSaveStatus === 'saving' || pageSaveStatus === 'publishing'}
-                            title={pageDirty ? 'Save the current draft before publishing.' : undefined}
-                            type="button"
-                            onClick={handlePublishStructuredPage}
-                          >
-                            {pageSaveStatus === 'publishing' ? 'Publishing...' : 'Publish saved draft'}
-                          </button>
-                        ) : null}
-                      </div>
-
                       <div
                         className={`admin-page-editor-shell${
                           selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id
@@ -4031,73 +4158,137 @@ export function AdminPage() {
                         }`}
                       >
                         {selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id ? (
-                          <EditorContextPanel activeView={pageContextView} onViewChange={setPageContextView}>
-                            <div className="admin-page-editor-layers-rail admin-page-editor-rail--active" hidden={pageContextView !== 'layers'}>
-                              <BlockOutline
-                                blocks={pageEditorState.draft?.blocks}
-                                disabled={pagePreviewMode !== 'edit' || Boolean(pageRevisionPreview.id)}
-                                selectedBlockId={selectedPageBlockId}
-                                validation={pageValidation}
-                                onBlocksChange={(nextBlocks) => updateStructuredPageDraftPath(['blocks'], nextBlocks)}
-                                onSelectBlock={handlePageEditorNodeSelection}
+                          <aside className="admin-page-editor-layers-rail" aria-label="Page layers">
+                            <BlockOutline
+                              blocks={pageEditorState.draft?.blocks}
+                              disabled={pagePreviewMode !== 'edit' || Boolean(pageRevisionPreview.id)}
+                              pageSelected={pageSettingsOpen}
+                              selectedBlockId={selectedPageBlockId}
+                              validation={pageValidation}
+                              onBlocksChange={(nextBlocks) => updateStructuredPageDraftPath(['blocks'], nextBlocks)}
+                              onSelectBlock={handlePageEditorNodeSelection}
+                              onSelectPage={openStructuredPageSettings}
+                            />
+                          </aside>
+                        ) : null}
+
+                        <div className="admin-page-editor-main">
+                          {selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id ? (
+                            <div className="admin-page-editor-canvas-toolbar">
+                              <div aria-label="Canvas view" className="admin-page-editor-view-toggle" role="group">
+                                <button
+                                  aria-pressed={pageCanvasView === 'visual'}
+                                  className={`admin-page-editor-view-toggle-button${
+                                    pageCanvasView === 'visual' ? ' admin-page-editor-view-toggle-button--active' : ''
+                                  }`}
+                                  type="button"
+                                  onClick={() => setPageContextView('')}
+                                >
+                                  <Eye aria-hidden="true" size={16} strokeWidth={2} />
+                                  <span>Visual</span>
+                                </button>
+                                <button
+                                  aria-pressed={pageCanvasView === 'layout'}
+                                  className={`admin-page-editor-view-toggle-button${
+                                    pageCanvasView === 'layout' ? ' admin-page-editor-view-toggle-button--active' : ''
+                                  }`}
+                                  type="button"
+                                  onClick={() => setPageContextView('layout')}
+                                >
+                                  <LayoutPanelTop aria-hidden="true" size={16} strokeWidth={2} />
+                                  <span>Layout</span>
+                                </button>
+                              </div>
+                              <EditorIconButton
+                                aria-pressed={pageSettingsOpen}
+                                className={pageSettingsOpen ? 'editor-icon-button--active' : ''}
+                                icon={SlidersHorizontal}
+                                label="Page settings"
+                                onClick={() => {
+                                  if (pageSettingsOpen) {
+                                    setPageContextView('')
+                                  } else {
+                                    openStructuredPageSettings()
+                                  }
+                                }}
                               />
                             </div>
-                            <div className="admin-page-editor-layout-rail admin-page-editor-rail--active" hidden={pageContextView !== 'layout'}>
-                              <BlockLayoutOutline
-                                blocks={pageEditorState.draft?.blocks}
-                                layoutMetrics={pageLayoutMetrics}
-                                selectedBlockId={selectedPageBlockId}
-                                onSelectBlock={handlePageEditorNodeSelection}
-                              />
-                            </div>
-                            <div className="admin-page-editor-inspector-rail admin-page-editor-rail--active" hidden={pageContextView !== 'inspector'}>
+                          ) : null}
+
+                          {selectedStructuredPageIsBlockPage && pagePreviewMode === 'edit' && !pageRevisionPreview.id && pageSettingsOpen ? (
+                            <div className="admin-page-editor-page-settings">
                               <BlockInspectorPanel
-                                disabled={!pageDraftEditingEnabled || pagePreviewMode !== 'edit' || Boolean(pageRevisionPreview.id)}
+                                disabled={!pageDraftEditingEnabled}
                                 page={pageEditorState.draft}
                                 routeInventory={pageWorkspaceState.inventory}
-                                selectedBlockId={selectedPageBlockId}
+                                selectedBlockId=""
                                 siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
                                 validation={pageValidation}
-                                onClearSelection={openStructuredPageSettings}
+                                onClearSelection={clearStructuredPageSelection}
                                 onUpdatePath={updateStructuredPageDraftPath}
                               />
                             </div>
-                          </EditorContextPanel>
-                        ) : null}
+                          ) : null}
 
-                        <div className="admin-page-editor-canvas">
-                          {pageRevisionPreview.status === 'loading' ? (
-                            <p className="admin-empty">Loading revision preview...</p>
-                          ) : pageRevisionPreview.page ? (
-                            <AdminPagePreview
-                              device={pagePreviewDevice}
-                              page={pageRevisionPreview.page}
-                              pageKey={pageEditorState.activeKey}
-                              routeInventory={pageWorkspaceState.inventory}
-                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                            />
-                          ) : pagePreviewMode === 'preview' ? (
-                            <AdminPagePreview
-                              device={pagePreviewDevice}
-                              page={pageEditorState.draft}
-                              pageKey={pageEditorState.activeKey}
-                              routeInventory={pageWorkspaceState.inventory}
-                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                            />
-                          ) : (
-                            <AdminPageEditorCanvas
-                              device={pagePreviewDevice}
-                              disabled={!pageDraftEditingEnabled}
-                              onChange={handleStructuredPageDraftChange}
-                              onLayoutMetricsChange={setPageLayoutMetrics}
-                              onSelectedBlockIdChange={handlePageEditorNodeSelection}
-                              page={pageEditorState.draft}
-                              pageKey={pageEditorState.activeKey}
-                              routeInventory={pageWorkspaceState.inventory}
-                              selectedBlockId={selectedPageBlockId}
-                              siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
-                            />
-                          )}
+                          <div className="admin-page-editor-canvas">
+                            {pageRevisionPreview.status === 'loading' ? (
+                              <p className="admin-empty">Loading revision preview...</p>
+                            ) : pageRevisionPreview.page ? (
+                              <AdminPagePreview
+                                device={pagePreviewDevice}
+                                page={pageRevisionPreview.page}
+                                pageKey={pageEditorState.activeKey}
+                                routeInventory={pageWorkspaceState.inventory}
+                                siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                              />
+                            ) : pagePreviewMode === 'preview' ? (
+                              <AdminPagePreview
+                                device={pagePreviewDevice}
+                                page={pageEditorState.draft}
+                                pageKey={pageEditorState.activeKey}
+                                routeInventory={pageWorkspaceState.inventory}
+                                siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                              />
+                            ) : selectedStructuredPageIsBlockPage && pageCanvasView === 'layout' ? (
+                              <div className="admin-page-editor-layout-view">
+                                <BlockLayoutOutline
+                                  blocks={pageEditorState.draft?.blocks}
+                                  layoutMetrics={pageLayoutMetrics}
+                                  selectedBlockId={selectedPageBlockId}
+                                  onSelectBlock={handlePageEditorNodeSelection}
+                                />
+                              </div>
+                            ) : (
+                              <AdminPageEditorCanvas
+                                device={pagePreviewDevice}
+                                disabled={!pageDraftEditingEnabled}
+                                renderSelectionInspector={
+                                  selectedStructuredPageIsBlockPage
+                                    ? (selectionId) => (
+                                        <BlockInspectorPanel
+                                          disabled={!pageDraftEditingEnabled}
+                                          page={pageEditorState.draft}
+                                          routeInventory={pageWorkspaceState.inventory}
+                                          selectedBlockId={selectionId}
+                                          siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                                          validation={pageValidation}
+                                          onClearSelection={clearStructuredPageSelection}
+                                          onUpdatePath={updateStructuredPageDraftPath}
+                                        />
+                                      )
+                                    : undefined
+                                }
+                                onChange={handleStructuredPageDraftChange}
+                                onLayoutMetricsChange={setPageLayoutMetrics}
+                                onSelectedBlockIdChange={handlePageEditorNodeSelection}
+                                page={pageEditorState.draft}
+                                pageKey={pageEditorState.activeKey}
+                                routeInventory={pageWorkspaceState.inventory}
+                                selectedBlockId={selectedPageBlockId}
+                                siteShell={siteShellDraft ?? siteShellWorkspaceState.shell}
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -4142,22 +4333,6 @@ export function AdminPage() {
 
           {activeTab === 'properties' ? (
             <section className="admin-panel">
-              <div className="admin-panel-header">
-                <div>
-                  <h2>Property Editor</h2>
-                </div>
-                <div className="admin-inline-actions">
-                  <button
-                    className="button-link button-link--ghost admin-action"
-                    disabled={propertyActionBusy}
-                    type="button"
-                    onClick={handleNewPropertyClick}
-                  >
-                    New property
-                  </button>
-                </div>
-              </div>
-
               {!propertyEditingEnabled ? (
                 <p className="admin-note">
                   Property editing is not available in this environment. Contact your developer to enable live editing.
@@ -4172,29 +4347,6 @@ export function AdminPage() {
                 <p className="admin-empty">No properties are available yet. Start with a new draft.</p>
               ) : null}
 
-              {workspaceState.status === 'ready' ? (
-                <div className="admin-selector-row">
-                  <label className="admin-field admin-selector-field">
-                    <span>Property</span>
-                    <select
-                      disabled={propertyActionBusy}
-                      value={editorState.mode === 'edit' ? editorState.activeSlug : ''}
-                      onChange={handlePropertySelectionChange}
-                    >
-                      <option disabled hidden value="">
-                        {editorState.mode === 'create' ? 'New property draft' : 'Select a property'}
-                      </option>
-                      {properties.map((property) => (
-                        <option key={property.slug} value={property.slug}>
-                          {formatPropertySelectorLabel(property)}
-                          {lockBadgeSuffix('property', property.adminOriginalSlug || property.slug)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              ) : null}
-
               <div className="admin-editor">
                 <AdminEditLockNotice lock={propertyLock} resourceLabel="property" />
 
@@ -4206,110 +4358,16 @@ export function AdminPage() {
                   </button>
                 ) : null}
 
-                {editorState.mode === 'edit' && editorState.activeSlug ? (
-                  <AdminViewLiveButton path={`/rental-properties/${editorState.activeSlug}`} onBeforeNavigate={confirmLivePageNavigation} />
-                ) : null}
-
-                <form className="admin-form admin-form--flush" onSubmit={handleSubmit}>
-                  <div className="admin-toolbar-row admin-toolbar-row--split">
-                    <div className="admin-chip-row admin-chip-row--compact">
-                      {editorState.mode === 'edit' ? (
+                <form className="admin-form admin-form--flush" id={PROPERTY_EDITOR_FORM_ID} onSubmit={handleSubmit}>
+                  {editorState.mode === 'edit' ? (
+                    <div className="admin-toolbar-row">
+                      <div className="admin-chip-row admin-chip-row--compact">
                         <span className="admin-chip">{propertyHasPendingPublication ? 'Draft saved' : 'Live version current'}</span>
-                      ) : null}
+                      </div>
                     </div>
-
-                    <div className="admin-inline-actions">
-                      {editorState.mode === 'edit' && editorState.activeSlug ? (
-                        <Link className="button-link button-link--ghost admin-action" to={`/rental-properties/${editorState.activeSlug}`}>
-                          View on site
-                        </Link>
-                      ) : null}
-                      {editorState.mode === 'edit' && formState.originalSlug ? (
-                        <button
-                          className="button-link button-link--ghost admin-action"
-                          disabled={!propertySaveEnabled || propertyActionBusy}
-                          type="button"
-                          onClick={handleDeleteProperty}
-                        >
-                          Delete property
-                        </button>
-                      ) : null}
-                      <button
-                        className="button-link button-link--ghost admin-action"
-                        disabled={!propertySaveEnabled || propertyActionBusy}
-                        type="button"
-                        onClick={handlePropertyVisibilityToggle}
-                      >
-                        {editorState.mode === 'edit'
-                          ? formState.active !== false
-                            ? 'Deactivate property'
-                            : 'Activate property'
-                          : formState.active !== false
-                            ? 'Create active draft'
-                            : 'Create inactive draft'}
-                      </button>
-                    </div>
-                  </div>
+                  ) : null}
 
                   <div className="admin-floating-save-shell">
-                    {propertyFloatingSaveVisible ? (
-                      <div className="admin-floating-save" ref={propertyFloatingSaveRef}>
-                        {propertyPreviewToggleVisible ? (
-                          <div aria-label="Editor view" className="admin-property-preview-mode-toggle" role="group">
-                            <button
-                              aria-pressed={propertyPreviewMode === 'edit'}
-                              className={`button-link admin-action ${propertyPreviewMode === 'edit' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                              type="button"
-                              onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'edit' })}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              aria-pressed={propertyPreviewMode === 'preview'}
-                              className={`button-link admin-action ${propertyPreviewMode === 'preview' ? 'button-link--secondary' : 'button-link--ghost'}`}
-                              type="button"
-                              onClick={() => setPropertyPreviewViewState({ key: propertyPreviewModeKey, mode: 'preview' })}
-                            >
-                              Preview
-                            </button>
-                          </div>
-                        ) : null}
-
-                        {propertyDirty ? (
-                          <button
-                            className="button-link button-link--ghost admin-action"
-                            disabled={propertyActionBusy}
-                            type="button"
-                            onClick={handleDiscardPropertyChanges}
-                          >
-                            Reset
-                          </button>
-                        ) : null}
-
-                        {propertyPublishVisible ? (
-                          <button
-                            className="button-link button-link--secondary admin-submit"
-                            disabled={!propertyPublishEnabled}
-                            title={propertyDirty ? 'Save the draft before publishing it live.' : 'Publish the saved draft live.'}
-                            type="button"
-                            onClick={handlePublishProperty}
-                          >
-                            {saveStatus === 'publishing' ? 'Publishing...' : 'Publish draft'}
-                          </button>
-                        ) : null}
-
-                        {(propertyDirty || saveStatus === 'saving') ? (
-                          <button
-                            className="button-link button-link--primary admin-submit"
-                            disabled={!propertySaveEnabled || propertyActionBusy}
-                            type="submit"
-                          >
-                            {saveStatus === 'saving' ? 'Saving...' : 'Save draft'}
-                          </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-
                     <AdminPropertyPreview
                       key={propertyPreviewEditorKey}
                       disabled={!propertySaveEnabled}
@@ -4453,6 +4511,7 @@ export function AdminPage() {
             </section>
           ) : null}
 
+          {activeTab === 'clients' ? <AdminClientsPanel authUser={authState.user} /> : null}
           {activeTab === 'submissions' ? <AdminAdvertiseInquiriesPanel authUser={authState.user} /> : null}
 
           {activeTab === 'backups' ? (

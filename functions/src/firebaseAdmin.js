@@ -92,13 +92,21 @@ function getAdminAuthClient() {
   return getAuth(getAdminApp())
 }
 
-function getAllowedAdminEmails() {
+function getAllowedEmailSet(environmentVariableName) {
   return new Set(
-    String(process.env.ADMIN_ALLOWED_EMAILS ?? '')
+    String(process.env[environmentVariableName] ?? '')
       .split(',')
       .map((email) => email.trim().toLowerCase())
       .filter(Boolean),
   )
+}
+
+function getAllowedAdminEmails() {
+  return getAllowedEmailSet('ADMIN_ALLOWED_EMAILS')
+}
+
+function getAllowedOwnerEmails() {
+  return getAllowedEmailSet('ADMIN_OWNER_EMAILS')
 }
 
 function isUsingAuthEmulator() {
@@ -147,6 +155,26 @@ async function requireAdminUser(request) {
     uid: decodedToken.uid,
     email,
     claims: decodedToken,
+  }
+}
+
+async function requireOwnerUser(request) {
+  const adminUser = await requireAdminUser(request)
+  const ownerEmails = getAllowedOwnerEmails()
+  const hasOwnerClaim = adminUser.claims.cmsOwner === true
+  const allowedByOwnerEmail = adminUser.email && ownerEmails.has(adminUser.email)
+  const allowedInEmulator = isUsingAuthEmulator() && Boolean(adminUser.email)
+
+  if (!hasOwnerClaim && !allowedByOwnerEmail && !allowedInEmulator) {
+    throw new HttpError(
+      403,
+      'This Firebase user is not allowed to run owner-only recovery operations. Add the email to ADMIN_OWNER_EMAILS or grant cmsOwner=true.',
+    )
+  }
+
+  return {
+    ...adminUser,
+    owner: true,
   }
 }
 
@@ -232,6 +260,7 @@ exports.isDefaultFirestoreDatabaseId = isDefaultFirestoreDatabaseId
 exports.isFirestoreUnavailableError = isFirestoreUnavailableError
 exports.isStagingRuntime = isStagingRuntime
 exports.requireAdminUser = requireAdminUser
+exports.requireOwnerUser = requireOwnerUser
 exports.runWithRuntimeContext = runWithRuntimeContext
 exports.assertExpectedUpdatedAtMatches = assertExpectedUpdatedAtMatches
 exports.toEpochMillis = toEpochMillis

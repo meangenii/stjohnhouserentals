@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from '../lib/router'
 import { getPropertyContactActions, getPropertyContactInfo } from '../lib/propertyContact'
 import { getShortDescriptionLines } from '../lib/propertyDetailHelpers'
 import { getPropertyTemplateVariantConfig } from '../lib/propertyTemplateVariants'

@@ -46,6 +46,10 @@ function enumField(path, label, options, extra = {}) {
   return { label, options, path, widget: 'enum', ...extra }
 }
 
+function booleanField(path, label, options = {}) {
+  return { label, path, widget: 'boolean', ...options }
+}
+
 function linkField({ defaultType = 'internal', destinationField = 'path', destinationLabel = 'Link', label = 'Link', labelLabel = 'Text', labelPath, linkPath }) {
   return {
     defaultType,
@@ -82,12 +86,41 @@ function collectionItemFactory(type, collection) {
   return ({ makeId = makeInspectorItemId } = {}) => createBlockCollectionItem(type, collection, { makeId })
 }
 
+function makeCarBargeRateRow({ makeId = makeInspectorItemId } = {}) {
+  return {
+    id: makeId(),
+    label: '',
+    valueIds: [makeId()],
+    values: [''],
+  }
+}
+
+function makeCarBargeScheduleColumn({ makeId = makeInspectorItemId } = {}) {
+  return {
+    heading: 'New column',
+    id: makeId(),
+    timeIds: [],
+    times: [],
+  }
+}
+
+function makeCarBargeSchedule({ makeId = makeInspectorItemId } = {}) {
+  return {
+    columns: [],
+    id: makeId(),
+    noteIds: [],
+    notes: [],
+    title: 'Schedule',
+  }
+}
+
 export const blockInspectorSchemas = {
   hero: {
     fields: [
       textField(['title'], 'Title', { multiline: true, rows: 3 }),
       textField(['lead'], 'Lead', { multiline: true, rows: 4 }),
       imageField(['image'], 'Hero image'),
+      booleanField(['action', 'enabled'], 'Show CTA button'),
       linkField({
         defaultType: 'internal',
         destinationField: 'path',
@@ -266,6 +299,115 @@ export const blockInspectorSchemas = {
         labelPath: ['link', 'label'],
         linkPath: ['link'],
       }),
+    ],
+  },
+  'car-barge-hero': {
+    fields: [
+      textField(['title'], 'Hero title', { multiline: true, rows: 3 }),
+      imageField(['image'], 'Hero image'),
+      {
+        fields: [
+          textField(['label'], 'Label'),
+          textField(['targetId'], 'Section id'),
+        ],
+        label: 'Navigation pills',
+        makeItem: collectionItemFactory('car-barge-hero', 'navItems'),
+        path: ['navItems'],
+        singularLabel: 'Navigation pill',
+        widget: 'objectList',
+      },
+    ],
+  },
+  'car-barge-intro': {
+    fields: [
+      stringListField(['leftParagraphs'], ['leftParagraphIds'], 'Left column paragraphs', 'paragraph'),
+      {
+        fields: [
+          textField(['label'], 'Label'),
+          textField(['value'], 'Value'),
+        ],
+        label: 'Port Authority fees',
+        makeItem: collectionItemFactory('car-barge-intro', 'portAuthorityFees'),
+        path: ['portAuthorityFees'],
+        singularLabel: 'Fee',
+        widget: 'objectList',
+      },
+      stringListField(['rightParagraphs'], ['rightParagraphIds'], 'Right column paragraphs', 'paragraph'),
+      linkField({
+        defaultType: 'external',
+        destinationField: 'path',
+        destinationLabel: 'Reference link',
+        label: 'Reference link',
+        labelLabel: 'Link text',
+        labelPath: ['referenceLink', 'label'],
+        linkPath: ['referenceLink'],
+      }),
+      textField(['note'], 'Rate note', { multiline: true, rows: 4 }),
+    ],
+  },
+  'car-barge-operator': {
+    fields: [
+      textField(['title'], 'Operator title', { multiline: true, rows: 2 }),
+      imageField(['image'], 'Operator image'),
+      textField(['meta', 'names'], 'Barge names'),
+      textField(['meta', 'phone'], 'Telephone', { inputType: 'tel' }),
+      textField(['meta', 'travelTime'], 'Travel time'),
+      textField(['rates', 'heading'], 'Rates heading'),
+      {
+        fields: [
+          textField(['label'], 'Label'),
+          stringListField(['values'], ['valueIds'], 'Values', 'value'),
+        ],
+        label: 'Rate rows',
+        makeItem: makeCarBargeRateRow,
+        path: ['rates', 'rows'],
+        singularLabel: 'Rate row',
+        widget: 'objectList',
+      },
+      stringListField(['rates', 'footer'], ['rates', 'footerIds'], 'Rates footer lines', 'footer line'),
+      linkField({
+        defaultType: 'external',
+        destinationField: 'path',
+        destinationLabel: 'Rates link',
+        label: 'Rates link',
+        labelLabel: 'Link text',
+        labelPath: ['rates', 'link', 'label'],
+        linkPath: ['rates', 'link'],
+      }),
+      {
+        fields: [
+          textField(['title'], 'Schedule title'),
+          {
+            fields: [
+              textField(['heading'], 'Heading'),
+              stringListField(['times'], ['timeIds'], 'Times', 'time'),
+            ],
+            label: 'Columns',
+            makeItem: makeCarBargeScheduleColumn,
+            path: ['columns'],
+            singularLabel: 'Column',
+            widget: 'objectList',
+          },
+          stringListField(['notes'], ['noteIds'], 'Notes', 'note'),
+        ],
+        label: 'Schedules',
+        makeItem: makeCarBargeSchedule,
+        path: ['schedules'],
+        singularLabel: 'Schedule',
+        widget: 'objectList',
+      },
+    ],
+  },
+  tabs: {
+    fields: [
+      {
+        fields: [textField(['title'], 'Tab label')],
+        label: 'Tabs',
+        makeItem: collectionItemFactory('tabs', 'items'),
+        path: ['items'],
+        singularLabel: 'Tab',
+        widget: 'objectList',
+      },
     ],
   },
   group: {

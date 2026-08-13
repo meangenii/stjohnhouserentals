@@ -63,12 +63,15 @@ assert.equal(secondHero.action.label, '', 'Nested defaults must not share mutabl
 
 const expectedCollectionKeys = [
   'business-list.items',
+  'car-barge-hero.navItems',
+  'car-barge-intro.portAuthorityFees',
   'contact-details.items',
   'feature-grid.items',
   'group.items',
   'image-gallery.images',
   'rate-table.rows',
   'schedule.columns',
+  'tabs.items',
   'testimonials.items',
 ]
 

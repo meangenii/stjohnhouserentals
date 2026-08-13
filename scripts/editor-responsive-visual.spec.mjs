@@ -31,13 +31,19 @@ async function readEditorLayout(page) {
     return {
       canvas: readBox('.admin-page-editor-canvas'),
       clientWidth: document.documentElement.clientWidth,
-      context: readBox('.admin-page-editor-context'),
+      floatingInspector: readBox('.admin-selected-block-floating-inspector'),
       inspector: readBox('.block-inspector'),
-      layout: readBox('.block-layout-outline'),
+      layout: readBox('.admin-page-editor-layout-view'),
       layers: readBox('.block-outline'),
       scrollWidth: document.documentElement.scrollWidth,
+      toolbar: readBox('.admin-page-editor-canvas-toolbar'),
     }
   })
+}
+
+async function selectPreviewDevice(page, label) {
+  await page.getByRole('button', { name: /^Preview device:/ }).click()
+  await page.getByRole('menuitemradio', { name: label, exact: true }).click()
 }
 
 function expectUsableBox(box) {
@@ -65,44 +71,41 @@ test.afterAll(async () => {
   await server?.close()
 })
 
-test('desktop editor starts canvas-only and opens compact context drawers on demand', async ({ page }) => {
+test('desktop editor keeps layers beside the canvas and swaps visual/layout in place', async ({ page }) => {
   await page.setViewportSize({ height: 1000, width: 1440 })
   await openCleanHarness(page)
   const closedLayout = await readEditorLayout(page)
 
   expect(closedLayout.scrollWidth).toBeLessThanOrEqual(closedLayout.clientWidth)
+  expectUsableBox(closedLayout.layers)
+  expect(closedLayout.layers.width).toBeLessThan(360)
+  expect(closedLayout.toolbar).not.toBeNull()
+  expect(closedLayout.toolbar.width).toBeGreaterThan(160)
+  expect(closedLayout.toolbar.height).toBeGreaterThan(40)
   expectUsableBox(closedLayout.canvas)
-  expect(closedLayout.context).toBeNull()
-  expect(closedLayout.layers).toBeNull()
+  expect(closedLayout.canvas.left).toBeGreaterThanOrEqual(closedLayout.layers.right)
+  expect(closedLayout.canvas.width).toBeGreaterThan(closedLayout.layers.width * 3)
   await expect(page.getByRole('button', { name: 'Edit background', exact: true })).toBeHidden()
-  await expect(page.locator('.admin-page-editor-shell')).toHaveScreenshot('editor-shell-desktop.png')
 
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
-  const openLayout = await readEditorLayout(page)
-  expectUsableBox(openLayout.context)
-  expectUsableBox(openLayout.layers)
-  expect(openLayout.context.right).toBeLessThanOrEqual(openLayout.clientWidth)
-  expect(openLayout.canvas.top).toBeGreaterThanOrEqual(openLayout.context.bottom)
-  expect(openLayout.canvas.width).toBe(closedLayout.canvas.width)
-
-  await page.getByRole('button', { name: 'Open Layout', exact: true }).click()
+  await page.getByRole('button', { name: 'Layout', exact: true }).click()
   await expect(page.getByRole('region', { name: 'Layout layers' }).getByText(/px x/).first()).toBeVisible()
   const measuredLayout = await readEditorLayout(page)
   expectUsableBox(measuredLayout.layout)
-  expect(measuredLayout.canvas.top).toBeGreaterThanOrEqual(measuredLayout.context.bottom)
-  expect(measuredLayout.canvas.width).toBe(closedLayout.canvas.width)
+  expect(measuredLayout.canvas.left).toBeCloseTo(closedLayout.canvas.left, 0)
+  expect(measuredLayout.canvas.top).toBeCloseTo(closedLayout.canvas.top, 0)
+  expect(measuredLayout.canvas.width).toBeCloseTo(closedLayout.canvas.width, 0)
 
   await page.getByRole('region', { name: 'Layout layers' }).locator('.block-layout-outline-button').filter({ hasText: 'Hero Banner' }).click()
+  await page.getByRole('button', { name: 'Visual', exact: true }).click()
   const blockToolbar = page.locator('.block-toolbar')
   await expect(blockToolbar.getByRole('button', { name: 'Move up', exact: true })).toBeVisible()
   await expect(blockToolbar.getByRole('button', { name: 'Duplicate', exact: true })).toHaveText('')
   await expect(page.getByRole('button', { name: 'Edit background', exact: true })).toBeVisible()
-
-  await page.getByRole('button', { name: 'Close editor panel', exact: true }).click()
-  const reclosedLayout = await readEditorLayout(page)
-  expect(reclosedLayout.context).toBeNull()
-  expect(reclosedLayout.canvas.width).toBe(closedLayout.canvas.width)
-  await expect(page.locator('.admin-page-editor-shell')).toHaveScreenshot('editor-shell-desktop-selected.png')
+  const selectedLayout = await readEditorLayout(page)
+  expectUsableBox(selectedLayout.floatingInspector)
+  const selectedBlockBox = await page.locator('[data-editor-selection-id="fixture-hero"]').boundingBox()
+  expect(selectedBlockBox).not.toBeNull()
+  expect(selectedLayout.floatingInspector.top).toBeGreaterThan(selectedBlockBox.y)
 
   await page.getByRole('button', { name: 'Edit background', exact: true }).click()
   const backgroundDialog = page.getByRole('dialog', { name: 'Background', exact: true })
@@ -113,74 +116,64 @@ test('desktop editor starts canvas-only and opens compact context drawers on dem
   await backgroundDialog.getByRole('button', { name: 'Close', exact: true }).click()
 })
 
-test('tablet workspace keeps context above a full-width canvas', async ({ page }) => {
+test('tablet workspace keeps the rail narrow and the canvas wide', async ({ page }) => {
   await page.setViewportSize({ height: 1000, width: 1000 })
   await openCleanHarness(page)
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
   const layout = await readEditorLayout(page)
 
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth)
-  expectUsableBox(layout.context)
   expectUsableBox(layout.layers)
   expectUsableBox(layout.canvas)
   expect(layout.inspector?.width ?? 0).toBe(0)
-  expect(layout.context.right).toBeLessThanOrEqual(layout.clientWidth)
-  expect(layout.canvas.top).toBeGreaterThanOrEqual(layout.context.bottom)
-  await page.getByRole('button', { name: 'Tablet', exact: true }).click()
+  expect(layout.layers.width).toBeLessThan(340)
+  expect(layout.canvas.left).toBeGreaterThanOrEqual(layout.layers.right)
+  expect(layout.canvas.width).toBeGreaterThan(layout.layers.width * 2)
+  await selectPreviewDevice(page, 'Tablet')
   await expect(page.locator('.admin-site-preview-viewport--tablet')).toBeVisible()
-  await expect(page.locator('.admin-page-editor-shell')).toHaveScreenshot('editor-shell-tablet.png')
 })
 
-test('mobile workspace shows one compact context drawer without horizontal overflow', async ({ page }) => {
+test('mobile workspace stacks the rail above the canvas without horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 390 })
   await openCleanHarness(page)
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
   const layout = await readEditorLayout(page)
 
   expect(layout.scrollWidth).toBeLessThanOrEqual(layout.clientWidth)
-  expectUsableBox(layout.context)
   expectUsableBox(layout.layers)
   expectUsableBox(layout.canvas)
   expect(layout.inspector?.width ?? 0).toBe(0)
-  expect(layout.context.width).toBeLessThanOrEqual(layout.clientWidth)
-  expect(layout.context.right).toBeLessThanOrEqual(layout.clientWidth)
-  expect(layout.canvas.top).toBeGreaterThanOrEqual(layout.context.bottom)
-  await page.getByRole('button', { name: 'Mobile', exact: true }).click()
+  expect(layout.layers.width).toBeLessThanOrEqual(layout.clientWidth)
+  expect(layout.canvas.top).toBeGreaterThanOrEqual(layout.layers.bottom)
+  await selectPreviewDevice(page, 'Mobile')
   const mobileViewport = page.locator('.admin-site-preview-viewport--mobile')
   await expect(mobileViewport).toBeVisible()
   await expect(mobileViewport).toHaveCSS('width', '358px')
-  await expect(page.locator('.admin-page-editor-shell')).toHaveScreenshot('editor-shell-mobile.png')
 
+  // Picking a device from the split-button menu also switches to read-only Preview mode;
+  // return to Edit to reach the Layers rail and block toolbar below.
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-button').filter({ hasText: 'Hero Banner' }).click()
-  await page.getByRole('button', { name: 'Close editor panel', exact: true }).click()
   const selectedLayout = await readEditorLayout(page)
   expect(selectedLayout.scrollWidth).toBeLessThanOrEqual(selectedLayout.clientWidth)
   await expect(page.locator('.block-toolbar').getByRole('button', { name: 'Delete', exact: true })).toBeVisible()
+  expectUsableBox(selectedLayout.floatingInspector)
 })
 
-test('context and inspector tabs support keyboard navigation with no automated accessibility violations', async ({ page }) => {
+test('canvas controls and inspector tabs support keyboard navigation with no automated accessibility violations', async ({ page }) => {
   await page.setViewportSize({ height: 1000, width: 1440 })
   await openCleanHarness(page)
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
 
-  const layersContextTab = page.getByRole('tab', { name: 'Layers', exact: true })
-  await layersContextTab.focus()
-  await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('tab', { name: 'Layout', exact: true })).toHaveAttribute('aria-selected', 'true')
+  const layoutButton = page.getByRole('button', { name: 'Layout', exact: true })
+  await layoutButton.focus()
+  await page.keyboard.press('Enter')
+  await expect(layoutButton).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', { name: 'Layout layers' })).toBeVisible()
-  await page.keyboard.press('ArrowRight')
-  await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).toHaveAttribute('aria-selected', 'true')
-  await expect(page.getByRole('complementary', { name: 'Inspector' })).toBeVisible()
-  await page.keyboard.press('ArrowLeft')
-  await expect(page.getByRole('tab', { name: 'Layout', exact: true })).toHaveAttribute('aria-selected', 'true')
-  await page.keyboard.press('ArrowLeft')
-  await expect(layersContextTab).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('button', { name: 'Visual', exact: true }).click()
 
   await page.getByRole('region', { name: 'Page layers' }).locator('.block-outline-button').filter({ hasText: 'Hero Banner' }).focus()
   await page.keyboard.press('Enter')
 
   const inspector = page.getByRole('complementary', { name: 'Inspector' })
-  await expect(page.getByRole('tab', { name: 'Inspector', exact: true })).toHaveAttribute('aria-selected', 'true')
+  await expect(inspector).toBeVisible()
   const contentTab = inspector.getByRole('tab', { name: 'Content', exact: true })
   await contentTab.focus()
   await page.keyboard.press('ArrowRight')

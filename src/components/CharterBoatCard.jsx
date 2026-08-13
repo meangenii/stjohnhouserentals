@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '../lib/router'
 import { getContentImageSrc } from '../lib/contentAssets'
 import { truncateSummary } from '../lib/charterSummary'
 

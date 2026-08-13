@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from '../lib/router'
 import { buildAdminEditorHref, resolveAdminEditTarget } from '../lib/adminEditTarget'
 
 export function AdminEditPageButton() {

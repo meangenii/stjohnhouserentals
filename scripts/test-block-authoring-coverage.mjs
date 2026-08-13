@@ -15,6 +15,16 @@ const server = await createServer({
 
 let browser
 
+async function showVisualInspector(page) {
+  const visualButton = page.getByRole('button', { name: 'Visual', exact: true })
+
+  if ((await visualButton.count()) > 0 && (await visualButton.getAttribute('aria-pressed')) !== 'true') {
+    await visualButton.click()
+  }
+
+  await page.getByRole('complementary', { name: 'Inspector' }).waitFor()
+}
+
 async function addBlock(page, label) {
   const insertButton = page.getByRole('button', { name: '+ Insert below', exact: true })
   const addButton = page.getByRole('button', { name: '+ Add block', exact: true })
@@ -26,11 +36,7 @@ async function addBlock(page, label) {
   }
 
   await page.getByRole('button', { name: label, exact: true }).click()
-
-  const inspectorLauncher = page.getByRole('button', { name: 'Open Inspector', exact: true })
-  if ((await inspectorLauncher.getAttribute('aria-pressed')) !== 'true') {
-    await inspectorLauncher.click()
-  }
+  await showVisualInspector(page)
 }
 
 function getListItem(scope, index = 0) {
@@ -38,21 +44,21 @@ function getListItem(scope, index = 0) {
 }
 
 async function selectContainerLayer(page, label) {
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
   await page
     .getByRole('region', { name: 'Page layers' })
     .locator('.block-outline-container')
     .filter({ hasText: label })
     .click()
+  await showVisualInspector(page)
 }
 
 async function selectBlockLayer(page, label) {
-  await page.getByRole('button', { name: 'Open Layers', exact: true }).click()
   await page
     .getByRole('region', { name: 'Page layers' })
     .locator('.block-outline-button')
     .filter({ hasText: label })
     .click()
+  await showVisualInspector(page)
 }
 
 try {

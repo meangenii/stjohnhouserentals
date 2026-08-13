@@ -8,11 +8,29 @@ export const RICH_TEXT_BLOCK_OPTIONS = [
   { label: 'H6', value: 'h6' },
 ]
 
+export const RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS = [
+  { label: 'Left', value: 'left' },
+  { label: 'Center', value: 'center' },
+  { label: 'Right', value: 'right' },
+  { label: 'Justified', value: 'justify' },
+]
+
+export const RICH_TEXT_VERTICAL_ALIGN_OPTIONS = [
+  { label: 'Top', value: 'top' },
+  { label: 'Middle', value: 'middle' },
+  { label: 'Bottom', value: 'bottom' },
+]
+
 const REM_TO_PX = 16
 const PX_TO_PT = 72 / 96
 const MIN_RICH_TEXT_FONT_SIZE_PX = 8
 const MAX_RICH_TEXT_FONT_SIZE_PX = 96
 const RICH_TEXT_FONT_SIZE_VALUE_PATTERN = /^(\d+(?:\.\d+)?)(px|rem|em|pt)$/
+const RICH_TEXT_HEX_COLOR_PATTERN = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
+const RICH_TEXT_RGB_COLOR_PATTERN = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i
+const RICH_TEXT_TOKEN_COLOR_PATTERN = /^var\(--[a-z0-9-]+\)$/i
+const RICH_TEXT_HORIZONTAL_ALIGN_VALUES = new Set(RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS.map((option) => option.value))
+const RICH_TEXT_VERTICAL_ALIGN_VALUES = new Set(RICH_TEXT_VERTICAL_ALIGN_OPTIONS.map((option) => option.value))
 
 function formatFontSizeOptionLabel(label, value) {
   const pt = formatPointValue(estimateFontSizePt(value))
@@ -120,6 +138,30 @@ export function normalizeRichTextFontSizeAsPoints(value = '') {
   return `${formatPointValue(estimateFontSizePt(normalizedValue))}pt`
 }
 
+export function normalizeRichTextColor(value = '') {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+
+  if (!normalizedValue || normalizedValue === 'default' || normalizedValue === 'inherit') {
+    return ''
+  }
+
+  if (RICH_TEXT_HEX_COLOR_PATTERN.test(normalizedValue) || RICH_TEXT_TOKEN_COLOR_PATTERN.test(normalizedValue)) {
+    return normalizedValue
+  }
+
+  const rgbMatch = normalizedValue.match(RICH_TEXT_RGB_COLOR_PATTERN)
+
+  if (rgbMatch) {
+    const channels = rgbMatch.slice(1).map((channel) => Number.parseInt(channel, 10))
+
+    if (channels.every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255)) {
+      return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`
+    }
+  }
+
+  return ''
+}
+
 function getNodeOwnerElement(node) {
   if (!node) {
     return null
@@ -211,6 +253,54 @@ function getSelectionBlockElement(root) {
 
   const blockElement = selectionElement.closest('p, li, blockquote, h1, h2, h3, h4, h5, h6')
   return blockElement instanceof HTMLElement && root.contains(blockElement) ? blockElement : null
+}
+
+function getSelectionTableCellElement(root) {
+  const selectionElement = getSelectionElement(root)
+
+  if (!selectionElement) {
+    return null
+  }
+
+  const cellElement = selectionElement.closest('td, th')
+  return cellElement instanceof HTMLElement && root.contains(cellElement) ? cellElement : null
+}
+
+function normalizeHorizontalAlign(value = '') {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+  return RICH_TEXT_HORIZONTAL_ALIGN_VALUES.has(normalizedValue) ? normalizedValue : 'left'
+}
+
+function normalizeVerticalAlign(value = '') {
+  const normalizedValue = String(value ?? '').trim().toLowerCase()
+  return RICH_TEXT_VERTICAL_ALIGN_VALUES.has(normalizedValue) ? normalizedValue : 'top'
+}
+
+function readInlineStyleValue(element, propertyName) {
+  return element instanceof HTMLElement ? element.style[propertyName] : ''
+}
+
+function readComputedStyleValue(element, propertyName) {
+  if (!(element instanceof HTMLElement) || typeof window === 'undefined') {
+    return ''
+  }
+
+  return window.getComputedStyle(element)[propertyName] ?? ''
+}
+
+function getSelectedTableCellElements(root, range) {
+  if (!root || !range) {
+    return []
+  }
+
+  const selectedCells = Array.from(root.querySelectorAll('td, th')).filter((cell) => elementIntersectsRange(cell, range))
+
+  if (selectedCells.length > 0 || !range.collapsed) {
+    return selectedCells
+  }
+
+  const selectionCell = getSelectionTableCellElement(root)
+  return selectionCell ? [selectionCell] : []
 }
 
 export function captureRichTextSelectionRange(root) {
@@ -727,14 +817,21 @@ function surroundRangeWithElement(range, wrapper) {
   }
 }
 
-function cleanupFontSizeSpans(root) {
+function cleanupRichTextStyleSpans(root) {
   Array.from(root.querySelectorAll('span[style]')).forEach((span) => {
     const normalizedSize = normalizeRichTextFontSize(span.style.fontSize)
+    const normalizedColor = normalizeRichTextColor(span.style.color)
 
     if (normalizedSize) {
       span.style.fontSize = normalizedSize
     } else {
       span.style.removeProperty('font-size')
+    }
+
+    if (normalizedColor) {
+      span.style.color = normalizedColor
+    } else {
+      span.style.removeProperty('color')
     }
 
     if (!span.getAttribute('style')) {
@@ -774,7 +871,40 @@ function clearRichTextFontSize(root, range) {
   })
 
   if (changed) {
-    cleanupFontSizeSpans(root)
+    cleanupRichTextStyleSpans(root)
+  }
+
+  return changed
+}
+
+function clearRichTextColor(root, range) {
+  let changed = false
+  const selectedSpans = Array.from(root.querySelectorAll('span[style]')).filter(
+    (span) => normalizeRichTextColor(span.style.color) && elementIntersectsRange(span, range),
+  )
+  const anchorElement = getSelectionElement(root)
+  const anchorColorSpan = anchorElement?.closest?.('span[style]')
+
+  if (selectedSpans.length === 0 && anchorColorSpan instanceof HTMLElement && root.contains(anchorColorSpan)) {
+    selectedSpans.push(anchorColorSpan)
+  }
+
+  selectedSpans.forEach((span) => {
+    span.style.removeProperty('color')
+
+    if (!span.getAttribute('style')) {
+      span.removeAttribute('style')
+    }
+
+    if (span.attributes.length === 0) {
+      unwrapElement(span)
+    }
+
+    changed = true
+  })
+
+  if (changed) {
+    cleanupRichTextStyleSpans(root)
   }
 
   return changed
@@ -784,10 +914,13 @@ export function readRichTextSelectionState(root, { defaultBlockTag = 'p', fixedB
   const formattingState = {
     blockTag: fixedBlockTag || defaultBlockTag,
     bold: false,
+    color: 'default',
     defaultFontSizeLabel: formatComputedFontSizeLabel(root),
     fontSize: 'default',
+    horizontalAlign: 'left',
     italic: false,
     underline: false,
+    verticalAlign: 'top',
   }
 
   const range = getSelectionRangeInRoot(root)
@@ -821,17 +954,101 @@ export function readRichTextSelectionState(root, { defaultBlockTag = 'p', fixedB
     }
   }
 
-  const sizedSpan = selectionElement.closest('span[style]')
+  const alignmentElement = getSelectionTableCellElement(root) || getSelectionBlockElement(root)
 
-  if (sizedSpan && root.contains(sizedSpan)) {
-    const normalizedSize = normalizeRichTextFontSize(sizedSpan.style.fontSize)
+  if (alignmentElement) {
+    formattingState.horizontalAlign = normalizeHorizontalAlign(
+      readInlineStyleValue(alignmentElement, 'textAlign') || readComputedStyleValue(alignmentElement, 'textAlign'),
+    )
+  }
+
+  const tableCellElement = getSelectionTableCellElement(root)
+
+  if (tableCellElement) {
+    formattingState.verticalAlign = normalizeVerticalAlign(
+      readInlineStyleValue(tableCellElement, 'verticalAlign') || readComputedStyleValue(tableCellElement, 'verticalAlign'),
+    )
+  }
+
+  const styledSpan = selectionElement.closest('span[style]')
+
+  if (styledSpan && root.contains(styledSpan)) {
+    const normalizedSize = normalizeRichTextFontSize(styledSpan.style.fontSize)
+    const normalizedColor = normalizeRichTextColor(styledSpan.style.color)
 
     if (normalizedSize) {
       formattingState.fontSize = normalizedSize
     }
+
+    if (normalizedColor) {
+      formattingState.color = normalizedColor
+    }
   }
 
   return formattingState
+}
+
+export function applyRichTextHorizontalAlign(root, nextValue) {
+  if (!root) {
+    return false
+  }
+
+  const range = getSelectionRangeInRoot(root)
+
+  if (!range) {
+    return false
+  }
+
+  const normalizedValue = normalizeHorizontalAlign(nextValue)
+  const selectedCells = getSelectedTableCellElements(root, range)
+  const selectedElements =
+    selectedCells.length > 0
+      ? selectedCells
+      : getSelectedBlockElements(root, range).filter((element) => element instanceof HTMLElement)
+
+  if (selectedElements.length === 0) {
+    const fallbackElement = getSelectionBlockElement(root)
+
+    if (fallbackElement) {
+      selectedElements.push(fallbackElement)
+    }
+  }
+
+  if (selectedElements.length === 0) {
+    return false
+  }
+
+  selectedElements.forEach((element) => {
+    element.style.textAlign = normalizedValue
+  })
+
+  return true
+}
+
+export function applyRichTextVerticalAlign(root, nextValue) {
+  if (!root) {
+    return false
+  }
+
+  const range = getSelectionRangeInRoot(root)
+
+  if (!range) {
+    return false
+  }
+
+  const selectedCells = getSelectedTableCellElements(root, range)
+
+  if (selectedCells.length === 0) {
+    return false
+  }
+
+  const normalizedValue = normalizeVerticalAlign(nextValue)
+
+  selectedCells.forEach((cell) => {
+    cell.style.verticalAlign = normalizedValue
+  })
+
+  return true
 }
 
 export function applyRichTextFontSize(root, nextValue, { collapsedBehavior = 'selection' } = {}) {
@@ -878,7 +1095,7 @@ export function applyRichTextFontSize(root, nextValue, { collapsedBehavior = 'se
         }
 
         blockElement.appendChild(blockWrapper)
-        cleanupFontSizeSpans(root)
+        cleanupRichTextStyleSpans(root)
         selectNodeContents(blockWrapper)
         return true
       }
@@ -899,18 +1116,99 @@ export function applyRichTextFontSize(root, nextValue, { collapsedBehavior = 'se
       }
 
       root.appendChild(wrapperAtRoot)
-      cleanupFontSizeSpans(root)
+      cleanupRichTextStyleSpans(root)
       selectNodeContents(wrapperAtRoot)
       return true
     }
 
     anchorSizedSpan.style.fontSize = normalizedValue
-    cleanupFontSizeSpans(root)
+    cleanupRichTextStyleSpans(root)
     return true
   }
 
   surroundRangeWithElement(range, wrapper)
-  cleanupFontSizeSpans(root)
+  cleanupRichTextStyleSpans(root)
+  selectNodeContents(wrapper)
+  return true
+}
+
+export function applyRichTextColor(root, nextValue, { collapsedBehavior = 'selection' } = {}) {
+  if (!root) {
+    return false
+  }
+
+  const range = getSelectionRangeInRoot(root)
+
+  if (!range) {
+    return false
+  }
+
+  if (nextValue === 'default') {
+    return clearRichTextColor(root, range)
+  }
+
+  const normalizedValue = normalizeRichTextColor(nextValue)
+
+  if (!normalizedValue) {
+    return false
+  }
+
+  const wrapper = document.createElement('span')
+  wrapper.style.color = normalizedValue
+
+  if (range.collapsed) {
+    const anchorElement = getSelectionElement(root)
+    const anchorColorSpan = anchorElement?.closest?.('span[style]')
+
+    if (!(anchorColorSpan instanceof HTMLElement) || !root.contains(anchorColorSpan)) {
+      if (collapsedBehavior === 'block') {
+        const blockElement = getSelectionBlockElement(root)
+
+        if (!(blockElement instanceof HTMLElement)) {
+          return false
+        }
+
+        const blockWrapper = document.createElement('span')
+        blockWrapper.style.color = normalizedValue
+
+        while (blockElement.firstChild) {
+          blockWrapper.appendChild(blockElement.firstChild)
+        }
+
+        blockElement.appendChild(blockWrapper)
+        cleanupRichTextStyleSpans(root)
+        selectNodeContents(blockWrapper)
+        return true
+      }
+
+      if (collapsedBehavior !== 'root') {
+        return false
+      }
+
+      if (!root.firstChild) {
+        return false
+      }
+
+      const wrapperAtRoot = document.createElement('span')
+      wrapperAtRoot.style.color = normalizedValue
+
+      while (root.firstChild) {
+        wrapperAtRoot.appendChild(root.firstChild)
+      }
+
+      root.appendChild(wrapperAtRoot)
+      cleanupRichTextStyleSpans(root)
+      selectNodeContents(wrapperAtRoot)
+      return true
+    }
+
+    anchorColorSpan.style.color = normalizedValue
+    cleanupRichTextStyleSpans(root)
+    return true
+  }
+
+  surroundRangeWithElement(range, wrapper)
+  cleanupRichTextStyleSpans(root)
   selectNodeContents(wrapper)
   return true
 }

@@ -17,14 +17,18 @@ import {
 import { getBlockVisibilityClassNames, isBlockVisibleOnDevice } from '../lib/blockResponsive'
 import { getRenderableBlockAnchorId } from '../lib/blockAnchors'
 import { cloneBlockWithFreshIds } from '../lib/blockTree'
+import { BLOCK_WIDTH_OPTIONS } from '../lib/blockStyle'
+import { getSiteThemeElementStylePresets } from '../lib/siteThemeSettings'
 import { usePageEditor } from '../lib/usePageEditor'
+import { useSiteShellContent } from '../lib/useSiteContent'
 
-function BlockPicker({ excludeTypes, onCancel, onPick }) {
+function BlockPicker({ excludeTypes = [], onCancel, onPick }) {
+  const excludedTypes = Array.isArray(excludeTypes) ? excludeTypes : []
   const definitionsByCategory = blockCategories
     .map((category) => ({
       ...category,
       definitions: listBlockDefinitions().filter(
-        (definition) => definition.category === category.key && !excludeTypes.includes(definition.type),
+        (definition) => definition.category === category.key && !excludedTypes.includes(definition.type),
       ),
     }))
     .filter((category) => category.definitions.length > 0)
@@ -57,7 +61,7 @@ function BlockPicker({ excludeTypes, onCancel, onPick }) {
   )
 }
 
-export function BlockInserter({ excludeTypes, label = '+ Add block', onAddBlock }) {
+export function BlockInserter({ excludeTypes = [], label = '+ Add block', onAddBlock }) {
   const [pickerOpen, setPickerOpen] = useState(false)
 
   if (pickerOpen) {
@@ -166,18 +170,32 @@ function BlockToolbar({
   )
 }
 
-function getBlockLayoutClassName(block, definition) {
+function getConfiguredBlockWidth(block, stylePresets = []) {
   const explicitWidth = String(block?.style?.width ?? '').trim()
 
-  if (explicitWidth === 'full') {
+  if (BLOCK_WIDTH_OPTIONS.includes(explicitWidth)) {
+    return explicitWidth
+  }
+
+  const presetId = String(block?.style?.presetId ?? '').trim()
+  const preset = presetId ? stylePresets.find((entry) => entry?.enabled !== false && String(entry?.id ?? '').trim() === presetId) : null
+  const presetWidth = String(preset?.style?.width ?? '').trim()
+
+  return BLOCK_WIDTH_OPTIONS.includes(presetWidth) ? presetWidth : ''
+}
+
+function getBlockLayoutClassName(block, definition, stylePresets = []) {
+  const configuredWidth = getConfiguredBlockWidth(block, stylePresets)
+
+  if (configuredWidth === 'full') {
     return 'block-page-block--layout-bleed'
   }
 
-  if (explicitWidth === 'narrow') {
+  if (configuredWidth === 'narrow') {
     return 'block-page-block--layout-narrow'
   }
 
-  if (explicitWidth === 'contained') {
+  if (configuredWidth === 'contained') {
     return 'block-page-block--layout-contained'
   }
 
@@ -225,6 +243,8 @@ export function BlockList({ blocks, context = {}, emptyMessage = 'No blocks yet.
   const hasSharedSelection = typeof pageEditor?.setSelectedBlockId === 'function'
   const selectedBlockId = hasSharedSelection ? pageEditor.selectedBlockId : localSelectedBlockId
   const previewDevice = pageEditor?.device ?? context.device ?? 'desktop'
+  const siteShell = useSiteShellContent()
+  const stylePresets = getSiteThemeElementStylePresets(siteShell?.theme)
 
   function selectBlock(blockId) {
     if (hasSharedSelection) {
@@ -329,7 +349,7 @@ export function BlockList({ blocks, context = {}, emptyMessage = 'No blocks yet.
     }
 
     if (!definition) {
-      const layoutClassName = getBlockLayoutClassName(block, definition)
+      const layoutClassName = getBlockLayoutClassName(block, definition, stylePresets)
 
       if (!editable) {
         const visibilityClassNames = getBlockVisibilityClassNames(block).join(' ')
@@ -400,7 +420,7 @@ export function BlockList({ blocks, context = {}, emptyMessage = 'No blocks yet.
 
     const Renderer = definition.Renderer
     const editorLabel = String(block.editorLabel ?? '').trim() || definition.label
-    const layoutClassName = getBlockLayoutClassName(block, definition)
+    const layoutClassName = getBlockLayoutClassName(block, definition, stylePresets)
 
     if (!editable) {
       const visibilityClassNames = getBlockVisibilityClassNames(block).join(' ')

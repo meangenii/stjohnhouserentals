@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation } from '../lib/router'
 import { EditableBackgroundSection, EditableImage, EditableLink, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
 import { RestaurantDirectoryPanel } from '../components/RestaurantDirectoryPanel'

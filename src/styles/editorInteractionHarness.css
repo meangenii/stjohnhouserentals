@@ -30,18 +30,11 @@
 }
 
 .editor-interaction-harness-actions,
-.editor-interaction-harness-devices,
 .editor-interaction-harness-status {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-}
-
-.editor-interaction-harness-devices {
-  justify-content: flex-end;
-  margin: 0 auto 0.75rem;
-  max-width: 112rem;
 }
 
 .editor-interaction-harness-status {

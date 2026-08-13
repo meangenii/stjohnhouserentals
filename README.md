@@ -12,6 +12,8 @@ Phase one is a React rebuild of the current public site using Firebase Hosting f
 - Active site shell, structured page, property, and charter images are now expected to use Firebase Storage URLs only; admin saves reject bundled or third-party image URLs.
 - `npm run content:generate` writes the Functions-safe content artifacts under `functions/src/generated/` before build, emulators, or deploy.
 - `siteApi` exposes structured page content plus rental and charter endpoints, including authenticated admin write endpoints for Firebase-backed site shell, page, property, and charter editing.
+- Owner-only admin endpoints protect backup, staging cutover, and seed-reset operations separately from ordinary CMS editing.
+- Route-level navigation uses the local browser-history router in `src/lib/router.jsx`; the app does not depend on `react-router-dom`.
 - `npm run dev` keeps the frontend on `/api` and proxies those requests through the deployed Firebase Hosting `/api` rewrite by default; set `VITE_USE_FUNCTIONS_EMULATOR=true` to point it at `127.0.0.1:5001` while running `npm run emulators`.
 - `/admin` supports localhost-only Firebase auto sign-in through `VITE_ADMIN_AUTO_LOGIN_EMAIL` and `VITE_ADMIN_AUTO_LOGIN_PASSWORD` when you want live editing without the manual sign-in form on every session.
 

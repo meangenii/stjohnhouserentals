@@ -102,6 +102,136 @@ function escapeAttributeSelectorValue(value) {
   return String(value ?? '').replace(/["\\]/g, '\\$&')
 }
 
+function SelectedBlockFloatingInspector({ children, selectedBlockId, stageRef, surfaceRef }) {
+  const panelRef = useRef(null)
+  const [layout, setLayout] = useState(null)
+  // renderSelectionInspector(selectedBlockId) creates a brand-new element every render even
+  // when nothing relevant changed, so `children` can't be a dependency without tearing down
+  // and rebuilding the ResizeObserver/scroll listeners on every keystroke inside the panel.
+  // A ref lets the effect read the current value without retriggering on identity churn.
+  // Assigning it in its own layout effect (declared first, so it commits before the effect
+  // below reads it) keeps the mutation out of the render body per the rules of React.
+  const childrenRef = useRef(children)
+  useLayoutEffect(() => {
+    childrenRef.current = children
+  })
+
+  useLayoutEffect(() => {
+    let disposed = false
+    let retryFrame = 0
+    let teardown = () => {}
+
+    // In dev, React StrictMode mounts this component, tears it down, and remounts it once to
+    // surface effect bugs -- during that remount the stage/surface DOM nodes can exist for a
+    // frame before their refs are (re)attached. Retrying for a few frames instead of bailing
+    // out immediately avoids a spurious "no inspector" flash; a real absence (nothing selected)
+    // still resolves to null once retries are exhausted.
+    function attemptSetup(retriesLeft) {
+      if (disposed) {
+        return
+      }
+
+      if (!childrenRef.current || !selectedBlockId) {
+        setLayout(null)
+        return
+      }
+
+      if (!stageRef.current || !surfaceRef.current) {
+        if (retriesLeft > 0) {
+          retryFrame = window.requestAnimationFrame(() => attemptSetup(retriesLeft - 1))
+        } else {
+          setLayout(null)
+        }
+
+        return
+      }
+
+      const stage = stageRef.current
+      const surface = surfaceRef.current
+      const selector = `[data-editor-selection-id="${escapeAttributeSelectorValue(selectedBlockId)}"]`
+      let animationFrame = 0
+
+      function updateLayout() {
+        window.cancelAnimationFrame(animationFrame)
+        animationFrame = window.requestAnimationFrame(() => {
+          const selectedElement = surface.querySelector(selector)
+
+          if (!(selectedElement instanceof HTMLElement)) {
+            setLayout(null)
+            return
+          }
+
+          const stageRect = stage.getBoundingClientRect()
+          const selectedRect = selectedElement.getBoundingClientRect()
+          const maxWidth = Math.max(220, stageRect.width - 16)
+          const minimumWidth = Math.min(360, maxWidth)
+          const preferredWidth = Math.min(selectedRect.width, 560)
+          const width = Math.min(maxWidth, Math.max(minimumWidth, preferredWidth))
+          const left = Math.min(Math.max(selectedRect.left - stageRect.left, 8), Math.max(8, stageRect.width - width - 8))
+          const top = selectedRect.bottom - stageRect.top + 10
+
+          setLayout({ left, top, width })
+        })
+      }
+
+      updateLayout()
+
+      const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(updateLayout) : null
+      const selectedElement = surface.querySelector(selector)
+
+      resizeObserver?.observe(stage)
+      resizeObserver?.observe(surface)
+
+      if (selectedElement instanceof HTMLElement) {
+        resizeObserver?.observe(selectedElement)
+      }
+
+      if (panelRef.current) {
+        resizeObserver?.observe(panelRef.current)
+      }
+
+      window.addEventListener('resize', updateLayout)
+      window.addEventListener('scroll', updateLayout, true)
+
+      teardown = () => {
+        window.cancelAnimationFrame(animationFrame)
+        resizeObserver?.disconnect()
+        window.removeEventListener('resize', updateLayout)
+        window.removeEventListener('scroll', updateLayout, true)
+      }
+    }
+
+    attemptSetup(5)
+
+    return () => {
+      disposed = true
+      window.cancelAnimationFrame(retryFrame)
+      teardown()
+    }
+  }, [selectedBlockId, stageRef, surfaceRef])
+
+  if (!children || !layout) {
+    return null
+  }
+
+  return (
+    <div
+      className="admin-selected-block-floating-inspector"
+      data-admin-inline-editable="true"
+      ref={panelRef}
+      style={{
+        left: `${layout.left}px`,
+        top: `${layout.top}px`,
+        width: `${layout.width}px`,
+      }}
+      onClick={(event) => event.stopPropagation()}
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      {children}
+    </div>
+  )
+}
+
 const LAYOUT_ELEMENT_SELECTOR = [
   '.block-style-frame',
   '.block-style-frame-inner',
@@ -201,6 +331,7 @@ function collectEditorLayoutMetrics(surface) {
 export function AdminPageEditorCanvas({
   device = 'desktop',
   disabled = false,
+  renderSelectionInspector,
   onChange,
   onLayoutMetricsChange,
   onSelectedBlockIdChange,
@@ -213,6 +344,7 @@ export function AdminPageEditorCanvas({
   const [activeFieldId, setActiveFieldId] = useState('')
   const suppressInlineActivationClickRef = useRef(false)
   const suppressInlineActivationClickTimeoutRef = useRef(0)
+  const stageRef = useRef(null)
   const surfaceRef = useRef(null)
 
   function clearInlineActivationClickGuard() {
@@ -298,11 +430,14 @@ export function AdminPageEditorCanvas({
     device,
     disabled,
     onChange,
+    renderSelectionInspector,
     selectedBlockId,
     setActiveFieldId,
     setSelectedBlockId: onSelectedBlockIdChange,
   })
   const previewBody = renderPreviewBody(page, pageKey)
+  const selectionInspector =
+    selectedBlockId && typeof renderSelectionInspector === 'function' ? renderSelectionInspector(selectedBlockId) : null
 
   function handleCanvasPointerDownCapture(event) {
     const target = getTargetOwnerElement(event.target)
@@ -370,13 +505,18 @@ export function AdminPageEditorCanvas({
   return (
     <SiteContentPreviewContext.Provider value={{ pages: { [pageKey]: page }, pageEditor, routeInventory, siteShell: resolvedSiteShell }}>
       <PreviewSurface device={device} interactive>
-        <div
-          className="site-main admin-preview-editor-page"
-          ref={surfaceRef}
-          onClickCapture={handleCanvasClickCapture}
-          onPointerDownCapture={handleCanvasPointerDownCapture}
-        >
-          {previewBody}
+        <div className="admin-preview-editor-stage" ref={stageRef}>
+          <div
+            className="site-main admin-preview-editor-page"
+            ref={surfaceRef}
+            onClickCapture={handleCanvasClickCapture}
+            onPointerDownCapture={handleCanvasPointerDownCapture}
+          >
+            {previewBody}
+          </div>
+          <SelectedBlockFloatingInspector selectedBlockId={selectedBlockId} stageRef={stageRef} surfaceRef={surfaceRef}>
+            {selectionInspector}
+          </SelectedBlockFloatingInspector>
         </div>
       </PreviewSurface>
     </SiteContentPreviewContext.Provider>

@@ -12,6 +12,8 @@ const propertyDataSource = import.meta.env.VITE_PROPERTY_DATA_SOURCE ?? 'firebas
 const BLOCK_RICH_TEXT_PATTERN = /<\/?(?:blockquote|div|h[1-6]|li|ol|p|ul)\b/i
 const PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES = ['ratesHtml', 'ratesTableHtml']
 const PROPERTY_DESCRIPTION_SECTION_FIELD_NAMES = [...PROPERTY_RATE_DESCRIPTION_SECTION_FIELD_NAMES, 'bookingHtml', 'policyHtml']
+const LISTING_FEE_INTERVALS = new Set(['monthly', 'annual', 'one-time'])
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 let localPropertyCatalogPromise = null
 let remotePropertyCatalogPromise = null
@@ -30,6 +32,16 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
+}
+
+function normalizeListingFeeInterval(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return LISTING_FEE_INTERVALS.has(normalized) ? normalized : ''
+}
+
+function normalizeDateOnlyValue(value) {
+  const normalized = String(value ?? '').trim().slice(0, 10)
+  return DATE_ONLY_PATTERN.test(normalized) ? normalized : ''
 }
 
 function normalizeEnabledDescriptionSections(value, record = {}) {
@@ -356,6 +368,11 @@ function normalizePropertyRecord(record) {
     bedroomLabel: formatBedroomLabel(bedrooms),
     location: String(record.location ?? '').trim(),
     calendarUrl: String(record.calendarUrl ?? '').trim(),
+    clientId: String(record.clientId ?? '').trim(),
+    listingFeeAmount: String(record.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: normalizeListingFeeInterval(record.listingFeeInterval),
+    lastPaidAt: normalizeDateOnlyValue(record.lastPaidAt),
+    renewalDueAt: normalizeDateOnlyValue(record.renewalDueAt),
     descriptionHtml,
     hasStructuredDescriptionSections,
     enabledDescriptionSections,
@@ -412,6 +429,11 @@ function normalizePropertySummaryRecord(record) {
     bedroomLabel: formatBedroomLabel(bedrooms),
     heroImage,
     amenitiesHtml: String(record.amenitiesHtml ?? '').trim(),
+    clientId: String(record.clientId ?? '').trim(),
+    listingFeeAmount: String(record.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: normalizeListingFeeInterval(record.listingFeeInterval),
+    lastPaidAt: normalizeDateOnlyValue(record.lastPaidAt),
+    renewalDueAt: normalizeDateOnlyValue(record.renewalDueAt),
   }
 
   if (Object.prototype.hasOwnProperty.call(record, 'adminOriginalSlug')) {
@@ -680,6 +702,11 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     shortDescription,
     location: String(draft?.location ?? '').trim(),
     calendarUrl: String(draft?.calendarUrl ?? '').trim(),
+    clientId: String(draft?.clientId ?? '').trim(),
+    listingFeeAmount: String(draft?.listingFeeAmount ?? '').trim(),
+    listingFeeInterval: normalizeListingFeeInterval(draft?.listingFeeInterval),
+    lastPaidAt: normalizeDateOnlyValue(draft?.lastPaidAt),
+    renewalDueAt: normalizeDateOnlyValue(draft?.renewalDueAt),
     hasStructuredDescriptionSections: true,
     enabledDescriptionSections,
     description: description,
@@ -847,6 +874,11 @@ function summarizeProperty(property) {
     amenitiesHtml: property.amenitiesHtml,
     booking: property.booking,
     externalLinks: property.externalLinks,
+    clientId: property.clientId,
+    listingFeeAmount: property.listingFeeAmount,
+    listingFeeInterval: property.listingFeeInterval,
+    lastPaidAt: property.lastPaidAt,
+    renewalDueAt: property.renewalDueAt,
   }
 
   if (property.adminOriginalSlug) {
@@ -993,6 +1025,28 @@ export async function setAdminPropertyActiveState(originalSlug, active, options 
     { originalSlug, active: active !== false, expectedUpdatedAt: options.expectedUpdatedAt ?? null },
     options,
   )
+  invalidatePropertyCaches()
+
+  return cloneData(normalizePropertyRecord(payload?.property))
+}
+
+export async function setAdminPropertyBillingInfo(originalSlug, billing, options = {}) {
+  if (!isFirebasePropertyData()) {
+    throw new Error('Property billing updates are only available when VITE_PROPERTY_DATA_SOURCE=firebase.')
+  }
+
+  const payload = await postJson('/admin/properties/billing', { originalSlug, billing }, options)
+  invalidatePropertyCaches()
+
+  return cloneData(normalizePropertyRecord(payload?.property))
+}
+
+export async function setAdminPropertyClientId(originalSlug, clientId, options = {}) {
+  if (!isFirebasePropertyData()) {
+    throw new Error('Property client assignment is only available when VITE_PROPERTY_DATA_SOURCE=firebase.')
+  }
+
+  const payload = await postJson('/admin/properties/client', { originalSlug, clientId }, options)
   invalidatePropertyCaches()
 
   return cloneData(normalizePropertyRecord(payload?.property))

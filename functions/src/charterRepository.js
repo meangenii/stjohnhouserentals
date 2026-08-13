@@ -133,8 +133,13 @@ function buildCharterViewFromStoredRecord(record, documentId = '', { mode = 'pub
     charter.adminOriginalSlug = documentId || selectedRecord.adminOriginalSlug || selectedRecord.slug
     charter.publication = buildCharterPublicationState(envelope)
   } else {
+    charter.active = selectedRecord.active !== false && envelope.draft?.active !== false
     delete charter.adminOriginalSlug
     delete charter.publication
+    delete charter.updatedAt
+    delete charter.updatedBy
+    delete charter.publishedAt
+    delete charter.publishedBy
   }
 
   return charter

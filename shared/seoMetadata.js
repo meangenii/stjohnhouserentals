@@ -52,6 +52,13 @@ export const STATIC_SEO_ROUTES = [
     changefreq: 'monthly',
   },
   {
+    path: '/cbtest',
+    title: 'Car Barge Information | St. John House Rentals',
+    description: 'Get St. Thomas to St. John car barge information, schedules, rates, and travel tips for rental vehicles.',
+    priority: '0.3',
+    changefreq: 'monthly',
+  },
+  {
     path: '/passenger-ferry',
     title: 'Passenger Ferry | St. John House Rentals',
     description: 'Find passenger ferry schedules, departure points, rates, and travel tips for getting to St. John.',

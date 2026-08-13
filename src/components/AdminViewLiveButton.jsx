@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link } from '../lib/router'
 
 export function AdminViewLiveButton({ onBeforeNavigate, path = '' }) {
   const normalizedPath = String(path ?? '').trim()
@@ -25,6 +25,29 @@ export function AdminViewLiveButton({ onBeforeNavigate, path = '' }) {
         &#8599;
       </span>
       View Live Page
+    </Link>
+  )
+}
+
+export function AdminBackToSiteButton({ onBeforeNavigate }) {
+  function handleClick(event) {
+    if (typeof onBeforeNavigate === 'function' && !onBeforeNavigate()) {
+      event.preventDefault()
+    }
+  }
+
+  return (
+    <Link
+      aria-label="Back to site"
+      className="admin-mode-toggle admin-mode-toggle--back"
+      title="Back to site"
+      to="/"
+      onClick={handleClick}
+    >
+      <span aria-hidden="true" className="admin-mode-toggle-icon">
+        &#8592;
+      </span>
+      Back to site
     </Link>
   )
 }

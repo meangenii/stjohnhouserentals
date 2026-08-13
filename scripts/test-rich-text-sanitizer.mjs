@@ -38,6 +38,22 @@ assert.ok(normalizedHtml.includes('Custom'))
 const rewrittenInternalLink = normalizeSiteHtml('<a href="https://www.stjohnhouserentals.com/car-rental-ferry-boat-info/">Car info</a>')
 assert.equal(rewrittenInternalLink, '<a href="/car-barge-information">Car info</a>')
 
+const alignedHtml = normalizeSiteHtml(
+  '<p style="text-align: center; display: grid;">Centered</p><table><tbody><tr><td style="text-align: right; vertical-align: bottom; position: absolute;">Cell</td></tr></tbody></table>',
+)
+assert.equal(
+  alignedHtml,
+  '<p style="text-align: center;">Centered</p><table><tbody><tr><td style="text-align: right; vertical-align: bottom;">Cell</td></tr></tbody></table>',
+)
+
+const coloredHtml = normalizeSiteHtml(
+  '<p><span style="color: var(--brand-navy);">Token</span> <span style="color: #37a5dd;">Hex</span> <span style="color: rgb(17, 17, 17);">RGB</span> <span style="color: red;">Named</span></p>',
+)
+assert.equal(
+  coloredHtml,
+  '<p><span style="color: var(--brand-navy);">Token</span> <span style="color: #37a5dd;">Hex</span> <span style="color: #111111;">RGB</span> <span>Named</span></p>',
+)
+
 const decodedEscapedHtml = normalizeSiteHtml('&lt;p onclick="bad()"&gt;Escaped&lt;/p&gt;')
 assert.equal(decodedEscapedHtml, '<p>Escaped</p>')
 

@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '../lib/router'
 import { formatPropertyRichHtml } from '../lib/formatPropertyRichHtml'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 

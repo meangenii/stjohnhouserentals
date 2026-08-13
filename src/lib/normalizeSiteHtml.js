@@ -1,4 +1,4 @@
-import { normalizeRichTextFontSize } from './richTextFormatting.js'
+import { normalizeRichTextColor, normalizeRichTextFontSize } from './richTextFormatting.js'
 
 const SITE_ORIGIN_PATTERN = /^https?:\/\/(?:www\.)?stjohnhouserentals\.com$/i
 const EMPTY_PRUNABLE_INLINE_TAGS = new Set(['A', 'B', 'EM', 'I', 'SPAN', 'STRONG', 'U'])
@@ -34,6 +34,9 @@ const ALLOWED_TAGS = new Set([
 ])
 const DROP_TAGS = new Set(['BASE', 'BUTTON', 'EMBED', 'FORM', 'IFRAME', 'INPUT', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'SELECT', 'STYLE', 'TEXTAREA'])
 const BLANK_LINE_PLACEHOLDER_TAGS = new Set(['P', 'DIV', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE'])
+const STYLE_ALLOWED_TAGS = new Set(['BLOCKQUOTE', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'P', 'SPAN', 'TD', 'TH'])
+const TEXT_ALIGN_STYLE_TAGS = new Set(['BLOCKQUOTE', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'P', 'TD', 'TH'])
+const TABLE_CELL_STYLE_TAGS = new Set(['TD', 'TH'])
 const ALLOWED_CLASS_NAMES = new Set([
   'property-description-section',
   'property-description-section--booking',
@@ -188,7 +191,8 @@ function getFallbackAttributeValue(attributes = '', name = '') {
   return match ? match[1] ?? match[2] ?? match[3] ?? '' : ''
 }
 
-function sanitizeStyleText(style = '') {
+function sanitizeStyleText(style = '', tagName = 'SPAN') {
+  const normalizedTagName = String(tagName ?? '').trim().toUpperCase()
   const declarations = String(style ?? '')
     .split(';')
     .map((entry) => entry.trim())
@@ -215,6 +219,16 @@ function sanitizeStyleText(style = '') {
       return
     }
 
+    if (propertyName === 'color') {
+      const normalizedColor = normalizeRichTextColor(propertyValue)
+
+      if (normalizedColor) {
+        safeDeclarations.push(`color: ${normalizedColor}`)
+      }
+
+      return
+    }
+
     if (propertyName === 'font-style' && propertyValue === 'italic') {
       safeDeclarations.push('font-style: italic')
       return
@@ -232,6 +246,16 @@ function sanitizeStyleText(style = '') {
 
     if (propertyName === 'text-decoration-line' && propertyValue === 'underline') {
       safeDeclarations.push('text-decoration: underline')
+      return
+    }
+
+    if (propertyName === 'text-align' && TEXT_ALIGN_STYLE_TAGS.has(normalizedTagName) && ['left', 'center', 'right', 'justify'].includes(propertyValue)) {
+      safeDeclarations.push(`text-align: ${propertyValue}`)
+      return
+    }
+
+    if (propertyName === 'vertical-align' && TABLE_CELL_STYLE_TAGS.has(normalizedTagName) && ['top', 'middle', 'bottom'].includes(propertyValue)) {
+      safeDeclarations.push(`vertical-align: ${propertyValue}`)
     }
   })
 
@@ -291,8 +315,8 @@ function sanitizeOpeningTagFallback(tagName, attributes = '') {
 
   const safeAttributes = []
 
-  if (tagName === 'SPAN') {
-    const safeStyle = sanitizeStyleText(getFallbackAttributeValue(attributes, 'style'))
+  if (STYLE_ALLOWED_TAGS.has(tagName)) {
+    const safeStyle = sanitizeStyleText(getFallbackAttributeValue(attributes, 'style'), tagName)
     const safeClass = sanitizeClassText(getFallbackAttributeValue(attributes, 'class'))
 
     if (safeStyle) {
@@ -365,11 +389,13 @@ function unwrapElement(element) {
 }
 
 function sanitizeStyleAttribute(element) {
-  if (element.tagName.toUpperCase() !== 'SPAN') {
+  const tagName = element.tagName.toUpperCase()
+
+  if (!STYLE_ALLOWED_TAGS.has(tagName)) {
     return ''
   }
 
-  return sanitizeStyleText(element.getAttribute('style'))
+  return sanitizeStyleText(element.getAttribute('style'), tagName)
 }
 
 function sanitizeClassAttribute(element) {

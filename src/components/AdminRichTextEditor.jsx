@@ -3,7 +3,12 @@ import { ADMIN_FLOATING_PREVIEW_STACK_OFFSET_VAR, ADMIN_FLOATING_SAVE_STACK_OFFS
 import { buildRouteOptions, resolveLinkRenderConfig } from '../lib/linkRecords'
 import { getClipboardRichTextHtml, richTextValueToHtml } from '../lib/richTextValue'
 import {
+  RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS,
+  RICH_TEXT_VERTICAL_ALIGN_OPTIONS,
+  applyRichTextColor,
+  applyRichTextHorizontalAlign,
   applyRichTextFontSize,
+  applyRichTextVerticalAlign,
   captureCaretOffset,
   captureRichTextSelectionRange,
   insertLinkAtCollapsedSelection,
@@ -14,6 +19,7 @@ import {
   readRichTextSelectionState,
   tightenOrUntightenSelectedLines,
 } from '../lib/richTextFormatting'
+import { RICH_TEXT_COLOR_OPTIONS } from '../lib/richTextColorOptions'
 import { getEnabledRichTextBlockOptions, getEnabledRichTextFontSizeOptions } from '../lib/editorStyleSettings'
 import { SiteContentPreviewContext } from '../lib/siteContentPreview'
 import { useEditorStyleSettings } from '../lib/useEditorStyleSettings'
@@ -366,6 +372,32 @@ function insertSectionSnippetHtml(sourceHtml, snippet, snippets) {
   return richTextValueToHtml(root.innerHTML)
 }
 
+function getColorInputValue(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value ?? '').trim()) ? value : '#111111'
+}
+
+function RichTextColorInput({ disabled, onApply }) {
+  const [customColor, setCustomColor] = useState('#111111')
+
+  return (
+    <div className="admin-rich-text-menu-custom-color">
+      <label>
+        <span>Custom</span>
+        <input disabled={disabled} type="color" value={getColorInputValue(customColor)} onChange={(event) => setCustomColor(event.target.value)} />
+      </label>
+      <button
+        className="admin-rich-text-menu-custom-size-apply"
+        disabled={disabled}
+        type="button"
+        onClick={() => onApply(customColor)}
+        onMouseDown={(event) => event.preventDefault()}
+      >
+        Apply
+      </button>
+    </div>
+  )
+}
+
 function getInsertedLinkText(renderConfig) {
   const destination = String(renderConfig?.destination || renderConfig?.href || renderConfig?.to || '').trim()
 
@@ -415,11 +447,14 @@ export function AdminRichTextEditor({
   const [selectionState, setSelectionState] = useState(() => ({
     blockTag: 'p',
     bold: false,
+    color: 'default',
     fontSize: 'default',
+    horizontalAlign: 'left',
     italic: false,
     tableCell: false,
     tightenedLines: false,
     underline: false,
+    verticalAlign: 'top',
   }))
   const editorStyleSettings = useEditorStyleSettings()
   const previewState = useContext(SiteContentPreviewContext)
@@ -700,6 +735,36 @@ export function AdminRichTextEditor({
     }
 
     if (applyRichTextFontSize(editorRef.current, nextValue, { collapsedBehavior: collapsedFontSizeBehavior })) {
+      syncValue()
+    }
+  }
+
+  function handleColorChange(nextValue) {
+    if (disabled || !editorRef.current || !focusEditorSelection()) {
+      return
+    }
+
+    if (applyRichTextColor(editorRef.current, nextValue, { collapsedBehavior: collapsedFontSizeBehavior })) {
+      syncValue()
+    }
+  }
+
+  function handleHorizontalAlignChange(nextValue) {
+    if (disabled || !editorRef.current || !focusEditorSelection()) {
+      return
+    }
+
+    if (applyRichTextHorizontalAlign(editorRef.current, nextValue)) {
+      syncValue()
+    }
+  }
+
+  function handleVerticalAlignChange(nextValue) {
+    if (disabled || !editorRef.current || !focusEditorSelection()) {
+      return
+    }
+
+    if (applyRichTextVerticalAlign(editorRef.current, nextValue)) {
       syncValue()
     }
   }
@@ -1111,10 +1176,11 @@ export function AdminRichTextEditor({
               {contentModeConfig.blockFormatting ? (
                 <AdminRichTextMenu
                   disabled={disabled}
-                  label="Tag"
+                  label="Style"
                   onBeforeOpen={rememberSelection}
                   onSelect={handleBlockTagChange}
                   options={blockStyleOptions}
+                  showLabel={false}
                   value={selectionState.blockTag}
                 />
               ) : null}
@@ -1127,7 +1193,40 @@ export function AdminRichTextEditor({
                   onBeforeOpen={rememberSelection}
                   onSelect={handleFontSizeChange}
                   options={displayedFontSizeOptions}
+                  showLabel={false}
                   value={selectionState.fontSize}
+                />
+              ) : null}
+              <AdminRichTextMenu
+                disabled={disabled}
+                footer={<RichTextColorInput disabled={disabled} onApply={handleColorChange} />}
+                label="Color"
+                onBeforeOpen={rememberSelection}
+                onSelect={handleColorChange}
+                options={RICH_TEXT_COLOR_OPTIONS}
+                showLabel={false}
+                value={selectionState.color}
+              />
+              {contentModeConfig.blockFormatting ? (
+                <AdminRichTextMenu
+                  disabled={disabled}
+                  label="Horizontal align"
+                  onBeforeOpen={rememberSelection}
+                  onSelect={handleHorizontalAlignChange}
+                  options={RICH_TEXT_HORIZONTAL_ALIGN_OPTIONS}
+                  showLabel={false}
+                  value={selectionState.horizontalAlign}
+                />
+              ) : null}
+              {contentModeConfig.blockFormatting && selectionState.tableCell ? (
+                <AdminRichTextMenu
+                  disabled={disabled}
+                  label="Vertical align"
+                  onBeforeOpen={rememberSelection}
+                  onSelect={handleVerticalAlignChange}
+                  options={RICH_TEXT_VERTICAL_ALIGN_OPTIONS}
+                  showLabel={false}
+                  value={selectionState.verticalAlign}
                 />
               ) : null}
               <ToolbarButton
@@ -1179,18 +1278,22 @@ export function AdminRichTextEditor({
                   <ToolbarButton disabled={disabled} onClick={insertTable}>
                     Insert Table
                   </ToolbarButton>
-                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={addTableRow}>
-                    Add Row
-                  </ToolbarButton>
-                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={addTableColumn}>
-                    Add Column
-                  </ToolbarButton>
-                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={removeTableRow}>
-                    Delete Row
-                  </ToolbarButton>
-                  <ToolbarButton disabled={disabled || !selectionState.tableCell} onClick={removeTableColumn}>
-                    Delete Column
-                  </ToolbarButton>
+                  {selectionState.tableCell ? (
+                    <>
+                      <ToolbarButton disabled={disabled} onClick={addTableRow}>
+                        Add Row
+                      </ToolbarButton>
+                      <ToolbarButton disabled={disabled} onClick={addTableColumn}>
+                        Add Column
+                      </ToolbarButton>
+                      <ToolbarButton disabled={disabled} onClick={removeTableRow}>
+                        Delete Row
+                      </ToolbarButton>
+                      <ToolbarButton disabled={disabled} onClick={removeTableColumn}>
+                        Delete Column
+                      </ToolbarButton>
+                    </>
+                  ) : null}
                 </>
               ) : null}
               {contentModeConfig.links ? (

@@ -1,5 +1,8 @@
 import {
   BusinessListBlockRenderer,
+  CarBargeHeroBlockRenderer,
+  CarBargeIntroBlockRenderer,
+  CarBargeOperatorBlockRenderer,
   ContactDetailsBlockRenderer,
   ContactFormBlockRenderer,
   CtaBandBlockRenderer,
@@ -19,6 +22,7 @@ import {
   ScheduleBlockRenderer,
   SpacerBlockRenderer,
   SpacerBlockSettings,
+  TabsBlockRenderer,
   TestimonialsBlockRenderer,
   TwoColumnTextBlockRenderer,
 } from '../components/blocks/BlockRenderers'
@@ -143,6 +147,34 @@ const blockRendererDefinitions = {
     layout: 'contained',
     Renderer: RateTableBlockRenderer,
     schema: getBlockInspectorSchema('rate-table'),
+  },
+  'car-barge-hero': {
+    category: 'layout',
+    label: 'Car Barge Hero',
+    layout: 'bleed',
+    Renderer: CarBargeHeroBlockRenderer,
+    schema: getBlockInspectorSchema('car-barge-hero'),
+  },
+  'car-barge-intro': {
+    category: 'content',
+    label: 'Car Barge Intro',
+    layout: 'contained',
+    Renderer: CarBargeIntroBlockRenderer,
+    schema: getBlockInspectorSchema('car-barge-intro'),
+  },
+  'car-barge-operator': {
+    category: 'content',
+    label: 'Car Barge Operator',
+    layout: 'contained',
+    Renderer: CarBargeOperatorBlockRenderer,
+    schema: getBlockInspectorSchema('car-barge-operator'),
+  },
+  tabs: {
+    category: 'layout',
+    label: 'Tabs',
+    layout: 'contained',
+    Renderer: TabsBlockRenderer,
+    schema: getBlockInspectorSchema('tabs'),
   },
   group: {
     category: 'layout',
