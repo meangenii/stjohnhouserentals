@@ -564,7 +564,7 @@ function renderHomeEditor(page, helpers) {
 
   return (
     <>
-      <SectionCard description="This is the first banner visitors see on the homepage." title="Hero Banner">
+      <SectionCard description="This is the first banner visitors see on this page." title="Hero Banner">
         <RichLinesField
           disabled={disabled}
           label="Heading Lines"
@@ -582,7 +582,7 @@ function renderHomeEditor(page, helpers) {
         </Field>
       </SectionCard>
 
-      <SectionCard description="This headline sits above the bedroom directory on the homepage." title="Rental Directory Intro">
+      <SectionCard description="This headline sits above the bedroom directory on this page." title="Rental Directory Intro">
         <RichTextField
           disabled={disabled}
           label="Section Heading"
@@ -614,7 +614,7 @@ function renderHomeEditor(page, helpers) {
         </Field>
       </SectionCard>
 
-      <SectionCard description="These cards sit beside the homepage collage image." title="Discover Section">
+      <SectionCard description="These cards sit beside the collage image." title="Discover Section">
         <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['discover', 'title'], value)} value={page.discover?.title ?? ''} />
         <Field wide>
           <ImageField
@@ -626,7 +626,7 @@ function renderHomeEditor(page, helpers) {
         </Field>
         <Field wide>
           <RepeatingSection
-            description="These four cards stay in place on the homepage."
+            description="These four cards stay in place on this page."
             disabled={disabled}
             itemLabel="feature"
             items={page.discover?.features ?? []}
@@ -659,7 +659,7 @@ function renderHomeEditor(page, helpers) {
         </Field>
       </SectionCard>
 
-      <SectionCard description="This block links the homepage to the broader brand story." title="About Section">
+      <SectionCard description="This block links this page to the broader brand story." title="About Section">
         <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['about', 'title'], value)} value={page.about?.title ?? ''} />
         <RichTextField disabled={disabled} label="Text Before Link" onChange={(value) => setPath(['about', 'bodyIntro'], value)} value={page.about?.bodyIntro ?? ''} />
         <RichTextField disabled={disabled} label="Text After Link" onChange={(value) => setPath(['about', 'bodyOutro'], value)} value={page.about?.bodyOutro ?? ''} />

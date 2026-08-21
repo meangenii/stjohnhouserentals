@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Unna:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Unna:wght@400;700&display=swap');
 @import url('./styles/blocks.css');
 
 :root {
@@ -1701,7 +1701,15 @@ img {
 }
 
 .rental-accommodations-page {
-  background: #ffffff;
+  background-color: #0fa3c7;
+  background-image:
+    linear-gradient(180deg, rgba(214, 232, 245, 0.8) 0%, rgba(236, 240, 230, 0.84) 100%),
+    url('/images/rental-list-water-bg-v5.jpg');
+  background-blend-mode: normal, normal;
+  background-size: cover, cover;
+  background-position: top center, top center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 
 .rental-accommodations-hero {
@@ -1759,6 +1767,14 @@ img {
   overflow-x: auto;
   padding: 1rem;
   scrollbar-width: none;
+}
+
+.rental-accommodations-pill-list > :first-child {
+  margin-left: 0.4rem;
+}
+
+.rental-accommodations-pill-list > :last-child {
+  margin-right: 0.4rem;
 }
 
 .rental-accommodations-pill-list::-webkit-scrollbar {
@@ -1858,12 +1874,71 @@ img {
   background: #ffffff;
 }
 
-.rental-accommodations-count {
+.rental-accommodations-view-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
   margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+}
+
+.rental-accommodations-view-tab {
+  min-height: 2.6rem;
+  padding: 0.55rem 1.6rem;
+  border: 1px solid rgba(7, 33, 74, 0.25);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #07214a;
+  font-size: 0.95rem;
   font-weight: 600;
-  text-align: center;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.rental-accommodations-view-tab:hover {
+  border-color: var(--brand-sky);
+}
+
+.rental-accommodations-view-tab:focus-visible {
+  outline: 2px solid rgba(7, 33, 74, 0.55);
+  outline-offset: 2px;
+}
+
+.rental-accommodations-view-tab--active {
+  border-color: var(--brand-sky);
+  background: var(--brand-sky);
+  color: #07214a;
+}
+
+.rental-accommodations-list-view {
+  margin-top: 2.55rem;
+  background: transparent;
+  color: var(--text);
+}
+
+.rental-accommodations-list-view .property-directory-inner {
+  padding: 0 1.5rem 2.4rem;
+}
+
+.rental-accommodations-list-view .property-directory-column {
+  background: rgba(217, 196, 154, 0.55);
+  border-radius: 1rem;
+  padding: 1.6rem 1.25rem 1.9rem;
+  box-shadow: 0 12px 28px rgba(7, 33, 74, 0.16);
+}
+
+.rental-accommodations-list-view .property-directory-pill {
+  border-color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--brand-navy);
+}
+
+.rental-accommodations-list-view .property-directory-link {
+  color: var(--brand-navy);
+  font-weight: 700;
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.95),
+    0 0 4px rgba(255, 255, 255, 0.95),
+    0 0 8px rgba(255, 255, 255, 0.9);
 }
 
 .rental-accommodations-grid {

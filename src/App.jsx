@@ -111,10 +111,6 @@ function getRouteTitle(pathname) {
     return 'St. John Car Rentals'
   }
 
-  if (pathname === '/for-rent') {
-    return 'Rental Accommodations'
-  }
-
   if (pathname === '/for-sale' || pathname === '/property-for-sale') {
     return 'Property For Sale'
   }
@@ -435,7 +431,7 @@ function resolvePublicRouteElement(pathname) {
   const normalizedPathname = String(pathname ?? '').replace(/\/+$/, '') || '/'
 
   if (normalizedPathname === '/') {
-    return <HomePage />
+    return <RentalAccommodationsPage />
   }
 
   if (normalizedPathname === '/about-us') {
@@ -443,11 +439,11 @@ function resolvePublicRouteElement(pathname) {
   }
 
   if (normalizedPathname === '/st-john-rentals') {
-    return <Navigate replace to="/for-rent" />
+    return <Navigate replace to="/" />
   }
 
   if (normalizedPathname === '/for-rent') {
-    return <RentalAccommodationsPage />
+    return <HomePage />
   }
 
   if (normalizedPathname === '/for-sale' || normalizedPathname === '/property-for-sale') {

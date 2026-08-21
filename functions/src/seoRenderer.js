@@ -12,14 +12,14 @@ const CANONICAL_PATH_ALIASES = {
   '/car-rental-ferry-boat-info': '/car-barge-information',
   '/ferrys': '/passenger-ferry',
   '/for-sale': '/property-for-sale',
-  '/st-john-rentals': '/for-rent',
+  '/st-john-rentals': '/',
 }
 
 const STATIC_SEO_ROUTES = [
   {
     path: '/',
-    title: 'St. John House Rentals | Wide Selection of Properties',
-    description: 'Explore St. John House Rentals: wide selection of properties for the perfect Caribbean getaway.',
+    title: 'Rental Accommodations | St. John House Rentals',
+    description: 'Discover St. John rental accommodations, villa stays, and island homes for your Caribbean trip.',
     priority: '1.0',
     changefreq: 'weekly',
   },
@@ -32,8 +32,8 @@ const STATIC_SEO_ROUTES = [
   },
   {
     path: '/for-rent',
-    title: 'Rental Accommodations | St. John House Rentals',
-    description: 'Discover St. John rental accommodations, villa stays, and island homes for your Caribbean trip.',
+    title: 'St. John House Rentals | Wide Selection of Properties',
+    description: 'Explore St. John House Rentals: wide selection of properties for the perfect Caribbean getaway.',
     priority: '0.9',
     changefreq: 'weekly',
   },

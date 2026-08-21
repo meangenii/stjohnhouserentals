@@ -1,6 +1,6 @@
 import { Link } from '../lib/router'
 
-const DEFAULT_PROPERTY_RETURN_PATH = '/for-rent'
+const DEFAULT_PROPERTY_RETURN_PATH = '/'
 
 function getSafePropertyReturnPath(value) {
   const candidate = String(value ?? '').trim()

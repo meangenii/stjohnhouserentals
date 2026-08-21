@@ -76,7 +76,6 @@ export function PropertyDetailPage() {
   const propertyStructuredData = property
     ? buildBreadcrumbJsonLd([
         { name: 'Home', path: '/' },
-        { name: 'Rental Accommodations', path: '/for-rent' },
         { name: property.name, path: property.path },
       ])
     : null
@@ -328,7 +327,7 @@ export function PropertyDetailPage() {
   const nextProperty = usesFilteredPropertyOrder
     ? (filteredPropertyOrder[filteredPropertyIndex + 1] ?? null)
     : property.nextProperty
-  const propertyReturnPath = typeof location.state?.propertyReturnPath === 'string' ? location.state.propertyReturnPath : '/for-rent'
+  const propertyReturnPath = typeof location.state?.propertyReturnPath === 'string' ? location.state.propertyReturnPath : '/'
   const propertyReturnScrollY = Number(location.state?.propertyReturnScrollY)
   const propertyReturnTargetId =
     typeof location.state?.propertyReturnTargetId === 'string' ? location.state.propertyReturnTargetId : ''
@@ -346,7 +345,7 @@ export function PropertyDetailPage() {
       }
     : undefined
   const nextPropertyNavigationState =
-    usesFilteredPropertyOrder || propertyReturnPath !== '/for-rent' || propertyReturnStatePayload
+    usesFilteredPropertyOrder || propertyReturnPath !== '/' || propertyReturnStatePayload
       ? {
           ...(usesFilteredPropertyOrder ? { filteredPropertyOrder } : {}),
           propertyReturnPath,

@@ -6,10 +6,10 @@ const primaryNavItems = [
   { label: 'ABOUT', path: '/about-us', matchPaths: ['/about-us'] },
   {
     label: 'HOUSES',
-    path: '/for-rent',
-    matchPaths: ['/st-john-rentals', '/for-rent', '/for-sale', '/property-for-sale', '/rental-properties'],
+    path: '/',
+    matchPaths: ['/for-sale', '/property-for-sale', '/rental-properties'],
     children: [
-      { label: 'Rental Accommodations', path: '/for-rent', matchPaths: ['/for-rent'] },
+      { label: 'Rental Accommodations', path: '/', matchPaths: ['/'] },
       { label: 'Property For Sale', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
     ],
   },
@@ -164,7 +164,7 @@ function createRichContentPage({ key, path, navLabel, group, title = '', content
 const structuredSitePages = {
   home: {
     key: 'home',
-    path: '/',
+    path: '/for-rent',
     navLabel: 'Home',
     group: 'marketing',
     source: 'structured',
@@ -174,8 +174,8 @@ const structuredSitePages = {
       lead: 'Find the perfect vacation home for your next island adventure.',
       image: {
         kind: 'image',
-        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-hero.png?alt=media&token=deba52c2-f3ce-42e7-85e5-db2e42bf4819',
-        alt: 'Trunk Bay view across bright blue water on St. John',
+        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Frentalaccommodations%2Frentalaccommodations-hero.jpg?alt=media&token=2772fb38-19fe-4647-805f-47a7b2a38b0c',
+        alt: 'Seaside neighborhood on St. John',
       },
     },
     directory: {
@@ -186,7 +186,7 @@ const structuredSitePages = {
       title: "We've been a trusted St. John business for over 25 years!",
       lead:
         "St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you're looking for a way to support locals, you've found it!",
-      action: { label: 'Browse Rentals', path: '/for-rent', backgroundColor: '#6da6dc' },
+      action: { label: 'Browse Rentals', path: '/', backgroundColor: '#6da6dc' },
       image: {
         kind: 'image',
         url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-trust.jpg?alt=media&token=c5ad7fd6-0243-4d4f-b34e-50945dd03e50',
@@ -426,7 +426,7 @@ const structuredSitePages = {
   },
   rentalAccommodations: {
     key: 'rentalAccommodations',
-    path: '/for-rent',
+    path: '/',
     navLabel: 'Rental Accommodations',
     group: 'houses',
     source: 'structured',
@@ -435,8 +435,8 @@ const structuredSitePages = {
       title: 'Rental Accommodations',
       image: {
         kind: 'image',
-        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Frentalaccommodations%2Frentalaccommodations-hero.jpg?alt=media&token=06e1b0bf-e354-4f0d-8e5f-bd3b11842cb8',
-        alt: 'Seaside neighborhood on St. John',
+        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-hero-beach.png?alt=media&token=cb795e85-03fa-4116-b677-46ff8844ace3',
+        alt: 'Trunk Bay view across bright blue water on St. John',
       },
     },
     directory: {

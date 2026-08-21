@@ -11,6 +11,7 @@ import {
 } from '../lib/propertyLocationFilters'
 import { getPropertyContactActions } from '../lib/propertyContact'
 import { listPropertySummaries } from '../lib/propertyRepository'
+import { comparePropertyNames } from '../lib/propertySort'
 import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
 import { useAdminSession } from '../lib/useAdminSession'
 import { useStructuredPageContent } from '../lib/useSiteContent'
@@ -52,7 +53,7 @@ const AIR_CONDITIONING_FILTER_OPTIONS = [
 ]
 
 const AIR_CONDITIONING_FILTER_VALUES = new Set(AIR_CONDITIONING_FILTER_OPTIONS.map((option) => option.value))
-const RENTAL_ACCOMMODATIONS_PATH = '/for-rent'
+const RENTAL_ACCOMMODATIONS_PATH = '/'
 const RENTAL_HERO_BOTTOM_PEEK_FALLBACK_PX = 78
 
 const AIR_CONDITIONING_TERM_PATTERN = /\b(?:air[-\s]?condition(?:ed|ing)?|a\/c|ac)\b/i
@@ -278,6 +279,28 @@ function formatRoomFilterLabel(roomCount) {
   return `${roomCount} Room${roomCount === 1 ? '' : 's'}`
 }
 
+function formatBedroomGroupLabel(bedroomCount) {
+  return `${bedroomCount} Bedroom${bedroomCount === 1 ? '' : 's'}`
+}
+
+function buildBedroomGroups(cards) {
+  const groups = new Map()
+
+  cards.forEach((card) => {
+    card.availableBedroomCounts.forEach((bedroomCount) => {
+      if (!groups.has(bedroomCount)) {
+        groups.set(bedroomCount, { bedrooms: bedroomCount, label: formatBedroomGroupLabel(bedroomCount), cards: [] })
+      }
+
+      groups.get(bedroomCount).cards.push(card)
+    })
+  })
+
+  return Array.from(groups.values())
+    .map((group) => ({ ...group, cards: [...group.cards].sort(comparePropertyNames) }))
+    .sort((left, right) => left.bedrooms - right.bedrooms)
+}
+
 function isLocationSummaryLine(line = '') {
   return /^Location:\s*/i.test(String(line ?? '').trim())
 }
@@ -359,6 +382,7 @@ export function RentalAccommodationsPage() {
   const activeRentalFilters = parseRentalFilterSearchParams(searchParams)
   const canonicalFilterSearch = buildRentalFilterSearchParams(activeRentalFilters).toString()
   const [summaryState, setSummaryState] = useState({ status: 'loading', properties: [] })
+  const [viewMode, setViewMode] = useState('pictures')
   const { selectedRoomCount, selectedAmenities, selectedAirConditioningType, selectedLocation } = activeRentalFilters
   const roomFilterId = 'rental-room-filter'
   const airConditioningFilterId = 'rental-air-conditioning-filter'
@@ -403,6 +427,7 @@ export function RentalAccommodationsPage() {
     })
   }
 
+  const bedroomGroups = buildBedroomGroups(cards)
   const filteredPropertyOrder = cards.map((card) => ({ slug: card.slug, name: card.name, path: card.path }))
   const propertyReturnPath = buildRentalAccommodationsReturnPath(activeRentalFilters)
   const propertyNavigationState = {
@@ -711,21 +736,66 @@ export function RentalAccommodationsPage() {
           {summaryState.status === 'ready' ? (
             cards.length ? (
               <>
-                <p className="rental-accommodations-count">
-                  {cards.length} {cards.length === 1 ? 'Property' : 'Properties'}
-                  {hasActiveFilters && cards.length !== allCards.length ? ` of ${allCards.length}` : ''}
-                </p>
-
-                <div className="rental-accommodations-grid">
-                  {cards.map((card) => (
-                    <RentalAccommodationCard
-                      card={card}
-                      key={card.path}
-                      propertyNavigationState={propertyNavigationState}
-                      onPropertyNavigate={handlePropertyNavigation}
-                    />
-                  ))}
+                <div aria-label="Rental accommodations view" className="rental-accommodations-view-tabs" role="tablist">
+                  <button
+                    aria-selected={viewMode === 'pictures'}
+                    className={`rental-accommodations-view-tab${viewMode === 'pictures' ? ' rental-accommodations-view-tab--active' : ''}`}
+                    role="tab"
+                    type="button"
+                    onClick={() => setViewMode('pictures')}
+                  >
+                    Pictures
+                  </button>
+                  <button
+                    aria-selected={viewMode === 'list'}
+                    className={`rental-accommodations-view-tab${viewMode === 'list' ? ' rental-accommodations-view-tab--active' : ''}`}
+                    role="tab"
+                    type="button"
+                    onClick={() => setViewMode('list')}
+                  >
+                    List
+                  </button>
                 </div>
+
+                {viewMode === 'pictures' ? (
+                  <div className="rental-accommodations-grid">
+                    {cards.map((card) => (
+                      <RentalAccommodationCard
+                        card={card}
+                        key={card.path}
+                        propertyNavigationState={propertyNavigationState}
+                        onPropertyNavigate={handlePropertyNavigation}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="property-directory rental-accommodations-list-view">
+                    <div className="property-directory-inner">
+                      <div className="property-directory-grid">
+                        {bedroomGroups.map((group) => (
+                          <section className="property-directory-column" key={group.bedrooms}>
+                            <div className="property-directory-pill">{group.label}</div>
+
+                            <ul className="property-link-list">
+                              {group.cards.map((card) => (
+                                <li id={getPropertyReturnTargetId(card.slug) || undefined} key={card.slug}>
+                                  <Link
+                                    className="property-directory-link"
+                                    state={propertyNavigationState}
+                                    to={card.path}
+                                    onClick={(event) => handlePropertyNavigation(event, card)}
+                                  >
+                                    {card.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </section>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               <p className="rental-accommodations-empty">
