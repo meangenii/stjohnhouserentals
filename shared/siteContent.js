@@ -5,12 +5,11 @@ const primaryNavItems = [
   { label: 'HOME', path: '/', matchPaths: ['/'] },
   { label: 'ABOUT', path: '/about-us', matchPaths: ['/about-us'] },
   {
-    label: 'HOUSES',
-    path: '/',
-    matchPaths: ['/for-sale', '/property-for-sale', '/rental-properties'],
+    label: 'FOR SALE',
+    path: '',
+    matchPaths: ['/for-sale', '/property-for-sale'],
     children: [
-      { label: 'Rental Accommodations', path: '/', matchPaths: ['/'] },
-      { label: 'Property For Sale', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
+      { label: 'Realestate', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
     ],
   },
   {
@@ -235,20 +234,33 @@ const structuredSitePages = {
     source: 'structured',
     contentModel: 'about',
     hero: {
-      title: 'Celebrating 25 years this season!',
+      title: 'Why Choose Us',
       image: {
         kind: 'image',
         url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Faboutus%2Faboutus-hero.jpg?alt=media&token=7bc1d18d-a679-4d8d-855c-5de87373aef5',
         alt: 'Anaberg ruins overlooking St. John waters',
       },
     },
+    intro: {
+      kicker: 'Why Choose Us',
+      title: 'Welcome to the island we call home',
+      lead:
+        "St. John's beauty is in the details — like the plumeria blooming along every hillside road. We know this island intimately, and we're here to help you find your place in it.",
+      image: {
+        kind: 'image',
+        url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-why-choose-us.jpg?alt=media&token=6ef187f8-498f-46f8-bb6f-494bfef2d7e4',
+        alt: 'Pink plumeria (frangipani) flowers overlooking St. John waters',
+      },
+    },
     story: {
       kicker: 'About Us',
-      title: 'St. John House Rentals is owned and run by Jean "Mean Jean" Vance',
+      title: "We've been a trusted St. John business for over 25 years!",
       leadParagraphs: [
+        "St. John House Rentals has been connecting islanders and visitors since 1999. We operate exclusively on St. John. If you're looking for a way to support locals, you've found it!",
         "If you're a long-time visitor to St. John, you may remember her from her bartending days at the famous Skinny Legs Bar and Grill.",
         "It was back in those days-in 1999, when the internet first came to Coral Bay-that Mean Jean and her friend Andy Gordon started a website called St. John Links, designed to give intrepid travelers a little info about how to vacation on the sleepy side of the island. Andy was a tech whiz with a neuromuscular disease that caused his fingers to stop working. Mean Jean was, literally, his right hand, moving the computer mouse and doing the typing.",
       ],
+      action: { label: 'Browse Rentals', path: '/', backgroundColor: '#6da6dc' },
       bodyParagraphs: [
         "The site started with just a handful of rentals and the idea was simple: connect vacationers directly with property owners looking to rent out their homes. No fuss. No fees. No middleman. If you saw a house you liked, you could contact the homeowner directly and book. The homeowner would give a percentage to St. John Links. And-in the true Coral Bay fashion-it was all done on the honor system.",
         'People liked this idea. The business grew. In 2004 St. John Links added St. John House Rentals to accommodate the demand. Today, the site is going strong, giving you an easy way to connect directly with dozens of St. John property owners.',

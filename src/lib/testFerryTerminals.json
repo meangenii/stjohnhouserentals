@@ -1,0 +1,23 @@
+[
+  {
+    "id": "cruz-bay-terminal",
+    "name": "Cruz Bay Ferry Terminal",
+    "detail": "Loredon L. Boynes Sr. Dock — St. John landing for both the Red Hook and Crown Bay passenger ferries.",
+    "lat": 18.331485,
+    "lng": -64.7958887
+  },
+  {
+    "id": "red-hook-terminal",
+    "name": "Red Hook Ferry Terminal",
+    "detail": "St. Thomas landing for the Red Hook ↔ Cruz Bay passenger ferry. ~15 minute crossing.",
+    "lat": 18.3266832,
+    "lng": -64.8492828
+  },
+  {
+    "id": "crown-bay-marina",
+    "name": "Crown Bay Marina",
+    "detail": "St. Thomas landing for the Crown Bay ↔ Cruz Bay passenger ferry. ~35 minute crossing.",
+    "lat": 18.3339885,
+    "lng": -64.9522155
+  }
+]

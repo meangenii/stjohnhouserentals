@@ -52,6 +52,7 @@ const EditorInteractionHarnessPage = import.meta.env.DEV
 const EditorReviewHarnessPage = import.meta.env.DEV
   ? lazyPage(() => import('./pages/EditorReviewHarnessPage'), 'EditorReviewHarnessPage')
   : null
+const PropertyMapTestPage = lazyPage(() => import('./pages/PropertyMapTestPage'), 'PropertyMapTestPage')
 
 function normalizeHashRoute() {
   if (typeof window === 'undefined') {
@@ -153,6 +154,10 @@ function getRouteTitle(pathname) {
 
   if (pathname.startsWith('/rental-properties/') || pathname.startsWith('/1bedroom/')) {
     return 'Rental Property'
+  }
+
+  if (pathname === '/admin/__property-map-test') {
+    return 'Property Map Test'
   }
 
   const dynamicPageSummary = resolvePageSummaryForPath(pathname)
@@ -541,6 +546,16 @@ function AppRoutes() {
       <RouteErrorBoundary locationKey={location.pathname}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <EditorReviewHarnessPage />
+        </Suspense>
+      </RouteErrorBoundary>
+    )
+  }
+
+  if (PropertyMapTestPage && location.pathname === '/admin/__property-map-test') {
+    return (
+      <RouteErrorBoundary locationKey={location.pathname}>
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <PropertyMapTestPage />
         </Suspense>
       </RouteErrorBoundary>
     )

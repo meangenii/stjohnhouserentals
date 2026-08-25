@@ -1,0 +1,182 @@
+{
+  "Mongoose Junction": {
+    "lat": 18.3325244,
+    "lng": -64.7921113,
+    "approximate": false
+  },
+  "Constant Point": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Vester Gade": {
+    "lat": 18.3303149,
+    "lng": -64.7948092,
+    "approximate": false
+  },
+  "North Shore Road": {
+    "lat": 18.3323606,
+    "lng": -64.7930305,
+    "approximate": false
+  },
+  "Ferry Landing": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "At the Circle": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Across from School": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Wharfside Landing": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Meada's Plaza": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Beside Tennis Courts": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Across from Tennis Courts": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Fishfry Drive": {
+    "lat": 18.3297979,
+    "lng": -64.7930242,
+    "approximate": false
+  },
+  "Cruz Bay Beach": {
+    "lat": 18.3305591,
+    "lng": -64.7963377,
+    "approximate": false
+  },
+  "Strand Gade": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "King Street": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "South Shore Road": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Cruz Bay Road": {
+    "lat": 18.3327603,
+    "lng": -64.7937621,
+    "approximate": false
+  },
+  "Palm Plaza": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "The Marketplace": {
+    "lat": 18.327461,
+    "lng": -64.7913563,
+    "approximate": false
+  },
+  "Westin": {
+    "lat": 18.3230008,
+    "lng": -64.7863945,
+    "approximate": false
+  },
+  "Across from Wharfside": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Prince Street": {
+    "lat": 18.3304863,
+    "lng": -64.7929943,
+    "approximate": true
+  },
+  "Coral Bay Harbor": {
+    "lat": 18.3425418,
+    "lng": -64.7160343,
+    "approximate": true
+  },
+  "The Triangle": {
+    "lat": 18.3425418,
+    "lng": -64.7160343,
+    "approximate": true
+  },
+  "Friis Bay": {
+    "lat": 18.3249549,
+    "lng": -64.6995804,
+    "approximate": false
+  },
+  "Near Salt Pond": {
+    "lat": 18.3425418,
+    "lng": -64.7160343,
+    "approximate": true
+  },
+  "Honeymoon Beach": {
+    "lat": 18.3406872,
+    "lng": -64.7908296,
+    "approximate": false
+  },
+  "Cinnamon Bay": {
+    "lat": 18.3543981,
+    "lng": -64.7593042,
+    "approximate": false
+  },
+  "Centerline Rd": {
+    "lat": 18.3317707,
+    "lng": -64.7885483,
+    "approximate": false
+  },
+  "Centerline @ N. Shore": {
+    "lat": 18.3317707,
+    "lng": -64.7885483,
+    "approximate": true
+  },
+  "Gifft Hill Rd": {
+    "lat": 18.3356013,
+    "lng": -64.7550406,
+    "approximate": true
+  },
+  "Lovango Cay": {
+    "lat": 18.3605525,
+    "lng": -64.8020253,
+    "approximate": false
+  },
+  "Maho Beach": {
+    "lat": 18.3566202,
+    "lng": -64.7484706,
+    "approximate": false
+  },
+  "Centerline @ Gifft Hill": {
+    "lat": 18.3317707,
+    "lng": -64.7885483,
+    "approximate": true
+  },
+  "Trunk Bay Park": {
+    "lat": 18.3524536,
+    "lng": -64.7698601,
+    "approximate": false
+  },
+  "Caneel Bay": {
+    "lat": 18.3432872,
+    "lng": -64.7884718,
+    "approximate": false
+  }
+}

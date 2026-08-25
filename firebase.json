@@ -20,6 +20,15 @@
     ],
     "headers": [
       {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
         "source": "/assets/**",
         "headers": [
           {
@@ -86,7 +95,7 @@
         }
       },
       {
-        "source": "**",
+        "source": "!/@(assets)/**",
         "destination": "/index.html"
       }
     ]

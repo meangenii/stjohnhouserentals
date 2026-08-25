@@ -1401,6 +1401,10 @@ img {
   gap: 1.6rem;
 }
 
+.about-page-story-grid--reversed .about-page-story-copy {
+  order: -1;
+}
+
 .about-page-story-media img,
 .about-page-essentials-media img {
   width: 100%;
@@ -1758,44 +1762,30 @@ img {
 }
 
 .rental-accommodations-pill-list {
-  width: min(100%, 74rem);
+  width: min(100%, 80rem);
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  overflow-x: auto;
+  gap: 0.5rem;
   padding: 1rem;
-  scrollbar-width: none;
-}
-
-.rental-accommodations-pill-list > :first-child {
-  margin-left: 0.4rem;
-}
-
-.rental-accommodations-pill-list > :last-child {
-  margin-right: 0.4rem;
-}
-
-.rental-accommodations-pill-list::-webkit-scrollbar {
-  display: none;
 }
 
 .rental-accommodations-pill,
 .rental-accommodations-pill-select {
   flex: 0 0 auto;
-  min-height: 3.2rem;
+  min-height: 2.5rem;
 }
 
 .rental-accommodations-pill {
-  padding: 0.65rem 1.3rem;
+  padding: 0.45rem 1rem;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 999px;
   background: rgba(7, 33, 74, 0.78);
   backdrop-filter: blur(6px);
   box-shadow: 0 4px 14px rgba(4, 14, 33, 0.35);
   color: #ffffff;
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -1829,26 +1819,26 @@ img {
   position: relative;
   flex: 0 0 auto;
   width: fit-content;
-  min-width: 8.5rem;
+  min-width: 7rem;
 }
 
 .rental-accommodations-pill-select-shell--location {
-  min-width: min(100%, 12.5rem);
-  max-width: min(100%, 18rem);
+  min-width: min(100%, 10rem);
+  max-width: min(100%, 15rem);
 }
 
 .rental-accommodations-pill-select-shell--air-conditioning {
-  min-width: min(100%, 12rem);
-  max-width: min(100%, 15rem);
+  min-width: min(100%, 9.5rem);
+  max-width: min(100%, 12.5rem);
 }
 
 .rental-accommodations-pill-select-shell::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: 1.35rem;
-  width: 0.65rem;
-  height: 0.65rem;
+  right: 1.05rem;
+  width: 0.55rem;
+  height: 0.55rem;
   border-right: 2px solid #ffffff;
   border-bottom: 2px solid #ffffff;
   pointer-events: none;
@@ -1857,7 +1847,7 @@ img {
 
 .rental-accommodations-pill-select {
   width: 100%;
-  padding: 0 3rem 0 1.3rem;
+  padding: 0 2.4rem 0 1rem;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 999px;
   appearance: none;
@@ -1865,7 +1855,7 @@ img {
   backdrop-filter: blur(6px);
   box-shadow: 0 4px 14px rgba(4, 14, 33, 0.35);
   color: #ffffff;
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
@@ -1920,7 +1910,7 @@ img {
 }
 
 .rental-accommodations-list-view .property-directory-column {
-  background: rgba(217, 196, 154, 0.55);
+  background: rgba(255, 255, 255, 0.55);
   border-radius: 1rem;
   padding: 1.6rem 1.25rem 1.9rem;
   box-shadow: 0 12px 28px rgba(7, 33, 74, 0.16);
@@ -5476,9 +5466,17 @@ img {
     gap: 2rem;
   }
 
+  .about-page-story-grid--reversed {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
   .about-page-essentials-grid {
     grid-template-columns: minmax(0, 0.92fr) minmax(0, 0.9fr);
     gap: 2rem;
+  }
+
+  .about-page-essentials-grid--reversed {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 0.92fr);
   }
 
   .charter-boats-grid {
@@ -5704,6 +5702,10 @@ img {
     gap: 2.45rem;
     grid-template-columns: minmax(360px, 0.72fr) minmax(0, 0.98fr);
     align-items: start;
+  }
+
+  .about-page-story-grid--reversed {
+    grid-template-columns: minmax(0, 0.98fr) minmax(360px, 0.72fr);
   }
 
   .about-page-story-copy h2,

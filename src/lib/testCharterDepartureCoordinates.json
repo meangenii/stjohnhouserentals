@@ -1,0 +1,32 @@
+{
+  "boat-bvi": {
+    "lat": 18.3327603,
+    "lng": -64.7937621,
+    "dock": "Cruz Bay (National Park dock area)",
+    "approximate": true
+  },
+  "flyaway-charters-vi": {
+    "lat": 18.3425418,
+    "lng": -64.7160343,
+    "dock": "Coral Bay Dinghy Dock",
+    "approximate": false
+  },
+  "island-roots": {
+    "lat": 18.3327603,
+    "lng": -64.7937621,
+    "dock": "Cruz Bay (National Park dock area)",
+    "approximate": true
+  },
+  "private-luxury-power-catamaran-adventures": {
+    "lat": 18.3327603,
+    "lng": -64.7937621,
+    "dock": "Cruz Bay, National Park Service finger dock",
+    "approximate": false
+  },
+  "tacoboatstjohn": {
+    "lat": 18.3425418,
+    "lng": -64.7160343,
+    "dock": "Coral Bay Dinghy Dock, behind the Fire Station",
+    "approximate": false
+  }
+}
