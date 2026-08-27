@@ -9,7 +9,7 @@ const primaryNavItems = [
     path: '',
     matchPaths: ['/for-sale', '/property-for-sale'],
     children: [
-      { label: 'Realestate', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
+      { label: 'Real Estate', path: '/property-for-sale', matchPaths: ['/for-sale', '/property-for-sale'] },
     ],
   },
   {

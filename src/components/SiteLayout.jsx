@@ -63,22 +63,32 @@ function isLocalAttractionsNavItem(item) {
   return String(item?.label ?? '').trim().toLowerCase() === 'local attractions' && normalizeNavPath(item?.path || item?.href) === '/map'
 }
 
+function normalizeKnownNavLabel(item) {
+  if (String(item?.label ?? '').trim().toLowerCase() !== 'realestate') {
+    return item
+  }
+
+  return { ...item, label: 'Real Estate' }
+}
+
 function expandLocalAttractionsNavItems(items = []) {
   return (Array.isArray(items) ? items : []).flatMap((item) => {
-    if (isLocalAttractionsNavItem(item)) {
+    const normalizedItem = normalizeKnownNavLabel(item)
+
+    if (isLocalAttractionsNavItem(normalizedItem)) {
       return LOCAL_ATTRACTIONS_NAV_ITEMS
     }
 
-    if (Array.isArray(item?.children) && item.children.length > 0) {
+    if (Array.isArray(normalizedItem?.children) && normalizedItem.children.length > 0) {
       return [
         {
-          ...item,
-          children: expandLocalAttractionsNavItems(item.children),
+          ...normalizedItem,
+          children: expandLocalAttractionsNavItems(normalizedItem.children),
         },
       ]
     }
 
-    return [item]
+    return [normalizedItem]
   })
 }
 
