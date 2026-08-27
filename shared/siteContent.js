@@ -243,9 +243,6 @@ const structuredSitePages = {
     },
     intro: {
       kicker: 'Why Choose Us',
-      title: 'Welcome to the island we call home',
-      lead:
-        "St. John's beauty is in the details — like the plumeria blooming along every hillside road. We know this island intimately, and we're here to help you find your place in it.",
       image: {
         kind: 'image',
         url: 'https://firebasestorage.googleapis.com/v0/b/st-john-house-rentals.firebasestorage.app/o/media%2Fpages%2Fhome%2Fhome-why-choose-us.jpg?alt=media&token=6ef187f8-498f-46f8-bb6f-494bfef2d7e4',

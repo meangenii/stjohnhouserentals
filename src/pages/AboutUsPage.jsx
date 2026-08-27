@@ -11,7 +11,7 @@ export function AboutUsPage() {
   }
 
   const heroImageUrl = getContentImageSrc(page.hero.image, { width: 1920, height: 720 })
-  const introImageUrl = page.intro ? getContentImageSrc(page.intro.image, { width: 960, height: 720 }) : ''
+  const introImageUrl = page.intro?.image ? getContentImageSrc(page.intro.image, { width: 960, height: 960, mode: 'fit' }) : ''
   const storyImageUrl = getContentImageSrc(page.story.image, { width: 960, height: 720 })
   const essentialsImageUrl = getContentImageSrc(page.essentials.image, { width: 960, height: 720 })
 
@@ -31,43 +31,23 @@ export function AboutUsPage() {
         </div>
       </EditableBackgroundSection>
 
-      {page.intro ? (
-        <section className="about-page-story about-page-intro">
-          <div className="about-page-story-inner">
-            <div className="about-page-story-grid">
-              <div className="about-page-story-media">
-                {introImageUrl ? (
-                  <EditableImage
-                    alt={page.intro.image.alt || page.intro.title}
-                    decoding="async"
-                    fetchPriority="low"
-                    image={page.intro.image}
-                    path={['intro', 'image']}
-                    loading="lazy"
-                    src={introImageUrl}
-                  />
-                ) : null}
-              </div>
-
-              <div className="about-page-story-copy">
-                <EditableText as="p" className="about-page-kicker" label="Intro Kicker" path={['intro', 'kicker']} value={page.intro.kicker}>
-                  {page.intro.kicker}
-                </EditableText>
-                <EditableText as="h2" label="Intro Title" multiline path={['intro', 'title']} rows={3} value={page.intro.title}>
-                  {page.intro.title}
-                </EditableText>
-                <EditableText as="p" label="Intro Lead" multiline path={['intro', 'lead']} rows={4} value={page.intro.lead}>
-                  {page.intro.lead}
-                </EditableText>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="about-page-story">
         <div className="about-page-story-inner">
-          <div className="about-page-story-grid about-page-story-grid--reversed">
+          <div className="about-page-story-grid">
+            <div className="about-page-story-media about-page-story-media--intro">
+              {introImageUrl ? (
+                <EditableImage
+                  alt={page.intro.image.alt || page.story.title}
+                  decoding="async"
+                  fetchPriority="low"
+                  image={page.intro.image}
+                  path={['intro', 'image']}
+                  loading="lazy"
+                  src={introImageUrl}
+                />
+              ) : null}
+            </div>
+
             <div className="about-page-story-copy">
               <EditableText as="p" className="about-page-kicker" label="Story Kicker" path={['story', 'kicker']} value={page.story.kicker}>
                 {page.story.kicker}
@@ -102,6 +82,16 @@ export function AboutUsPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="about-page-story-grid about-page-story-grid--reversed about-page-story-continuation">
+            <div className="about-page-story-body">
+              {page.story.bodyParagraphs.map((paragraph, index) => (
+                <EditableText as="p" key={index} label={`Body Paragraph ${index + 1}`} multiline path={['story', 'bodyParagraphs', index]} rows={5} value={paragraph}>
+                  {paragraph}
+                </EditableText>
+              ))}
+            </div>
 
             <div className="about-page-story-media">
               {storyImageUrl ? (
@@ -116,14 +106,6 @@ export function AboutUsPage() {
                 />
               ) : null}
             </div>
-          </div>
-
-          <div className="about-page-story-body">
-            {page.story.bodyParagraphs.map((paragraph, index) => (
-              <EditableText as="p" key={index} label={`Body Paragraph ${index + 1}`} multiline path={['story', 'bodyParagraphs', index]} rows={5} value={paragraph}>
-                {paragraph}
-              </EditableText>
-            ))}
           </div>
         </div>
       </section>

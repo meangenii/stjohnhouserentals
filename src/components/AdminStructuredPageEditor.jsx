@@ -1,7 +1,9 @@
 import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { getImageDimensions, normalizeImageDimension } from '../lib/imageSizePresets'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
+import { buildRestaurantOnlineHref } from '../lib/restaurantLinks'
 import { richTextLinesToHtml, richTextValueToInlineHtml, richTextValueToLines } from '../lib/richTextValue'
+import { AdminAutoResizeTextarea } from './AdminAutoResizeTextarea'
 import { AdminRichTextEditor } from './AdminRichTextEditor'
 import { AdminMediaManager } from './AdminMediaManager'
 import { AdminImageSizeControls } from './AdminImageSizeControls'
@@ -891,7 +893,7 @@ function renderLocalAttractionsEditor(page, helpers) {
         <RichParagraphsField disabled={disabled} label="Intro Paragraphs" onChange={(value) => setPath(['intro', 'paragraphs'], value)} value={page.intro?.paragraphs ?? []} />
       </SectionCard>
 
-      <SectionCard description="These restaurant groups appear lower on the page." title="Dining Guide">
+      <SectionCard description="These restaurant groups appear lower on the page. Each Find Online URL controls that restaurant's public Find online button. When no custom URL is saved, the field shows the Google Maps link used by the button." title="Dining Guide">
         <RichTextField disabled={disabled} label="Section Heading" onChange={(value) => setPath(['dining', 'title'], value)} value={page.dining?.title ?? ''} />
 
         <Field wide>
@@ -921,7 +923,7 @@ function renderLocalAttractionsEditor(page, helpers) {
                     disabled={disabled}
                     itemLabel="restaurant"
                     items={Array.isArray(section?.restaurants) ? section.restaurants : []}
-                    onAdd={() => helpers.addItem(['dining', 'sections', sectionIndex, 'restaurants'], { name: '', cuisine: '', location: '', phone: '' })}
+                    onAdd={() => helpers.addItem(['dining', 'sections', sectionIndex, 'restaurants'], { name: '', cuisine: '', location: '', website: '', phone: '' })}
                     renderItem={(restaurant, restaurantIndex) => (
                       <ItemCard
                         canMoveDown={restaurantIndex < (section?.restaurants?.length ?? 0) - 1}
@@ -936,6 +938,16 @@ function renderLocalAttractionsEditor(page, helpers) {
                         <TextField disabled={disabled} label="Restaurant Name" onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'name'], value)} value={restaurant?.name ?? ''} />
                         <TextField disabled={disabled} label="Cuisine" onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'cuisine'], value)} value={restaurant?.cuisine ?? ''} />
                         <TextField disabled={disabled} label="Location" onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'location'], value)} value={restaurant?.location ?? ''} />
+                        <label className="admin-field admin-field--wide">
+                          <span>Find Online URL</span>
+                          <AdminAutoResizeTextarea
+                            ariaLabel={`Find Online URL for ${restaurant?.name || `Restaurant ${restaurantIndex + 1}`}`}
+                            disabled={disabled}
+                            placeholder="https://example.com"
+                            value={buildRestaurantOnlineHref(restaurant)}
+                            onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'website'], value)}
+                          />
+                        </label>
                         <TextField disabled={disabled} label="Phone" onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'phone'], value)} value={restaurant?.phone ?? ''} />
                       </ItemCard>
                     )}

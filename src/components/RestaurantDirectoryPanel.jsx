@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { buildRestaurantOnlineHref } from '../lib/restaurantLinks'
+import { AdminAutoResizeTextarea } from './AdminAutoResizeTextarea'
 
 function cloneValue(value) {
   if (value === undefined) {
@@ -191,7 +193,7 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
       <div className="admin-content-section-header">
         <div>
           <h4>Restaurants</h4>
-          <p>One row per restaurant. Deactivated restaurants stay saved here but are hidden from the public dining guide.</p>
+          <p>The Find Online URL controls each restaurant's public Find online button. When no custom URL is saved, this field shows the Google Maps link used by the button. Deactivated restaurants stay saved here but are hidden from the public dining guide.</p>
         </div>
         <button className="button-link button-link--ghost admin-action" disabled={isDisabled} type="button" onClick={openAddDialog}>
           Add restaurant
@@ -263,13 +265,13 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
                 />
               </label>
 
-              <label className="admin-restaurant-add-field">
-                <span>Website URL</span>
-                <input
+              <label className="admin-restaurant-add-field admin-restaurant-add-field--wide">
+                <span>Find Online URL</span>
+                <AdminAutoResizeTextarea
+                  ariaLabel="Find Online URL"
                   placeholder="https://example.com"
-                  type="text"
-                  value={restaurantDraft.website}
-                  onChange={(event) => setDraftField('website', event.target.value)}
+                  value={buildRestaurantOnlineHref(restaurantDraft)}
+                  onChange={(value) => setDraftField('website', value)}
                 />
               </label>
 
@@ -311,7 +313,7 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
           <span>Name</span>
           <span>Cuisine</span>
           <span>Location</span>
-          <span>Website URL</span>
+          <span>Find Online URL</span>
           <span>Phone</span>
           <span>Active</span>
           <span />
@@ -352,12 +354,12 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
                 value={restaurant?.location ?? ''}
                 onChange={(event) => setRestaurantField(sectionIndex, restaurantIndex, 'location', event.target.value)}
               />
-              <input
+              <AdminAutoResizeTextarea
+                ariaLabel={`Find Online URL for ${restaurant?.name || 'restaurant'}`}
                 disabled={isDisabled}
                 placeholder="https://example.com"
-                type="text"
-                value={restaurant?.website ?? ''}
-                onChange={(event) => setRestaurantField(sectionIndex, restaurantIndex, 'website', event.target.value)}
+                value={buildRestaurantOnlineHref(restaurant)}
+                onChange={(value) => setRestaurantField(sectionIndex, restaurantIndex, 'website', value)}
               />
               <input
                 disabled={isDisabled}

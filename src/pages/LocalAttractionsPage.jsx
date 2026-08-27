@@ -5,6 +5,7 @@ import { PageLoadingState } from '../components/PageLoadingState'
 import { RestaurantDirectoryPanel } from '../components/RestaurantDirectoryPanel'
 import { buildPhoneHref } from '../lib/contactLinks'
 import { getContentImageSrc } from '../lib/contentAssets'
+import { buildRestaurantOnlineHref } from '../lib/restaurantLinks'
 import { usePageEditor } from '../lib/usePageEditor'
 import { useStructuredPageContent } from '../lib/useSiteContent'
 
@@ -48,17 +49,6 @@ function scrollToLocalAttractionsHashTarget(hashTarget) {
 
   targetElement.scrollIntoView({ block: 'start', behavior: 'auto' })
   return true
-}
-
-function buildRestaurantOnlineHref(restaurant) {
-  const website = String(restaurant?.website ?? '').trim()
-
-  if (website) {
-    return /^https?:\/\//i.test(website) ? website : `https://${website}`
-  }
-
-  const searchQuery = [restaurant?.name, restaurant?.location, 'St. John USVI'].filter(Boolean).join(' ')
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`
 }
 
 function normalizeMapPositionCopy(value) {
@@ -113,7 +103,7 @@ function DiningSection({ restaurants, sectionIndex, title }) {
         {restaurants.map(({ restaurant, restaurantIndex }) => {
           const phoneHref = buildPhoneHref(restaurant.phone)
           const onlineHref = buildRestaurantOnlineHref(restaurant)
-          const onlineLabel = restaurant.website ? 'Visit website' : 'Find online'
+          const onlineLabel = 'Find online'
 
           return (
             <article className="local-attractions-restaurant-card" key={restaurantIndex}>

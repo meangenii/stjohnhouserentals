@@ -1457,6 +1457,14 @@ img {
   margin-top: 1.55rem;
 }
 
+.about-page-story-continuation {
+  margin-top: 1.8rem;
+}
+
+.about-page-story-continuation .about-page-story-body {
+  margin-top: 0;
+}
+
 .about-page-story-body p + p {
   margin-top: 1.35rem;
 }
@@ -1473,6 +1481,12 @@ img {
 
 .about-page-story-media img {
   aspect-ratio: 960 / 680;
+}
+
+.about-page-story-media--intro img {
+  aspect-ratio: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .about-page-essentials-media img {
@@ -10236,6 +10250,7 @@ button.admin-auth-badge {
 
 .admin-car-companies-row input[type='text'],
 .admin-restaurant-directory-row input[type='text'],
+.admin-restaurant-directory-row .admin-auto-resize-textarea,
 .admin-restaurant-directory-row select {
   width: 100%;
   padding: 0.6rem 0.75rem;
@@ -10243,6 +10258,14 @@ button.admin-auth-badge {
   border-radius: 0.6rem;
   background: #ffffff;
   font-size: 0.92rem;
+}
+
+.admin-auto-resize-textarea {
+  overflow: hidden;
+  resize: none;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .admin-restaurant-add-dialog-shell {
@@ -10296,7 +10319,12 @@ button.admin-auth-badge {
   font-weight: 700;
 }
 
+.admin-restaurant-add-field--wide {
+  grid-column: 1 / -1;
+}
+
 .admin-restaurant-add-field input,
+.admin-restaurant-add-field .admin-auto-resize-textarea,
 .admin-restaurant-add-field select {
   width: 100%;
   padding: 0.65rem 0.75rem;
