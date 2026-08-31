@@ -1,4 +1,5 @@
 const { GoogleAuth } = require('google-auth-library')
+const { HttpError } = require('./firebaseAdmin')
 const { primeApplicationDefaultCredentialsFromFirebaseCli } = require('./firebaseCliCredentialBootstrap')
 
 const ANALYTICS_DATA_API_ROOT = 'https://analyticsdata.googleapis.com/v1beta'
@@ -7,6 +8,8 @@ const DEFAULT_DATE_RANGE = {
   startDate: '30daysAgo',
   endDate: 'today',
 }
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const MAX_CUSTOM_DATE_RANGE_DAYS = 366
 
 let authClientPromise = null
 
@@ -47,6 +50,54 @@ function normalizePagePath(value) {
   }
 
   return pathname === '/' ? '/' : pathname.replace(/\/+$/, '')
+}
+
+function parseDateOnly(value) {
+  const normalized = normalizeString(value)
+
+  if (!DATE_ONLY_PATTERN.test(normalized)) {
+    return null
+  }
+
+  const [year, month, day] = normalized.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return null
+  }
+
+  return date
+}
+
+function normalizeAnalyticsDateRange({ startDate, endDate } = {}) {
+  const normalizedStartDate = normalizeString(startDate)
+  const normalizedEndDate = normalizeString(endDate)
+
+  if (!normalizedStartDate && !normalizedEndDate) {
+    return { ...DEFAULT_DATE_RANGE }
+  }
+
+  const parsedStartDate = parseDateOnly(normalizedStartDate)
+  const parsedEndDate = parseDateOnly(normalizedEndDate)
+
+  if (!parsedStartDate || !parsedEndDate) {
+    throw new HttpError(400, 'Analytics start and end dates must both be valid dates (YYYY-MM-DD).')
+  }
+
+  if (parsedStartDate > parsedEndDate) {
+    throw new HttpError(400, 'Analytics start date must be on or before the end date.')
+  }
+
+  const inclusiveDayCount = Math.round((parsedEndDate.getTime() - parsedStartDate.getTime()) / 86400000) + 1
+
+  if (inclusiveDayCount > MAX_CUSTOM_DATE_RANGE_DAYS) {
+    throw new HttpError(400, `Analytics date range must be ${MAX_CUSTOM_DATE_RANGE_DAYS} days or fewer.`)
+  }
+
+  return {
+    startDate: normalizedStartDate,
+    endDate: normalizedEndDate,
+  }
 }
 
 function getPropertyPagePathCandidates(property = {}) {
@@ -146,16 +197,17 @@ function createAnalyticsUnavailableMessage(error) {
   return apiMessage || 'Google Analytics data is temporarily unavailable.'
 }
 
-async function getPropertyAnalyticsReport(property = {}) {
+async function getPropertyAnalyticsReport(property = {}, requestedDateRange = {}) {
   const propertyId = getAnalyticsPropertyId()
   const pagePaths = getPropertyPagePathCandidates(property)
+  const dateRange = normalizeAnalyticsDateRange(requestedDateRange)
 
   if (!propertyId) {
     return {
       status: 'unconfigured',
       message: 'Set GOOGLE_ANALYTICS_PROPERTY_ID to the numeric GA4 property id to show client property analytics.',
       pagePaths,
-      dateRange: DEFAULT_DATE_RANGE,
+      dateRange,
       metrics: buildEmptyMetrics(),
       daily: [],
       sources: [],
@@ -167,7 +219,7 @@ async function getPropertyAnalyticsReport(property = {}) {
       status: 'unavailable',
       message: 'This property does not have a public page path to query in Google Analytics.',
       pagePaths,
-      dateRange: DEFAULT_DATE_RANGE,
+      dateRange,
       metrics: buildEmptyMetrics(),
       daily: [],
       sources: [],
@@ -183,7 +235,7 @@ async function getPropertyAnalyticsReport(property = {}) {
   try {
     ;[summaryReport, dailyReport, sourceReport] = await Promise.all([
       runAnalyticsReport(propertyId, {
-        dateRanges: [DEFAULT_DATE_RANGE],
+        dateRanges: [dateRange],
         dimensionFilter,
         metrics: [
           { name: 'screenPageViews' },
@@ -194,7 +246,7 @@ async function getPropertyAnalyticsReport(property = {}) {
         ],
       }),
       runAnalyticsReport(propertyId, {
-        dateRanges: [DEFAULT_DATE_RANGE],
+        dateRanges: [dateRange],
         dimensions: [{ name: 'date' }],
         dimensionFilter,
         metrics: [{ name: 'screenPageViews' }, { name: 'activeUsers' }],
@@ -202,7 +254,7 @@ async function getPropertyAnalyticsReport(property = {}) {
         limit: 30,
       }),
       runAnalyticsReport(propertyId, {
-        dateRanges: [DEFAULT_DATE_RANGE],
+        dateRanges: [dateRange],
         dimensions: [{ name: 'sessionSourceMedium' }],
         dimensionFilter,
         metrics: [{ name: 'sessions' }],
@@ -216,7 +268,7 @@ async function getPropertyAnalyticsReport(property = {}) {
       message: createAnalyticsUnavailableMessage(error),
       pagePaths,
       propertyId,
-      dateRange: DEFAULT_DATE_RANGE,
+      dateRange,
       metrics: buildEmptyMetrics(),
       daily: [],
       sources: [],
@@ -229,7 +281,7 @@ async function getPropertyAnalyticsReport(property = {}) {
     status: 'ready',
     pagePaths,
     propertyId,
-    dateRange: DEFAULT_DATE_RANGE,
+    dateRange,
     metrics: summaryRow
       ? {
           views: readMetricValue(summaryRow, 0),
@@ -252,3 +304,4 @@ async function getPropertyAnalyticsReport(property = {}) {
 }
 
 exports.getPropertyAnalyticsReport = getPropertyAnalyticsReport
+exports.normalizeAnalyticsDateRange = normalizeAnalyticsDateRange

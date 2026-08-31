@@ -14,7 +14,7 @@ const {
 const { archiveClient, getClient, importClientsFromProperties, listClients, saveClient } = require('./clientRepository')
 const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
 const { createInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
-const { getPropertyAnalyticsReport } = require('./analyticsRepository')
+const { getPropertyAnalyticsReport, normalizeAnalyticsDateRange } = require('./analyticsRepository')
 const {
   getCharterBySlug,
   listAllCharters,
@@ -725,7 +725,13 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       response.json({
         source: 'google-analytics',
         checkedAt: new Date().toISOString(),
-        analytics: await getPropertyAnalyticsReport(property),
+        analytics: await getPropertyAnalyticsReport(
+          property,
+          normalizeAnalyticsDateRange({
+            startDate: request.query?.startDate,
+            endDate: request.query?.endDate,
+          }),
+        ),
       })
       return
     }
@@ -831,7 +837,52 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     if (request.method === 'POST' && /^admin\/clients\/[^/]+\/invoices$/.test(path)) {
       const adminUser = await requireAdminUser(request)
       const clientId = decodeURIComponent(path.split('/')[2])
-      const invoice = await createInvoice({ ...request.body, clientId }, adminUser)
+      const client = await getClient(clientId)
+      const propertySlugs = Array.isArray(request.body?.propertySlugs)
+        ? Array.from(new Set(request.body.propertySlugs.map((slug) => String(slug ?? '').trim()).filter(Boolean)))
+        : []
+
+      if (propertySlugs.length === 0) {
+        throw new HttpError(400, 'Select at least one property for this invoice.')
+      }
+
+      const properties = await Promise.all(propertySlugs.map((slug) => getAdminPropertyBySlug(slug)))
+
+      for (let index = 0; index < properties.length; index += 1) {
+        const property = properties[index]
+
+        if (!property) {
+          throw new HttpError(404, `Property not found: ${propertySlugs[index]}`)
+        }
+
+        if (String(property.clientId ?? '').trim() !== client.id) {
+          throw new HttpError(400, `${property.name || property.slug} is not linked to this client.`)
+        }
+      }
+
+      const analyticsDateRange = normalizeAnalyticsDateRange({
+        startDate: request.body?.analyticsStartDate,
+        endDate: request.body?.analyticsEndDate,
+      })
+      const capturedAt = new Date().toISOString()
+      const analyticsReports = await Promise.all(
+        properties.map((property) => getPropertyAnalyticsReport(property, analyticsDateRange)),
+      )
+      const analyticsSnapshots = properties.map((property, index) => ({
+        propertySlug: property.slug,
+        propertyName: property.name,
+        capturedAt,
+        report: analyticsReports[index],
+      }))
+      const invoice = await createInvoice(
+        {
+          ...request.body,
+          clientId,
+          propertySlugs,
+          analyticsSnapshots,
+        },
+        adminUser,
+      )
 
       response.json({
         source: 'firestore',

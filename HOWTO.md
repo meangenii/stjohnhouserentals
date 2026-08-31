@@ -21,7 +21,7 @@ cd ..
 
 1. Fill in `.env` using `.env.example`.
 2. Set the Firebase project id in `.firebaserc`.
-3. If you want shared live editing, copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`. Set `ADMIN_OWNER_EMAILS` for the smaller group allowed to run backup, cutover, and seed-reset operations.
+3. If you want shared live editing, copy `functions/.env.example` to `functions/.env` and set `ADMIN_ALLOWED_EMAILS`. Set `ADMIN_OWNER_EMAILS` for the smaller group allowed to run backup, cutover, and seed-reset operations. Set `GOOGLE_ANALYTICS_PROPERTY_ID` in this Functions environment file—not the root frontend `.env`—to enable property reports and invoice analytics snapshots.
 4. If you want local scripts to target a non-default Firestore database, set `FIRESTORE_DATABASE_ID` in `functions/.env` and optionally set `FIRESTORE_ENFORCE_NON_DEFAULT=true`.
 5. If you want a staging-only deployed API that reads/writes a cloned Firestore database while the public live site continues serving the live default database, set `FIRESTORE_STAGING_DATABASE_ID` in `functions/.env` to the clone database id. The deployed `siteApiStaging` function refuses to start against `(default)`.
 6. If you want the owner-only admin Backups tab to start managed exports from the browser, set `FIRESTORE_BACKUP_OUTPUT_URI` in `functions/.env` to a Cloud Storage destination such as `gs://your-bucket/genericcms-firestore`.
@@ -47,7 +47,9 @@ Optional:
 - `VITE_ADMIN_AUTO_LOGIN_EMAIL` and `VITE_ADMIN_AUTO_LOGIN_PASSWORD` for localhost-only admin auto sign-in when you do not want to manually sign in on `/admin`
 - `VITE_FIREBASE_MEASUREMENT_ID` enables Firebase/Google Analytics pageview tracking outside localhost
 - `VITE_ENABLE_ANALYTICS_IN_DEV=true` allows analytics from localhost for intentional testing
-- `GOOGLE_ANALYTICS_PROPERTY_ID` enables admin property analytics reports through the GA4 Data API. This is the numeric GA4 property id, and the Functions service account needs Analytics Viewer access to that property.
+- `GOOGLE_ANALYTICS_PROPERTY_ID` in `functions/.env` enables admin property analytics reports through the GA4 Data API. This is the numeric GA4 property id, and the Functions service account needs Analytics Viewer access to that property.
+
+The Clients admin can generate a property invoice with a custom analytics period. The browser shows a preview, but the API fetches GA4 again while creating the invoice and stores that server-verified summary with the invoice. This keeps historical invoice metrics stable even when later GA4 reports change. If GA4 is unavailable, the admin must explicitly confirm that the invoice should be saved with the availability message instead of metrics.
 
 The Firebase client values are required for Firebase-backed admin sign-in and live editing.
 

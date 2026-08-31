@@ -3,8 +3,10 @@ const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = re
 const INVOICE_COLLECTION = 'cmsClientInvoices'
 const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
 const INVOICE_STATUSES = new Set(['draft', 'sent', 'paid', 'overdue', 'void'])
+const ANALYTICS_STATUSES = new Set(['ready', 'unconfigured', 'unavailable'])
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const INVOICE_NUMBER_PATTERN = /^GENCMS-(\d{4})-(\d{3,})$/
+const INVOICE_NUMBER_PREFIX = 'STJHR'
+const INVOICE_NUMBER_PATTERN = /^(?:GENCMS|STJHR)-(\d{4})-(\d{3,})$/
 
 function normalizeTimestampValue(value) {
   if (!value) {
@@ -88,6 +90,56 @@ function normalizeLineItems(value) {
   return normalized
 }
 
+function normalizeMetricValue(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function normalizeAnalyticsSnapshot(snapshot = {}) {
+  const propertySlug = String(snapshot?.propertySlug ?? '').trim()
+
+  if (!propertySlug) {
+    return null
+  }
+
+  const report = snapshot?.report ?? snapshot
+  const status = ANALYTICS_STATUSES.has(report?.status) ? report.status : 'unavailable'
+  const metrics = report?.metrics ?? {}
+
+  return {
+    propertySlug,
+    propertyName: String(snapshot?.propertyName ?? '').trim(),
+    capturedAt: String(snapshot?.capturedAt ?? '').trim(),
+    status,
+    message: String(report?.message ?? '').trim(),
+    dateRange: {
+      startDate: String(report?.dateRange?.startDate ?? '').trim(),
+      endDate: String(report?.dateRange?.endDate ?? '').trim(),
+    },
+    pagePaths: Array.isArray(report?.pagePaths)
+      ? report.pagePaths.map((path) => String(path ?? '').trim()).filter(Boolean).slice(0, 10)
+      : [],
+    metrics: {
+      views: normalizeMetricValue(metrics.views),
+      activeUsers: normalizeMetricValue(metrics.activeUsers),
+      sessions: normalizeMetricValue(metrics.sessions),
+      engagementRate: normalizeMetricValue(metrics.engagementRate),
+      averageSessionDuration: normalizeMetricValue(metrics.averageSessionDuration),
+    },
+    sources: Array.isArray(report?.sources)
+      ? report.sources.slice(0, 5).map((row) => ({
+          sourceMedium: String(row?.sourceMedium ?? '').trim(),
+          sessions: normalizeMetricValue(row?.sessions),
+        }))
+      : [],
+  }
+}
+
+function normalizeAnalyticsSnapshots(value) {
+  const snapshots = Array.isArray(value) ? value : value ? [value] : []
+  return snapshots.map(normalizeAnalyticsSnapshot).filter(Boolean).slice(0, 20)
+}
+
 function computeAmountTotal(lineItems) {
   const total = lineItems.reduce((sum, item) => {
     const numeric = Number(String(item.amount).replace(/[^0-9.-]/g, ''))
@@ -100,14 +152,53 @@ function computeAmountTotal(lineItems) {
 function normalizeInvoiceDraft(payload) {
   const clientId = normalizeField(payload?.clientId, { label: 'Client', maxLength: 200, required: true })
   const propertySlugs = Array.isArray(payload?.propertySlugs)
-    ? payload.propertySlugs.map((slug) => String(slug ?? '').trim()).filter(Boolean)
+    ? Array.from(
+        new Set(
+          payload.propertySlugs
+            .map((slug) => normalizeField(slug, { label: 'Property identifier', maxLength: 200 }))
+            .filter(Boolean),
+        ),
+      )
     : []
   const lineItems = normalizeLineItems(payload?.lineItems)
   const issueDate = normalizeDateOnlyValue(payload?.issueDate, { label: 'Issue date', required: true })
   const dueDate = normalizeDateOnlyValue(payload?.dueDate, { label: 'Due date' })
+  const analyticsStartDate = normalizeDateOnlyValue(payload?.analyticsStartDate, { label: 'Analytics start date' })
+  const analyticsEndDate = normalizeDateOnlyValue(payload?.analyticsEndDate, { label: 'Analytics end date' })
   const notes = normalizeField(payload?.notes, { label: 'Notes', maxLength: 2000 })
+  const analyticsSnapshots = normalizeAnalyticsSnapshots(payload?.analyticsSnapshots)
 
-  return { clientId, propertySlugs, lineItems, issueDate, dueDate, notes }
+  if (propertySlugs.length === 0) {
+    throw new HttpError(400, 'Select at least one property for this invoice.')
+  }
+
+  if (propertySlugs.length > 20) {
+    throw new HttpError(400, 'An invoice can include no more than 20 properties.')
+  }
+
+  if (Boolean(analyticsStartDate) !== Boolean(analyticsEndDate)) {
+    throw new HttpError(400, 'Analytics start and end dates must both be provided.')
+  }
+
+  if (analyticsStartDate && analyticsStartDate > analyticsEndDate) {
+    throw new HttpError(400, 'Analytics start date must be on or before the end date.')
+  }
+
+  if (dueDate && dueDate < issueDate) {
+    throw new HttpError(400, 'Due date must be on or after the issue date.')
+  }
+
+  return {
+    clientId,
+    propertySlugs,
+    lineItems,
+    issueDate,
+    dueDate,
+    analyticsStartDate,
+    analyticsEndDate,
+    analyticsSnapshots,
+    notes,
+  }
 }
 
 function normalizeStoredInvoiceRecord(id, record = {}) {
@@ -122,6 +213,9 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     amountTotal: String(record.amountTotal ?? '').trim(),
     issueDate: String(record.issueDate ?? '').trim(),
     dueDate: String(record.dueDate ?? '').trim(),
+    analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
+    analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
+    analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
     status: INVOICE_STATUSES.has(record.status) ? record.status : 'draft',
     notes: String(record.notes ?? '').trim(),
     createdAt: normalizeTimestampValue(record.createdAt),
@@ -159,7 +253,7 @@ async function reserveNextInvoiceNumber(transaction, counterRef, year) {
 
   transaction.set(counterRef, { sequence: nextSequence, updatedAt: getServerTimestamp() })
 
-  return `GENCMS-${year}-${String(nextSequence).padStart(3, '0')}`
+  return `${INVOICE_NUMBER_PREFIX}-${year}-${String(nextSequence).padStart(3, '0')}`
 }
 
 async function listInvoicesForClient(clientId) {
@@ -203,6 +297,9 @@ async function createInvoice(payload, adminUser) {
       amountTotal,
       issueDate: invoice.issueDate,
       dueDate: invoice.dueDate,
+      analyticsStartDate: invoice.analyticsStartDate,
+      analyticsEndDate: invoice.analyticsEndDate,
+      analyticsSnapshots: invoice.analyticsSnapshots,
       status: 'draft',
       notes: invoice.notes,
       createdAt: getServerTimestamp(),
@@ -245,3 +342,8 @@ exports.listInvoicesForClient = listInvoicesForClient
 exports.createInvoice = createInvoice
 exports.updateInvoiceStatus = updateInvoiceStatus
 exports.INVOICE_COLLECTION = INVOICE_COLLECTION
+exports._test = {
+  normalizeAnalyticsSnapshot,
+  normalizeInvoiceDraft,
+  normalizeStoredInvoiceRecord,
+}

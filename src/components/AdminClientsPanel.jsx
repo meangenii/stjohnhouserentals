@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AdminClientInvoices } from './AdminClientInvoices'
 import { getAdminIdToken } from '../lib/adminAuth'
 import {
   archiveAdminClient,
@@ -692,8 +693,9 @@ export function AdminClientsPanel({ authUser }) {
           </form>
 
           {!isCreatingNew ? (
-            <div className="admin-client-related-grid">
-              <section className="admin-client-detail-properties" aria-label={`Listed properties (${linkedProperties.length})`}>
+            <>
+              <div className="admin-client-related-grid">
+                <section className="admin-client-detail-properties" aria-label={`Listed properties (${linkedProperties.length})`}>
                 <div className="admin-inline-actions admin-client-add-property-row">
                   <select
                     aria-label="Add a property to this client"
@@ -746,10 +748,18 @@ export function AdminClientsPanel({ authUser }) {
                 ) : (
                   <p>No properties linked to this client yet.</p>
                 )}
-              </section>
+                </section>
 
-              <PropertyAnalyticsPanel analyticsState={propertyAnalyticsState} property={selectedProperty} />
-            </div>
+                <PropertyAnalyticsPanel analyticsState={propertyAnalyticsState} property={selectedProperty} />
+              </div>
+
+              <AdminClientInvoices
+                authUser={authUser}
+                client={selectedClient}
+                properties={linkedProperties}
+                selectedPropertySlug={selectedPropertySlug}
+              />
+            </>
           ) : null}
         </div>
       </div>

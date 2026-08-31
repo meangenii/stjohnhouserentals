@@ -31,8 +31,19 @@ export async function importAdminClientsFromProperties(options = {}) {
   )
 }
 
-export async function getAdminPropertyAnalytics(slug, options = {}) {
-  const payload = await getJson(`/admin/analytics/properties/${encodeURIComponent(slug)}`, options)
+export async function getAdminPropertyAnalytics(slug, { startDate, endDate, ...options } = {}) {
+  const search = new URLSearchParams()
+
+  if (startDate) {
+    search.set('startDate', startDate)
+  }
+
+  if (endDate) {
+    search.set('endDate', endDate)
+  }
+
+  const query = search.size > 0 ? `?${search.toString()}` : ''
+  const payload = await getJson(`/admin/analytics/properties/${encodeURIComponent(slug)}${query}`, options)
   return payload?.analytics ?? null
 }
 
