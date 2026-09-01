@@ -7,8 +7,10 @@ import {
   listAdminClients,
   saveAdminClient,
 } from '../lib/adminClientApi'
-import { listAllProperties, setAdminPropertyClientId } from '../lib/propertyRepository'
+import { listAllProperties, setAdminPropertyBillingInfo, setAdminPropertyClientId } from '../lib/propertyRepository'
 
+const SITE_ORIGIN = 'https://www.stjohnhouserentals.com'
+const DEFAULT_ANNUAL_INVOICE_AMOUNT = '300'
 const BLANK_DRAFT = {
   businessName: '',
   contactName: '',
@@ -58,6 +60,20 @@ function getClientDisplayName(client) {
   return businessName || contactName || email || 'Unnamed client'
 }
 
+function getPropertyUrl(property) {
+  const rawPath = String(property?.path || (property?.slug ? `/rental-properties/${property.slug}` : '')).trim()
+
+  if (!rawPath) {
+    return ''
+  }
+
+  if (/^https?:\/\//i.test(rawPath)) {
+    return rawPath
+  }
+
+  return `${SITE_ORIGIN}${rawPath.startsWith('/') ? rawPath : `/${rawPath}`}`
+}
+
 function getTodayDateOnly() {
   const now = new Date()
   const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60 * 1000)
@@ -67,6 +83,55 @@ function getTodayDateOnly() {
 function normalizeDateOnlyValue(value) {
   const normalized = String(value ?? '').trim().slice(0, 10)
   return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : ''
+}
+
+function addDays(dateOnly, dayCount) {
+  const source = /^\d{4}-\d{2}-\d{2}$/.test(String(dateOnly ?? '')) ? `${dateOnly}T12:00:00` : new Date()
+  const date = source instanceof Date ? source : new Date(source)
+  date.setDate(date.getDate() + dayCount)
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
+function addMonths(dateOnly, monthCount) {
+  if (!normalizeDateOnlyValue(dateOnly)) {
+    return ''
+  }
+
+  const date = new Date(`${dateOnly}T12:00:00`)
+  date.setMonth(date.getMonth() + monthCount)
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
+function getAnnualServiceEndDate(startDate) {
+  return startDate ? addDays(addMonths(startDate, 12), -1) : ''
+}
+
+function formatDate(dateOnly) {
+  const normalized = normalizeDateOnlyValue(dateOnly)
+
+  if (!normalized) {
+    return ''
+  }
+
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${normalized}T00:00:00Z`))
+}
+
+function createPropertyBillingDraft(property) {
+  const listingFeeAmount = String(property?.listingFeeAmount ?? '').trim()
+
+  return {
+    subscriptionStartAt: normalizeDateOnlyValue(property?.subscriptionStartAt),
+    listingFeeAmount: listingFeeAmount || DEFAULT_ANNUAL_INVOICE_AMOUNT,
+  }
+}
+
+function isPropertyBillingDraftChanged(draft, property) {
+  const currentDraft = createPropertyBillingDraft(draft)
+  const savedDraft = createPropertyBillingDraft(property)
+
+  return Object.keys(savedDraft).some((field) => String(currentDraft[field] ?? '') !== String(savedDraft[field] ?? ''))
 }
 
 function isPropertyRenewalDue(property, todayDateOnly) {
@@ -130,18 +195,11 @@ function PropertyAnalyticsPanel({ analyticsState, property }) {
   const metrics = report?.metrics ?? {}
   const dailyRows = Array.isArray(report?.daily) ? report.daily.slice(0, 7) : []
   const sourceRows = Array.isArray(report?.sources) ? report.sources.slice(0, 5) : []
+  const propertyUrl = getPropertyUrl(property)
 
   return (
     <section className="admin-client-analytics" aria-label={property?.name ? `${property.name} analytics` : 'Property analytics'} aria-live="polite">
-      {property?.slug ? (
-        <div className="admin-client-section-actions">
-          <a className="button-link button-link--ghost admin-action" href={`/admin?tab=properties&propertySlug=${encodeURIComponent(property.slug)}`}>
-            Edit property
-          </a>
-        </div>
-      ) : null}
-
-      {property?.path ? <p className="admin-client-path">{property.path}</p> : null}
+      {propertyUrl ? <p className="admin-client-path"><a href={propertyUrl}>{propertyUrl}</a></p> : null}
 
       {analyticsState.state === 'loading' ? <p className="admin-empty">Loading analytics...</p> : null}
       {message && analyticsState.state !== 'loading' ? <p className="admin-note">{message}</p> : null}
@@ -228,6 +286,67 @@ function PropertyAnalyticsPanel({ analyticsState, property }) {
   )
 }
 
+function PropertyBillingPanel({ disabled, draft, hasChanges, property, status, onChange, onSave }) {
+  if (!property) {
+    return null
+  }
+
+  const subscriptionStartDate = normalizeDateOnlyValue(draft.subscriptionStartAt)
+  const serviceEndDate = getAnnualServiceEndDate(subscriptionStartDate)
+
+  return (
+    <form className="admin-client-property-billing" aria-label={`${property.name || property.slug} billing`} onSubmit={onSave}>
+      <div className="admin-client-section-header">
+        <div>
+          <span className="eyebrow">Property Billing</span>
+          <h4>{property.name || property.slug}</h4>
+        </div>
+        <span className="admin-chip">$300 annual default</span>
+      </div>
+
+      <div className="admin-client-property-billing-grid">
+        <label className="admin-field">
+          <span>Subscription start</span>
+          <input
+            disabled={disabled}
+            type="date"
+            value={draft.subscriptionStartAt}
+            onChange={(event) => onChange('subscriptionStartAt', event.target.value)}
+          />
+        </label>
+        <label className="admin-field">
+          <span>Annual cost</span>
+          <input
+            disabled={disabled}
+            inputMode="decimal"
+            type="text"
+            value={draft.listingFeeAmount}
+            onChange={(event) => onChange('listingFeeAmount', event.target.value)}
+          />
+        </label>
+        <div className="admin-client-billing-derived">
+          <span>Annual service through</span>
+          <strong>{serviceEndDate ? formatDate(serviceEndDate) : 'Set subscription start'}</strong>
+        </div>
+      </div>
+
+      {status.message ? (
+        <p className={`admin-feedback admin-feedback--${status.state === 'success' ? 'idle' : status.state}`}>{status.message}</p>
+      ) : null}
+
+      <div className="admin-inline-actions admin-client-section-actions">
+        <button
+          className="button-link button-link--primary admin-action"
+          disabled={disabled || status.state === 'saving' || !hasChanges}
+          type="submit"
+        >
+          {status.state === 'saving' ? 'Saving property...' : 'Save property billing'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 function UnassignedPropertyRow({ property, clients, disabled, onAssign }) {
   const [selectedClientId, setSelectedClientId] = useState('')
 
@@ -297,6 +416,8 @@ export function AdminClientsPanel({ authUser }) {
   const [selectedClientId, setSelectedClientId] = useState('')
   const [selectedPropertySlug, setSelectedPropertySlug] = useState('')
   const [propertyAnalyticsState, setPropertyAnalyticsState] = useState(EMPTY_ANALYTICS_STATE)
+  const [propertyBillingDraft, setPropertyBillingDraft] = useState(() => createPropertyBillingDraft(null))
+  const [propertyBillingStatus, setPropertyBillingStatus] = useState({ state: 'idle', message: '' })
   const [draft, setDraft] = useState(BLANK_DRAFT)
   const [formStatus, setFormStatus] = useState({ state: 'idle', message: '' })
   const [archiveStatus, setArchiveStatus] = useState({ state: 'idle', message: '' })
@@ -379,7 +500,7 @@ export function AdminClientsPanel({ authUser }) {
   const selectedClient = clients.find((client) => client.id === selectedClientId) ?? null
   const isCreatingNew = !selectedClientId
   const hasDraftChanges = isClientDraftChanged(draft, selectedClient)
-  const shouldShowSaveButton = hasDraftChanges || formStatus.state === 'saving'
+  const canSubmitClient = isCreatingNew || hasDraftChanges
   const todayDateOnly = getTodayDateOnly()
   const renewalCountByClientId = useMemo(() => {
     const counts = new Map()
@@ -411,6 +532,7 @@ export function AdminClientsPanel({ authUser }) {
   )
   const linkedPropertySlugs = linkedProperties.map((property) => property.slug).join('|')
   const selectedProperty = linkedProperties.find((property) => property.slug === selectedPropertySlug) ?? null
+  const hasPropertyBillingChanges = selectedProperty ? isPropertyBillingDraftChanged(propertyBillingDraft, selectedProperty) : false
   const selectedClientRenewalCount = selectedClient ? renewalCountByClientId.get(selectedClient.id) ?? 0 : 0
 
   useEffect(() => {
@@ -426,6 +548,11 @@ export function AdminClientsPanel({ authUser }) {
   useEffect(() => {
     setAddPropertySlug('')
   }, [selectedClientId])
+
+  useEffect(() => {
+    setPropertyBillingDraft(createPropertyBillingDraft(selectedProperty))
+    setPropertyBillingStatus({ state: 'idle', message: '' })
+  }, [selectedProperty?.listingFeeAmount, selectedProperty?.slug, selectedProperty?.subscriptionStartAt, selectedProperty])
 
   useEffect(() => {
     if (!authUser?.uid || !selectedProperty?.slug) {
@@ -486,6 +613,48 @@ export function AdminClientsPanel({ authUser }) {
 
   function handleFieldChange(field, value) {
     setDraft((current) => ({ ...current, [field]: value }))
+  }
+
+  function handlePropertyBillingFieldChange(field, value) {
+    setPropertyBillingDraft((current) => ({ ...current, [field]: value }))
+    setPropertyBillingStatus({ state: 'idle', message: '' })
+  }
+
+  async function handleSavePropertyBilling(event) {
+    event.preventDefault()
+
+    if (!selectedProperty) {
+      return
+    }
+
+    setPropertyBillingStatus({ state: 'saving', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to save this property billing.')
+      }
+
+      await setAdminPropertyBillingInfo(
+        selectedProperty.adminOriginalSlug || selectedProperty.slug,
+        {
+          listingFeeAmount: String(propertyBillingDraft.listingFeeAmount ?? '').trim() || DEFAULT_ANNUAL_INVOICE_AMOUNT,
+          subscriptionStartAt: propertyBillingDraft.subscriptionStartAt,
+          listingFeeInterval: 'annual',
+          lastPaidAt: selectedProperty.lastPaidAt ?? '',
+          renewalDueAt: selectedProperty.renewalDueAt ?? '',
+        },
+        { authToken },
+      )
+      setPropertyBillingStatus({ state: 'success', message: 'Property billing saved.' })
+      await loadProperties(authToken)
+    } catch (error) {
+      setPropertyBillingStatus({
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to save this property billing.',
+      })
+    }
   }
 
   async function handleSave(event) {
@@ -652,22 +821,6 @@ export function AdminClientsPanel({ authUser }) {
               <span>Phone</span>
               <input type="tel" value={draft.phone} onChange={(event) => handleFieldChange('phone', event.target.value)} />
             </label>
-            <label className="admin-field">
-              <span>Subscription start</span>
-              <input
-                type="date"
-                value={draft.subscriptionStartAt}
-                onChange={(event) => handleFieldChange('subscriptionStartAt', event.target.value)}
-              />
-            </label>
-            <label className="admin-field">
-              <span>Subscription end</span>
-              <input
-                type="date"
-                value={draft.subscriptionEndAt}
-                onChange={(event) => handleFieldChange('subscriptionEndAt', event.target.value)}
-              />
-            </label>
             <label className="admin-field admin-field--full-width">
               <span>Address</span>
               <input type="text" value={draft.address} onChange={(event) => handleFieldChange('address', event.target.value)} />
@@ -683,74 +836,87 @@ export function AdminClientsPanel({ authUser }) {
               </p>
             ) : null}
 
-            {shouldShowSaveButton ? (
-              <div className="admin-inline-actions">
-                <button className="button-link button-link--primary admin-action" type="submit" disabled={formStatus.state === 'saving'}>
-                  {formStatus.state === 'saving' ? 'Saving...' : isCreatingNew ? 'Create client' : 'Save changes'}
-                </button>
-              </div>
-            ) : null}
+            <div className="admin-inline-actions">
+              <button
+                className="button-link button-link--primary admin-action"
+                type="submit"
+                disabled={formStatus.state === 'saving' || !canSubmitClient}
+              >
+                {formStatus.state === 'saving' ? 'Saving...' : isCreatingNew ? 'Create client' : 'Save client'}
+              </button>
+            </div>
           </form>
 
           {!isCreatingNew ? (
             <>
               <div className="admin-client-related-grid">
                 <section className="admin-client-detail-properties" aria-label={`Listed properties (${linkedProperties.length})`}>
-                <div className="admin-inline-actions admin-client-add-property-row">
-                  <select
-                    aria-label="Add a property to this client"
-                    disabled={assignStatus.state === 'saving' || unassignedProperties.length === 0}
-                    value={addPropertySlug}
-                    onChange={(event) => setAddPropertySlug(event.target.value)}
-                  >
-                    <option value="">
-                      {unassignedProperties.length > 0 ? 'Select property...' : 'No unassigned properties'}
-                    </option>
-                    {unassignedProperties.map((property) => (
-                      <option key={property.slug} value={property.adminOriginalSlug || property.slug}>
-                        {property.name || property.slug}
-                      </option>
-                    ))}
-                  </select>
-                  {addPropertySlug ? (
-                    <button
-                      className="button-link button-link--ghost admin-action"
-                      disabled={assignStatus.state === 'saving'}
-                      type="button"
-                      onClick={() => {
-                        handleAssignProperty(addPropertySlug, selectedClient.id)
-                        setAddPropertySlug('')
-                      }}
+                  <div className="admin-inline-actions admin-client-add-property-row">
+                    <select
+                      aria-label="Add a property to this client"
+                      disabled={assignStatus.state === 'saving' || unassignedProperties.length === 0}
+                      value={addPropertySlug}
+                      onChange={(event) => setAddPropertySlug(event.target.value)}
                     >
-                      Add
-                    </button>
-                  ) : null}
-                </div>
-
-                {linkedProperties.length > 0 ? (
-                  <div className="admin-inquiry-list admin-client-property-list">
-                    {linkedProperties.map((property) => (
+                      <option value="">
+                        {unassignedProperties.length > 0 ? 'Select property...' : 'No unassigned properties'}
+                      </option>
+                      {unassignedProperties.map((property) => (
+                        <option key={property.slug} value={property.adminOriginalSlug || property.slug}>
+                          {property.name || property.slug}
+                        </option>
+                      ))}
+                    </select>
+                    {addPropertySlug ? (
                       <button
-                        className={`admin-inquiry-button admin-client-property-button ${
-                          selectedPropertySlug === property.slug ? 'admin-inquiry-button--active' : ''
-                        }`.trim()}
-                        key={property.slug}
+                        className="button-link button-link--ghost admin-action"
+                        disabled={assignStatus.state === 'saving'}
                         type="button"
-                        onClick={() => setSelectedPropertySlug(property.slug)}
+                        onClick={() => {
+                          handleAssignProperty(addPropertySlug, selectedClient.id)
+                          setAddPropertySlug('')
+                        }}
                       >
-                        <div className="admin-inquiry-button-header">
-                          <strong>{property.name}</strong>
-                          {isPropertyRenewalDue(property, todayDateOnly) ? <span className="admin-client-renewal-badge">Renewal due</span> : null}
-                        </div>
+                        Add
                       </button>
-                    ))}
+                    ) : null}
                   </div>
-                ) : (
-                  <p>No properties linked to this client yet.</p>
-                )}
+
+                  {linkedProperties.length > 0 ? (
+                    <div className="admin-inquiry-list admin-client-property-list">
+                      {linkedProperties.map((property) => (
+                        <button
+                          className={`admin-inquiry-button admin-client-property-button ${
+                            selectedPropertySlug === property.slug ? 'admin-inquiry-button--active' : ''
+                          }`.trim()}
+                          key={property.slug}
+                          type="button"
+                          onClick={() => setSelectedPropertySlug(property.slug)}
+                        >
+                          <div className="admin-inquiry-button-header">
+                            <strong>{property.name}</strong>
+                            {isPropertyRenewalDue(property, todayDateOnly) ? <span className="admin-client-renewal-badge">Renewal due</span> : null}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No properties linked to this client yet.</p>
+                  )}
                 </section>
 
-                <PropertyAnalyticsPanel analyticsState={propertyAnalyticsState} property={selectedProperty} />
+                <div className="admin-client-selected-property-stack">
+                  <PropertyBillingPanel
+                    disabled={propertyBillingStatus.state === 'saving'}
+                    draft={propertyBillingDraft}
+                    hasChanges={hasPropertyBillingChanges}
+                    property={selectedProperty}
+                    status={propertyBillingStatus}
+                    onChange={handlePropertyBillingFieldChange}
+                    onSave={handleSavePropertyBilling}
+                  />
+                  <PropertyAnalyticsPanel analyticsState={propertyAnalyticsState} property={selectedProperty} />
+                </div>
               </div>
 
               <AdminClientInvoices

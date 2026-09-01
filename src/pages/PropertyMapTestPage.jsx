@@ -94,7 +94,7 @@ function houseMarkerPoints(properties) {
     properties,
     (property) => locationCoordinates[property.location] || null,
     (property) => property.name,
-  ).map(({ item: property, lat, lng, coord }) => ({
+  ).map(({ item: property, lat, lng }) => ({
     lat,
     lng,
     popupHtml:

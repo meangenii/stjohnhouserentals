@@ -13,6 +13,7 @@ const {
 } = require('./backupAdminRepository')
 const { archiveClient, getClient, importClientsFromProperties, listClients, saveClient } = require('./clientRepository')
 const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
+const { createInvoicePdfDownload, emailInvoicePdf } = require('./invoiceDeliveryRepository')
 const { createInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
 const { getPropertyAnalyticsReport, normalizeAnalyticsDateRange } = require('./analyticsRepository')
 const {
@@ -888,6 +889,36 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         invoice,
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/clients\/invoices\/[^/]+\/pdf$/.test(path)) {
+      await requireAdminUser(request)
+      const invoiceId = decodeURIComponent(path.split('/')[3])
+      const pdf = await createInvoicePdfDownload(invoiceId)
+
+      response
+        .status(200)
+        .set({
+          'Cache-Control': 'no-store',
+          'Content-Disposition': `attachment; filename="${pdf.filename}"`,
+          'Content-Length': String(pdf.buffer.length),
+          'Content-Type': pdf.contentType,
+        })
+        .send(pdf.buffer)
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/clients\/invoices\/[^/]+\/email$/.test(path)) {
+      await requireAdminUser(request)
+      const invoiceId = decodeURIComponent(path.split('/')[3])
+      const delivery = await emailInvoicePdf(invoiceId)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        delivery,
       })
       return
     }

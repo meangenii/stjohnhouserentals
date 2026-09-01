@@ -782,6 +782,7 @@ function normalizePropertyRecord(record) {
     location: String(record.location ?? '').trim(),
     calendarUrl: String(record.calendarUrl ?? '').trim(),
     clientId: String(record.clientId ?? '').trim(),
+    subscriptionStartAt: normalizeDateOnlyValue(record.subscriptionStartAt),
     listingFeeAmount: String(record.listingFeeAmount ?? '').trim(),
     listingFeeInterval: normalizeListingFeeInterval(record.listingFeeInterval),
     lastPaidAt: normalizeDateOnlyValue(record.lastPaidAt),
@@ -855,6 +856,7 @@ function buildPropertyViewFromStoredRecord(record, documentId = '', { mode = 'pu
     delete property.adminOriginalSlug
     delete property.publication
     delete property.clientId
+    delete property.subscriptionStartAt
     delete property.listingFeeAmount
     delete property.listingFeeInterval
     delete property.lastPaidAt
@@ -1127,6 +1129,7 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
     location: String(draft?.location ?? '').trim(),
     calendarUrl: String(draft?.calendarUrl ?? '').trim(),
     clientId: String(draft?.clientId ?? '').trim(),
+    subscriptionStartAt: normalizeDateOnlyValue(draft?.subscriptionStartAt),
     listingFeeAmount: String(draft?.listingFeeAmount ?? '').trim(),
     listingFeeInterval: normalizeListingFeeInterval(draft?.listingFeeInterval),
     lastPaidAt: normalizeDateOnlyValue(draft?.lastPaidAt),
@@ -1596,6 +1599,7 @@ exports.setPropertyBillingInfo = async function setPropertyBillingInfo(originalS
     originalSlug,
     {
       listingFeeAmount: String(billing?.listingFeeAmount ?? '').trim(),
+      subscriptionStartAt: normalizeDateOnlyValue(billing?.subscriptionStartAt),
       listingFeeInterval: normalizeListingFeeInterval(billing?.listingFeeInterval),
       lastPaidAt: normalizeDateOnlyValue(billing?.lastPaidAt),
       renewalDueAt: normalizeDateOnlyValue(billing?.renewalDueAt),

@@ -4,6 +4,7 @@ const INVOICE_COLLECTION = 'cmsClientInvoices'
 const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
 const INVOICE_STATUSES = new Set(['draft', 'sent', 'paid', 'overdue', 'void'])
 const ANALYTICS_STATUSES = new Set(['ready', 'unconfigured', 'unavailable'])
+const SOCIAL_STAT_KEYS = ['views', 'viewers', 'clicks', 'impressions', 'reach', 'engagements']
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const INVOICE_NUMBER_PREFIX = 'STJHR'
 const INVOICE_NUMBER_PATTERN = /^(?:GENCMS|STJHR)-(\d{4})-(\d{3,})$/
@@ -95,6 +96,73 @@ function normalizeMetricValue(value) {
   return Number.isFinite(number) ? number : 0
 }
 
+function normalizeOptionalMetricValue(value) {
+  const rawValue = String(value ?? '').trim()
+  if (!rawValue) {
+    return null
+  }
+
+  const cleanedValue = rawValue.replace(/,/g, '').replace(/[^0-9.-]/g, '')
+  if (!/[0-9]/.test(cleanedValue)) {
+    return null
+  }
+
+  const number = Number(cleanedValue)
+  return Number.isFinite(number) ? number : null
+}
+
+function normalizeSocialStatEntry(entry = {}) {
+  if (!entry || typeof entry !== 'object') {
+    return null
+  }
+
+  const metricSource = entry.metrics && typeof entry.metrics === 'object' ? entry.metrics : entry
+  const metrics = SOCIAL_STAT_KEYS.reduce((normalized, key) => {
+    const value = normalizeOptionalMetricValue(metricSource[key])
+
+    if (value !== null) {
+      normalized[key] = value
+    }
+
+    return normalized
+  }, {})
+
+  if (Object.keys(metrics).length === 0) {
+    return null
+  }
+
+  const startDate = normalizeDateOnlyValue(entry.startDate ?? entry.dateRange?.startDate, {
+    label: 'Social stats start date',
+  })
+  const endDate = normalizeDateOnlyValue(entry.endDate ?? entry.dateRange?.endDate, {
+    label: 'Social stats end date',
+  })
+
+  if (Boolean(startDate) !== Boolean(endDate)) {
+    throw new HttpError(400, 'Social stats start and end dates must both be provided.')
+  }
+
+  if (startDate && startDate > endDate) {
+    throw new HttpError(400, 'Social stats start date must be on or before the end date.')
+  }
+
+  return {
+    label:
+      normalizeField(entry.label ?? entry.platform ?? 'Social media marketing', {
+        label: 'Social stats label',
+        maxLength: 120,
+      }) || 'Social media marketing',
+    startDate,
+    endDate,
+    metrics,
+  }
+}
+
+function normalizeSocialStats(value) {
+  const entries = Array.isArray(value) ? value : value ? [value] : []
+  return entries.map(normalizeSocialStatEntry).filter(Boolean).slice(0, 10)
+}
+
 function normalizeAnalyticsSnapshot(snapshot = {}) {
   const propertySlug = String(snapshot?.propertySlug ?? '').trim()
 
@@ -132,6 +200,9 @@ function normalizeAnalyticsSnapshot(snapshot = {}) {
           sessions: normalizeMetricValue(row?.sessions),
         }))
       : [],
+    socialStats: normalizeSocialStats(
+      report?.socialStats ?? snapshot?.socialStats ?? report?.marketingStats ?? snapshot?.marketingStats,
+    ),
   }
 }
 
@@ -167,6 +238,7 @@ function normalizeInvoiceDraft(payload) {
   const analyticsEndDate = normalizeDateOnlyValue(payload?.analyticsEndDate, { label: 'Analytics end date' })
   const notes = normalizeField(payload?.notes, { label: 'Notes', maxLength: 2000 })
   const analyticsSnapshots = normalizeAnalyticsSnapshots(payload?.analyticsSnapshots)
+  const socialStats = normalizeSocialStats(payload?.socialStats ?? payload?.marketingStats)
 
   if (propertySlugs.length === 0) {
     throw new HttpError(400, 'Select at least one property for this invoice.')
@@ -197,6 +269,7 @@ function normalizeInvoiceDraft(payload) {
     analyticsStartDate,
     analyticsEndDate,
     analyticsSnapshots,
+    socialStats,
     notes,
   }
 }
@@ -216,6 +289,7 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
     analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
     analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
+    socialStats: normalizeSocialStats(record.socialStats ?? record.marketingStats),
     status: INVOICE_STATUSES.has(record.status) ? record.status : 'draft',
     notes: String(record.notes ?? '').trim(),
     createdAt: normalizeTimestampValue(record.createdAt),
@@ -277,6 +351,22 @@ async function listInvoicesForClient(clientId) {
   }
 }
 
+async function getInvoice(id) {
+  const normalizedId = String(id ?? '').trim()
+
+  if (!normalizedId) {
+    throw new HttpError(400, 'An invoice id is required.')
+  }
+
+  const snapshot = await getDb().collection(INVOICE_COLLECTION).doc(normalizedId).get()
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'That invoice could not be found.')
+  }
+
+  return normalizeStoredInvoiceRecord(snapshot.id, snapshot.data())
+}
+
 async function createInvoice(payload, adminUser) {
   const invoice = normalizeInvoiceDraft(payload)
   const year = Number(invoice.issueDate.slice(0, 4))
@@ -300,6 +390,7 @@ async function createInvoice(payload, adminUser) {
       analyticsStartDate: invoice.analyticsStartDate,
       analyticsEndDate: invoice.analyticsEndDate,
       analyticsSnapshots: invoice.analyticsSnapshots,
+      socialStats: invoice.socialStats,
       status: 'draft',
       notes: invoice.notes,
       createdAt: getServerTimestamp(),
@@ -339,6 +430,7 @@ async function updateInvoiceStatus(id, status) {
 }
 
 exports.listInvoicesForClient = listInvoicesForClient
+exports.getInvoice = getInvoice
 exports.createInvoice = createInvoice
 exports.updateInvoiceStatus = updateInvoiceStatus
 exports.INVOICE_COLLECTION = INVOICE_COLLECTION

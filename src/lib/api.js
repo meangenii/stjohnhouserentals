@@ -84,8 +84,62 @@ async function requestJson(path, { method = 'GET', body, headers, authToken, kee
   return payload
 }
 
+function getFilenameFromContentDisposition(contentDisposition) {
+  const header = String(contentDisposition ?? '')
+  const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header)
+
+  if (utf8Match) {
+    return decodeURIComponent(utf8Match[1])
+  }
+
+  const quotedMatch = /filename="([^"]+)"/i.exec(header)
+  if (quotedMatch) {
+    return quotedMatch[1]
+  }
+
+  const plainMatch = /filename=([^;]+)/i.exec(header)
+  return plainMatch ? plainMatch[1].trim() : ''
+}
+
+async function requestBlob(path, { method = 'GET', headers, authToken } = {}) {
+  const requestHeaders = new Headers(headers ?? {})
+  const normalizedMethod = String(method ?? 'GET').trim().toUpperCase() || 'GET'
+  const requestInit = {
+    method: normalizedMethod,
+    headers: requestHeaders,
+  }
+
+  if (authToken) {
+    requestHeaders.set('Authorization', `Bearer ${authToken}`)
+  }
+
+  if (normalizedMethod === 'GET' && shouldBypassBrowserCache(path, { authToken })) {
+    requestInit.cache = 'no-store'
+  }
+
+  const response = await fetch(`${apiBaseUrl}${path}`, requestInit)
+
+  if (!response.ok) {
+    const payload = await readResponsePayload(response)
+    const fallbackMessage = `Request failed with status ${response.status}`
+    const error = new Error(payload?.message || fallbackMessage)
+    error.status = response.status
+    error.payload = payload
+    throw error
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: getFilenameFromContentDisposition(response.headers.get('Content-Disposition')),
+  }
+}
+
 export async function getJson(path, options) {
   return requestJson(path, { ...options, method: 'GET' })
+}
+
+export async function getBlob(path, options) {
+  return requestBlob(path, { ...options, method: 'GET' })
 }
 
 export async function postJson(path, body, options) {

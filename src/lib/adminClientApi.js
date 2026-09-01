@@ -1,4 +1,4 @@
-import { deleteJson, getJson, postJson } from './api'
+import { deleteJson, getBlob, getJson, postJson } from './api'
 
 export async function listAdminClients(options = {}) {
   const payload = await getJson('/admin/clients', options)
@@ -74,4 +74,13 @@ export async function createAdminClientInvoice(clientId, draft, options = {}) {
 export async function updateAdminClientInvoiceStatus(invoiceId, status, options = {}) {
   const payload = await postJson(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}/status`, { status }, options)
   return payload?.invoice ?? null
+}
+
+export async function downloadAdminClientInvoicePdf(invoiceId, options = {}) {
+  return getBlob(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}/pdf`, options)
+}
+
+export async function emailAdminClientInvoicePdf(invoiceId, options = {}) {
+  const payload = await postJson(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}/email`, {}, options)
+  return payload?.delivery ?? null
 }

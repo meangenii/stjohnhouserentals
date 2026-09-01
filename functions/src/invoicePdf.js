@@ -1,0 +1,530 @@
+const PDFDocument = require('pdfkit')
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const SITE_ORIGIN = 'https://www.stjohnhouserentals.com'
+const COMPANY_NAME = 'St. John House Rentals'
+const DBA_NAME = 'DBA St John Links'
+const PAYEE_NAME = 'Jean Vance'
+const COMPANY_ADDRESS_LINES = ['9901 Emmaus', 'St. John, VI 00830-9587']
+const COMPANY_EMAIL = 'stjohnlinks@gmail.com'
+const SOCIAL_STAT_LABELS = [
+  ['views', 'Views'],
+  ['viewers', 'Viewers'],
+  ['clicks', 'Clicks'],
+  ['impressions', 'Impressions'],
+  ['reach', 'Reach'],
+  ['engagements', 'Engagements'],
+]
+const ANNUAL_INVOICE_MONTH_COUNT = 12
+
+function normalizeDateOnly(dateOnly) {
+  const normalized = String(dateOnly ?? '').trim().slice(0, 10)
+  return DATE_ONLY_PATTERN.test(normalized) ? normalized : ''
+}
+
+function addDays(dateOnly, dayCount) {
+  const source = DATE_ONLY_PATTERN.test(String(dateOnly ?? '')) ? `${dateOnly}T12:00:00` : new Date()
+  const date = source instanceof Date ? source : new Date(source)
+  date.setDate(date.getDate() + dayCount)
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
+function addMonths(dateOnly, monthCount) {
+  if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
+    return ''
+  }
+
+  const date = new Date(`${dateOnly}T12:00:00`)
+  date.setMonth(date.getMonth() + monthCount)
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
+  return localDate.toISOString().slice(0, 10)
+}
+
+function getAnnualServiceEndDate(startDate) {
+  return startDate ? addDays(addMonths(startDate, ANNUAL_INVOICE_MONTH_COUNT), -1) : ''
+}
+
+function formatDate(dateOnly) {
+  if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
+    return String(dateOnly ?? '')
+  }
+
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${dateOnly}T00:00:00Z`))
+}
+
+function formatInvoiceDate(dateOnly) {
+  if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
+    return String(dateOnly ?? '')
+  }
+
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(`${dateOnly}T00:00:00Z`))
+}
+
+function formatMonthYear(dateOnly) {
+  if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
+    return ''
+  }
+
+  const [year, month] = dateOnly.split('-')
+  return `${Number(month)}-${year}`
+}
+
+function formatNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : '0'
+}
+
+function formatPercent(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? `${Math.round(number * 100)}%` : '0%'
+}
+
+function formatDuration(value) {
+  const seconds = Math.max(0, Math.round(Number(value) || 0))
+  const minutes = Math.floor(seconds / 60)
+  const remainder = seconds % 60
+  return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`
+}
+
+function readAmount(value) {
+  const amount = Number(String(value ?? '').replace(/[^0-9.-]/g, ''))
+  return Number.isFinite(amount) ? amount : 0
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(readAmount(value))
+}
+
+function formatInvoiceCurrency(value) {
+  const amount = readAmount(value)
+
+  if (Number.isInteger(amount)) {
+    return `$${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount)}`
+  }
+
+  return formatCurrency(amount)
+}
+
+function getInvoicePdfFilename(invoice) {
+  const invoiceNumber = String(invoice?.invoiceNumber || invoice?.id || 'invoice').trim()
+  const safeName = invoiceNumber.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'invoice'
+  return `${safeName}.pdf`
+}
+
+function getClientName(client) {
+  return client?.businessName || client?.contactName || client?.email || 'Client'
+}
+
+function getClientInvoiceLines(client) {
+  const businessName = String(client?.businessName ?? '').trim()
+  const contactName = String(client?.contactName ?? '').trim()
+  const phone = String(client?.phone ?? '').trim()
+  const address = String(client?.address ?? '').trim()
+  const email = String(client?.email ?? '').trim()
+
+  return Array.from(new Set([businessName, contactName, phone, address, email].filter(Boolean)))
+}
+
+function getPropertyUrl(property, fallbackSlug = '') {
+  const rawPath = String(property?.path || (fallbackSlug ? `/rental-properties/${fallbackSlug}` : '')).trim()
+
+  if (!rawPath) {
+    return SITE_ORIGIN
+  }
+
+  if (/^https?:\/\//i.test(rawPath)) {
+    return rawPath
+  }
+
+  return `${SITE_ORIGIN}${rawPath.startsWith('/') ? rawPath : `/${rawPath}`}`
+}
+
+function getServicePeriod(invoice, property) {
+  const startDate = normalizeDateOnly(invoice?.analyticsStartDate)
+    || normalizeDateOnly(property?.subscriptionStartAt)
+    || normalizeDateOnly(invoice?.issueDate)
+  const endDate = normalizeDateOnly(invoice?.analyticsEndDate) || getAnnualServiceEndDate(startDate)
+  const startLabel = formatMonthYear(startDate)
+  const endLabel = formatMonthYear(endDate)
+
+  if (startLabel && endLabel && startLabel !== endLabel) {
+    return `${startLabel}\nthrough\n${endLabel}`
+  }
+
+  return startLabel || ''
+}
+
+function getSnapshotForProperty(snapshots, property, propertySlug) {
+  return snapshots.find((snapshot) => snapshot.propertySlug === property?.slug)
+    || snapshots.find((snapshot) => snapshot.propertySlug === propertySlug)
+    || snapshots[0]
+    || null
+}
+
+function getAnalyticsRangeLabel(invoice, snapshot) {
+  const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice?.analyticsStartDate)
+  const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice?.analyticsEndDate)
+
+  if (startDate && endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`
+  }
+
+  return 'TBD'
+}
+
+function getAnalyticsMetricLabel(snapshot, metricName) {
+  if (snapshot?.status !== 'ready') {
+    return 'N/A'
+  }
+
+  return formatNumber(snapshot?.metrics?.[metricName])
+}
+
+function getSocialStatsRangeLabel(stats) {
+  const startDate = normalizeDateOnly(stats?.startDate || stats?.dateRange?.startDate)
+  const endDate = normalizeDateOnly(stats?.endDate || stats?.dateRange?.endDate)
+
+  if (startDate && endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`
+  }
+
+  return String(stats?.rangeLabel || stats?.range || '').trim()
+}
+
+function normalizeSocialStatEntry(stats) {
+  if (!stats || typeof stats !== 'object') {
+    return null
+  }
+
+  const metricSource = stats.metrics && typeof stats.metrics === 'object' ? stats.metrics : stats
+  const metrics = SOCIAL_STAT_LABELS
+    .map(([key, label]) => {
+      const value = Number(metricSource[key])
+      return Number.isFinite(value) ? { key, label, value } : null
+    })
+    .filter(Boolean)
+
+  if (!metrics.length) {
+    return null
+  }
+
+  return {
+    label: String(stats.label || stats.platform || 'Social media marketing').trim(),
+    rangeLabel: getSocialStatsRangeLabel(stats),
+    metrics,
+  }
+}
+
+function getInvoiceSocialStats(invoice, snapshot) {
+  const sources = [
+    ...(Array.isArray(invoice?.socialStats) ? invoice.socialStats : invoice?.socialStats ? [invoice.socialStats] : []),
+    ...(Array.isArray(snapshot?.socialStats) ? snapshot.socialStats : snapshot?.socialStats ? [snapshot.socialStats] : []),
+    ...(Array.isArray(invoice?.marketingStats)
+      ? invoice.marketingStats
+      : invoice?.marketingStats
+        ? [invoice.marketingStats]
+        : []),
+    ...(Array.isArray(snapshot?.marketingStats)
+      ? snapshot.marketingStats
+      : snapshot?.marketingStats
+        ? [snapshot.marketingStats]
+        : []),
+  ]
+
+  return sources.map(normalizeSocialStatEntry).filter(Boolean)
+}
+
+function writeText(doc, text, x, y, options = {}) {
+  const {
+    width,
+    font = 'Helvetica',
+    size = 9,
+    color = '#000000',
+    lineGap = 1,
+    align = 'left',
+  } = options
+
+  doc.font(font).fontSize(size).fillColor(color).text(String(text ?? ''), x, y, { width, lineGap, align })
+  return doc.y
+}
+
+function renderMetricGrid(doc, metrics, x, y, width, { columns = 3 } = {}) {
+  const gap = 4
+  const cellHeight = 32
+  const cellWidth = (width - gap * (columns - 1)) / columns
+
+  metrics.forEach((metric, index) => {
+    const column = index % columns
+    const row = Math.floor(index / columns)
+    const cellX = x + column * (cellWidth + gap)
+    const cellY = y + row * (cellHeight + gap)
+
+    doc.rect(cellX, cellY, cellWidth, cellHeight).fillAndStroke('#f8fafc', '#d7d7d7')
+    writeText(doc, metric.label, cellX + 5, cellY + 5, { width: cellWidth - 10, size: 6.8, color: '#4b5563' })
+    writeText(doc, metric.value, cellX + 5, cellY + 17, { width: cellWidth - 10, size: 8.5 })
+  })
+
+  return y + Math.ceil(metrics.length / columns) * (cellHeight + gap) - gap
+}
+
+function renderAnalyticsReport(doc, invoice, snapshot, x, y, width) {
+  writeText(doc, 'Google Analytics', x, y, { width: width * 0.45, font: 'Helvetica-Bold', size: 9.5 })
+  writeText(doc, getAnalyticsRangeLabel(invoice, snapshot), x + width * 0.45, y + 1, {
+    width: width * 0.55,
+    size: 7,
+    color: '#4b5563',
+    align: 'right',
+  })
+  let nextY = y + 15
+
+  if (snapshot?.status !== 'ready') {
+    return writeText(
+      doc,
+      snapshot?.message || 'Google Analytics was unavailable when this invoice was generated.',
+      x,
+      nextY,
+      { width, size: 8, color: '#4b5563' },
+    ) + 3
+  }
+
+  nextY = renderMetricGrid(
+    doc,
+    [
+      { label: 'Views', value: getAnalyticsMetricLabel(snapshot, 'views') },
+      { label: 'Unique visitors', value: getAnalyticsMetricLabel(snapshot, 'activeUsers') },
+      { label: 'Sessions', value: getAnalyticsMetricLabel(snapshot, 'sessions') },
+      { label: 'Engagement', value: formatPercent(snapshot.metrics?.engagementRate) },
+      { label: 'Avg. session', value: formatDuration(snapshot.metrics?.averageSessionDuration) },
+    ],
+    x,
+    nextY,
+    width,
+  )
+
+  return nextY + 4
+}
+
+function renderSocialStats(doc, stats, x, y, width) {
+  if (!stats.length) {
+    return y
+  }
+
+  let nextY = y + 4
+
+  stats.forEach((entry) => {
+    writeText(doc, entry.label, x, nextY, { width: width * 0.45, font: 'Helvetica-Bold', size: 9 })
+
+    if (entry.rangeLabel) {
+      writeText(doc, entry.rangeLabel, x + width * 0.45, nextY + 1, {
+        width: width * 0.55,
+        size: 7,
+        color: '#4b5563',
+        align: 'right',
+      })
+    }
+
+    nextY = renderMetricGrid(doc, entry.metrics.map((metric) => ({
+      label: metric.label,
+      value: formatNumber(metric.value),
+    })), x, nextY + 15, width, { columns: 3 }) + 7
+  })
+
+  return nextY
+}
+
+function getServiceDescriptionLabel(description) {
+  const normalized = String(description ?? '').trim().replace(/[\u2013\u2014]/g, '-')
+
+  if (!normalized || /property listing/i.test(normalized) || /^https?:\/\//i.test(normalized) || normalized.startsWith('/')) {
+    return 'Website listing services for'
+  }
+
+  return normalized
+}
+
+function renderCellText(doc, text, x, y, width, options = {}) {
+  return writeText(doc, text, x, y, { width, size: 9, ...options }) + 4
+}
+
+function drawRowBorders(doc, columns, y, height) {
+  columns.forEach((column) => {
+    doc.rect(column.x, y, column.width, height).stroke('#222222')
+  })
+}
+
+function renderInvoiceTable(doc, { invoice, properties }) {
+  const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
+  const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property?.slug === slug)?.name || slug)
+  const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
+  const primaryProperty = properties.find((property) => property?.slug === primaryPropertySlug) ?? null
+  const servicePeriod = getServicePeriod(invoice, primaryProperty)
+  const tableX = doc.page.margins.left
+  const tableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right
+  const columns = [
+    { key: 'service', label: 'Date of Service', x: tableX, width: tableWidth * 0.12 },
+    { key: 'description', label: 'Service Description', x: tableX + tableWidth * 0.12, width: tableWidth * 0.56 },
+    { key: 'amount', label: 'Amount', x: tableX + tableWidth * 0.68, width: tableWidth * 0.16 },
+    { key: 'due', label: 'Amount Due', x: tableX + tableWidth * 0.84, width: tableWidth * 0.16 },
+  ]
+  const headerY = doc.y
+  const headerHeight = 24
+
+  columns.forEach((column) => {
+    doc.rect(column.x, headerY, column.width, headerHeight).stroke('#222222')
+    writeText(doc, column.label, column.x + 5, headerY + 7, { width: column.width - 10, size: 8.5 })
+  })
+
+  let rowY = headerY + headerHeight
+
+  invoice.lineItems.forEach((item, index) => {
+    const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
+    const rowProperty = properties.find((property) => property?.slug === rowPropertySlug) ?? primaryProperty
+    const rowSnapshot = getSnapshotForProperty(snapshots, rowProperty, rowPropertySlug)
+    const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
+    const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
+    const showPropertyDetails = index === 0 && propertyName
+    const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
+    const descriptionColumn = columns[1]
+    const descX = descriptionColumn.x + 7
+    const descWidth = descriptionColumn.width - 14
+    let descY = rowY + 9
+
+    if (rowY > doc.page.height - doc.page.margins.bottom - 220) {
+      doc.addPage()
+      rowY = doc.page.margins.top
+      descY = rowY + 9
+    }
+
+    const serviceY = renderCellText(doc, index === 0 ? servicePeriod : '', columns[0].x + 5, rowY + 9, columns[0].width - 10)
+    descY = renderCellText(doc, getServiceDescriptionLabel(item.description), descX, descY, descWidth)
+
+    if (showPropertyDetails) {
+      descY += 22
+      descY = renderCellText(doc, propertyName, descX, descY, descWidth, { font: 'Helvetica-Bold' })
+      descY = renderCellText(doc, propertyUrl, descX, descY, descWidth, { color: '#0000ee' })
+      descY = renderAnalyticsReport(doc, invoice, rowSnapshot, descX, descY + 5, descWidth)
+      descY = renderSocialStats(doc, socialStats, descX, descY, descWidth)
+    }
+
+    const amountY = renderCellText(doc, formatInvoiceCurrency(item.amount), columns[3].x + 5, rowY + 9, columns[3].width - 10)
+    const rowHeight = Math.max(210, descY - rowY + 10, serviceY - rowY + 10, amountY - rowY + 10)
+
+    drawRowBorders(doc, columns, rowY, rowHeight)
+    rowY += rowHeight
+  })
+
+  const totalHeight = 27
+  doc.rect(columns[2].x, rowY, columns[2].width, totalHeight).stroke('#222222')
+  doc.rect(columns[3].x, rowY, columns[3].width, totalHeight).stroke('#222222')
+  writeText(doc, 'Total Due:', columns[2].x + 5, rowY + 8, { width: columns[2].width - 10, size: 9 })
+  writeText(doc, formatInvoiceCurrency(invoice.amountTotal), columns[3].x + 5, rowY + 8, { width: columns[3].width - 10, size: 9 })
+
+  doc.y = rowY + totalHeight + 28
+}
+
+function renderInvoiceHeader(doc, invoice, client) {
+  const left = doc.page.margins.left
+  const right = doc.page.width - doc.page.margins.right
+  const top = doc.page.margins.top
+
+  writeText(doc, `Invoice - ${invoice.invoiceNumber}.`, left, top, { width: 220, size: 13 })
+  writeText(doc, COMPANY_NAME.replace(' House ', ' House\n'), right - 130, top + 20, {
+    width: 130,
+    font: 'Times-Italic',
+    size: 15,
+    align: 'center',
+  })
+
+  const partyY = top + 142
+  const clientLines = getClientInvoiceLines(client)
+
+  writeText(doc, 'Client:', left, partyY, { width: 200, size: 10 })
+  let clientY = partyY + 15
+  ;(clientLines.length > 0 ? clientLines : [getClientName(client)]).forEach((line) => {
+    clientY = writeText(doc, line, left, clientY, { width: 270, size: 10 }) + 2
+  })
+
+  writeText(doc, 'Invoice Date:', right - 160, partyY, { width: 160, size: 10 })
+  writeText(doc, formatInvoiceDate(invoice.issueDate), right - 160, partyY + 15, { width: 160, size: 10 })
+
+  doc.y = partyY + 66
+}
+
+function renderPaymentCopy(doc) {
+  const left = doc.page.margins.left
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right
+
+  if (doc.y > doc.page.height - doc.page.margins.bottom - 140) {
+    doc.addPage()
+  }
+
+  writeText(
+    doc,
+    `Please contact me with any listing changes, seasonal including rates and dates. Payment is due upon receipt. Please make checks payable to ${PAYEE_NAME}. Payments can be sent to:`,
+    left,
+    doc.y,
+    { width, size: 9 },
+  )
+
+  let addressY = doc.y + 10
+  ;[PAYEE_NAME, ...COMPANY_ADDRESS_LINES].forEach((line) => {
+    addressY = writeText(doc, line, left, addressY, { width, size: 9 }) + 2
+  })
+
+  doc.y = addressY + 12
+}
+
+function renderFooter(doc) {
+  const left = doc.page.margins.left
+  const right = doc.page.width - doc.page.margins.right
+  const bottomY = doc.page.height - doc.page.margins.bottom - 42
+
+  writeText(doc, DBA_NAME, left, bottomY, { width: 180, font: 'Helvetica-Bold', size: 9 })
+  writeText(doc, SITE_ORIGIN.replace(/^https?:\/\//, ''), left, bottomY + 13, { width: 180, size: 9, color: '#0000ee' })
+
+  let addressY = bottomY
+  ;[...COMPANY_ADDRESS_LINES, COMPANY_EMAIL].forEach((line) => {
+    addressY = writeText(doc, line, right - 210, addressY, { width: 210, size: 8, align: 'right' }) + 2
+  })
+}
+
+function createInvoicePdfBuffer({ invoice, client, properties = [] }) {
+  return new Promise((resolve, reject) => {
+    const document = new PDFDocument({
+      size: 'LETTER',
+      margins: { top: 54, right: 54, bottom: 44, left: 54 },
+      info: {
+        Title: `Invoice ${invoice?.invoiceNumber || ''}`.trim(),
+        Author: COMPANY_NAME,
+        Subject: `Invoice for ${getClientName(client)}`,
+      },
+    })
+    const chunks = []
+
+    document.on('data', (chunk) => chunks.push(chunk))
+    document.on('end', () => resolve(Buffer.concat(chunks)))
+    document.on('error', reject)
+
+    renderInvoiceHeader(document, invoice, client)
+    renderInvoiceTable(document, { invoice, client, properties })
+
+    if (invoice.notes) {
+      writeText(document, invoice.notes, document.page.margins.left, document.y, {
+        width: document.page.width - document.page.margins.left - document.page.margins.right,
+        size: 9,
+      })
+      document.y += 20
+    }
+
+    renderPaymentCopy(document)
+    renderFooter(document)
+    document.end()
+  })
+}
+
+exports.createInvoicePdfBuffer = createInvoicePdfBuffer
+exports.formatInvoiceCurrency = formatInvoiceCurrency
+exports.formatInvoiceDate = formatInvoiceDate
+exports.getInvoicePdfFilename = getInvoicePdfFilename

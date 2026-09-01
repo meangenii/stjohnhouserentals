@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { getAdminIdToken } from '../lib/adminAuth'
 import {
   createAdminClientInvoice,
+  downloadAdminClientInvoicePdf,
+  emailAdminClientInvoicePdf,
   getAdminPropertyAnalytics,
   listAdminClientInvoices,
   updateAdminClientInvoiceStatus,
@@ -16,7 +18,17 @@ const DBA_NAME = 'DBA St John Links'
 const PAYEE_NAME = 'Jean Vance'
 const COMPANY_ADDRESS_LINES = ['9901 Emmaus', 'St. John, VI 00830-9587']
 const COMPANY_EMAIL = 'stjohnlinks@gmail.com'
-const MARKETING_DATE_LABEL = 'Marketing Dates TBD'
+const SOCIAL_STAT_LABELS = {
+  views: 'Views',
+  viewers: 'Viewers',
+  clicks: 'Clicks',
+  impressions: 'Impressions',
+  reach: 'Reach',
+  engagements: 'Engagements',
+}
+const DEFAULT_ANNUAL_INVOICE_AMOUNT = '300'
+const ANNUAL_INVOICE_MONTH_COUNT = 12
+const INVOICE_DUE_DAY_COUNT = 30
 
 function getLocalDateOnly(date = new Date()) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
@@ -38,6 +50,28 @@ function addMonths(dateOnly, monthCount) {
   const date = new Date(`${dateOnly}T12:00:00`)
   date.setMonth(date.getMonth() + monthCount)
   return getLocalDateOnly(date)
+}
+
+function getAnnualServiceEndDate(startDate) {
+  return startDate ? addDays(addMonths(startDate, ANNUAL_INVOICE_MONTH_COUNT), -1) : ''
+}
+
+function getAnnualInvoiceAmount(property) {
+  const amount = String(property?.listingFeeAmount ?? '').trim()
+  return amount || DEFAULT_ANNUAL_INVOICE_AMOUNT
+}
+
+function getDerivedInvoiceDates(property) {
+  const subscriptionStartDate = normalizeDateOnly(property?.subscriptionStartAt)
+  const today = getLocalDateOnly()
+  const issueDate = subscriptionStartDate || today
+
+  return {
+    issueDate,
+    dueDate: addDays(issueDate, INVOICE_DUE_DAY_COUNT),
+    analyticsStartDate: subscriptionStartDate,
+    analyticsEndDate: getAnnualServiceEndDate(subscriptionStartDate),
+  }
 }
 
 function formatDate(dateOnly) {
@@ -102,12 +136,27 @@ function formatInvoiceCurrency(value) {
   return formatCurrency(amount)
 }
 
-function getClientName(client) {
-  return client?.businessName || client?.contactName || client?.email || 'Client'
+function getInvoicePdfFallbackFilename(invoice) {
+  const invoiceNumber = String(invoice?.invoiceNumber || invoice?.id || 'invoice').trim()
+  const safeName = invoiceNumber.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'invoice'
+  return `${safeName}.pdf`
 }
 
-function getPropertyLineDescription() {
-  return 'Website listing services for'
+function downloadBlob(blob, filename) {
+  const downloadUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = downloadUrl
+  link.download = filename
+  link.rel = 'noopener'
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0)
+}
+
+function getClientName(client) {
+  return client?.businessName || client?.contactName || client?.email || 'Client'
 }
 
 function normalizeDateOnly(dateOnly) {
@@ -129,23 +178,15 @@ function getPropertyUrl(property, fallbackSlug = '') {
   return `${SITE_ORIGIN}${rawPath.startsWith('/') ? rawPath : `/${rawPath}`}`
 }
 
-function getIntervalMonthCount(property) {
-  switch (String(property?.listingFeeInterval ?? '').trim().toLowerCase()) {
-    case 'monthly':
-      return 1
-    case 'one-time':
-      return 0
-    case 'annual':
-    default:
-      return 12
-  }
+function getPropertyLineDescription(property) {
+  return getPropertyUrl(property, property?.slug)
 }
 
-function getServicePeriod(client, invoice, property) {
-  const startDate = normalizeDateOnly(client?.subscriptionStartAt) || normalizeDateOnly(invoice.issueDate)
-  const explicitEndDate = normalizeDateOnly(client?.subscriptionEndAt)
-  const intervalMonthCount = getIntervalMonthCount(property)
-  const endDate = explicitEndDate || (startDate && intervalMonthCount > 0 ? addMonths(startDate, intervalMonthCount) : '')
+function getServicePeriod(invoice, property) {
+  const startDate = normalizeDateOnly(invoice?.analyticsStartDate)
+    || normalizeDateOnly(property?.subscriptionStartAt)
+    || normalizeDateOnly(invoice?.issueDate)
+  const endDate = normalizeDateOnly(invoice?.analyticsEndDate) || getAnnualServiceEndDate(startDate)
   const startLabel = formatMonthYear(startDate)
   const endLabel = formatMonthYear(endDate)
 
@@ -192,10 +233,79 @@ function getAnalyticsMetricLabel(snapshot, metricName) {
   return formatNumber(snapshot?.metrics?.[metricName])
 }
 
+function readSocialMetric(value) {
+  const rawValue = String(value ?? '').trim()
+  if (!rawValue) {
+    return null
+  }
+
+  const cleanedValue = rawValue.replace(/,/g, '').replace(/[^0-9.-]/g, '')
+  if (!/[0-9]/.test(cleanedValue)) {
+    return null
+  }
+
+  const metric = Number(cleanedValue)
+  return Number.isFinite(metric) ? metric : null
+}
+
+function getSocialStatsRangeLabel(stats) {
+  const startDate = normalizeDateOnly(stats?.startDate || stats?.dateRange?.startDate)
+  const endDate = normalizeDateOnly(stats?.endDate || stats?.dateRange?.endDate)
+
+  if (startDate && endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`
+  }
+
+  return String(stats?.rangeLabel || stats?.range || '').trim()
+}
+
+function normalizeSocialStatEntry(stats) {
+  if (!stats || typeof stats !== 'object') {
+    return null
+  }
+
+  const metricSource = stats.metrics && typeof stats.metrics === 'object' ? stats.metrics : stats
+  const metrics = Object.entries(SOCIAL_STAT_LABELS)
+    .map(([key, label]) => {
+      const value = readSocialMetric(metricSource[key])
+      return value === null ? null : { key, label, value }
+    })
+    .filter(Boolean)
+
+  if (!metrics.length) {
+    return null
+  }
+
+  return {
+    label: String(stats.label || stats.platform || 'Social media marketing').trim(),
+    rangeLabel: getSocialStatsRangeLabel(stats),
+    metrics,
+  }
+}
+
+function getInvoiceSocialStats(invoice, snapshot) {
+  const sources = [
+    ...(Array.isArray(invoice?.socialStats) ? invoice.socialStats : invoice?.socialStats ? [invoice.socialStats] : []),
+    ...(Array.isArray(snapshot?.socialStats) ? snapshot.socialStats : snapshot?.socialStats ? [snapshot.socialStats] : []),
+    ...(Array.isArray(invoice?.marketingStats)
+      ? invoice.marketingStats
+      : invoice?.marketingStats
+        ? [invoice.marketingStats]
+        : []),
+    ...(Array.isArray(snapshot?.marketingStats)
+      ? snapshot.marketingStats
+      : snapshot?.marketingStats
+        ? [snapshot.marketingStats]
+        : []),
+  ]
+
+  return sources.map(normalizeSocialStatEntry).filter(Boolean)
+}
+
 function getServiceDescriptionLabel(description) {
   const normalized = String(description ?? '').trim().replace(/[\u2013\u2014]/g, '-')
 
-  if (!normalized || /property listing/i.test(normalized)) {
+  if (!normalized || /property listing/i.test(normalized) || /^https?:\/\//i.test(normalized) || normalized.startsWith('/')) {
     return 'Website listing services for'
   }
 
@@ -203,18 +313,15 @@ function getServiceDescriptionLabel(description) {
 }
 
 function createInvoiceDraft(property) {
-  const today = getLocalDateOnly()
+  const derivedDates = getDerivedInvoiceDates(property)
 
   return {
     propertySlug: property?.slug ?? '',
-    issueDate: today,
-    dueDate: addDays(today, 30),
-    analyticsStartDate: addDays(today, -29),
-    analyticsEndDate: today,
+    ...derivedDates,
     lineItems: [
       {
         description: getPropertyLineDescription(property),
-        amount: String(property?.listingFeeAmount ?? ''),
+        amount: getAnnualInvoiceAmount(property),
       },
     ],
     notes: '',
@@ -227,7 +334,7 @@ function AnalyticsMetrics({ report }) {
   return (
     <div className="admin-client-invoice-metrics">
       <span><strong>{formatNumber(metrics.views)}</strong> views</span>
-      <span><strong>{formatNumber(metrics.activeUsers)}</strong> users</span>
+      <span><strong>{formatNumber(metrics.activeUsers)}</strong> unique visitors</span>
       <span><strong>{formatNumber(metrics.sessions)}</strong> sessions</span>
       <span><strong>{formatPercent(metrics.engagementRate)}</strong> engagement</span>
       <span><strong>{formatDuration(metrics.averageSessionDuration)}</strong> avg. session</span>
@@ -235,15 +342,97 @@ function AnalyticsMetrics({ report }) {
   )
 }
 
-function SavedInvoice({ client, invoice, properties, printTarget, statusBusy, onPrint, onStatusChange }) {
+function InvoiceAnalyticsReport({ invoice, snapshot }) {
+  const rangeLabel = getAnalyticsRangeLabel(invoice, snapshot)
+
+  return (
+    <section className="admin-client-invoice-ga-report" aria-label="Google Analytics report">
+      <div className="admin-client-invoice-ga-header">
+        <strong>Google Analytics</strong>
+        <span>{rangeLabel}</span>
+      </div>
+      {snapshot?.status === 'ready' ? (
+        <dl className="admin-client-invoice-ga-metrics">
+          <div>
+            <dt>Views</dt>
+            <dd>{getAnalyticsMetricLabel(snapshot, 'views')}</dd>
+          </div>
+          <div>
+            <dt>Unique visitors</dt>
+            <dd>{getAnalyticsMetricLabel(snapshot, 'activeUsers')}</dd>
+          </div>
+          <div>
+            <dt>Sessions</dt>
+            <dd>{getAnalyticsMetricLabel(snapshot, 'sessions')}</dd>
+          </div>
+          <div>
+            <dt>Engagement</dt>
+            <dd>{formatPercent(snapshot.metrics?.engagementRate)}</dd>
+          </div>
+          <div>
+            <dt>Avg. session</dt>
+            <dd>{formatDuration(snapshot.metrics?.averageSessionDuration)}</dd>
+          </div>
+        </dl>
+      ) : (
+        <p className="admin-client-invoice-muted">
+          {snapshot?.message || 'Google Analytics was unavailable when this invoice was generated.'}
+        </p>
+      )}
+    </section>
+  )
+}
+
+function InvoiceSocialStats({ stats }) {
+  if (!stats?.length) {
+    return null
+  }
+
+  return (
+    <section className="admin-client-invoice-social-report" aria-label="Social marketing statistics">
+      {stats.map((entry, index) => (
+        <div className="admin-client-invoice-social-group" key={`${entry.label}-${entry.rangeLabel}-${index}`}>
+          <div className="admin-client-invoice-social-header">
+            <strong>{entry.label}</strong>
+            {entry.rangeLabel ? <span>{entry.rangeLabel}</span> : null}
+          </div>
+          <dl className="admin-client-invoice-social-metrics">
+            {entry.metrics.map((metric) => (
+              <div key={metric.key}>
+                <dt>{metric.label}</dt>
+                <dd>{formatNumber(metric.value)}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </section>
+  )
+}
+
+function SavedInvoice({
+  actionState,
+  client,
+  invoice,
+  properties,
+  printTarget,
+  statusBusy,
+  onEmailPdf,
+  onPrint,
+  onSavePdf,
+  onStatusChange,
+}) {
   const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property.slug === slug)?.name || slug)
   const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
   const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
   const primaryProperty = properties.find((property) => property.slug === primaryPropertySlug) ?? null
-  const primarySnapshot = getSnapshotForProperty(snapshots, primaryProperty, primaryPropertySlug)
-  const servicePeriod = getServicePeriod(client, invoice, primaryProperty)
-  const analyticsRangeLabel = getAnalyticsRangeLabel(invoice, primarySnapshot)
+  const servicePeriod = getServicePeriod(invoice, primaryProperty)
   const clientLines = getClientInvoiceLines(client)
+  const clientEmail = String(client?.email ?? '').trim()
+  const invoiceAction = actionState?.invoiceId === invoice.id ? actionState : null
+  const isPdfBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'save-pdf'
+  const isEmailBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'email-pdf'
+  const isActionBusy = isPdfBusy || isEmailBusy
 
   return (
     <article className={`admin-client-saved-invoice ${printTarget ? 'admin-client-invoice-print-target' : ''}`.trim()}>
@@ -266,8 +455,34 @@ function SavedInvoice({ client, invoice, properties, printTarget, statusBusy, on
           <button className="button-link button-link--ghost admin-action" type="button" onClick={() => onPrint(invoice.id)}>
             Print
           </button>
+          <button
+            className="button-link button-link--ghost admin-action"
+            disabled={isActionBusy}
+            type="button"
+            onClick={() => onSavePdf(invoice)}
+          >
+            {isPdfBusy ? 'Saving...' : 'Save PDF'}
+          </button>
+          <button
+            className="button-link button-link--ghost admin-action"
+            disabled={isActionBusy || !clientEmail}
+            title={clientEmail ? `Email PDF to ${clientEmail}` : 'Add a client email before emailing this invoice.'}
+            type="button"
+            onClick={() => onEmailPdf(invoice)}
+          >
+            {isEmailBusy ? 'Emailing...' : 'Email PDF'}
+          </button>
         </div>
       </div>
+      {invoiceAction?.message ? (
+        <p
+          className={`admin-client-invoice-action-feedback admin-client-invoice-no-print admin-feedback admin-feedback--${
+            invoiceAction.state === 'error' ? 'error' : 'idle'
+          }`}
+        >
+          {invoiceAction.message}
+        </p>
+      ) : null}
 
       <div className="admin-client-invoice-document">
         <header className="admin-client-invoice-document-header">
@@ -310,6 +525,7 @@ function SavedInvoice({ client, invoice, properties, printTarget, statusBusy, on
               const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
               const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
               const showPropertyDetails = index === 0 && propertyName
+              const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
 
               return (
                 <tr key={`${item.description}-${index}`}>
@@ -320,18 +536,8 @@ function SavedInvoice({ client, invoice, properties, printTarget, statusBusy, on
                       <>
                         <strong>{propertyName}</strong>
                         <a href={propertyUrl}>{propertyUrl}</a>
-                        <p>STJHR Site Statistics ({analyticsRangeLabel}):</p>
-                        <p>
-                          Views: {getAnalyticsMetricLabel(rowSnapshot, 'views')} Unique Visitors:{' '}
-                          {getAnalyticsMetricLabel(rowSnapshot, 'activeUsers')}
-                        </p>
-                        {rowSnapshot?.status && rowSnapshot.status !== 'ready' ? (
-                          <p>{rowSnapshot.message || 'Google Analytics was unavailable when this invoice was generated.'}</p>
-                        ) : null}
-                        <p><strong>FB and Instagram marketing.</strong></p>
-                        <p>Statistics &quot;{MARKETING_DATE_LABEL}&quot;:</p>
-                        <p>Views: N/A Viewers: N/A</p>
-                        <p>Clicks: N/A</p>
+                        <InvoiceAnalyticsReport invoice={invoice} snapshot={rowSnapshot} />
+                        <InvoiceSocialStats stats={socialStats} />
                       </>
                     ) : null}
                   </td>
@@ -385,19 +591,31 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const [invoiceState, setInvoiceState] = useState({ state: 'idle', invoices: [], message: '' })
   const [createStatus, setCreateStatus] = useState({ state: 'idle', message: '' })
   const [statusBusyId, setStatusBusyId] = useState('')
+  const [invoiceActionState, setInvoiceActionState] = useState({ invoiceId: '', action: '', state: 'idle', message: '' })
   const [printInvoiceId, setPrintInvoiceId] = useState('')
   const propertyKey = properties.map((property) => property.slug).join('|')
   const draftProperty = properties.find((property) => property.slug === draft.propertySlug) ?? null
+  const subscriptionStartDate = normalizeDateOnly(draftProperty?.subscriptionStartAt)
+  const annualServiceEndDate = getAnnualServiceEndDate(subscriptionStartDate)
   const amountTotal = useMemo(() => draft.lineItems.reduce((sum, item) => sum + readAmount(item.amount), 0), [draft.lineItems])
   const datesAreQueryable =
     DATE_ONLY_PATTERN.test(draft.analyticsStartDate) &&
     DATE_ONLY_PATTERN.test(draft.analyticsEndDate) &&
     draft.analyticsStartDate <= draft.analyticsEndDate
+  const canGenerateInvoice = Boolean(draft.propertySlug && subscriptionStartDate && datesAreQueryable)
 
   useEffect(() => {
     setDraft(createInvoiceDraft(selectedProperty))
     setCreateStatus({ state: 'idle', message: '' })
-  }, [client?.id, selectedProperty, selectedPropertySlug, propertyKey])
+  }, [
+    propertyKey,
+    selectedProperty?.listingFeeAmount,
+    selectedProperty?.path,
+    selectedProperty?.slug,
+    selectedProperty?.subscriptionStartAt,
+    selectedProperty,
+    selectedPropertySlug,
+  ])
 
   useEffect(() => {
     if (!authUser?.uid || !client?.id) {
@@ -499,25 +717,47 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
 
   function handlePropertyChange(slug) {
     const property = properties.find((candidate) => candidate.slug === slug)
+    const derivedDates = getDerivedInvoiceDates(property)
+
     setDraft((current) => ({
       ...current,
       propertySlug: slug,
-      lineItems: current.lineItems.length === 1
-        ? [{ description: getPropertyLineDescription(property), amount: String(property?.listingFeeAmount ?? '') }]
-        : current.lineItems,
+      ...derivedDates,
+      lineItems: [{ description: getPropertyLineDescription(property), amount: getAnnualInvoiceAmount(property) }],
     }))
     setCreateStatus({ state: 'idle', message: '' })
   }
 
-  function handleLineItemChange(index, field, value) {
+  function handleInvoiceAmountChange(value) {
     setDraft((current) => ({
       ...current,
-      lineItems: current.lineItems.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item),
+      lineItems: [
+        {
+          description: getPropertyLineDescription(properties.find((property) => property.slug === current.propertySlug) ?? draftProperty),
+          amount: value,
+        },
+      ],
     }))
+    setCreateStatus({ state: 'idle', message: '' })
   }
 
   async function handleCreateInvoice(event) {
     event.preventDefault()
+
+    const invoiceProperty = properties.find((property) => property.slug === draft.propertySlug) ?? draftProperty
+    const derivedDates = getDerivedInvoiceDates(invoiceProperty)
+    const lineItem = {
+      description: getPropertyLineDescription(invoiceProperty),
+      amount: String(draft.lineItems[0]?.amount ?? '').trim() || getAnnualInvoiceAmount(invoiceProperty),
+    }
+
+    if (!normalizeDateOnly(invoiceProperty?.subscriptionStartAt)) {
+      setCreateStatus({
+        state: 'error',
+        message: 'Set and save this property\'s subscription start date before generating the annual invoice.',
+      })
+      return
+    }
 
     if (analyticsState.report?.status !== 'ready') {
       const proceed = window.confirm('Google Analytics is not currently available for this property and period. Save the invoice with the availability message instead?')
@@ -539,11 +779,11 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         client.id,
         {
           propertySlugs: [draft.propertySlug],
-          issueDate: draft.issueDate,
-          dueDate: draft.dueDate,
-          analyticsStartDate: draft.analyticsStartDate,
-          analyticsEndDate: draft.analyticsEndDate,
-          lineItems: draft.lineItems,
+          issueDate: derivedDates.issueDate,
+          dueDate: derivedDates.dueDate,
+          analyticsStartDate: derivedDates.analyticsStartDate,
+          analyticsEndDate: derivedDates.analyticsEndDate,
+          lineItems: [lineItem],
           notes: draft.notes,
         },
         { authToken },
@@ -588,6 +828,81 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.print()))
   }
 
+  async function handleSavePdf(invoice) {
+    setInvoiceActionState({ invoiceId: invoice.id, action: 'save-pdf', state: 'working', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to save this invoice PDF.')
+      }
+
+      const result = await downloadAdminClientInvoicePdf(invoice.id, { authToken })
+      const filename = result.filename || getInvoicePdfFallbackFilename(invoice)
+
+      downloadBlob(result.blob, filename)
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'save-pdf',
+        state: 'success',
+        message: `PDF download started: ${filename}`,
+      })
+    } catch (error) {
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'save-pdf',
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to save this invoice PDF.',
+      })
+    }
+  }
+
+  async function handleEmailPdf(invoice) {
+    const recipientEmail = String(client?.email ?? '').trim()
+
+    if (!recipientEmail) {
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'email-pdf',
+        state: 'error',
+        message: 'Add a client email before emailing this invoice.',
+      })
+      return
+    }
+
+    const shouldSend = window.confirm(`Email ${invoice.invoiceNumber} as a PDF attachment to ${recipientEmail}?`)
+    if (!shouldSend) {
+      return
+    }
+
+    setInvoiceActionState({ invoiceId: invoice.id, action: 'email-pdf', state: 'working', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to email this invoice PDF.')
+      }
+
+      const delivery = await emailAdminClientInvoicePdf(invoice.id, { authToken })
+
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'email-pdf',
+        state: 'success',
+        message: `Invoice PDF emailed to ${delivery?.recipientEmail || recipientEmail}.`,
+      })
+    } catch (error) {
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'email-pdf',
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to email this invoice PDF.',
+      })
+    }
+  }
+
   if (properties.length === 0) {
     return (
       <section className="admin-client-invoices" aria-label="Invoices">
@@ -614,39 +929,63 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
               {properties.map((property) => <option key={property.slug} value={property.slug}>{property.name || property.slug}</option>)}
             </select>
           </label>
-          <label className="admin-field"><span>Issue date</span><input required type="date" value={draft.issueDate} onChange={(event) => setDraftField('issueDate', event.target.value)} /></label>
-          <label className="admin-field"><span>Due date</span><input type="date" min={draft.issueDate} value={draft.dueDate} onChange={(event) => setDraftField('dueDate', event.target.value)} /></label>
-          <label className="admin-field"><span>Analytics from</span><input required type="date" value={draft.analyticsStartDate} onChange={(event) => setDraftField('analyticsStartDate', event.target.value)} /></label>
-          <label className="admin-field"><span>Analytics through</span><input required type="date" min={draft.analyticsStartDate} value={draft.analyticsEndDate} onChange={(event) => setDraftField('analyticsEndDate', event.target.value)} /></label>
+          <div className="admin-client-invoice-derived-summary admin-field--full-width">
+            <div>
+              <span>Subscription start</span>
+              <strong>{subscriptionStartDate ? formatDate(subscriptionStartDate) : 'Set on property, then save'}</strong>
+            </div>
+            <div>
+              <span>Annual service through</span>
+              <strong>{annualServiceEndDate ? formatDate(annualServiceEndDate) : 'Calculated from subscription start'}</strong>
+            </div>
+            <div>
+              <span>Invoice date</span>
+              <strong>{formatDate(draft.issueDate)}</strong>
+            </div>
+            <div>
+              <span>Due date</span>
+              <strong>{formatDate(draft.dueDate)}</strong>
+            </div>
+          </div>
         </div>
 
-        <div className="admin-client-invoice-line-editor">
-          <div className="admin-client-invoice-line-heading"><span>Description</span><span>Amount</span><span aria-hidden="true" /></div>
-          {draft.lineItems.map((item, index) => (
-            <div className="admin-client-invoice-line" key={index}>
-              <input aria-label={`Line item ${index + 1} description`} required type="text" value={item.description} onChange={(event) => handleLineItemChange(index, 'description', event.target.value)} />
-              <input aria-label={`Line item ${index + 1} amount`} required inputMode="decimal" type="text" value={item.amount} onChange={(event) => handleLineItemChange(index, 'amount', event.target.value)} />
-              <button
-                aria-label={`Remove line item ${index + 1}`}
-                className="admin-client-invoice-remove-line"
-                disabled={draft.lineItems.length === 1}
-                type="button"
-                onClick={() => setDraft((current) => ({ ...current, lineItems: current.lineItems.filter((_, itemIndex) => itemIndex !== index) }))}
-              >x</button>
-            </div>
-          ))}
+        <div className="admin-client-invoice-line-editor admin-client-invoice-line-editor--annual">
+          <div className="admin-client-invoice-line-heading"><span>Property URL</span><span>Annual amount</span></div>
+          <div className="admin-client-invoice-line">
+            <a className="admin-client-invoice-property-url-field" href={getPropertyLineDescription(draftProperty)}>
+              {getPropertyLineDescription(draftProperty)}
+            </a>
+            <input
+              aria-label="Annual invoice amount"
+              required
+              inputMode="decimal"
+              type="text"
+              value={draft.lineItems[0]?.amount ?? DEFAULT_ANNUAL_INVOICE_AMOUNT}
+              onChange={(event) => handleInvoiceAmountChange(event.target.value)}
+            />
+          </div>
           <div className="admin-client-invoice-line-footer">
-            <button className="button-link button-link--ghost admin-action" type="button" onClick={() => setDraft((current) => ({ ...current, lineItems: [...current.lineItems, { description: '', amount: '' }] }))}>Add line</button>
+            <span>One-year listing service</span>
             <strong>Total: {formatCurrency(amountTotal)}</strong>
           </div>
         </div>
 
         <label className="admin-field"><span>Notes</span><textarea rows={3} value={draft.notes} onChange={(event) => setDraftField('notes', event.target.value)} /></label>
 
+        {!subscriptionStartDate ? (
+          <p className="admin-note">
+            Set and save the selected property&apos;s subscription start date to calculate the annual invoice and analytics range.
+          </p>
+        ) : null}
+
         <div className="admin-client-invoice-analytics-preview" aria-live="polite">
           <div className="admin-client-invoice-report-heading">
             <div><span className="eyebrow">Analytics preview</span><strong>{draftProperty?.name || draft.propertySlug}</strong></div>
-            <span>{formatDate(draft.analyticsStartDate)} - {formatDate(draft.analyticsEndDate)}</span>
+            <span>
+              {datesAreQueryable
+                ? `${formatDate(draft.analyticsStartDate)} - ${formatDate(draft.analyticsEndDate)}`
+                : 'Set subscription start'}
+            </span>
           </div>
           {analyticsState.state === 'loading' ? <p>Loading Google Analytics...</p> : null}
           {analyticsState.state === 'ready' && analyticsState.report?.status === 'ready' ? <AnalyticsMetrics report={analyticsState.report} /> : null}
@@ -658,7 +997,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         <div className="admin-inline-actions admin-client-invoice-submit-row">
           <button
             className="button-link button-link--primary admin-action"
-            disabled={createStatus.state === 'saving' || analyticsState.state === 'loading' || !datesAreQueryable}
+            disabled={createStatus.state === 'saving' || analyticsState.state === 'loading' || !canGenerateInvoice}
             type="submit"
           >
             {createStatus.state === 'saving' ? 'Generating...' : 'Generate invoice'}
@@ -673,13 +1012,16 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         {invoiceState.state === 'ready' && invoiceState.invoices.length === 0 ? <p className="admin-empty">No invoices generated for this client yet.</p> : null}
         {invoiceState.invoices.map((invoice) => (
           <SavedInvoice
+            actionState={invoiceActionState}
             client={client}
             invoice={invoice}
             key={invoice.id}
             printTarget={printInvoiceId === invoice.id}
             properties={properties}
             statusBusy={statusBusyId === invoice.id}
+            onEmailPdf={handleEmailPdf}
             onPrint={handlePrint}
+            onSavePdf={handleSavePdf}
             onStatusChange={handleStatusChange}
           />
         ))}

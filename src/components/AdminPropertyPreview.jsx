@@ -1363,6 +1363,24 @@ export function AdminPropertyPreview({
               </div>
             </EditSection>
 
+            <EditSection title="Property Billing">
+              <div className="admin-preview-field-grid admin-preview-field-grid--tight">
+                <PreviewInput
+                  disabled={disabled}
+                  label="Subscription Start"
+                  onChange={(value) => onFieldChange('subscriptionStartAt', value)}
+                  type="date"
+                  value={formState.subscriptionStartAt}
+                />
+                <PreviewInput
+                  disabled={disabled}
+                  label="Annual Cost"
+                  onChange={(value) => onFieldChange('listingFeeAmount', value)}
+                  value={formState.listingFeeAmount}
+                />
+              </div>
+            </EditSection>
+
           <EditSection title="Hero Image">
             <div className="admin-property-hero-media-layout">
               <div className="admin-image-thumb-shell">
