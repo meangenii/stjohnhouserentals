@@ -1,3 +1,4 @@
+const sharp = require('sharp')
 const { getClient } = require('./clientRepository')
 const { getEmailTransport } = require('./emailTransport')
 const { HttpError } = require('./firebaseAdmin')
@@ -9,6 +10,7 @@ const {
   getInvoicePdfFilename,
 } = require('./invoicePdf')
 const { getAdminPropertyBySlug } = require('./propertyRepository')
+const { getSiteShellContent } = require('./siteContentRepository')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -24,9 +26,34 @@ async function getInvoiceDocumentContext(invoiceId) {
   }
 }
 
+// PDFKit only embeds PNG/JPEG, but the site logo can be uploaded in any format (e.g. AVIF),
+// so this normalizes it to PNG. Any failure here just omits the logo rather than failing the invoice.
+async function getInvoiceLogoImage() {
+  try {
+    const siteShell = await getSiteShellContent()
+    const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim()
+
+    if (!logoUrl) {
+      return null
+    }
+
+    const response = await fetch(logoUrl)
+
+    if (!response.ok) {
+      return null
+    }
+
+    const sourceBuffer = Buffer.from(await response.arrayBuffer())
+    return await sharp(sourceBuffer).png().toBuffer()
+  } catch {
+    return null
+  }
+}
+
 async function createInvoicePdfDownload(invoiceId) {
   const context = await getInvoiceDocumentContext(invoiceId)
-  const buffer = await createInvoicePdfBuffer(context)
+  const logoImage = await getInvoiceLogoImage()
+  const buffer = await createInvoicePdfBuffer({ ...context, logoImage })
 
   return {
     ...context,

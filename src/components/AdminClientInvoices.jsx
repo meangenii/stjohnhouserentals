@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { getAdminIdToken } from '../lib/adminAuth'
 import {
   createAdminClientInvoice,
+  deleteAdminClientInvoice,
   downloadAdminClientInvoicePdf,
   emailAdminClientInvoicePdf,
   getAdminPropertyAnalytics,
   listAdminClientInvoices,
   updateAdminClientInvoiceStatus,
 } from '../lib/adminClientApi'
-import siteLogo from '../content/site_logo.png'
+import { useSiteShellContent } from '../lib/useSiteContent'
+import siteLogoFallback from '../content/site_logo.png'
 
 const INVOICE_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'void']
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -414,9 +416,11 @@ function SavedInvoice({
   actionState,
   client,
   invoice,
+  logoUrl,
   properties,
   printTarget,
   statusBusy,
+  onDeleteInvoice,
   onEmailPdf,
   onPrint,
   onSavePdf,
@@ -432,7 +436,8 @@ function SavedInvoice({
   const invoiceAction = actionState?.invoiceId === invoice.id ? actionState : null
   const isPdfBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'save-pdf'
   const isEmailBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'email-pdf'
-  const isActionBusy = isPdfBusy || isEmailBusy
+  const isDeleteBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'delete'
+  const isActionBusy = isPdfBusy || isEmailBusy || isDeleteBusy
 
   return (
     <article className={`admin-client-saved-invoice ${printTarget ? 'admin-client-invoice-print-target' : ''}`.trim()}>
@@ -472,6 +477,14 @@ function SavedInvoice({
           >
             {isEmailBusy ? 'Emailing...' : 'Email PDF'}
           </button>
+          <button
+            className="button-link button-link--ghost admin-action"
+            disabled={isActionBusy}
+            type="button"
+            onClick={() => onDeleteInvoice(invoice)}
+          >
+            {isDeleteBusy ? 'Deleting...' : 'Delete'}
+          </button>
         </div>
       </div>
       {invoiceAction?.message ? (
@@ -488,7 +501,7 @@ function SavedInvoice({
         <header className="admin-client-invoice-document-header">
           <h4>Invoice - {invoice.invoiceNumber}.</h4>
           <div className="admin-client-invoice-brand">
-            <span className="admin-client-invoice-logo-mark" aria-hidden="true"><img alt="" src={siteLogo} /></span>
+            <span className="admin-client-invoice-logo-mark" aria-hidden="true"><img alt="" src={logoUrl} /></span>
             <strong aria-label={COMPANY_NAME}>
               <span>St. John House</span>
               <span>Rentals</span>
@@ -585,6 +598,8 @@ function SavedInvoice({
 }
 
 export function AdminClientInvoices({ authUser, client, properties, selectedPropertySlug }) {
+  const siteShell = useSiteShellContent()
+  const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim() || siteLogoFallback
   const selectedProperty = properties.find((property) => property.slug === selectedPropertySlug) ?? properties[0] ?? null
   const [draft, setDraft] = useState(() => createInvoiceDraft(selectedProperty))
   const [analyticsState, setAnalyticsState] = useState({ state: 'idle', report: null, message: '' })
@@ -728,19 +743,6 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     setCreateStatus({ state: 'idle', message: '' })
   }
 
-  function handleInvoiceAmountChange(value) {
-    setDraft((current) => ({
-      ...current,
-      lineItems: [
-        {
-          description: getPropertyLineDescription(properties.find((property) => property.slug === current.propertySlug) ?? draftProperty),
-          amount: value,
-        },
-      ],
-    }))
-    setCreateStatus({ state: 'idle', message: '' })
-  }
-
   async function handleCreateInvoice(event) {
     event.preventDefault()
 
@@ -748,7 +750,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     const derivedDates = getDerivedInvoiceDates(invoiceProperty)
     const lineItem = {
       description: getPropertyLineDescription(invoiceProperty),
-      amount: String(draft.lineItems[0]?.amount ?? '').trim() || getAnnualInvoiceAmount(invoiceProperty),
+      amount: getAnnualInvoiceAmount(invoiceProperty),
     }
 
     if (!normalizeDateOnly(invoiceProperty?.subscriptionStartAt)) {
@@ -903,6 +905,38 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     }
   }
 
+  async function handleDeleteInvoice(invoice) {
+    const shouldDelete = window.confirm(`Delete invoice ${invoice.invoiceNumber}? This cannot be undone.`)
+
+    if (!shouldDelete) {
+      return
+    }
+
+    setInvoiceActionState({ invoiceId: invoice.id, action: 'delete', state: 'working', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to delete this invoice.')
+      }
+
+      await deleteAdminClientInvoice(invoice.id, { authToken })
+      setInvoiceState((current) => ({
+        ...current,
+        invoices: current.invoices.filter((existing) => existing.id !== invoice.id),
+      }))
+      setInvoiceActionState({ invoiceId: '', action: '', state: 'idle', message: '' })
+    } catch (error) {
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'delete',
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to delete this invoice.',
+      })
+    }
+  }
+
   if (properties.length === 0) {
     return (
       <section className="admin-client-invoices" aria-label="Invoices">
@@ -950,19 +984,11 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         </div>
 
         <div className="admin-client-invoice-line-editor admin-client-invoice-line-editor--annual">
-          <div className="admin-client-invoice-line-heading"><span>Property URL</span><span>Annual amount</span></div>
+          <div className="admin-client-invoice-line-heading"><span>Property URL</span></div>
           <div className="admin-client-invoice-line">
             <a className="admin-client-invoice-property-url-field" href={getPropertyLineDescription(draftProperty)}>
               {getPropertyLineDescription(draftProperty)}
             </a>
-            <input
-              aria-label="Annual invoice amount"
-              required
-              inputMode="decimal"
-              type="text"
-              value={draft.lineItems[0]?.amount ?? DEFAULT_ANNUAL_INVOICE_AMOUNT}
-              onChange={(event) => handleInvoiceAmountChange(event.target.value)}
-            />
           </div>
           <div className="admin-client-invoice-line-footer">
             <span>One-year listing service</span>
@@ -1016,9 +1042,11 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
             client={client}
             invoice={invoice}
             key={invoice.id}
+            logoUrl={logoUrl}
             printTarget={printInvoiceId === invoice.id}
             properties={properties}
             statusBusy={statusBusyId === invoice.id}
+            onDeleteInvoice={handleDeleteInvoice}
             onEmailPdf={handleEmailPdf}
             onPrint={handlePrint}
             onSavePdf={handleSavePdf}

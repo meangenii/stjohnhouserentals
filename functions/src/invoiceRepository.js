@@ -429,10 +429,28 @@ async function updateInvoiceStatus(id, status) {
   return normalizeStoredInvoiceRecord(savedSnapshot.id, savedSnapshot.data())
 }
 
+async function deleteInvoice(id) {
+  const normalizedId = String(id ?? '').trim()
+
+  if (!normalizedId) {
+    throw new HttpError(400, 'An invoice id is required.')
+  }
+
+  const docRef = getDb().collection(INVOICE_COLLECTION).doc(normalizedId)
+  const snapshot = await docRef.get()
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'That invoice could not be found.')
+  }
+
+  await docRef.delete()
+}
+
 exports.listInvoicesForClient = listInvoicesForClient
 exports.getInvoice = getInvoice
 exports.createInvoice = createInvoice
 exports.updateInvoiceStatus = updateInvoiceStatus
+exports.deleteInvoice = deleteInvoice
 exports.INVOICE_COLLECTION = INVOICE_COLLECTION
 exports._test = {
   normalizeAnalyticsSnapshot,

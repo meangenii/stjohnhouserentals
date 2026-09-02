@@ -876,6 +876,7 @@ function summarizeProperty(property) {
     heroImage: property.heroImage,
     amenitiesHtml: property.amenitiesHtml,
     booking: property.booking,
+    calendarUrl: property.calendarUrl,
     externalLinks: property.externalLinks,
     clientId: property.clientId,
     subscriptionStartAt: property.subscriptionStartAt,

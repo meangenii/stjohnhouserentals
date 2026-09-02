@@ -14,7 +14,7 @@ const {
 const { archiveClient, getClient, importClientsFromProperties, listClients, saveClient } = require('./clientRepository')
 const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
 const { createInvoicePdfDownload, emailInvoicePdf } = require('./invoiceDeliveryRepository')
-const { createInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
+const { createInvoice, deleteInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
 const { getPropertyAnalyticsReport, normalizeAnalyticsDateRange } = require('./analyticsRepository')
 const {
   getCharterBySlug,
@@ -932,6 +932,18 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         invoice,
+      })
+      return
+    }
+
+    if (request.method === 'DELETE' && /^admin\/clients\/invoices\/[^/]+$/.test(path)) {
+      await requireAdminUser(request)
+      const invoiceId = decodeURIComponent(path.split('/')[3])
+      await deleteInvoice(invoiceId)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
       })
       return
     }

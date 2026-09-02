@@ -924,6 +924,51 @@ img {
   color: #dbe7ff;
 }
 
+.property-directory-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.property-directory-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+button.property-directory-badge {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.property-directory-badge--hidden {
+  border-color: #c8dbeb;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--brand-navy);
+}
+
+.property-directory-badge--warning {
+  border-color: #f0d2c8;
+  background: #fff7f4;
+  color: #9a4a2c;
+}
+
+.property-directory-badge--danger {
+  border-color: #f0b8b8;
+  background: #fdf0f0;
+  color: #9a2c2c;
+}
+
 .page-section {
   width: min(var(--page-width), calc(100% - 1.5rem));
   padding: var(--section-padding-top) 0 0;
@@ -1999,11 +2044,22 @@ img {
   text-align: left;
 }
 
-.rental-accommodations-card-badge {
+.rental-accommodations-card-media-link {
+  display: block;
+}
+
+.rental-accommodations-card-badges {
   position: absolute;
   left: 1rem;
   top: 1rem;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.rental-accommodations-card-badge {
   min-height: auto;
   padding: 0.55rem 1rem;
   border-width: 2px;
@@ -2012,6 +2068,18 @@ img {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   box-shadow: 0 10px 24px rgba(7, 26, 54, 0.18);
+}
+
+button.rental-accommodations-card-badge {
+  border-style: solid;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.admin-chip--danger {
+  border-color: #f0b8b8;
+  background: #fdf0f0;
+  color: #9a2c2c;
 }
 
 .rental-accommodations-card-divider {
@@ -6947,7 +7015,7 @@ button.admin-auth-badge {
 
 .admin-client-property-billing-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(9rem, 1fr) minmax(7rem, 0.8fr) minmax(10rem, 1fr);
   gap: 0.75rem;
   align-items: end;
 }
@@ -7147,7 +7215,7 @@ button.admin-auth-badge {
 
 .admin-client-invoice-line-editor--annual .admin-client-invoice-line-heading,
 .admin-client-invoice-line-editor--annual .admin-client-invoice-line {
-  grid-template-columns: minmax(0, 1fr) minmax(7rem, 10rem);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .admin-client-invoice-property-url-field {
@@ -9942,6 +10010,45 @@ button.admin-auth-badge {
   height: 0.24rem;
   border-radius: 999px;
   background: #7bb8dd;
+}
+
+.admin-property-preview-section--warning {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #f0d2c8;
+  border-top: 1px solid #f0d2c8;
+  border-radius: 0.6rem;
+  background: #fff7f4;
+}
+
+.admin-property-preview-section--warning .admin-property-preview-rule {
+  background: #d98a5f;
+}
+
+.admin-property-preview-section-warning {
+  margin: 0.2rem 0 0;
+  color: #9a4a2c;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.admin-property-preview-issue-banner {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #f0d2c8;
+  border-radius: 0.75rem;
+  background: #fff7f4;
+  color: #9a4a2c;
+}
+
+.admin-property-preview-issue-banner strong {
+  font-size: 0.95rem;
+}
+
+.admin-property-preview-issue-banner ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
 }
 
 .admin-preview-checkbox {

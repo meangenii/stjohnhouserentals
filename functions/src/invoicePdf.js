@@ -424,14 +424,25 @@ function renderInvoiceTable(doc, { invoice, properties }) {
   doc.y = rowY + totalHeight + 28
 }
 
-function renderInvoiceHeader(doc, invoice, client) {
+function renderInvoiceHeader(doc, invoice, client, logoImage) {
   const left = doc.page.margins.left
   const right = doc.page.width - doc.page.margins.right
   const top = doc.page.margins.top
+  const brandWidth = 130
+  const brandX = right - brandWidth
+  let brandTextY = top + 20
 
   writeText(doc, `Invoice - ${invoice.invoiceNumber}.`, left, top, { width: 220, size: 13 })
-  writeText(doc, COMPANY_NAME.replace(' House ', ' House\n'), right - 130, top + 20, {
-    width: 130,
+
+  if (logoImage) {
+    const logoWidth = 90
+    const logoHeight = 55
+    doc.image(logoImage, brandX + (brandWidth - logoWidth) / 2, top, { fit: [logoWidth, logoHeight], align: 'center', valign: 'top' })
+    brandTextY = top + logoHeight + 6
+  }
+
+  writeText(doc, COMPANY_NAME.replace(' House ', ' House\n'), brandX, brandTextY, {
+    width: brandWidth,
     font: 'Times-Italic',
     size: 15,
     align: 'center',
@@ -490,7 +501,7 @@ function renderFooter(doc) {
   })
 }
 
-function createInvoicePdfBuffer({ invoice, client, properties = [] }) {
+function createInvoicePdfBuffer({ invoice, client, properties = [], logoImage = null }) {
   return new Promise((resolve, reject) => {
     const document = new PDFDocument({
       size: 'LETTER',
@@ -507,7 +518,7 @@ function createInvoicePdfBuffer({ invoice, client, properties = [] }) {
     document.on('end', () => resolve(Buffer.concat(chunks)))
     document.on('error', reject)
 
-    renderInvoiceHeader(document, invoice, client)
+    renderInvoiceHeader(document, invoice, client, logoImage)
     renderInvoiceTable(document, { invoice, client, properties })
 
     if (invoice.notes) {

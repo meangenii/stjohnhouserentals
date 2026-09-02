@@ -76,6 +76,10 @@ export async function updateAdminClientInvoiceStatus(invoiceId, status, options 
   return payload?.invoice ?? null
 }
 
+export async function deleteAdminClientInvoice(invoiceId, options = {}) {
+  return deleteJson(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}`, options)
+}
+
 export async function downloadAdminClientInvoicePdf(invoiceId, options = {}) {
   return getBlob(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}/pdf`, options)
 }

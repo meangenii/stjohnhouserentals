@@ -234,6 +234,8 @@ const DEFAULT_ADMIN_EDITOR_LOCATION = {
   propertySlug: '',
   charterMode: 'create',
   charterSlug: '',
+  clientId: '',
+  clientPropertySlug: '',
 }
 const STRUCTURED_PAGE_EDITOR_FORM_ID = 'admin-structured-page-editor-form'
 const PROPERTY_EDITOR_FORM_ID = 'admin-property-editor-form'
@@ -272,6 +274,8 @@ function normalizeAdminEditorLocation(value = {}) {
     propertySlug: propertyMode === 'edit' && propertySlug ? propertySlug : '',
     charterMode: charterMode === 'edit' && charterSlug ? 'edit' : 'create',
     charterSlug: charterMode === 'edit' && charterSlug ? charterSlug : '',
+    clientId: String(value?.clientId ?? '').trim(),
+    clientPropertySlug: String(value?.clientPropertySlug ?? '').trim(),
   }
 }
 
@@ -292,6 +296,8 @@ function readAdminEditorLocationFromSearch(search = '') {
     propertySlug,
     charterMode: charterSlug ? 'edit' : '',
     charterSlug,
+    clientId: params.get('clientId') ?? '',
+    clientPropertySlug: params.get('clientPropertySlug') ?? '',
   }
 }
 
@@ -1329,6 +1335,8 @@ export function AdminPage() {
   const preferredCharterMode = initialAdminEditorLocation.charterMode
   const preferredCharterSlug = initialAdminEditorLocation.charterSlug
   const preferredPageKey = initialAdminEditorLocation.pageKey
+  const preferredClientId = initialAdminEditorLocation.clientId
+  const preferredClientPropertySlug = initialAdminEditorLocation.clientPropertySlug
   const [activeTab, setActiveTab] = useState(initialAdminEditorLocation.tab)
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
   const [formState, setFormState] = useState(initialPropertyFormState)
@@ -4515,7 +4523,13 @@ export function AdminPage() {
             </section>
           ) : null}
 
-          {activeTab === 'clients' ? <AdminClientsPanel authUser={authState.user} /> : null}
+          {activeTab === 'clients' ? (
+            <AdminClientsPanel
+              authUser={authState.user}
+              initialClientId={preferredClientId}
+              initialPropertySlug={preferredClientPropertySlug}
+            />
+          ) : null}
           {activeTab === 'submissions' ? <AdminAdvertiseInquiriesPanel authUser={authState.user} /> : null}
 
           {activeTab === 'backups' ? (

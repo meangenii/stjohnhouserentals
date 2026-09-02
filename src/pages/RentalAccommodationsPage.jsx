@@ -10,6 +10,7 @@ import {
   normalizePropertyLocationFilterValue,
 } from '../lib/propertyLocationFilters'
 import { getPropertyContactActions } from '../lib/propertyContact'
+import { getPropertyContentIssues, getPropertyInvoiceStatus, getTodayDateOnly } from '../lib/propertyIssues'
 import { listPropertySummaries } from '../lib/propertyRepository'
 import { comparePropertyNames } from '../lib/propertySort'
 import { richTextValueToLines, richTextValueToPlainText } from '../lib/richTextValue'
@@ -248,7 +249,7 @@ function getRentalHeroBottomPeek(filterBarElement) {
     : RENTAL_HERO_BOTTOM_PEEK_FALLBACK_PX
 }
 
-function buildCardFromProperty(property) {
+function buildCardFromProperty(property, { isAdmin = false, todayDateOnly = '' } = {}) {
   const summaryLines = getShortDescriptionLines(property.shortDescription)
   const amenityLines = getAmenityLines(property.amenitiesHtml)
   const searchableLines = [...summaryLines, ...amenityLines]
@@ -272,6 +273,17 @@ function buildCardFromProperty(property) {
     amenityIds: AMENITY_FILTERS.filter((filter) => filter.matches(summaryText)).map((filter) => filter.id),
     airConditioningType: getAirConditioningType(summaryLines, amenityLines),
     contactActions: emailContactActions,
+    clientId: isAdmin ? String(property.clientId ?? '').trim() : '',
+    issues: isAdmin
+      ? getPropertyContentIssues({
+          heroImage: property.heroImage,
+          shortDescription: property.shortDescription,
+          bookingEmail: property.booking?.email,
+          bookingPhone: property.booking?.phone,
+          calendarUrl: property.calendarUrl,
+        }).map((issue) => issue.message)
+      : [],
+    invoiceStatus: isAdmin ? getPropertyInvoiceStatus(property, todayDateOnly) : null,
   }
 }
 
@@ -310,26 +322,61 @@ function RentalAccommodationCard({ card, propertyNavigationState, onPropertyNavi
   const locationFactLines = card.summaryLines.filter((line) => isLocationSummaryLine(line))
   const standardFactLines = card.summaryLines.filter((line) => !isLocationSummaryLine(line))
 
+  const hasBadges = !card.active || card.issues.length > 0 || card.invoiceStatus
+
   return (
     <article className="rental-accommodations-card" id={returnTargetId || undefined}>
-      <Link
-        aria-label={card.name}
-        className="rental-accommodations-card-media"
-        state={propertyNavigationState}
-        to={card.path}
-        onClick={(event) => onPropertyNavigate(event, card)}
-      >
-        {card.imageUrl ? (
-          <img
-            alt={card.imageAlt || card.name}
-            className="rental-accommodations-card-image"
-            decoding="async"
-            loading="lazy"
-            src={card.imageUrl}
-          />
+      <div className="rental-accommodations-card-media">
+        <Link
+          aria-label={card.name}
+          className="rental-accommodations-card-media-link"
+          state={propertyNavigationState}
+          to={card.path}
+          onClick={(event) => onPropertyNavigate(event, card)}
+        >
+          {card.imageUrl ? (
+            <img
+              alt={card.imageAlt || card.name}
+              className="rental-accommodations-card-image"
+              decoding="async"
+              loading="lazy"
+              src={card.imageUrl}
+            />
+          ) : null}
+        </Link>
+        {hasBadges ? (
+          <div className="rental-accommodations-card-badges">
+            {!card.active ? <span className="admin-chip admin-chip--warning rental-accommodations-card-badge">Hidden</span> : null}
+            {card.issues.length > 0 ? (
+              <button
+                className="admin-chip admin-chip--warning rental-accommodations-card-badge"
+                title={card.issues.join(', ')}
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  window.location.href = `/admin?tab=properties&propertySlug=${encodeURIComponent(card.slug)}`
+                }}
+              >
+                {`${card.issues.length} issue${card.issues.length === 1 ? '' : 's'}`}
+              </button>
+            ) : null}
+            {card.invoiceStatus ? (
+              <button
+                className={`admin-chip rental-accommodations-card-badge ${card.invoiceStatus.urgent ? 'admin-chip--danger' : 'admin-chip--warning'}`}
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  window.location.href = `/admin?tab=clients&clientId=${encodeURIComponent(card.clientId)}&clientPropertySlug=${encodeURIComponent(card.slug)}`
+                }}
+              >
+                {card.invoiceStatus.label}
+              </button>
+            ) : null}
+          </div>
         ) : null}
-        {!card.active ? <span className="admin-chip admin-chip--warning rental-accommodations-card-badge">Hidden</span> : null}
-      </Link>
+      </div>
 
       <div className="rental-accommodations-card-body">
         <div className="rental-accommodations-card-heading">
@@ -396,7 +443,8 @@ export function RentalAccommodationsPage() {
           typeof property.path === 'string',
       )
     : []
-  const allCards = visibleProperties.map((property) => buildCardFromProperty(property))
+  const todayDateOnly = getTodayDateOnly()
+  const allCards = visibleProperties.map((property) => buildCardFromProperty(property, { isAdmin, todayDateOnly }))
   const roomCountOptions = Array.from(
     new Set(
       allCards.flatMap((card) => card.availableBedroomCounts).filter((bedroomCount) => Number.isInteger(bedroomCount) && bedroomCount > 0),
@@ -787,6 +835,43 @@ export function RentalAccommodationsPage() {
                                   >
                                     {card.name}
                                   </Link>
+                                  {!card.active || card.issues.length > 0 || card.invoiceStatus ? (
+                                    <span className="property-directory-badges">
+                                      {!card.active ? (
+                                        <span className="property-directory-badge property-directory-badge--hidden" title="Hidden">
+                                          H
+                                        </span>
+                                      ) : null}
+                                      {card.issues.length > 0 ? (
+                                        <button
+                                          className="property-directory-badge property-directory-badge--warning"
+                                          title={`${card.issues.length} issue${card.issues.length === 1 ? '' : 's'}: ${card.issues.join(', ')}`}
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            window.location.href = `/admin?tab=properties&propertySlug=${encodeURIComponent(card.slug)}`
+                                          }}
+                                        >
+                                          {card.issues.length}
+                                        </button>
+                                      ) : null}
+                                      {card.invoiceStatus ? (
+                                        <button
+                                          className={`property-directory-badge ${card.invoiceStatus.urgent ? 'property-directory-badge--danger' : 'property-directory-badge--warning'}`}
+                                          title={card.invoiceStatus.label}
+                                          type="button"
+                                          onClick={(event) => {
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            window.location.href = `/admin?tab=clients&clientId=${encodeURIComponent(card.clientId)}&clientPropertySlug=${encodeURIComponent(card.slug)}`
+                                          }}
+                                        >
+                                          $
+                                        </button>
+                                      ) : null}
+                                    </span>
+                                  ) : null}
                                 </li>
                               ))}
                             </ul>

@@ -410,11 +410,11 @@ function UnassignedPropertiesPanel({ properties, clients, assignStatus, onAssign
   )
 }
 
-export function AdminClientsPanel({ authUser }) {
+export function AdminClientsPanel({ authUser, initialClientId = '', initialPropertySlug = '' }) {
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', clients: [], message: '' })
   const [properties, setProperties] = useState([])
-  const [selectedClientId, setSelectedClientId] = useState('')
-  const [selectedPropertySlug, setSelectedPropertySlug] = useState('')
+  const [selectedClientId, setSelectedClientId] = useState(initialClientId)
+  const [selectedPropertySlug, setSelectedPropertySlug] = useState(initialPropertySlug)
   const [propertyAnalyticsState, setPropertyAnalyticsState] = useState(EMPTY_ANALYTICS_STATE)
   const [propertyBillingDraft, setPropertyBillingDraft] = useState(() => createPropertyBillingDraft(null))
   const [propertyBillingStatus, setPropertyBillingStatus] = useState({ state: 'idle', message: '' })

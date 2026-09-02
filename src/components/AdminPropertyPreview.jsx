@@ -7,6 +7,7 @@ import {
   richTextValueToPlainText,
 } from '../lib/richTextValue'
 import { getImageFileName } from '../lib/imageFileName'
+import { getPropertyContentIssues } from '../lib/propertyIssues'
 import {
   AIR_CONDITIONING_OPTIONS,
   buildPropertyShortDescription,
@@ -406,13 +407,14 @@ function PreviewRichTextLineList({ collapsedFontSizeBehavior = 'selection', disa
   )
 }
 
-function EditSection({ actions = null, children, title }) {
+function EditSection({ actions = null, children, title, warning = '' }) {
   return (
-    <section className="admin-property-preview-section">
+    <section className={`admin-property-preview-section${warning ? ' admin-property-preview-section--warning' : ''}`}>
       <div className="admin-property-preview-section-header admin-property-preview-section-header--split">
         <div>
           <h4>{title}</h4>
           <div aria-hidden="true" className="admin-property-preview-rule" />
+          {warning ? <p className="admin-property-preview-section-warning">{warning}</p> : null}
         </div>
         {actions}
       </div>
@@ -1300,6 +1302,17 @@ export function AdminPropertyPreview({
   const hasEditableForm = editable && Boolean(formState)
   const effectiveMode = hasEditableForm ? (mode === 'preview' ? 'preview' : 'edit') : 'preview'
   const amenityGroupCount = Array.isArray(formState?.amenityGroups) ? formState.amenityGroups.length : 0
+  const contentIssues =
+    hasEditableForm && property
+      ? getPropertyContentIssues({
+          heroImage: formState.heroImageUrl,
+          shortDescription: formState.shortDescription,
+          bookingEmail: formState.bookingEmail,
+          bookingPhone: formState.bookingPhone,
+          calendarUrl: formState.calendarUrl,
+        })
+      : []
+  const contentIssueKeys = new Set(contentIssues.map((issue) => issue.key))
 
   return (
     <aside className="admin-property-preview">
@@ -1320,7 +1333,18 @@ export function AdminPropertyPreview({
 
         {hasEditableForm && effectiveMode === 'edit' ? (
           <div className="admin-property-preview-body">
-            <EditSection title="Basic Info">
+            {contentIssues.length > 0 ? (
+              <div className="admin-property-preview-issue-banner" role="status">
+                <strong>{`${contentIssues.length} issue${contentIssues.length === 1 ? '' : 's'} to fix on this listing:`}</strong>
+                <ul>
+                  {contentIssues.map((issue) => (
+                    <li key={issue.key}>{issue.message}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <EditSection title="Basic Info" warning={contentIssueKeys.has('bookingContact') ? 'No booking contact set' : ''}>
               <div className="admin-preview-field-grid admin-preview-field-grid--tight">
                 <PreviewInput disabled={disabled} label="Property Name" onChange={(value) => onFieldChange('name', value)} value={formState.name} />
                 <PreviewInput disabled={disabled} label="Bedrooms" onChange={(value) => onFieldChange('bedrooms', value)} type="number" value={formState.bedrooms} />
@@ -1381,7 +1405,7 @@ export function AdminPropertyPreview({
               </div>
             </EditSection>
 
-          <EditSection title="Hero Image">
+          <EditSection title="Hero Image" warning={contentIssueKeys.has('heroImage') ? 'No hero image set' : ''}>
             <div className="admin-property-hero-media-layout">
               <div className="admin-image-thumb-shell">
                 {formState.heroImageUrl ? (
@@ -1448,7 +1472,7 @@ export function AdminPropertyPreview({
             ) : null}
           </EditSection>
 
-          <EditSection title="Short Description">
+          <EditSection title="Short Description" warning={contentIssueKeys.has('shortDescription') ? 'No description set' : ''}>
             <div className="admin-preview-field-grid">
               <fieldset className="admin-field admin-field--wide admin-property-summary-features">
                 <legend>Summary Amenities</legend>
@@ -1532,7 +1556,7 @@ export function AdminPropertyPreview({
             />
           </EditSection>
 
-          <EditSection title="Calendar">
+          <EditSection title="Calendar" warning={contentIssueKeys.has('calendarUrl') ? 'No calendar link set' : ''}>
             <div className="admin-preview-field-grid">
               <PreviewInput
                 disabled={disabled}
