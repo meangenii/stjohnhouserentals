@@ -9,6 +9,13 @@
       content="Browse St. John vacation rentals, ferry information, charter boats, and island travel resources."
     />
     <title>St. John House Rentals</title>
+    <meta property="fb:app_id" content="%VITE_FACEBOOK_APP_ID%" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_FIREBASE_MEASUREMENT_ID%"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { window.dataLayer.push(arguments); }
+      gtag('js', new Date());
+    </script>
   </head>
   <body>
     <div id="root"></div>

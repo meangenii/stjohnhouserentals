@@ -4127,6 +4127,160 @@ button.rental-accommodations-card-badge {
   line-height: 1.18;
 }
 
+.social-engagement-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.social-engagement-row .social-share-row {
+  margin-top: 0;
+}
+
+.site-like-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--button-secondary-text, var(--brand-blue));
+  border-radius: var(--button-radius);
+  background: transparent;
+  color: var(--button-secondary-text, var(--brand-blue));
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+.site-like-button:hover,
+.site-like-button:focus-visible {
+  transform: translateY(-1px);
+}
+
+.site-like-button:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.site-like-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.site-like-button--liked {
+  border-color: #e0245e;
+  background: #fdeef2;
+  color: #e0245e;
+}
+
+.site-like-button-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.site-like-button-count {
+  min-width: 0.9rem;
+  text-align: left;
+}
+
+.social-share-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.social-share-like {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+}
+
+.social-share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--button-radius);
+  background: #f1f5f9;
+  color: #1f2937;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.social-share-button:hover,
+.social-share-button:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: var(--button-shadow);
+}
+
+.social-share-button:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.social-share-button--facebook {
+  background: #1877f2;
+  color: #ffffff;
+}
+
+.social-share-button--pinterest {
+  background: #e60023;
+  color: #ffffff;
+}
+
+.social-share-button--twitter {
+  background: #000000;
+  color: #ffffff;
+}
+
+.social-share-button--whatsapp {
+  background: #25d366;
+  color: #ffffff;
+}
+
+.social-share-button--email,
+.social-share-button--native {
+  background: transparent;
+  border-color: var(--button-secondary-text, var(--brand-blue));
+  color: var(--button-secondary-text, var(--brand-blue));
+}
+
+.social-share-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.social-share-button--email .social-share-button-icon,
+.social-share-button--native .social-share-button-icon {
+  background: rgba(11, 43, 95, 0.08);
+}
+
 .property-gallery {
   margin-top: 0;
 }

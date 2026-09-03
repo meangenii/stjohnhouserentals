@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from '../lib/router'
+import { FacebookLikeShare } from '../components/FacebookLikeShare'
 import { RichTextValue } from '../components/RichTextValue'
+import { SiteLikeButton } from '../components/SiteLikeButton'
+import { SocialShareButtons } from '../components/SocialShareButtons'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { findInternalNavigationTarget } from '../lib/internalLinkNavigation'
 import { normalizeSiteHtml } from '../lib/normalizeSiteHtml'
 import { getCharterBySlug } from '../lib/charterRepository'
 import { buildRemoteImageUrl } from '../lib/remoteImage'
-import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
+import { buildBreadcrumbJsonLd, buildCanonicalUrl, getCanonicalPath } from '../../shared/seoMetadata.js'
 
 export function CharterBoatDetailPage() {
   const { slug = '' } = useParams()
@@ -109,6 +112,24 @@ export function CharterBoatDetailPage() {
             />
           </div>
         ) : null}
+
+        <div className="social-engagement-row">
+          <SiteLikeButton itemId={charter.slug} itemType="charter" title={charter.name} />
+          <FacebookLikeShare
+            itemId={charter.slug}
+            itemType="charter"
+            title={charter.name}
+            url={buildCanonicalUrl(charterCanonicalPath)}
+          />
+          <SocialShareButtons
+            description={documentDescription}
+            imageUrl={charter.heroImage ? buildRemoteImageUrl(charter.heroImage, { width: 1200, height: 800 }) : ''}
+            itemId={charter.slug}
+            itemType="charter"
+            title={charter.name}
+            url={buildCanonicalUrl(charterCanonicalPath)}
+          />
+        </div>
 
         {charter.contentHtml ? (
           <div

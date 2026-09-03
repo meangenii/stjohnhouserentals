@@ -5,6 +5,16 @@ const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
 const INVOICE_STATUSES = new Set(['draft', 'sent', 'paid', 'overdue', 'void'])
 const ANALYTICS_STATUSES = new Set(['ready', 'unconfigured', 'unavailable'])
 const SOCIAL_STAT_KEYS = ['views', 'viewers', 'clicks', 'impressions', 'reach', 'engagements']
+const ENGAGEMENT_METRIC_KEYS = [
+  'siteLikes',
+  'facebookLikes',
+  'facebookShareClicks',
+  'pinterestShareClicks',
+  'twitterShareClicks',
+  'whatsappShareClicks',
+  'emailShareClicks',
+  'nativeShareClicks',
+]
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const INVOICE_NUMBER_PREFIX = 'STJHR'
 const INVOICE_NUMBER_PATTERN = /^(?:GENCMS|STJHR)-(\d{4})-(\d{3,})$/
@@ -211,6 +221,43 @@ function normalizeAnalyticsSnapshots(value) {
   return snapshots.map(normalizeAnalyticsSnapshot).filter(Boolean).slice(0, 20)
 }
 
+function normalizeEngagementSnapshot(snapshot = {}) {
+  const propertySlug = String(snapshot?.propertySlug ?? '').trim()
+
+  if (!propertySlug) {
+    return null
+  }
+
+  const report = snapshot?.report ?? snapshot
+  const counts = report?.counts ?? {}
+
+  return {
+    propertySlug,
+    propertyName: String(snapshot?.propertyName ?? '').trim(),
+    capturedAt: String(snapshot?.capturedAt ?? '').trim(),
+    dateRange: {
+      startDate: String(report?.dateRange?.startDate ?? '').trim(),
+      endDate: String(report?.dateRange?.endDate ?? '').trim(),
+    },
+    requestedDateRange: {
+      startDate: String(report?.requestedDateRange?.startDate ?? '').trim(),
+      endDate: String(report?.requestedDateRange?.endDate ?? '').trim(),
+    },
+    trackingStartDate: String(report?.trackingStartDate ?? '').trim(),
+    clamped: report?.clamped === true,
+    counts: ENGAGEMENT_METRIC_KEYS.reduce((normalized, key) => {
+      normalized[key] = normalizeMetricValue(counts[key])
+      return normalized
+    }, {}),
+    totalEvents: normalizeMetricValue(report?.totalEvents),
+  }
+}
+
+function normalizeEngagementSnapshots(value) {
+  const snapshots = Array.isArray(value) ? value : value ? [value] : []
+  return snapshots.map(normalizeEngagementSnapshot).filter(Boolean).slice(0, 20)
+}
+
 function computeAmountTotal(lineItems) {
   const total = lineItems.reduce((sum, item) => {
     const numeric = Number(String(item.amount).replace(/[^0-9.-]/g, ''))
@@ -238,6 +285,7 @@ function normalizeInvoiceDraft(payload) {
   const analyticsEndDate = normalizeDateOnlyValue(payload?.analyticsEndDate, { label: 'Analytics end date' })
   const notes = normalizeField(payload?.notes, { label: 'Notes', maxLength: 2000 })
   const analyticsSnapshots = normalizeAnalyticsSnapshots(payload?.analyticsSnapshots)
+  const engagementSnapshots = normalizeEngagementSnapshots(payload?.engagementSnapshots)
   const socialStats = normalizeSocialStats(payload?.socialStats ?? payload?.marketingStats)
 
   if (propertySlugs.length === 0) {
@@ -269,6 +317,7 @@ function normalizeInvoiceDraft(payload) {
     analyticsStartDate,
     analyticsEndDate,
     analyticsSnapshots,
+    engagementSnapshots,
     socialStats,
     notes,
   }
@@ -289,6 +338,7 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
     analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
     analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
+    engagementSnapshots: normalizeEngagementSnapshots(record.engagementSnapshots ?? record.engagementSnapshot),
     socialStats: normalizeSocialStats(record.socialStats ?? record.marketingStats),
     status: INVOICE_STATUSES.has(record.status) ? record.status : 'draft',
     notes: String(record.notes ?? '').trim(),
@@ -390,6 +440,7 @@ async function createInvoice(payload, adminUser) {
       analyticsStartDate: invoice.analyticsStartDate,
       analyticsEndDate: invoice.analyticsEndDate,
       analyticsSnapshots: invoice.analyticsSnapshots,
+      engagementSnapshots: invoice.engagementSnapshots,
       socialStats: invoice.socialStats,
       status: 'draft',
       notes: invoice.notes,

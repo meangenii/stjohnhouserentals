@@ -15,6 +15,16 @@ const SOCIAL_STAT_LABELS = [
   ['reach', 'Reach'],
   ['engagements', 'Engagements'],
 ]
+const ENGAGEMENT_METRIC_LABELS = [
+  ['siteLikes', 'Site Likes'],
+  ['facebookLikes', 'FB Likes'],
+  ['facebookShareClicks', 'FB Shares'],
+  ['pinterestShareClicks', 'Pinterest'],
+  ['twitterShareClicks', 'X Shares'],
+  ['whatsappShareClicks', 'WhatsApp'],
+  ['emailShareClicks', 'Email'],
+  ['nativeShareClicks', 'Other Shares'],
+]
 const ANNUAL_INVOICE_MONTH_COUNT = 12
 
 function normalizeDateOnly(dateOnly) {
@@ -163,6 +173,18 @@ function getSnapshotForProperty(snapshots, property, propertySlug) {
     || null
 }
 
+function getEngagementRangeLabel(invoice, snapshot) {
+  const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice?.analyticsStartDate)
+  const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice?.analyticsEndDate)
+  const rangeLabel = startDate && endDate ? `${formatDate(startDate)} - ${formatDate(endDate)}` : 'TBD'
+
+  if (snapshot?.clamped && normalizeDateOnly(snapshot?.trackingStartDate)) {
+    return `${rangeLabel} (tracking began ${formatDate(snapshot.trackingStartDate)})`
+  }
+
+  return rangeLabel
+}
+
 function getAnalyticsRangeLabel(invoice, snapshot) {
   const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice?.analyticsStartDate)
   const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice?.analyticsEndDate)
@@ -306,6 +328,27 @@ function renderAnalyticsReport(doc, invoice, snapshot, x, y, width) {
   return nextY + 4
 }
 
+function renderEngagementReport(doc, invoice, snapshot, x, y, width) {
+  const counts = snapshot?.counts ?? {}
+  const metrics = ENGAGEMENT_METRIC_LABELS
+    .map(([key, label]) => ({ label, value: formatNumber(counts[key]), raw: Number(counts[key]) || 0 }))
+    .filter((metric) => metric.raw > 0)
+
+  if (!metrics.length) {
+    return y
+  }
+
+  writeText(doc, 'Site Engagement', x, y, { width: width * 0.45, font: 'Helvetica-Bold', size: 9.5 })
+  writeText(doc, getEngagementRangeLabel(invoice, snapshot), x + width * 0.45, y + 1, {
+    width: width * 0.55,
+    size: 7,
+    color: '#4b5563',
+    align: 'right',
+  })
+
+  return renderMetricGrid(doc, metrics, x, y + 15, width, { columns: 4 }) + 4
+}
+
 function renderSocialStats(doc, stats, x, y, width) {
   if (!stats.length) {
     return y
@@ -356,6 +399,7 @@ function drawRowBorders(doc, columns, y, height) {
 
 function renderInvoiceTable(doc, { invoice, properties }) {
   const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
+  const engagementSnapshots = Array.isArray(invoice.engagementSnapshots) ? invoice.engagementSnapshots : []
   const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property?.slug === slug)?.name || slug)
   const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
   const primaryProperty = properties.find((property) => property?.slug === primaryPropertySlug) ?? null
@@ -382,6 +426,7 @@ function renderInvoiceTable(doc, { invoice, properties }) {
     const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
     const rowProperty = properties.find((property) => property?.slug === rowPropertySlug) ?? primaryProperty
     const rowSnapshot = getSnapshotForProperty(snapshots, rowProperty, rowPropertySlug)
+    const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
     const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
     const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
     const showPropertyDetails = index === 0 && propertyName
@@ -405,6 +450,7 @@ function renderInvoiceTable(doc, { invoice, properties }) {
       descY = renderCellText(doc, propertyName, descX, descY, descWidth, { font: 'Helvetica-Bold' })
       descY = renderCellText(doc, propertyUrl, descX, descY, descWidth, { color: '#0000ee' })
       descY = renderAnalyticsReport(doc, invoice, rowSnapshot, descX, descY + 5, descWidth)
+      descY = renderEngagementReport(doc, invoice, rowEngagementSnapshot, descX, descY + 4, descWidth)
       descY = renderSocialStats(doc, socialStats, descX, descY, descWidth)
     }
 

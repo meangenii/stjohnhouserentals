@@ -1,11 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from '../lib/router'
+import { FacebookLikeShare } from '../components/FacebookLikeShare'
 import { PropertyAvailabilityFallback } from '../components/PropertyAvailabilityFallback'
+import { SiteLikeButton } from '../components/SiteLikeButton'
 import { PropertyAvailabilityCalendar } from '../components/PropertyAvailabilityCalendar'
 import { PropertyContentSection } from '../components/PropertyContentSection'
 import { PropertyDescriptionSections, PropertyDetailsSection, PropertyPolicySection } from '../components/PropertyDescriptionSections'
 import { RichTextValue } from '../components/RichTextValue'
 import { ReturnToPropertiesButton } from '../components/ReturnToPropertiesButton'
+import { SocialShareButtons } from '../components/SocialShareButtons'
 import { getAdminIdToken } from '../lib/adminAuth'
 import { DEFAULT_SITE_DESCRIPTION, useDocumentMeta } from '../lib/documentMeta'
 import { getPropertyContactActions, getPropertyContactInfo } from '../lib/propertyContact'
@@ -16,7 +19,7 @@ import { buildRemoteImageUrl } from '../lib/remoteImage'
 import { usePropertyGalleryNavigation } from '../lib/usePropertyGalleryNavigation'
 import { useAdminSession } from '../lib/useAdminSession'
 import { hasPropertyCalendarLink } from '../lib/propertyCalendarLink'
-import { buildBreadcrumbJsonLd, getCanonicalPath } from '../../shared/seoMetadata.js'
+import { buildBreadcrumbJsonLd, buildCanonicalUrl, getCanonicalPath } from '../../shared/seoMetadata.js'
 
 const PROPERTY_CROSSFADE_DURATION_MS = 180
 const PROPERTY_CROSSFADE_NAVIGATION_DELAY_MS = PROPERTY_CROSSFADE_DURATION_MS + 40
@@ -497,6 +500,23 @@ export function PropertyDetailPage() {
         <div className="property-template-inner">
           <header className="property-template-header" ref={propertyHeadingRef}>
             <h1>{property.name}</h1>
+            <div className="social-engagement-row">
+              <SiteLikeButton itemId={property.slug} itemType="property" title={property.name} />
+              <FacebookLikeShare
+                itemId={property.slug}
+                itemType="property"
+                title={property.name}
+                url={buildCanonicalUrl(propertyCanonicalPath)}
+              />
+              <SocialShareButtons
+                description={documentDescription}
+                imageUrl={property.heroImage ? buildRemoteImageUrl(property.heroImage, { width: 1200, height: 800 }) : ''}
+                itemId={property.slug}
+                itemType="property"
+                title={property.name}
+                url={buildCanonicalUrl(propertyCanonicalPath)}
+              />
+            </div>
           </header>
 
           {activeImage ? (

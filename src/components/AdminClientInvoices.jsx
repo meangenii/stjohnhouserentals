@@ -28,6 +28,16 @@ const SOCIAL_STAT_LABELS = {
   reach: 'Reach',
   engagements: 'Engagements',
 }
+const ENGAGEMENT_METRIC_LABELS = [
+  ['siteLikes', 'Site Likes'],
+  ['facebookLikes', 'Facebook Likes'],
+  ['facebookShareClicks', 'Facebook Shares'],
+  ['pinterestShareClicks', 'Pinterest Shares'],
+  ['twitterShareClicks', 'X (Twitter) Shares'],
+  ['whatsappShareClicks', 'WhatsApp Shares'],
+  ['emailShareClicks', 'Email Shares'],
+  ['nativeShareClicks', 'Other Shares'],
+]
 const DEFAULT_ANNUAL_INVOICE_AMOUNT = '300'
 const ANNUAL_INVOICE_MONTH_COUNT = 12
 const INVOICE_DUE_DAY_COUNT = 30
@@ -385,6 +395,48 @@ function InvoiceAnalyticsReport({ invoice, snapshot }) {
   )
 }
 
+function getEngagementRangeLabel(invoice, snapshot) {
+  const rangeLabel = getAnalyticsRangeLabel(invoice, snapshot)
+
+  if (snapshot?.clamped && normalizeDateOnly(snapshot?.trackingStartDate)) {
+    return `${rangeLabel} (tracking began ${formatDate(snapshot.trackingStartDate)})`
+  }
+
+  return rangeLabel
+}
+
+function InvoiceEngagementReport({ invoice, snapshot }) {
+  const counts = snapshot?.counts ?? {}
+  const metrics = ENGAGEMENT_METRIC_LABELS.map(([key, label]) => ({ key, label, value: Number(counts[key]) || 0 })).filter(
+    (metric) => metric.value > 0,
+  )
+
+  if (!metrics.length) {
+    return null
+  }
+
+  const rangeLabel = getEngagementRangeLabel(invoice, snapshot)
+
+  return (
+    <section className="admin-client-invoice-social-report" aria-label="Site engagement">
+      <div className="admin-client-invoice-social-group">
+        <div className="admin-client-invoice-social-header">
+          <strong>Site Engagement</strong>
+          <span>{rangeLabel}</span>
+        </div>
+        <dl className="admin-client-invoice-social-metrics">
+          {metrics.map((metric) => (
+            <div key={metric.key}>
+              <dt>{metric.label}</dt>
+              <dd>{formatNumber(metric.value)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  )
+}
+
 function InvoiceSocialStats({ stats }) {
   if (!stats?.length) {
     return null
@@ -428,6 +480,7 @@ function SavedInvoice({
 }) {
   const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property.slug === slug)?.name || slug)
   const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
+  const engagementSnapshots = Array.isArray(invoice.engagementSnapshots) ? invoice.engagementSnapshots : []
   const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
   const primaryProperty = properties.find((property) => property.slug === primaryPropertySlug) ?? null
   const servicePeriod = getServicePeriod(invoice, primaryProperty)
@@ -535,6 +588,7 @@ function SavedInvoice({
               const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
               const rowProperty = properties.find((property) => property.slug === rowPropertySlug) ?? primaryProperty
               const rowSnapshot = getSnapshotForProperty(snapshots, rowProperty, rowPropertySlug)
+              const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
               const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
               const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
               const showPropertyDetails = index === 0 && propertyName
@@ -550,6 +604,7 @@ function SavedInvoice({
                         <strong>{propertyName}</strong>
                         <a href={propertyUrl}>{propertyUrl}</a>
                         <InvoiceAnalyticsReport invoice={invoice} snapshot={rowSnapshot} />
+                        <InvoiceEngagementReport invoice={invoice} snapshot={rowEngagementSnapshot} />
                         <InvoiceSocialStats stats={socialStats} />
                       </>
                     ) : null}

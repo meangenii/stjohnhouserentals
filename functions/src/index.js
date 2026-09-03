@@ -16,6 +16,8 @@ const { deletePayment, listPaymentsForClient, recordPayment } = require('./payme
 const { createInvoicePdfDownload, emailInvoicePdf } = require('./invoiceDeliveryRepository')
 const { createInvoice, deleteInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
 const { getPropertyAnalyticsReport, normalizeAnalyticsDateRange } = require('./analyticsRepository')
+const { getLikeSummary, toggleLike } = require('./likeRepository')
+const { getPropertyEngagementSummary, recordEngagementEvent } = require('./engagementRepository')
 const {
   getCharterBySlug,
   listAllCharters,
@@ -502,6 +504,58 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'GET' && path === 'likes/summary') {
+      const summary = await getLikeSummary({
+        itemType: request.query?.itemType ?? '',
+        itemId: request.query?.itemId ?? '',
+        clientToken: request.query?.clientToken ?? '',
+      })
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...summary,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'likes/toggle') {
+      const result = await toggleLike(
+        {
+          itemType: request.body?.itemType ?? '',
+          itemId: request.body?.itemId ?? '',
+          clientToken: request.body?.clientToken ?? '',
+        },
+        request,
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'engagement/track') {
+      const result = await recordEngagementEvent(
+        {
+          itemType: request.body?.itemType ?? '',
+          itemId: request.body?.itemId ?? '',
+          channel: request.body?.channel ?? '',
+          action: request.body?.action ?? '',
+        },
+        request,
+      )
+
+      response.status(202).json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        ...result,
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/contact/advertise') {
       await requireAdminUser(request)
       response.json({
@@ -875,12 +929,29 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         capturedAt,
         report: analyticsReports[index],
       }))
+      const engagementReports = await Promise.all(
+        properties.map((property) =>
+          getPropertyEngagementSummary({
+            itemType: 'property',
+            itemId: property.slug,
+            startDate: analyticsDateRange.startDate,
+            endDate: analyticsDateRange.endDate,
+          }),
+        ),
+      )
+      const engagementSnapshots = properties.map((property, index) => ({
+        propertySlug: property.slug,
+        propertyName: property.name,
+        capturedAt,
+        report: engagementReports[index],
+      }))
       const invoice = await createInvoice(
         {
           ...request.body,
           clientId,
           propertySlugs,
           analyticsSnapshots,
+          engagementSnapshots,
         },
         adminUser,
       )
