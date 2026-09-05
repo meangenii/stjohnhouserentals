@@ -4128,7 +4128,9 @@ button.rental-accommodations-card-badge {
 }
 
 .social-engagement-row {
-  display: flex;
+  /* Hidden site-wide until social sharing is ready to go live - remove this line to
+     bring the like/share buttons back. Nothing else about the row was changed. */
+  display: none;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
