@@ -6,7 +6,7 @@ const {
   payeeName: PAYEE_NAME,
   companyAddressLines: COMPANY_ADDRESS_LINES,
   companyEmail: COMPANY_EMAIL,
-} = require('../../shared/invoiceBranding.json')
+} = require('../shared/invoiceBranding.json')
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const SOCIAL_STAT_LABELS = [

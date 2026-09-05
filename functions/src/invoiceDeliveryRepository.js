@@ -11,7 +11,7 @@ const {
 } = require('./invoicePdf')
 const { getAdminPropertyBySlug } = require('./propertyRepository')
 const { getSiteShellContent } = require('./siteContentRepository')
-const { companyName: COMPANY_NAME, payeeName: PAYEE_NAME } = require('../../shared/invoiceBranding.json')
+const { companyName: COMPANY_NAME, payeeName: PAYEE_NAME } = require('../shared/invoiceBranding.json')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 

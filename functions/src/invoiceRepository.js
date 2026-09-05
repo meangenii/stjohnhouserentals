@@ -1,5 +1,5 @@
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
-const { invoiceNumberPrefix: INVOICE_NUMBER_PREFIX } = require('../../shared/invoiceBranding.json')
+const { invoiceNumberPrefix: INVOICE_NUMBER_PREFIX } = require('../shared/invoiceBranding.json')
 
 const INVOICE_COLLECTION = 'cmsClientInvoices'
 const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
