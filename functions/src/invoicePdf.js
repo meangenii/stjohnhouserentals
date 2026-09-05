@@ -1,12 +1,14 @@
 const PDFDocument = require('pdfkit')
+const {
+  siteOrigin: SITE_ORIGIN,
+  companyName: COMPANY_NAME,
+  dbaName: DBA_NAME,
+  payeeName: PAYEE_NAME,
+  companyAddressLines: COMPANY_ADDRESS_LINES,
+  companyEmail: COMPANY_EMAIL,
+} = require('../../shared/invoiceBranding.json')
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const SITE_ORIGIN = 'https://www.stjohnhouserentals.com'
-const COMPANY_NAME = 'St. John House Rentals'
-const DBA_NAME = 'DBA St John Links'
-const PAYEE_NAME = 'Jean Vance'
-const COMPANY_ADDRESS_LINES = ['9901 Emmaus', 'St. John, VI 00830-9587']
-const COMPANY_EMAIL = 'stjohnlinks@gmail.com'
 const SOCIAL_STAT_LABELS = [
   ['views', 'Views'],
   ['viewers', 'Viewers'],
@@ -429,7 +431,7 @@ function renderInvoiceTable(doc, { invoice, properties }) {
     const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
     const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
     const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
-    const showPropertyDetails = index === 0 && propertyName
+    const showPropertyDetails = Boolean(propertyName)
     const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
     const descriptionColumn = columns[1]
     const descX = descriptionColumn.x + 7

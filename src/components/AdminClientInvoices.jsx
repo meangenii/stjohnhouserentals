@@ -11,15 +11,17 @@ import {
 } from '../lib/adminClientApi'
 import { useSiteShellContent } from '../lib/useSiteContent'
 import siteLogoFallback from '../content/site_logo.png'
+import {
+  siteOrigin as SITE_ORIGIN,
+  companyName as COMPANY_NAME,
+  dbaName as DBA_NAME,
+  payeeName as PAYEE_NAME,
+  companyAddressLines as COMPANY_ADDRESS_LINES,
+  companyEmail as COMPANY_EMAIL,
+} from '../../shared/invoiceBranding.json'
 
 const INVOICE_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'void']
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const SITE_ORIGIN = 'https://www.stjohnhouserentals.com'
-const COMPANY_NAME = 'St. John House Rentals'
-const DBA_NAME = 'DBA St John Links'
-const PAYEE_NAME = 'Jean Vance'
-const COMPANY_ADDRESS_LINES = ['9901 Emmaus', 'St. John, VI 00830-9587']
-const COMPANY_EMAIL = 'stjohnlinks@gmail.com'
 const SOCIAL_STAT_LABELS = {
   views: 'Views',
   viewers: 'Viewers',
@@ -324,6 +326,35 @@ function getServiceDescriptionLabel(description) {
   return normalized
 }
 
+function createEmptySocialStatsDraft() {
+  return Object.keys(SOCIAL_STAT_LABELS).reduce((draft, key) => ({ ...draft, [key]: '' }), { label: '' })
+}
+
+function buildSocialStatsPayload(socialStats, dateRange) {
+  const metrics = Object.keys(SOCIAL_STAT_LABELS).reduce((normalized, key) => {
+    const raw = String(socialStats?.[key] ?? '').trim()
+
+    if (raw) {
+      normalized[key] = raw
+    }
+
+    return normalized
+  }, {})
+
+  if (Object.keys(metrics).length === 0) {
+    return []
+  }
+
+  return [
+    {
+      label: String(socialStats?.label ?? '').trim() || 'Social media marketing',
+      startDate: dateRange?.startDate ?? '',
+      endDate: dateRange?.endDate ?? '',
+      ...metrics,
+    },
+  ]
+}
+
 function createInvoiceDraft(property) {
   const derivedDates = getDerivedInvoiceDates(property)
 
@@ -336,6 +367,7 @@ function createInvoiceDraft(property) {
         amount: getAnnualInvoiceAmount(property),
       },
     ],
+    socialStats: createEmptySocialStatsDraft(),
     notes: '',
   }
 }
@@ -491,6 +523,7 @@ function SavedInvoice({
   const isEmailBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'email-pdf'
   const isDeleteBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'delete'
   const isActionBusy = isPdfBusy || isEmailBusy || isDeleteBusy
+  const isDeletable = invoice.status === 'draft' || invoice.status === 'void'
 
   return (
     <article className={`admin-client-saved-invoice ${printTarget ? 'admin-client-invoice-print-target' : ''}`.trim()}>
@@ -532,7 +565,8 @@ function SavedInvoice({
           </button>
           <button
             className="button-link button-link--ghost admin-action"
-            disabled={isActionBusy}
+            disabled={isActionBusy || !isDeletable}
+            title={isDeletable ? undefined : 'Only draft or void invoices can be deleted. Set this invoice to void first to retire it.'}
             type="button"
             onClick={() => onDeleteInvoice(invoice)}
           >
@@ -591,7 +625,7 @@ function SavedInvoice({
               const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
               const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
               const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
-              const showPropertyDetails = index === 0 && propertyName
+              const showPropertyDetails = Boolean(propertyName)
               const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
 
               return (
@@ -785,6 +819,11 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     setCreateStatus({ state: 'idle', message: '' })
   }
 
+  function setSocialStatField(field, value) {
+    setDraft((current) => ({ ...current, socialStats: { ...current.socialStats, [field]: value } }))
+    setCreateStatus({ state: 'idle', message: '' })
+  }
+
   function handlePropertyChange(slug) {
     const property = properties.find((candidate) => candidate.slug === slug)
     const derivedDates = getDerivedInvoiceDates(property)
@@ -841,6 +880,10 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           analyticsStartDate: derivedDates.analyticsStartDate,
           analyticsEndDate: derivedDates.analyticsEndDate,
           lineItems: [lineItem],
+          socialStats: buildSocialStatsPayload(draft.socialStats, {
+            startDate: derivedDates.analyticsStartDate,
+            endDate: derivedDates.analyticsEndDate,
+          }),
           notes: draft.notes,
         },
         { authToken },
@@ -1052,6 +1095,33 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         </div>
 
         <label className="admin-field"><span>Notes</span><textarea rows={3} value={draft.notes} onChange={(event) => setDraftField('notes', event.target.value)} /></label>
+
+        <div className="admin-field admin-field--full-width">
+          <span>Social &amp; marketing stats (optional)</span>
+          <p className="admin-note">Paste totals from an external report (Facebook Ads, Meta/Google insights, etc.) to include a marketing stats section on this invoice. Leave blank to skip it.</p>
+        </div>
+        <label className="admin-field admin-field--full-width">
+          <span>Stats label</span>
+          <input
+            placeholder="Social media marketing"
+            type="text"
+            value={draft.socialStats.label}
+            onChange={(event) => setSocialStatField('label', event.target.value)}
+          />
+        </label>
+        <div className="admin-client-invoice-fields">
+          {Object.entries(SOCIAL_STAT_LABELS).map(([key, label]) => (
+            <label className="admin-field" key={key}>
+              <span>{label}</span>
+              <input
+                inputMode="numeric"
+                type="text"
+                value={draft.socialStats[key]}
+                onChange={(event) => setSocialStatField(key, event.target.value)}
+              />
+            </label>
+          ))}
+        </div>
 
         {!subscriptionStartDate ? (
           <p className="admin-note">

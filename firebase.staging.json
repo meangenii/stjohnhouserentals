@@ -31,6 +31,14 @@
     ],
     "rewrites": [
       {
+        "source": "/api/admin/social/**",
+        "function": {
+          "functionId": "siteApiSocialStaging",
+          "region": "us-central1",
+          "pinTag": true
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "siteApiStaging",

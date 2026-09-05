@@ -53,7 +53,13 @@ export function observeAdminUser(callback) {
     return () => {}
   }
 
-  return onAuthStateChanged(auth, callback)
+  // signInAdminWithGoogle() rejects a non-allowed email at sign-in time, but that
+  // check never runs again here - a Google account signed in some other way (e.g.
+  // directly through the Firebase SDK from devtools) would otherwise read as an
+  // authenticated admin to every consumer of this callback.
+  return onAuthStateChanged(auth, (user) => {
+    callback(user && isAdminEmail(user.email) ? user : null)
+  })
 }
 
 export async function signInAdminWithGoogle() {

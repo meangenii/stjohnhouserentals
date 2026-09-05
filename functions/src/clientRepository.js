@@ -6,6 +6,12 @@ const {
   isFirestoreUnavailableError,
 } = require('./firebaseAdmin')
 const { listAllProperties, setPropertyClientId } = require('./propertyRepository')
+const { listInvoicesForClient } = require('./invoiceRepository')
+
+// Statuses that represent money still owed - archiving a client past this point would make
+// a still-outstanding invoice unreachable from the admin UI (no "view archived clients"
+// screen exists), with no warning it happened.
+const OUTSTANDING_INVOICE_STATUSES = new Set(['sent', 'overdue'])
 
 const CLIENT_COLLECTION = 'cmsClients'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -212,6 +218,16 @@ async function archiveClient(id, adminUser) {
 
   if (!snapshot.exists) {
     throw new HttpError(404, 'That client could not be found.')
+  }
+
+  const invoices = await listInvoicesForClient(normalizedId)
+  const outstandingCount = invoices.filter((invoice) => OUTSTANDING_INVOICE_STATUSES.has(invoice.status)).length
+
+  if (outstandingCount > 0) {
+    throw new HttpError(
+      400,
+      `This client has ${outstandingCount} outstanding invoice${outstandingCount === 1 ? '' : 's'} (sent or overdue). Mark ${outstandingCount === 1 ? 'it' : 'them'} paid or void before archiving.`,
+    )
   }
 
   await docRef.set(

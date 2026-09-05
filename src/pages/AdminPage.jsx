@@ -20,6 +20,7 @@ import { AdminPropertyPreview } from '../components/AdminPropertyPreview'
 import { AdminCharterEditorPreview } from '../components/AdminCharterEditorPreview'
 import { AdminMediaManager } from '../components/AdminMediaManager'
 import { AdminSiteShellEditor } from '../components/AdminSiteShellEditor'
+import { AdminSocialMediaPanel } from '../components/AdminSocialMediaPanel'
 import { AdminStyleEditor } from '../components/AdminStyleEditor'
 import {
   isCharterEditingEnabled,
@@ -239,7 +240,18 @@ const DEFAULT_ADMIN_EDITOR_LOCATION = {
 }
 const STRUCTURED_PAGE_EDITOR_FORM_ID = 'admin-structured-page-editor-form'
 const PROPERTY_EDITOR_FORM_ID = 'admin-property-editor-form'
-const ADMIN_EDITOR_TABS = new Set(['site-shell', 'pages', 'styles', 'properties', 'charters', 'media', 'clients', 'submissions', 'backups'])
+const ADMIN_EDITOR_TABS = new Set([
+  'site-shell',
+  'pages',
+  'styles',
+  'properties',
+  'charters',
+  'media',
+  'clients',
+  'social',
+  'submissions',
+  'backups',
+])
 const ADMIN_EDITOR_TAB_OPTIONS = [
   { label: 'Header & Footer', value: 'site-shell' },
   { label: 'Pages', value: 'pages' },
@@ -248,6 +260,7 @@ const ADMIN_EDITOR_TAB_OPTIONS = [
   { label: 'Charters', value: 'charters' },
   { label: 'Media', value: 'media' },
   { label: 'Clients', value: 'clients' },
+  { label: 'Social', value: 'social' },
   { label: 'Advertise', value: 'submissions' },
   { label: 'Backups', value: 'backups' },
 ]
@@ -4530,6 +4543,7 @@ export function AdminPage() {
               initialPropertySlug={preferredClientPropertySlug}
             />
           ) : null}
+          {activeTab === 'social' ? <AdminSocialMediaPanel authUser={authState.user} /> : null}
           {activeTab === 'submissions' ? <AdminAdvertiseInquiriesPanel authUser={authState.user} /> : null}
 
           {activeTab === 'backups' ? (

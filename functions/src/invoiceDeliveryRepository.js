@@ -11,13 +11,16 @@ const {
 } = require('./invoicePdf')
 const { getAdminPropertyBySlug } = require('./propertyRepository')
 const { getSiteShellContent } = require('./siteContentRepository')
+const { companyName: COMPANY_NAME, payeeName: PAYEE_NAME } = require('../../shared/invoiceBranding.json')
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 async function getInvoiceDocumentContext(invoiceId) {
   const invoice = await getInvoice(invoiceId)
-  const client = await getClient(invoice.clientId)
-  const properties = await Promise.all(invoice.propertySlugs.map((slug) => getAdminPropertyBySlug(slug)))
+  const [client, properties] = await Promise.all([
+    getClient(invoice.clientId),
+    Promise.all(invoice.propertySlugs.map((slug) => getAdminPropertyBySlug(slug))),
+  ])
 
   return {
     invoice,
@@ -28,6 +31,11 @@ async function getInvoiceDocumentContext(invoiceId) {
 
 // PDFKit only embeds PNG/JPEG, but the site logo can be uploaded in any format (e.g. AVIF),
 // so this normalizes it to PNG. Any failure here just omits the logo rather than failing the invoice.
+// The converted buffer is cached per logo URL for the life of the warm instance, since the
+// fetch + re-encode is otherwise redone on every single invoice PDF/email even though the
+// site logo rarely changes.
+let cachedLogoImage = null
+
 async function getInvoiceLogoImage() {
   try {
     const siteShell = await getSiteShellContent()
@@ -37,6 +45,10 @@ async function getInvoiceLogoImage() {
       return null
     }
 
+    if (cachedLogoImage?.logoUrl === logoUrl) {
+      return cachedLogoImage.buffer
+    }
+
     const response = await fetch(logoUrl)
 
     if (!response.ok) {
@@ -44,7 +56,10 @@ async function getInvoiceLogoImage() {
     }
 
     const sourceBuffer = Buffer.from(await response.arrayBuffer())
-    return await sharp(sourceBuffer).png().toBuffer()
+    const buffer = await sharp(sourceBuffer).png().toBuffer()
+
+    cachedLogoImage = { logoUrl, buffer }
+    return buffer
   } catch {
     return null
   }
@@ -70,16 +85,16 @@ function buildInvoiceEmailText({ invoice, client, properties }) {
   return [
     `Hello ${recipientName},`,
     '',
-    `Attached is invoice ${invoice.invoiceNumber} from St. John House Rentals.`,
+    `Attached is invoice ${invoice.invoiceNumber} from ${COMPANY_NAME}.`,
     propertyNames.length ? `Property: ${propertyNames.join(', ')}` : '',
     `Invoice date: ${formatInvoiceDate(invoice.issueDate)}`,
     invoice.dueDate ? `Due date: ${formatInvoiceDate(invoice.dueDate)}` : '',
     `Amount due: ${formatInvoiceCurrency(invoice.amountTotal)}`,
     '',
-    'Please make checks payable to Jean Vance.',
+    `Please make checks payable to ${PAYEE_NAME}.`,
     '',
     'Thank you,',
-    'St. John House Rentals',
+    COMPANY_NAME,
   ].filter(Boolean).join('\n')
 }
 
@@ -101,7 +116,7 @@ async function emailInvoicePdf(invoiceId) {
     await emailSetup.transport.sendMail({
       from: `"${emailSetup.config.fromName}" <${emailSetup.config.fromEmail}>`,
       to: recipientEmail,
-      subject: `Invoice ${download.invoice.invoiceNumber} from St. John House Rentals`,
+      subject: `Invoice ${download.invoice.invoiceNumber} from ${COMPANY_NAME}`,
       text: buildInvoiceEmailText(download),
       attachments: [
         {

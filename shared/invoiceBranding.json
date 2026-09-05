@@ -1,0 +1,9 @@
+{
+  "siteOrigin": "https://www.stjohnhouserentals.com",
+  "companyName": "St. John House Rentals",
+  "dbaName": "DBA St John Links",
+  "payeeName": "Jean Vance",
+  "companyAddressLines": ["9901 Emmaus", "St. John, VI 00830-9587"],
+  "companyEmail": "stjohnlinks@gmail.com",
+  "invoiceNumberPrefix": "STJHR"
+}

@@ -110,11 +110,17 @@ function getAllowedOwnerEmails() {
 }
 
 function isUsingAuthEmulator() {
-  // Require both signals so a stray FIREBASE_AUTH_EMULATOR_HOST left set in a
-  // deployed environment can't alone grant every signed-in user admin access.
-  // FUNCTIONS_EMULATOR is set automatically by the Firebase emulator runtime
-  // and is never present in deployed Cloud Functions.
-  return Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST) && normalizeBoolean(process.env.FUNCTIONS_EMULATOR)
+  // Require all three signals so a stray FIREBASE_AUTH_EMULATOR_HOST/FUNCTIONS_EMULATOR
+  // left set in a deployed environment (e.g. a copy-pasted .env) can't alone grant every
+  // signed-in user admin access. FUNCTIONS_EMULATOR is set automatically by the Firebase
+  // emulator runtime; K_SERVICE is set automatically by Cloud Run/Cloud Functions itself
+  // on every real deployment and can't be set by application config, so its absence can't
+  // be spoofed by a misconfigured environment the way the other two vars could be.
+  return (
+    Boolean(process.env.FIREBASE_AUTH_EMULATOR_HOST) &&
+    normalizeBoolean(process.env.FUNCTIONS_EMULATOR) &&
+    !process.env.K_SERVICE
+  )
 }
 
 async function requireAdminUser(request) {

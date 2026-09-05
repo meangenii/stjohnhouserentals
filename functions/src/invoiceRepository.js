@@ -1,4 +1,5 @@
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const { invoiceNumberPrefix: INVOICE_NUMBER_PREFIX } = require('../../shared/invoiceBranding.json')
 
 const INVOICE_COLLECTION = 'cmsClientInvoices'
 const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
@@ -16,8 +17,9 @@ const ENGAGEMENT_METRIC_KEYS = [
   'nativeShareClicks',
 ]
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const INVOICE_NUMBER_PREFIX = 'STJHR'
-const INVOICE_NUMBER_PATTERN = /^(?:GENCMS|STJHR)-(\d{4})-(\d{3,})$/
+// Accepts both the legacy generic prefix and the configured one, so invoice numbers
+// issued before a rebrand/tenant change are still recognized.
+const INVOICE_NUMBER_PATTERN = new RegExp(`^(?:GENCMS|${INVOICE_NUMBER_PREFIX})-(\\d{4})-(\\d{3,})$`)
 
 function normalizeTimestampValue(value) {
   if (!value) {
@@ -58,11 +60,11 @@ function normalizeField(value, { label, maxLength, required = false } = {}) {
   return normalized
 }
 
-function normalizeDateOnlyValue(value, { label, required = false } = {}) {
+function normalizeDateOnlyValue(value, { label, required = false, strict = true } = {}) {
   const normalized = String(value ?? '').trim().slice(0, 10)
 
   if (!normalized) {
-    if (required) {
+    if (required && strict) {
       throw new HttpError(400, `${label} is required.`)
     }
 
@@ -70,7 +72,11 @@ function normalizeDateOnlyValue(value, { label, required = false } = {}) {
   }
 
   if (!DATE_ONLY_PATTERN.test(normalized)) {
-    throw new HttpError(400, `${label} must be a valid date (YYYY-MM-DD).`)
+    if (strict) {
+      throw new HttpError(400, `${label} must be a valid date (YYYY-MM-DD).`)
+    }
+
+    return ''
   }
 
   const [year, month, day] = normalized.split('-').map((part) => Number(part))
@@ -79,19 +85,43 @@ function normalizeDateOnlyValue(value, { label, required = false } = {}) {
     parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day
 
   if (!isValidCalendarDate) {
-    throw new HttpError(400, `${label} must be a valid date (YYYY-MM-DD).`)
+    if (strict) {
+      throw new HttpError(400, `${label} must be a valid date (YYYY-MM-DD).`)
+    }
+
+    return ''
   }
 
   return normalized
 }
 
+function parseLineItemAmount(rawAmount) {
+  const trimmed = String(rawAmount ?? '').trim()
+
+  if (!trimmed) {
+    return 0
+  }
+
+  const cleaned = trimmed.replace(/[$,\s]/g, '')
+
+  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) {
+    throw new HttpError(400, 'Line item amount must be a valid number.')
+  }
+
+  return Number(cleaned)
+}
+
 function normalizeLineItems(value) {
   const items = Array.isArray(value) ? value : []
   const normalized = items
-    .map((item) => ({
-      description: normalizeField(item?.description, { label: 'Line item description', maxLength: 200 }),
-      amount: normalizeField(item?.amount, { label: 'Line item amount', maxLength: 20 }),
-    }))
+    .map((item) => {
+      const description = normalizeField(item?.description, { label: 'Line item description', maxLength: 200 })
+      const amount = normalizeField(item?.amount, { label: 'Line item amount', maxLength: 20 })
+
+      parseLineItemAmount(amount)
+
+      return { description, amount }
+    })
     .filter((item) => item.description || item.amount)
 
   if (normalized.length === 0) {
@@ -121,7 +151,7 @@ function normalizeOptionalMetricValue(value) {
   return Number.isFinite(number) ? number : null
 }
 
-function normalizeSocialStatEntry(entry = {}) {
+function normalizeSocialStatEntry(entry = {}, { strict = true } = {}) {
   if (!entry || typeof entry !== 'object') {
     return null
   }
@@ -141,19 +171,29 @@ function normalizeSocialStatEntry(entry = {}) {
     return null
   }
 
-  const startDate = normalizeDateOnlyValue(entry.startDate ?? entry.dateRange?.startDate, {
+  let startDate = normalizeDateOnlyValue(entry.startDate ?? entry.dateRange?.startDate, {
     label: 'Social stats start date',
+    strict,
   })
-  const endDate = normalizeDateOnlyValue(entry.endDate ?? entry.dateRange?.endDate, {
+  let endDate = normalizeDateOnlyValue(entry.endDate ?? entry.dateRange?.endDate, {
     label: 'Social stats end date',
+    strict,
   })
 
-  if (Boolean(startDate) !== Boolean(endDate)) {
-    throw new HttpError(400, 'Social stats start and end dates must both be provided.')
-  }
+  if (Boolean(startDate) !== Boolean(endDate) || (startDate && startDate > endDate)) {
+    if (strict) {
+      throw new HttpError(
+        400,
+        Boolean(startDate) !== Boolean(endDate)
+          ? 'Social stats start and end dates must both be provided.'
+          : 'Social stats start date must be on or before the end date.',
+      )
+    }
 
-  if (startDate && startDate > endDate) {
-    throw new HttpError(400, 'Social stats start date must be on or before the end date.')
+    // A previously-stored entry with a corrupt date range shouldn't block reading the rest
+    // of the invoice - drop the range and keep the metrics.
+    startDate = ''
+    endDate = ''
   }
 
   return {
@@ -168,12 +208,12 @@ function normalizeSocialStatEntry(entry = {}) {
   }
 }
 
-function normalizeSocialStats(value) {
+function normalizeSocialStats(value, { strict = true } = {}) {
   const entries = Array.isArray(value) ? value : value ? [value] : []
-  return entries.map(normalizeSocialStatEntry).filter(Boolean).slice(0, 10)
+  return entries.map((entry) => normalizeSocialStatEntry(entry, { strict })).filter(Boolean).slice(0, 10)
 }
 
-function normalizeAnalyticsSnapshot(snapshot = {}) {
+function normalizeAnalyticsSnapshot(snapshot = {}, { strict = true } = {}) {
   const propertySlug = String(snapshot?.propertySlug ?? '').trim()
 
   if (!propertySlug) {
@@ -212,13 +252,14 @@ function normalizeAnalyticsSnapshot(snapshot = {}) {
       : [],
     socialStats: normalizeSocialStats(
       report?.socialStats ?? snapshot?.socialStats ?? report?.marketingStats ?? snapshot?.marketingStats,
+      { strict },
     ),
   }
 }
 
-function normalizeAnalyticsSnapshots(value) {
+function normalizeAnalyticsSnapshots(value, { strict = true } = {}) {
   const snapshots = Array.isArray(value) ? value : value ? [value] : []
-  return snapshots.map(normalizeAnalyticsSnapshot).filter(Boolean).slice(0, 20)
+  return snapshots.map((snapshot) => normalizeAnalyticsSnapshot(snapshot, { strict })).filter(Boolean).slice(0, 20)
 }
 
 function normalizeEngagementSnapshot(snapshot = {}) {
@@ -259,11 +300,7 @@ function normalizeEngagementSnapshots(value) {
 }
 
 function computeAmountTotal(lineItems) {
-  const total = lineItems.reduce((sum, item) => {
-    const numeric = Number(String(item.amount).replace(/[^0-9.-]/g, ''))
-    return sum + (Number.isFinite(numeric) ? numeric : 0)
-  }, 0)
-
+  const total = lineItems.reduce((sum, item) => sum + parseLineItemAmount(item.amount), 0)
   return total.toFixed(2)
 }
 
@@ -294,6 +331,13 @@ function normalizeInvoiceDraft(payload) {
 
   if (propertySlugs.length > 20) {
     throw new HttpError(400, 'An invoice can include no more than 20 properties.')
+  }
+
+  // The PDF and admin preview pair each line item with a property by matching index
+  // (propertySlugs[i] describes lineItems[i]) - with more than one property, the two
+  // arrays must line up 1:1 or that pairing silently points at the wrong property.
+  if (propertySlugs.length > 1 && lineItems.length !== propertySlugs.length) {
+    throw new HttpError(400, 'A multi-property invoice needs exactly one line item per property, in the same order.')
   }
 
   if (Boolean(analyticsStartDate) !== Boolean(analyticsEndDate)) {
@@ -337,9 +381,9 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     dueDate: String(record.dueDate ?? '').trim(),
     analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
     analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
-    analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
+    analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot, { strict: false }),
     engagementSnapshots: normalizeEngagementSnapshots(record.engagementSnapshots ?? record.engagementSnapshot),
-    socialStats: normalizeSocialStats(record.socialStats ?? record.marketingStats),
+    socialStats: normalizeSocialStats(record.socialStats ?? record.marketingStats, { strict: false }),
     status: INVOICE_STATUSES.has(record.status) ? record.status : 'draft',
     notes: String(record.notes ?? '').trim(),
     createdAt: normalizeTimestampValue(record.createdAt),
@@ -352,18 +396,36 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
 // collection was introduced: seeds the counter from any pre-existing invoice numbers so it
 // can't collide with invoices created before the counter existed. Reading through the
 // transaction keeps this consistent with the counter document read/write below.
+//
+// Scoped to invoiceNumber range queries (one per recognized prefix) rather than a full
+// collection scan, since this can re-run every year for as long as this fallback path
+// stays reachable (whenever a new year counter doc does not exist yet). The sequence
+// suffix is digits-only (see INVOICE_NUMBER_PATTERN), so ":" - the character right after
+// "9" in ASCII - is a safe exclusive upper bound for a "starts with" range query.
 async function findMaxExistingSequenceForYear(transaction, year) {
-  const snapshot = await transaction.get(getDb().collection(INVOICE_COLLECTION))
+  const collection = getDb().collection(INVOICE_COLLECTION)
+  const prefixes = Array.from(new Set([INVOICE_NUMBER_PREFIX, 'GENCMS']))
+  const snapshots = await Promise.all(
+    prefixes.map((prefix) => {
+      const lowerBound = `${prefix}-${year}-`
+      const upperBound = `${lowerBound}:`
+      return transaction.get(collection.where('invoiceNumber', '>=', lowerBound).where('invoiceNumber', '<', upperBound))
+    }),
+  )
 
-  return snapshot.docs.reduce((max, document) => {
-    const match = INVOICE_NUMBER_PATTERN.exec(String(document.data()?.invoiceNumber ?? ''))
+  return snapshots.reduce(
+    (max, snapshot) =>
+      snapshot.docs.reduce((innerMax, document) => {
+        const match = INVOICE_NUMBER_PATTERN.exec(String(document.data()?.invoiceNumber ?? ''))
 
-    if (!match || Number(match[1]) !== year) {
-      return max
-    }
+        if (!match || Number(match[1]) !== year) {
+          return innerMax
+        }
 
-    return Math.max(max, Number(match[2]))
-  }, 0)
+        return Math.max(innerMax, Number(match[2]))
+      }, max),
+    0,
+  )
 }
 
 // Reserves the next invoice number for `year` atomically within the caller's transaction:
@@ -421,6 +483,10 @@ async function createInvoice(payload, adminUser) {
   const invoice = normalizeInvoiceDraft(payload)
   const year = Number(invoice.issueDate.slice(0, 4))
   const amountTotal = computeAmountTotal(invoice.lineItems)
+
+  if (Number(amountTotal) < 0) {
+    throw new HttpError(400, 'Invoice total cannot be negative.')
+  }
 
   const db = getDb()
   const docRef = db.collection(INVOICE_COLLECTION).doc()
@@ -480,6 +546,13 @@ async function updateInvoiceStatus(id, status) {
   return normalizeStoredInvoiceRecord(savedSnapshot.id, savedSnapshot.data())
 }
 
+// Only 'draft' (never sent to the client) and 'void' (already retracted) invoices can be
+// hard-deleted - anything else represents real billing activity a client may have already
+// seen or paid, and deleting it would erase that record with no trace it ever existed.
+// Voiding (via updateInvoiceStatus) is the correct way to retire a sent/paid/overdue
+// invoice: it keeps the record while marking it no longer in effect.
+const DELETABLE_INVOICE_STATUSES = new Set(['draft', 'void'])
+
 async function deleteInvoice(id) {
   const normalizedId = String(id ?? '').trim()
 
@@ -492,6 +565,13 @@ async function deleteInvoice(id) {
 
   if (!snapshot.exists) {
     throw new HttpError(404, 'That invoice could not be found.')
+  }
+
+  if (!DELETABLE_INVOICE_STATUSES.has(snapshot.data()?.status)) {
+    throw new HttpError(
+      400,
+      'Only draft or void invoices can be deleted. Set this invoice to void instead to retire it without losing the billing record.',
+    )
   }
 
   await docRef.delete()

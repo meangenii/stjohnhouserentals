@@ -943,8 +943,8 @@ function renderLocalAttractionsEditor(page, helpers) {
                           <AdminAutoResizeTextarea
                             ariaLabel={`Find Online URL for ${restaurant?.name || `Restaurant ${restaurantIndex + 1}`}`}
                             disabled={disabled}
-                            placeholder="https://example.com"
-                            value={buildRestaurantOnlineHref(restaurant)}
+                            placeholder={restaurant?.website ? 'https://example.com' : buildRestaurantOnlineHref(restaurant)}
+                            value={restaurant?.website ?? ''}
                             onChange={(value) => setPath(['dining', 'sections', sectionIndex, 'restaurants', restaurantIndex, 'website'], value)}
                           />
                         </label>

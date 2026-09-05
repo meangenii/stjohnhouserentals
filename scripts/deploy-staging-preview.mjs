@@ -65,7 +65,7 @@ if (options.help || options.h) {
     'Usage:\n' +
       '  npm run deploy:staging -- [--channel=staging] [--expires=7d]\n' +
       '\n' +
-      'Builds the site, deploys only the siteApiStaging function, and publishes a Hosting preview channel that rewrites /api to siteApiStaging.\n',
+      'Builds the site, deploys only the siteApiStaging and siteApiSocialStaging functions, and publishes a Hosting preview channel that rewrites /api to them.\n',
   )
   process.exit(0)
 }
@@ -77,5 +77,5 @@ const firebaseCommand = process.platform === 'win32' ? 'firebase.cmd' : 'firebas
 
 assertSafeApiBaseUrlForStaging()
 run(npmCommand, ['run', 'build'])
-run(firebaseCommand, ['deploy', '--only', 'functions:siteApiStaging'])
+run(firebaseCommand, ['deploy', '--only', 'functions:siteApiStaging,functions:siteApiSocialStaging'])
 run(firebaseCommand, ['hosting:channel:deploy', channel, '--config', 'firebase.staging.json', '--expires', expires])

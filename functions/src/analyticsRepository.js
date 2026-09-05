@@ -77,6 +77,10 @@ function normalizeAnalyticsDateRange({ startDate, endDate } = {}) {
     return { ...DEFAULT_DATE_RANGE }
   }
 
+  if (normalizedStartDate === DEFAULT_DATE_RANGE.startDate && normalizedEndDate === DEFAULT_DATE_RANGE.endDate) {
+    return { ...DEFAULT_DATE_RANGE }
+  }
+
   const parsedStartDate = parseDateOnly(normalizedStartDate)
   const parsedEndDate = parseDateOnly(normalizedEndDate)
 
@@ -303,5 +307,27 @@ async function getPropertyAnalyticsReport(property = {}, requestedDateRange = {}
   }
 }
 
+function getUtcDateOnly(date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function resolveAnalyticsDateRangeToIsoDates(dateRange) {
+  const startDate = normalizeString(dateRange?.startDate)
+  const endDate = normalizeString(dateRange?.endDate)
+
+  if (DATE_ONLY_PATTERN.test(startDate) && DATE_ONLY_PATTERN.test(endDate)) {
+    return { startDate, endDate }
+  }
+
+  // The default GA date range uses GA4's relative-date syntax ('30daysAgo'/'today'),
+  // which non-GA consumers (e.g. the Firestore-backed engagement summary) can't parse -
+  // resolve it to the literal calendar dates it represents.
+  const now = new Date()
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  return { startDate: getUtcDateOnly(thirtyDaysAgo), endDate: getUtcDateOnly(now) }
+}
+
 exports.getPropertyAnalyticsReport = getPropertyAnalyticsReport
 exports.normalizeAnalyticsDateRange = normalizeAnalyticsDateRange
+exports.resolveAnalyticsDateRangeToIsoDates = resolveAnalyticsDateRangeToIsoDates

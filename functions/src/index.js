@@ -15,9 +15,20 @@ const { archiveClient, getClient, importClientsFromProperties, listClients, save
 const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
 const { createInvoicePdfDownload, emailInvoicePdf } = require('./invoiceDeliveryRepository')
 const { createInvoice, deleteInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
-const { getPropertyAnalyticsReport, normalizeAnalyticsDateRange } = require('./analyticsRepository')
+const {
+  getPropertyAnalyticsReport,
+  normalizeAnalyticsDateRange,
+  resolveAnalyticsDateRangeToIsoDates,
+} = require('./analyticsRepository')
 const { getLikeSummary, toggleLike } = require('./likeRepository')
 const { getPropertyEngagementSummary, recordEngagementEvent } = require('./engagementRepository')
+const {
+  createSocialPost,
+  getPropertySocialSummary,
+  getSocialConnectionStatus,
+  refreshSocialPostMetrics,
+  SOCIAL_MEDIA_SECRETS,
+} = require('./socialPostRepository')
 const {
   getCharterBySlug,
   listAllCharters,
@@ -156,6 +167,15 @@ const SITE_API_FUNCTION_OPTIONS = {
   memory: '1GiB',
   timeoutSeconds: 540,
 }
+// Bound only to the dedicated social-media Cloud Function (see createSocialApiFunction
+// below), not the main siteApi/siteApiStaging functions - those serve every other route
+// (properties, clients, invoices, likes, engagement) and must be deployable even if the
+// Facebook secret hasn't been provisioned yet, since Functions v2 requires a `secrets:`
+// entry's secret to already exist in Secret Manager at deploy time.
+const SOCIAL_API_FUNCTION_OPTIONS = {
+  ...SITE_API_FUNCTION_OPTIONS,
+  secrets: SOCIAL_MEDIA_SECRETS,
+}
 const SITE_SEO_FUNCTION_OPTIONS = {
   region: 'us-central1',
 }
@@ -228,7 +248,7 @@ function sendError(response, error, path) {
   })
   response.status(500).json({
     error: 'internal',
-    message: error instanceof Error ? error.message : 'Unexpected siteApi error',
+    message: 'An unexpected error occurred. Please try again shortly.',
     path,
   })
 }
@@ -505,11 +525,14 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
     }
 
     if (request.method === 'GET' && path === 'likes/summary') {
-      const summary = await getLikeSummary({
-        itemType: request.query?.itemType ?? '',
-        itemId: request.query?.itemId ?? '',
-        clientToken: request.query?.clientToken ?? '',
-      })
+      const summary = await getLikeSummary(
+        {
+          itemType: request.query?.itemType ?? '',
+          itemId: request.query?.itemId ?? '',
+          clientToken: request.query?.clientToken ?? '',
+        },
+        request,
+      )
 
       response.json({
         source: 'firestore',
@@ -782,11 +805,78 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         checkedAt: new Date().toISOString(),
         analytics: await getPropertyAnalyticsReport(
           property,
-          normalizeAnalyticsDateRange({
+          {
             startDate: request.query?.startDate,
             endDate: request.query?.endDate,
-          }),
+          },
         ),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && path === 'admin/social/status') {
+      await requireAdminUser(request)
+      response.json({
+        source: 'facebook-graph-api',
+        checkedAt: new Date().toISOString(),
+        status: getSocialConnectionStatus(),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/social\/properties\/[^/]+\/summary$/.test(path)) {
+      await requireAdminUser(request)
+      const slug = decodeURIComponent(path.replace(/^admin\/social\/properties\//, '').replace(/\/summary$/, ''))
+      const property = await getAdminPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in admin catalog',
+          slug,
+        })
+        return
+      }
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        summary: await getPropertySocialSummary({
+          propertySlug: property.slug,
+          startDate: request.query?.startDate,
+          endDate: request.query?.endDate,
+        }),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/social/posts') {
+      const adminUser = await requireAdminUser(request)
+      const slug = String(request.body?.propertySlug ?? '').trim()
+      const property = slug ? await getAdminPropertyBySlug(slug) : null
+
+      if (!property) {
+        throw new HttpError(404, 'Property not found in admin catalog.')
+      }
+
+      const post = await createSocialPost(request.body ?? {}, adminUser, property)
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        post,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/social\/posts\/[^/]+\/refresh-metrics$/.test(path)) {
+      await requireAdminUser(request)
+      const postId = decodeURIComponent(path.replace(/^admin\/social\/posts\//, '').replace(/\/refresh-metrics$/, ''))
+
+      response.json({
+        source: 'facebook-graph-api',
+        checkedAt: new Date().toISOString(),
+        post: await refreshSocialPostMetrics(postId),
       })
       return
     }
@@ -929,13 +1019,14 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         capturedAt,
         report: analyticsReports[index],
       }))
+      const engagementDateRange = resolveAnalyticsDateRangeToIsoDates(analyticsDateRange)
       const engagementReports = await Promise.all(
         properties.map((property) =>
           getPropertyEngagementSummary({
             itemType: 'property',
             itemId: property.slug,
-            startDate: analyticsDateRange.startDate,
-            endDate: analyticsDateRange.endDate,
+            startDate: engagementDateRange.startDate,
+            endDate: engagementDateRange.endDate,
           }),
         ),
       )
@@ -1514,8 +1605,8 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
   }
 }
 
-function createSiteApiFunction({ serviceName, mode, resolveDatabaseId }) {
-  return onRequest(SITE_API_FUNCTION_OPTIONS, async (request, response) => {
+function createSiteApiFunction({ serviceName, mode, resolveDatabaseId, functionOptions = SITE_API_FUNCTION_OPTIONS }) {
+  return onRequest(functionOptions, async (request, response) => {
     let databaseId = ''
 
     try {
@@ -1566,6 +1657,17 @@ exports.siteApi = createSiteApiFunction({
   resolveDatabaseId: () => getLiveFirestoreDatabaseId(),
 })
 
+// Same request handler as siteApi, deployed as its own Cloud Function so only the
+// social-media routes it actually serves (see the Hosting rewrite for /api/admin/social/**)
+// require the Facebook secret to be provisioned - the rest of the API stays deployable
+// without it.
+exports.siteApiSocial = createSiteApiFunction({
+  serviceName: 'siteApiSocial',
+  mode: 'live',
+  resolveDatabaseId: () => getLiveFirestoreDatabaseId(),
+  functionOptions: SOCIAL_API_FUNCTION_OPTIONS,
+})
+
 exports.siteSeo = createSiteSeoFunction({
   serviceName: 'siteSeo',
   mode: 'live',
@@ -1576,4 +1678,11 @@ exports.siteApiStaging = createSiteApiFunction({
   serviceName: 'siteApiStaging',
   mode: 'staging',
   resolveDatabaseId: resolveStagingDatabaseId,
+})
+
+exports.siteApiSocialStaging = createSiteApiFunction({
+  serviceName: 'siteApiSocialStaging',
+  mode: 'staging',
+  resolveDatabaseId: resolveStagingDatabaseId,
+  functionOptions: SOCIAL_API_FUNCTION_OPTIONS,
 })

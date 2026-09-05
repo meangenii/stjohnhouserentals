@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict')
-const { normalizeAnalyticsDateRange } = require('../src/analyticsRepository')
+const { normalizeAnalyticsDateRange, resolveAnalyticsDateRangeToIsoDates } = require('../src/analyticsRepository')
 const { _test: invoiceTest } = require('../src/invoiceRepository')
 const { createInvoicePdfBuffer, getInvoicePdfFilename } = require('../src/invoicePdf')
 
@@ -8,6 +8,10 @@ function assertHttpError(callback, expectedMessage) {
 }
 
 assert.deepEqual(normalizeAnalyticsDateRange(), { startDate: '30daysAgo', endDate: 'today' })
+assert.deepEqual(
+  normalizeAnalyticsDateRange({ startDate: '30daysAgo', endDate: 'today' }),
+  { startDate: '30daysAgo', endDate: 'today' },
+)
 assert.deepEqual(
   normalizeAnalyticsDateRange({ startDate: '2026-01-01', endDate: '2026-12-31' }),
   { startDate: '2026-01-01', endDate: '2026-12-31' },
@@ -107,6 +111,50 @@ assertHttpError(
   }),
   'Due date must be on or after the issue date.',
 )
+
+// A non-numeric amount must be rejected rather than silently totaling to $0.
+assertHttpError(
+  () => invoiceTest.normalizeInvoiceDraft({
+    clientId: 'client-1',
+    propertySlugs: ['villa-one'],
+    issueDate: '2026-08-31',
+    lineItems: [{ description: 'Listing', amount: 'abc' }],
+  }),
+  'Line item amount must be a valid number.',
+)
+
+// The default GA-relative date range ('30daysAgo'/'today') must resolve to real
+// calendar dates for non-GA consumers (e.g. the engagement summary), not pass through.
+const resolvedDefaultRange = resolveAnalyticsDateRangeToIsoDates(normalizeAnalyticsDateRange())
+assert.match(resolvedDefaultRange.startDate, /^\d{4}-\d{2}-\d{2}$/)
+assert.match(resolvedDefaultRange.endDate, /^\d{4}-\d{2}-\d{2}$/)
+assert.deepEqual(
+  resolveAnalyticsDateRangeToIsoDates({ startDate: '2026-08-01', endDate: '2026-08-31' }),
+  { startDate: '2026-08-01', endDate: '2026-08-31' },
+)
+
+// Reading back a previously-stored invoice must never throw, even if it has a
+// corrupt socialStats date range (e.g. from a manual edit or a future integration) -
+// the metrics should survive with the bad date range dropped.
+const rehydratedInvoice = invoiceTest.normalizeStoredInvoiceRecord('invoice-1', {
+  invoiceNumber: 'STJHR-2026-002',
+  clientId: 'client-1',
+  propertySlugs: ['villa-one'],
+  lineItems: [{ description: 'Listing', amount: '500' }],
+  issueDate: '2026-08-31',
+  socialStats: [
+    {
+      label: 'Corrupt entry',
+      startDate: 'not-a-date',
+      endDate: '2026-08-31',
+      metrics: { views: '100' },
+    },
+  ],
+})
+assert.equal(rehydratedInvoice.socialStats.length, 1)
+assert.equal(rehydratedInvoice.socialStats[0].startDate, '')
+assert.equal(rehydratedInvoice.socialStats[0].endDate, '')
+assert.equal(rehydratedInvoice.socialStats[0].metrics.views, 100)
 
 async function assertInvoicePdfGeneration() {
   const invoice = {

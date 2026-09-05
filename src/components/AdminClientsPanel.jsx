@@ -500,7 +500,7 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
   const selectedClient = clients.find((client) => client.id === selectedClientId) ?? null
   const isCreatingNew = !selectedClientId
   const hasDraftChanges = isClientDraftChanged(draft, selectedClient)
-  const canSubmitClient = isCreatingNew || hasDraftChanges
+  const canSubmitClient = isCreatingNew ? Boolean(draft.contactName.trim()) : hasDraftChanges
   const todayDateOnly = getTodayDateOnly()
   const renewalCountByClientId = useMemo(() => {
     const counts = new Map()

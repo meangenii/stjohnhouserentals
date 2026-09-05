@@ -173,6 +173,18 @@ async function deletePayment(id) {
     throw new HttpError(404, 'That payment could not be found.')
   }
 
+  // recordPayment() patches the linked property's lastPaidAt/renewalDueAt from this
+  // payment's paidAt/listingFeeInterval, but there's no stored record of what those
+  // fields were before that patch - deleting the payment here can't safely undo it, and
+  // would silently leave the property's billing dates reflecting a payment that no
+  // longer exists. Record a correcting payment instead of deleting a mistaken one.
+  if (String(snapshot.data()?.propertySlug ?? '').trim()) {
+    throw new HttpError(
+      400,
+      'This payment updated a property\'s billing dates and cannot be deleted without leaving them inconsistent. Record a correcting payment instead.',
+    )
+  }
+
   await docRef.delete()
 }
 

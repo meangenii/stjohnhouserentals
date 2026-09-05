@@ -1,11 +1,10 @@
-const { createHash } = require('node:crypto')
 const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = require('./firebaseAdmin')
+const { assertRateLimit, getRequestIp, hashKey, normalizePositiveInteger } = require('./rateLimiter')
+const { normalizeItemType: normalizeTrackableItemType, normalizeItemId: normalizeTrackableItemId } = require('./trackableItem')
 
 const ENGAGEMENT_COLLECTION = 'siteEngagementEvents'
 const EVENTS_SUBCOLLECTION = 'events'
 const RATE_LIMIT_COLLECTION = 'siteEngagementRateLimits'
-const ALLOWED_ITEM_TYPES = new Set(['property', 'charter'])
-const ITEM_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const DEFAULT_RATE_LIMIT_MAX_REQUESTS = 120
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
@@ -32,16 +31,6 @@ const CHANNEL_ACTION_TO_COUNT_KEY = new Map([
   ['native:share_click', 'nativeShareClicks'],
 ])
 
-function normalizePositiveInteger(value, fallback) {
-  const number = Number(value)
-
-  if (!Number.isFinite(number) || number <= 0) {
-    return fallback
-  }
-
-  return Math.floor(number)
-}
-
 function getEngagementRateLimitConfig() {
   return {
     maxRequests: normalizePositiveInteger(process.env.SITE_ENGAGEMENT_RATE_LIMIT_MAX, DEFAULT_RATE_LIMIT_MAX_REQUESTS),
@@ -49,34 +38,12 @@ function getEngagementRateLimitConfig() {
   }
 }
 
-function hashKey(scope, value) {
-  const normalizedValue = String(value ?? '').trim()
-
-  if (!normalizedValue) {
-    return ''
-  }
-
-  return createHash('sha256').update(`${scope}:${normalizedValue}`).digest('hex')
-}
-
 function normalizeItemType(value) {
-  const normalized = String(value ?? '').trim().toLowerCase()
-
-  if (!ALLOWED_ITEM_TYPES.has(normalized)) {
-    throw new HttpError(400, `Unsupported item type for engagement tracking: ${normalized || 'unknown'}`)
-  }
-
-  return normalized
+  return normalizeTrackableItemType(value, { message: `Unsupported item type for engagement tracking: ${String(value ?? '').trim().toLowerCase() || 'unknown'}` })
 }
 
 function normalizeItemId(value) {
-  const normalized = String(value ?? '').trim()
-
-  if (!ITEM_ID_PATTERN.test(normalized)) {
-    throw new HttpError(400, 'A valid item id is required to record engagement.')
-  }
-
-  return normalized
+  return normalizeTrackableItemId(value, { message: 'A valid item id is required to record engagement.' })
 }
 
 function normalizeChannelAction(channel, action) {
@@ -106,38 +73,14 @@ function getEngagementDocId(itemType, itemId) {
 
 async function assertEngagementRateLimit(request) {
   const config = getEngagementRateLimitConfig()
-  const key = hashKey('ip', request?.ip)
 
-  if (!key) {
-    return
-  }
-
-  const db = getDb()
-  const ref = db.collection(RATE_LIMIT_COLLECTION).doc(key)
-  const now = Date.now()
-
-  await db.runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(ref)
-    const data = snapshot.exists ? snapshot.data() : null
-    const windowStartedAtMs = Number(data?.windowStartedAtMs) || 0
-    const count = Number(data?.count) || 0
-    const withinWindow = windowStartedAtMs > 0 && now - windowStartedAtMs < config.windowMs
-
-    if (withinWindow && count >= config.maxRequests) {
-      throw new HttpError(429, 'Too many engagement events. Please wait a bit and try again.')
-    }
-
-    transaction.set(
-      ref,
-      {
-        count: withinWindow ? count + 1 : 1,
-        lastRequestAtMs: now,
-        updatedAt: getServerTimestamp(),
-        windowMs: config.windowMs,
-        windowStartedAtMs: withinWindow ? windowStartedAtMs : now,
-      },
-      { merge: true },
-    )
+  await assertRateLimit({
+    collection: RATE_LIMIT_COLLECTION,
+    keys: [hashKey('ip', getRequestIp(request))],
+    maxRequests: config.maxRequests,
+    windowMs: config.windowMs,
+    message: 'Too many engagement events. Please wait a bit and try again.',
+    noKeyMessage: 'Unable to verify this request.',
   })
 }
 

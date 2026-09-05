@@ -269,8 +269,8 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
                 <span>Find Online URL</span>
                 <AdminAutoResizeTextarea
                   ariaLabel="Find Online URL"
-                  placeholder="https://example.com"
-                  value={buildRestaurantOnlineHref(restaurantDraft)}
+                  placeholder={restaurantDraft.website ? 'https://example.com' : buildRestaurantOnlineHref(restaurantDraft)}
+                  value={restaurantDraft.website ?? ''}
                   onChange={(value) => setDraftField('website', value)}
                 />
               </label>
@@ -357,8 +357,8 @@ export function RestaurantDirectoryPanel({ page, updatePath, disabled = false })
               <AdminAutoResizeTextarea
                 ariaLabel={`Find Online URL for ${restaurant?.name || 'restaurant'}`}
                 disabled={isDisabled}
-                placeholder="https://example.com"
-                value={buildRestaurantOnlineHref(restaurant)}
+                placeholder={restaurant?.website ? 'https://example.com' : buildRestaurantOnlineHref(restaurant)}
+                value={restaurant?.website ?? ''}
                 onChange={(value) => setRestaurantField(sectionIndex, restaurantIndex, 'website', value)}
               />
               <input

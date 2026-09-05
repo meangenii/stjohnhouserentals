@@ -1,9 +1,7 @@
-import { getFirebaseApp } from './firebase'
-
 const measurementId = String(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID ?? '').trim()
 const enableAnalyticsInDev = String(import.meta.env.VITE_ENABLE_ANALYTICS_IN_DEV ?? '').trim() === 'true'
 
-let analyticsPromise = null
+let gtagConfigured = false
 
 function isLocalHostname(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1'
@@ -26,32 +24,16 @@ function shouldTrackAnalytics() {
     return false
   }
 
-  return true
+  return typeof window.gtag === 'function'
 }
 
-async function getBrowserAnalytics() {
-  if (!shouldTrackAnalytics()) {
-    return null
+function ensureGtagConfigured() {
+  if (gtagConfigured) {
+    return
   }
 
-  if (!analyticsPromise) {
-    analyticsPromise = import('firebase/analytics')
-      .then(async ({ getAnalytics, isSupported, logEvent }) => {
-        const app = getFirebaseApp()
-
-        if (!app || !(await isSupported())) {
-          return null
-        }
-
-        return {
-          analytics: getAnalytics(app),
-          logEvent,
-        }
-      })
-      .catch(() => null)
-  }
-
-  return analyticsPromise
+  window.gtag('config', measurementId, { send_page_view: false })
+  gtagConfigured = true
 }
 
 export function trackPageView({ path, title }) {
@@ -59,15 +41,11 @@ export function trackPageView({ path, title }) {
     return
   }
 
-  getBrowserAnalytics().then((state) => {
-    if (!state) {
-      return
-    }
+  ensureGtagConfigured()
 
-    state.logEvent(state.analytics, 'page_view', {
-      page_location: window.location.href,
-      page_path: path || `${window.location.pathname}${window.location.search}`,
-      page_title: title || document.title,
-    })
+  window.gtag('event', 'page_view', {
+    page_location: window.location.href,
+    page_path: path || `${window.location.pathname}${window.location.search}`,
+    page_title: title || document.title,
   })
 }

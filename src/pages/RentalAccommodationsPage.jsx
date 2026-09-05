@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from '../lib/router'
 import { EditableBackgroundSection, EditableText } from '../components/AdminInlinePageEdit'
 import { PageLoadingState } from '../components/PageLoadingState'
@@ -434,17 +434,24 @@ export function RentalAccommodationsPage() {
   const roomFilterId = 'rental-room-filter'
   const airConditioningFilterId = 'rental-air-conditioning-filter'
   const locationFilterId = 'rental-location-filter'
-  const visibleProperties = Array.isArray(summaryState.properties)
-    ? summaryState.properties.filter(
-        (property) =>
-          property &&
-          typeof property.slug === 'string' &&
-          typeof property.name === 'string' &&
-          typeof property.path === 'string',
-      )
-    : []
+  const visibleProperties = useMemo(
+    () =>
+      Array.isArray(summaryState.properties)
+        ? summaryState.properties.filter(
+            (property) =>
+              property &&
+              typeof property.slug === 'string' &&
+              typeof property.name === 'string' &&
+              typeof property.path === 'string',
+          )
+        : [],
+    [summaryState.properties],
+  )
   const todayDateOnly = getTodayDateOnly()
-  const allCards = visibleProperties.map((property) => buildCardFromProperty(property, { isAdmin, todayDateOnly }))
+  const allCards = useMemo(
+    () => visibleProperties.map((property) => buildCardFromProperty(property, { isAdmin, todayDateOnly })),
+    [visibleProperties, isAdmin, todayDateOnly],
+  )
   const roomCountOptions = Array.from(
     new Set(
       allCards.flatMap((card) => card.availableBedroomCounts).filter((bedroomCount) => Number.isInteger(bedroomCount) && bedroomCount > 0),
@@ -586,8 +593,31 @@ export function RentalAccommodationsPage() {
       }
 
       try {
-        const authToken = isAdmin ? await getAdminIdToken() : ''
-        const properties = await listPropertySummaries(authToken ? { authToken } : {})
+        let properties = null
+
+        if (isAdmin) {
+          const authToken = await getAdminIdToken()
+
+          if (cancelled) {
+            return
+          }
+
+          if (authToken) {
+            try {
+              properties = await listPropertySummaries({ authToken })
+            } catch {
+              properties = null
+            }
+
+            if (cancelled) {
+              return
+            }
+          }
+        }
+
+        if (!properties) {
+          properties = await listPropertySummaries()
+        }
 
         if (!cancelled) {
           setSummaryState({ status: 'ready', properties })
