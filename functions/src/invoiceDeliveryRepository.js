@@ -2,6 +2,12 @@ const sharp = require('sharp')
 const { getClient } = require('./clientRepository')
 const { getEmailTransport } = require('./emailTransport')
 const { HttpError } = require('./firebaseAdmin')
+const {
+  getPropertyAnalyticsReport,
+  normalizeAnalyticsDateRange,
+  resolveAnalyticsDateRangeToIsoDates,
+} = require('./analyticsRepository')
+const { getPropertyEngagementSummary } = require('./engagementRepository')
 const { getInvoice } = require('./invoiceRepository')
 const {
   createInvoicePdfBuffer,
@@ -21,11 +27,82 @@ async function getInvoiceDocumentContext(invoiceId) {
     getClient(invoice.clientId),
     getAdminPropertiesBySlug(invoice.propertySlugs),
   ])
+  const resolvedProperties = properties.filter(Boolean)
+  const invoiceWithAnalytics = await ensureInvoiceAnalyticsSnapshots(invoice, resolvedProperties)
 
   return {
-    invoice,
+    invoice: invoiceWithAnalytics,
     client,
-    properties: properties.filter(Boolean),
+    properties: resolvedProperties,
+  }
+}
+
+function getSnapshotPropertySlugs(snapshots) {
+  return new Set(
+    (Array.isArray(snapshots) ? snapshots : [])
+      .map((snapshot) => String(snapshot?.propertySlug ?? '').trim())
+      .filter(Boolean),
+  )
+}
+
+function getMissingSnapshotProperties(invoice, properties, field) {
+  const invoicePropertySlugs = new Set(
+    (Array.isArray(invoice?.propertySlugs) ? invoice.propertySlugs : [])
+      .map((slug) => String(slug ?? '').trim())
+      .filter(Boolean),
+  )
+  const snapshotSlugs = getSnapshotPropertySlugs(invoice?.[field])
+
+  return properties.filter((property) => {
+    const slug = String(property?.slug ?? '').trim()
+    return slug && invoicePropertySlugs.has(slug) && !snapshotSlugs.has(slug)
+  })
+}
+
+async function ensureInvoiceAnalyticsSnapshots(invoice, properties) {
+  const missingAnalyticsProperties = getMissingSnapshotProperties(invoice, properties, 'analyticsSnapshots')
+  const missingEngagementProperties = getMissingSnapshotProperties(invoice, properties, 'engagementSnapshots')
+
+  if (missingAnalyticsProperties.length === 0 && missingEngagementProperties.length === 0) {
+    return invoice
+  }
+
+  const analyticsDateRange = normalizeAnalyticsDateRange({
+    startDate: invoice.analyticsStartDate,
+    endDate: invoice.analyticsEndDate,
+  })
+  const engagementDateRange = resolveAnalyticsDateRangeToIsoDates(analyticsDateRange)
+  const capturedAt = new Date().toISOString()
+  const [analyticsReports, engagementReports] = await Promise.all([
+    Promise.all(missingAnalyticsProperties.map((property) => getPropertyAnalyticsReport(property, analyticsDateRange))),
+    Promise.all(
+      missingEngagementProperties.map((property) =>
+        getPropertyEngagementSummary({
+          itemType: 'property',
+          itemId: property.slug,
+          startDate: engagementDateRange.startDate,
+          endDate: engagementDateRange.endDate,
+        }),
+      ),
+    ),
+  ])
+  const analyticsSnapshots = missingAnalyticsProperties.map((property, index) => ({
+    propertySlug: property.slug,
+    propertyName: property.name,
+    capturedAt,
+    report: analyticsReports[index],
+  }))
+  const engagementSnapshots = missingEngagementProperties.map((property, index) => ({
+    propertySlug: property.slug,
+    propertyName: property.name,
+    capturedAt,
+    report: engagementReports[index],
+  }))
+
+  return {
+    ...invoice,
+    analyticsSnapshots: [...(Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []), ...analyticsSnapshots],
+    engagementSnapshots: [...(Array.isArray(invoice.engagementSnapshots) ? invoice.engagementSnapshots : []), ...engagementSnapshots],
   }
 }
 
@@ -143,3 +220,6 @@ async function emailInvoicePdf(invoiceId) {
 
 exports.createInvoicePdfDownload = createInvoicePdfDownload
 exports.emailInvoicePdf = emailInvoicePdf
+exports._test = {
+  getMissingSnapshotProperties,
+}

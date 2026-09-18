@@ -2,6 +2,7 @@ const assert = require('node:assert/strict')
 const { normalizeAnalyticsDateRange, resolveAnalyticsDateRangeToIsoDates } = require('../src/analyticsRepository')
 const { _test: invoiceTest } = require('../src/invoiceRepository')
 const { createInvoicePdfBuffer, getInvoicePdfFilename, _test: invoicePdfTest } = require('../src/invoicePdf')
+const { _test: invoiceDeliveryTest } = require('../src/invoiceDeliveryRepository')
 const { normalizeItemId: normalizeTrackableItemId } = require('../src/trackableItem')
 
 function assertHttpError(callback, expectedMessage) {
@@ -286,6 +287,14 @@ assert.equal(invoicePdfTest.formatInvoiceStatPercent(0), 'N/A')
 assert.equal(invoicePdfTest.formatInvoiceStatPercent(0.123), '12.3%')
 assert.equal(invoicePdfTest.formatInvoiceStatValue('0'), 'N/A')
 assert.equal(invoicePdfTest.formatInvoiceStatValue('7,455'), '7,455')
+assert.deepEqual(
+  invoiceDeliveryTest.getMissingSnapshotProperties(
+    { propertySlugs: ['villa-one', 'villa-two'], analyticsSnapshots: [{ propertySlug: 'villa-one' }] },
+    [{ slug: 'villa-one' }, { slug: 'villa-two' }, { slug: 'villa-three' }],
+    'analyticsSnapshots',
+  ).map((property) => property.slug),
+  ['villa-two'],
+)
 const separatedPlatformRows = invoicePdfTest.getSocialMarketingPlatformRows(null, {
   posts: [
     { platform: 'facebook', views: 10, viewers: 8, clicks: 2, likes: 3, comments: 1, shares: 1 },
