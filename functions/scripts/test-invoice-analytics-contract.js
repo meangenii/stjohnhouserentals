@@ -269,6 +269,8 @@ assert.equal(
   ),
   true,
 )
+assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 276, 226), 292)
+assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 220, 226), 262)
 
 async function assertInvoicePdfGeneration() {
   const invoice = {

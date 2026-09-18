@@ -10,6 +10,8 @@ const {
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const ANNUAL_INVOICE_MONTH_COUNT = 12
+const INVOICE_PARTY_ROW_MIN_HEIGHT = 66
+const INVOICE_TABLE_TOP_GAP = 16
 
 function normalizeDateOnly(dateOnly) {
   const normalized = String(dateOnly ?? '').trim().slice(0, 10)
@@ -205,6 +207,14 @@ function drawRowBorders(doc, columns, y, height) {
   })
 }
 
+function getInvoiceTableStartY(partyY, clientY, invoiceDateY) {
+  return Math.max(
+    partyY + INVOICE_PARTY_ROW_MIN_HEIGHT,
+    clientY + INVOICE_TABLE_TOP_GAP,
+    invoiceDateY + INVOICE_TABLE_TOP_GAP,
+  )
+}
+
 function renderSocialMarketingReport(doc, report, x, y, width) {
   if (!report) {
     return y
@@ -353,9 +363,9 @@ function renderInvoiceHeader(doc, invoice, client, logoImage) {
   })
 
   writeText(doc, 'Invoice Date:', right - 160, partyY, { width: 160, size: 10 })
-  writeText(doc, formatInvoiceDate(invoice.issueDate), right - 160, partyY + 15, { width: 160, size: 10 })
+  const invoiceDateY = writeText(doc, formatInvoiceDate(invoice.issueDate), right - 160, partyY + 15, { width: 160, size: 10 })
 
-  doc.y = partyY + 66
+  doc.y = getInvoiceTableStartY(partyY, clientY, invoiceDateY)
 }
 
 function renderPaymentCopy(doc) {
@@ -436,6 +446,7 @@ exports.formatInvoiceDate = formatInvoiceDate
 exports.getInvoicePdfFilename = getInvoicePdfFilename
 exports._test = {
   getInvoiceSnapshotForProperty,
+  getInvoiceTableStartY,
   getServicePeriod,
   hasMeaningfulWebsiteStats,
 }
