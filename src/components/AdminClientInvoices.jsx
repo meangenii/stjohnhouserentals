@@ -141,9 +141,30 @@ function formatOptionalNumber(value) {
   return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
 }
 
-function formatOptionalPercent(value) {
+function formatInvoiceStatValue(value) {
+  const normalized = String(value ?? '').trim()
+
+  if (!normalized || normalized.toUpperCase() === 'N/A') {
+    return 'N/A'
+  }
+
+  const number = Number(normalized.replace(/,/g, ''))
+
+  if (Number.isFinite(number) && number <= 0) {
+    return 'N/A'
+  }
+
+  return normalized
+}
+
+function formatInvoiceStatNumber(value) {
   const number = Number(value)
-  return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
+  return Number.isFinite(number) && number > 0 ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
+}
+
+function formatInvoiceStatPercent(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
 function formatInvoiceCurrency(value) {
@@ -298,7 +319,7 @@ function sumSocialPostMetric(posts, key) {
 }
 
 function formatSocialMetric(value) {
-  return value === null || value === undefined ? 'N/A' : formatOptionalNumber(value)
+  return formatInvoiceStatNumber(value)
 }
 
 function createPlatformSocialMarketingReport(posts, platform) {
@@ -411,14 +432,21 @@ function InvoiceSocialMarketingReport({ report, socialPostSnapshot }) {
       {platformRows.length > 0 ? platformRows.map((row) => (
         <p key={row.platform}>
           <strong>{row.platform} stats:</strong>{' '}
-          Views: {row.views || 'N/A'} Viewers: {row.viewers || 'N/A'} Clicks: {row.clicks || 'N/A'} Likes:{' '}
-          {row.likes || 'N/A'} Comments: {row.comments || 'N/A'} Shares: {row.shares || 'N/A'}
+          Views: {formatInvoiceStatValue(row.views)} Viewers: {formatInvoiceStatValue(row.viewers)} Clicks:{' '}
+          {formatInvoiceStatValue(row.clicks)} Likes: {formatInvoiceStatValue(row.likes)} Comments:{' '}
+          {formatInvoiceStatValue(row.comments)} Shares: {formatInvoiceStatValue(row.shares)}
         </p>
       )) : (
         <>
           <p>Combined Facebook and Instagram stats:</p>
-          <p>Views: {report.views || 'N/A'} Viewers: {report.viewers || 'N/A'} Clicks: {report.clicks || 'N/A'}</p>
-          <p>Likes: {report.likes || 'N/A'} Comments: {report.comments || 'N/A'} Shares: {report.shares || 'N/A'}</p>
+          <p>
+            Views: {formatInvoiceStatValue(report.views)} Viewers: {formatInvoiceStatValue(report.viewers)} Clicks:{' '}
+            {formatInvoiceStatValue(report.clicks)}
+          </p>
+          <p>
+            Likes: {formatInvoiceStatValue(report.likes)} Comments: {formatInvoiceStatValue(report.comments)} Shares:{' '}
+            {formatInvoiceStatValue(report.shares)}
+          </p>
         </>
       )}
     </div>
@@ -434,15 +462,15 @@ function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
     <div className="admin-client-invoice-marketing-report admin-client-invoice-website-report">
       <strong>Google Analytics website statistics.</strong>
       <p>
-        Views: {hasAnalytics ? formatOptionalNumber(metrics.views) : 'N/A'} Visitors:{' '}
-        {hasAnalytics ? formatOptionalNumber(metrics.activeUsers) : 'N/A'} Sessions:{' '}
-        {hasAnalytics ? formatOptionalNumber(metrics.sessions) : 'N/A'}
+        Views: {hasAnalytics ? formatInvoiceStatNumber(metrics.views) : 'N/A'} Visitors:{' '}
+        {hasAnalytics ? formatInvoiceStatNumber(metrics.activeUsers) : 'N/A'} Sessions:{' '}
+        {hasAnalytics ? formatInvoiceStatNumber(metrics.sessions) : 'N/A'}
       </p>
-      <p>Engagement rate: {hasAnalytics ? formatOptionalPercent(metrics.engagementRate) : 'N/A'}</p>
+      <p>Engagement rate: {hasAnalytics ? formatInvoiceStatPercent(metrics.engagementRate) : 'N/A'}</p>
       {engagementSnapshot ? (
         <p>
-          On-site activity: {formatOptionalNumber(engagementSnapshot.totalEvents)} total /{' '}
-          {formatOptionalNumber(counts.siteLikes)} likes / {formatOptionalNumber(counts.facebookShareClicks)} Facebook shares
+          On-site activity: {formatInvoiceStatNumber(engagementSnapshot.totalEvents)} total /{' '}
+          {formatInvoiceStatNumber(counts.siteLikes)} likes / {formatInvoiceStatNumber(counts.facebookShareClicks)} Facebook shares
         </p>
       ) : null}
     </div>

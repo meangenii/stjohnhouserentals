@@ -279,6 +279,13 @@ assert.equal(
 )
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 276, 226), 292)
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 220, 226), 262)
+assert.equal(invoicePdfTest.formatInvoiceStatNumber(0), 'N/A')
+assert.equal(invoicePdfTest.formatInvoiceStatNumber(null), 'N/A')
+assert.equal(invoicePdfTest.formatInvoiceStatNumber(7455), '7,455')
+assert.equal(invoicePdfTest.formatInvoiceStatPercent(0), 'N/A')
+assert.equal(invoicePdfTest.formatInvoiceStatPercent(0.123), '12.3%')
+assert.equal(invoicePdfTest.formatInvoiceStatValue('0'), 'N/A')
+assert.equal(invoicePdfTest.formatInvoiceStatValue('7,455'), '7,455')
 const separatedPlatformRows = invoicePdfTest.getSocialMarketingPlatformRows(null, {
   posts: [
     { platform: 'facebook', views: 10, viewers: 8, clicks: 2, likes: 3, comments: 1, shares: 1 },

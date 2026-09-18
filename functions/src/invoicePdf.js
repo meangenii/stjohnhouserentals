@@ -68,14 +68,30 @@ function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(readAmount(value))
 }
 
-function formatOptionalNumber(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
+function formatInvoiceStatValue(value) {
+  const normalized = String(value ?? '').trim()
+
+  if (!normalized || normalized.toUpperCase() === 'N/A') {
+    return 'N/A'
+  }
+
+  const number = Number(normalized.replace(/,/g, ''))
+
+  if (Number.isFinite(number) && number <= 0) {
+    return 'N/A'
+  }
+
+  return normalized
 }
 
-function formatOptionalPercent(value) {
+function formatInvoiceStatNumber(value) {
   const number = Number(value)
-  return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
+  return Number.isFinite(number) && number > 0 ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
+}
+
+function formatInvoiceStatPercent(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
 function formatInvoiceCurrency(value) {
@@ -202,7 +218,7 @@ function sumSocialPostMetric(posts, key) {
 }
 
 function formatSocialMetric(value) {
-  return value === null || value === undefined ? 'N/A' : formatOptionalNumber(value)
+  return formatInvoiceStatNumber(value)
 }
 
 function createPlatformSocialMarketingReport(posts, platform) {
@@ -269,7 +285,7 @@ function renderSocialMarketingReport(doc, report, socialPostSnapshot, x, y, widt
     platformRows.forEach((row) => {
       nextY = writeText(
         doc,
-        `${row.platform} stats: Views: ${row.views || 'N/A'} Viewers: ${row.viewers || 'N/A'} Clicks: ${row.clicks || 'N/A'} Likes: ${row.likes || 'N/A'} Comments: ${row.comments || 'N/A'} Shares: ${row.shares || 'N/A'}`,
+        `${row.platform} stats: Views: ${formatInvoiceStatValue(row.views)} Viewers: ${formatInvoiceStatValue(row.viewers)} Clicks: ${formatInvoiceStatValue(row.clicks)} Likes: ${formatInvoiceStatValue(row.likes)} Comments: ${formatInvoiceStatValue(row.comments)} Shares: ${formatInvoiceStatValue(row.shares)}`,
         x,
         nextY,
         { width, size: 9 },
@@ -279,8 +295,20 @@ function renderSocialMarketingReport(doc, report, socialPostSnapshot, x, y, widt
   }
 
   nextY = writeText(doc, 'Combined Facebook and Instagram stats:', x, nextY, { width, size: 9 }) + 2
-  nextY = writeText(doc, `Views: ${report.views || 'N/A'} Viewers: ${report.viewers || 'N/A'} Clicks: ${report.clicks || 'N/A'}`, x, nextY, { width, size: 9 }) + 2
-  nextY = writeText(doc, `Likes: ${report.likes || 'N/A'} Comments: ${report.comments || 'N/A'} Shares: ${report.shares || 'N/A'}`, x, nextY, { width, size: 9 }) + 4
+  nextY = writeText(
+    doc,
+    `Views: ${formatInvoiceStatValue(report.views)} Viewers: ${formatInvoiceStatValue(report.viewers)} Clicks: ${formatInvoiceStatValue(report.clicks)}`,
+    x,
+    nextY,
+    { width, size: 9 },
+  ) + 2
+  nextY = writeText(
+    doc,
+    `Likes: ${formatInvoiceStatValue(report.likes)} Comments: ${formatInvoiceStatValue(report.comments)} Shares: ${formatInvoiceStatValue(report.shares)}`,
+    x,
+    nextY,
+    { width, size: 9 },
+  ) + 4
 
   return nextY
 }
@@ -293,17 +321,17 @@ function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x,
 
   nextY = writeText(
     doc,
-    `Views: ${hasAnalytics ? formatOptionalNumber(metrics.views) : 'N/A'} Visitors: ${hasAnalytics ? formatOptionalNumber(metrics.activeUsers) : 'N/A'} Sessions: ${hasAnalytics ? formatOptionalNumber(metrics.sessions) : 'N/A'}`,
+    `Views: ${hasAnalytics ? formatInvoiceStatNumber(metrics.views) : 'N/A'} Visitors: ${hasAnalytics ? formatInvoiceStatNumber(metrics.activeUsers) : 'N/A'} Sessions: ${hasAnalytics ? formatInvoiceStatNumber(metrics.sessions) : 'N/A'}`,
     x,
     nextY,
     { width, size: 9 },
   ) + 2
-  nextY = writeText(doc, `Engagement rate: ${hasAnalytics ? formatOptionalPercent(metrics.engagementRate) : 'N/A'}`, x, nextY, { width, size: 9 }) + 2
+  nextY = writeText(doc, `Engagement rate: ${hasAnalytics ? formatInvoiceStatPercent(metrics.engagementRate) : 'N/A'}`, x, nextY, { width, size: 9 }) + 2
 
   if (engagementSnapshot) {
     nextY = writeText(
       doc,
-      `On-site activity: ${formatOptionalNumber(engagementSnapshot.totalEvents)} total / ${formatOptionalNumber(counts.siteLikes)} likes / ${formatOptionalNumber(counts.facebookShareClicks)} Facebook shares`,
+      `On-site activity: ${formatInvoiceStatNumber(engagementSnapshot.totalEvents)} total / ${formatInvoiceStatNumber(counts.siteLikes)} likes / ${formatInvoiceStatNumber(counts.facebookShareClicks)} Facebook shares`,
       x,
       nextY,
       { width, size: 9 },
@@ -502,4 +530,7 @@ exports._test = {
   getInvoiceTableStartY,
   getSocialMarketingPlatformRows,
   getServicePeriod,
+  formatInvoiceStatNumber,
+  formatInvoiceStatPercent,
+  formatInvoiceStatValue,
 }
