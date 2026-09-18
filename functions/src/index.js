@@ -363,19 +363,19 @@ async function handleSiteSeoRequest(request, response, { serviceName, databaseId
       return
     }
 
-    const staticRoute = createStaticRoutes().get(getCanonicalPath(pathname))
-
-    if (staticRoute) {
-      sendSeoHtml(response, staticRoute)
-      return
-    }
-
     const structuredPages = await listPublishedStructuredPageContent()
     const structuredRouteByPath = new Map(createStructuredPageRoutes(structuredPages).map((route) => [route.path, route]))
     const structuredRoute = structuredRouteByPath.get(pathname)
 
     if (structuredRoute) {
       sendSeoHtml(response, structuredRoute)
+      return
+    }
+
+    const staticRoute = createStaticRoutes().get(getCanonicalPath(pathname))
+
+    if (staticRoute) {
+      sendSeoHtml(response, staticRoute)
       return
     }
 
@@ -1086,9 +1086,19 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       const propertySlugs = Array.isArray(request.body?.propertySlugs)
         ? Array.from(new Set(request.body.propertySlugs.map((slug) => String(slug ?? '').trim()).filter(Boolean)))
         : []
+      const socialPostSnapshots = Array.isArray(request.body?.socialPostSnapshots) ? request.body.socialPostSnapshots : []
+      const facebookPostSnapshots = Array.isArray(request.body?.facebookPostSnapshots) ? request.body.facebookPostSnapshots : []
 
       if (propertySlugs.length === 0) {
         throw new HttpError(400, 'Select at least one property for this invoice.')
+      }
+
+      const invoicePropertySlugs = new Set(propertySlugs)
+      const invalidSocialSnapshot = [...socialPostSnapshots, ...facebookPostSnapshots]
+        .find((snapshot) => !invoicePropertySlugs.has(String(snapshot?.propertySlug ?? '').trim()))
+
+      if (invalidSocialSnapshot) {
+        throw new HttpError(400, 'Social marketing snapshots must belong to a property on this invoice.')
       }
 
       const properties = await getAdminPropertiesBySlug(propertySlugs)

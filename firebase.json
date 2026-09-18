@@ -47,6 +47,15 @@
         ]
       },
       {
+        "source": "/admin/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
         "source": "/api/**",
         "headers": [
           {
@@ -128,6 +137,10 @@
       },
       {
         "source": "/admin",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/admin/**",
         "destination": "/index.html"
       },
       {

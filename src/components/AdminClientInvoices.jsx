@@ -237,6 +237,13 @@ function getMarketingDateLabel(dateSource = {}) {
   return 'Marketing Dates TBD'
 }
 
+function syncSocialMarketingReportDateLabel(report, dateSource = {}) {
+  return {
+    ...(report || createSocialMarketingReport()),
+    dateLabel: getMarketingDateLabel(dateSource),
+  }
+}
+
 function createSocialMarketingReport(dateSource = {}) {
   return {
     dateLabel: getMarketingDateLabel(dateSource),
@@ -615,10 +622,12 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const draftProperty = properties.find((property) => property.slug === draft.propertySlug) ?? null
   const subscriptionStartDate = normalizeDateOnly(draftProperty?.subscriptionStartAt)
   const amountTotal = useMemo(() => draft.lineItems.reduce((sum, item) => sum + readAmount(item.amount), 0), [draft.lineItems])
+  const invoiceServiceStartDate = normalizeDateOnly(draft.analyticsStartDate)
+  const invoiceServiceEndDate = normalizeDateOnly(draft.analyticsEndDate)
   const datesAreQueryable =
-    DATE_ONLY_PATTERN.test(draft.analyticsStartDate) &&
-    DATE_ONLY_PATTERN.test(draft.analyticsEndDate) &&
-    draft.analyticsStartDate <= draft.analyticsEndDate
+    DATE_ONLY_PATTERN.test(invoiceServiceStartDate) &&
+    DATE_ONLY_PATTERN.test(invoiceServiceEndDate) &&
+    invoiceServiceStartDate <= invoiceServiceEndDate
   const canGenerateInvoice = Boolean(draft.propertySlug && subscriptionStartDate && datesAreQueryable)
 
   useEffect(() => {
@@ -707,6 +716,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
       ...current,
       socialMarketingReport: {
         ...(current.socialMarketingReport || createSocialMarketingReport(current)),
+        dateLabel: getMarketingDateLabel(current),
         [field]: value,
       },
     }))
@@ -882,7 +892,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           analyticsStartDate: draft.analyticsStartDate,
           analyticsEndDate: draft.analyticsEndDate,
           lineItems: [lineItem],
-          socialMarketingReport: draft.socialMarketingReport,
+          socialMarketingReport: syncSocialMarketingReportDateLabel(draft.socialMarketingReport, draft),
           socialPostSnapshots: createSocialPostSnapshot(invoiceProperty, socialMarketingState.posts),
         },
         { authToken },
@@ -1147,12 +1157,12 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           </label>
           <div className="admin-client-invoice-derived-summary admin-field--full-width">
             <div>
-              <span>Subscription start</span>
-              <strong>{subscriptionStartDate ? formatDate(subscriptionStartDate) : 'Set on property, then save'}</strong>
+              <span>Annual service starts</span>
+              <strong>{invoiceServiceStartDate ? formatDate(invoiceServiceStartDate) : 'Calculated from subscription start'}</strong>
             </div>
             <div>
               <span>Annual service through</span>
-              <strong>{draft.analyticsEndDate ? formatDate(draft.analyticsEndDate) : 'Calculated from subscription start'}</strong>
+              <strong>{invoiceServiceEndDate ? formatDate(invoiceServiceEndDate) : 'Calculated from subscription start'}</strong>
             </div>
             <div>
               <span>Invoice date</span>
@@ -1192,9 +1202,9 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
               <span>Marketing dates</span>
               <input
                 placeholder="Marketing Dates TBD"
+                readOnly
                 type="text"
-                value={draft.socialMarketingReport?.dateLabel ?? 'Marketing Dates TBD'}
-                onChange={(event) => handleSocialMarketingReportFieldChange('dateLabel', event.target.value)}
+                value={syncSocialMarketingReportDateLabel(draft.socialMarketingReport, draft).dateLabel}
               />
             </label>
             <label className="admin-field">

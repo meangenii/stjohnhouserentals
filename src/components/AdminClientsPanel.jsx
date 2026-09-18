@@ -52,6 +52,19 @@ function comparePropertyNames(left, right) {
   return String(left?.name ?? '').localeCompare(String(right?.name ?? ''), undefined, { sensitivity: 'base' })
 }
 
+function propertyMatchesSlug(property, slug) {
+  const normalizedSlug = String(slug ?? '').trim()
+
+  if (!normalizedSlug) {
+    return false
+  }
+
+  return [property?.slug, property?.adminOriginalSlug]
+    .map((candidate) => String(candidate ?? '').trim())
+    .filter(Boolean)
+    .includes(normalizedSlug)
+}
+
 function getClientDisplayName(client) {
   const businessName = String(client?.businessName ?? '').trim()
   const contactName = String(client?.contactName ?? '').trim()
@@ -492,7 +505,7 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
       return
     }
 
-    loadClients({ selectId: '' })
+    loadClients()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authUser?.uid])
 
@@ -541,7 +554,8 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
         return ''
       }
 
-      return linkedProperties.some((property) => property.slug === currentSlug) ? currentSlug : linkedProperties[0].slug
+      const selectedProperty = linkedProperties.find((property) => propertyMatchesSlug(property, currentSlug))
+      return selectedProperty?.slug ?? linkedProperties[0].slug
     })
   }, [linkedProperties, linkedPropertySlugs, selectedClient])
 
