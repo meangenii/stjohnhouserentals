@@ -208,8 +208,15 @@ function toEpochMillis(value) {
   }
 
   if (typeof value === 'string' && value.trim()) {
-    const millis = Number(value)
-    return Number.isFinite(millis) ? millis : null
+    const normalized = value.trim()
+    const numericMillis = Number(normalized)
+
+    if (Number.isFinite(numericMillis)) {
+      return numericMillis
+    }
+
+    const parsedMillis = Date.parse(normalized)
+    return Number.isFinite(parsedMillis) ? parsedMillis : null
   }
 
   if (value && typeof value === 'object') {
