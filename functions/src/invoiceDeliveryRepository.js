@@ -59,6 +59,43 @@ function getMissingSnapshotProperties(invoice, properties, field) {
   })
 }
 
+function createAnalyticsSnapshot(property, report, capturedAt) {
+  return {
+    propertySlug: property.slug,
+    propertyName: String(property.name ?? '').trim(),
+    capturedAt,
+    status: report?.status || 'unavailable',
+    message: String(report?.message ?? '').trim(),
+    dateRange: {
+      startDate: String(report?.dateRange?.startDate ?? '').trim(),
+      endDate: String(report?.dateRange?.endDate ?? '').trim(),
+    },
+    pagePaths: Array.isArray(report?.pagePaths) ? report.pagePaths : [],
+    metrics: report?.metrics ?? {},
+    sources: Array.isArray(report?.sources) ? report.sources : [],
+  }
+}
+
+function createEngagementSnapshot(property, report, capturedAt) {
+  return {
+    propertySlug: property.slug,
+    propertyName: String(property.name ?? '').trim(),
+    capturedAt,
+    dateRange: {
+      startDate: String(report?.dateRange?.startDate ?? '').trim(),
+      endDate: String(report?.dateRange?.endDate ?? '').trim(),
+    },
+    requestedDateRange: {
+      startDate: String(report?.requestedDateRange?.startDate ?? '').trim(),
+      endDate: String(report?.requestedDateRange?.endDate ?? '').trim(),
+    },
+    trackingStartDate: String(report?.trackingStartDate ?? '').trim(),
+    clamped: report?.clamped === true,
+    counts: report?.counts ?? {},
+    totalEvents: report?.totalEvents ?? 0,
+  }
+}
+
 async function ensureInvoiceAnalyticsSnapshots(invoice, properties) {
   const missingAnalyticsProperties = getMissingSnapshotProperties(invoice, properties, 'analyticsSnapshots')
   const missingEngagementProperties = getMissingSnapshotProperties(invoice, properties, 'engagementSnapshots')
@@ -86,18 +123,8 @@ async function ensureInvoiceAnalyticsSnapshots(invoice, properties) {
       ),
     ),
   ])
-  const analyticsSnapshots = missingAnalyticsProperties.map((property, index) => ({
-    propertySlug: property.slug,
-    propertyName: property.name,
-    capturedAt,
-    report: analyticsReports[index],
-  }))
-  const engagementSnapshots = missingEngagementProperties.map((property, index) => ({
-    propertySlug: property.slug,
-    propertyName: property.name,
-    capturedAt,
-    report: engagementReports[index],
-  }))
+  const analyticsSnapshots = missingAnalyticsProperties.map((property, index) => createAnalyticsSnapshot(property, analyticsReports[index], capturedAt))
+  const engagementSnapshots = missingEngagementProperties.map((property, index) => createEngagementSnapshot(property, engagementReports[index], capturedAt))
 
   return {
     ...invoice,
@@ -221,5 +248,7 @@ async function emailInvoicePdf(invoiceId) {
 exports.createInvoicePdfDownload = createInvoicePdfDownload
 exports.emailInvoicePdf = emailInvoicePdf
 exports._test = {
+  createAnalyticsSnapshot,
+  createEngagementSnapshot,
   getMissingSnapshotProperties,
 }

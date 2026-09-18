@@ -295,6 +295,29 @@ assert.deepEqual(
   ).map((property) => property.slug),
   ['villa-two'],
 )
+assert.deepEqual(
+  invoiceDeliveryTest.createAnalyticsSnapshot(
+    { slug: 'villa-two', name: 'Villa Two' },
+    {
+      status: 'ready',
+      dateRange: { startDate: '2025-04-01', endDate: '2026-03-31' },
+      metrics: { views: 7455, activeUsers: 5908, sessions: 6120, engagementRate: 0.61 },
+      sources: [{ sourceMedium: 'google / organic', sessions: 210 }],
+    },
+    '2026-09-18T20:00:00.000Z',
+  ),
+  {
+    propertySlug: 'villa-two',
+    propertyName: 'Villa Two',
+    capturedAt: '2026-09-18T20:00:00.000Z',
+    status: 'ready',
+    message: '',
+    dateRange: { startDate: '2025-04-01', endDate: '2026-03-31' },
+    pagePaths: [],
+    metrics: { views: 7455, activeUsers: 5908, sessions: 6120, engagementRate: 0.61 },
+    sources: [{ sourceMedium: 'google / organic', sessions: 210 }],
+  },
+)
 const separatedPlatformRows = invoicePdfTest.getSocialMarketingPlatformRows(null, {
   posts: [
     { platform: 'facebook', views: 10, viewers: 8, clicks: 2, likes: 3, comments: 1, shares: 1 },
