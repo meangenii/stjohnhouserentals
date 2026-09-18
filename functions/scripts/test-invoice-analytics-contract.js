@@ -277,20 +277,6 @@ assert.equal(
   ),
   '6-2026\nthrough\n5-2027',
 )
-assert.equal(
-  invoicePdfTest.hasMeaningfulWebsiteStats(
-    { status: 'ready', metrics: { views: 0, activeUsers: 0, sessions: 0, engagementRate: 0 } },
-    { totalEvents: 0, counts: { siteLikes: 0, facebookShareClicks: 0 } },
-  ),
-  false,
-)
-assert.equal(
-  invoicePdfTest.hasMeaningfulWebsiteStats(
-    { status: 'ready', metrics: { views: 1, activeUsers: 0, sessions: 0, engagementRate: 0 } },
-    { totalEvents: 0, counts: { siteLikes: 0, facebookShareClicks: 0 } },
-  ),
-  true,
-)
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 276, 226), 292)
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 220, 226), 262)
 const separatedPlatformRows = invoicePdfTest.getSocialMarketingPlatformRows(null, {

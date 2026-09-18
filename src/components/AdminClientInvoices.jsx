@@ -146,26 +146,6 @@ function formatOptionalPercent(value) {
   return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
-function readMetricNumber(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? number : 0
-}
-
-function hasMeaningfulWebsiteStats(analyticsSnapshot, engagementSnapshot) {
-  const metrics = analyticsSnapshot?.status === 'ready' ? analyticsSnapshot?.metrics ?? {} : {}
-  const counts = engagementSnapshot?.counts ?? {}
-
-  return [
-    metrics.views,
-    metrics.activeUsers,
-    metrics.sessions,
-    metrics.engagementRate,
-    engagementSnapshot?.totalEvents,
-    counts.siteLikes,
-    counts.facebookShareClicks,
-  ].some((value) => readMetricNumber(value) > 0)
-}
-
 function formatInvoiceCurrency(value) {
   const amount = readAmount(value)
 
@@ -446,10 +426,6 @@ function InvoiceSocialMarketingReport({ report, socialPostSnapshot }) {
 }
 
 function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
-  if (!hasMeaningfulWebsiteStats(analyticsSnapshot, engagementSnapshot)) {
-    return null
-  }
-
   const metrics = analyticsSnapshot?.metrics ?? {}
   const counts = engagementSnapshot?.counts ?? {}
   const hasAnalytics = analyticsSnapshot?.status === 'ready'
