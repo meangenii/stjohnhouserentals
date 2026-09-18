@@ -5,7 +5,6 @@ const INVOICE_COLLECTION = 'cmsClientInvoices'
 const INVOICE_COUNTER_COLLECTION = 'cmsClientInvoiceCounters'
 const INVOICE_STATUSES = new Set(['draft', 'sent', 'paid', 'overdue', 'void'])
 const ANALYTICS_STATUSES = new Set(['ready', 'unconfigured', 'unavailable'])
-const SOCIAL_STAT_KEYS = ['views', 'viewers', 'clicks', 'impressions', 'reach', 'engagements']
 const ENGAGEMENT_METRIC_KEYS = [
   'siteLikes',
   'facebookLikes',
@@ -114,19 +113,23 @@ function parseLineItemAmount(rawAmount) {
 function normalizeLineItems(value) {
   const items = Array.isArray(value) ? value : []
   const normalized = items
-    .map((item) => {
-      const description = normalizeField(item?.description, { label: 'Line item description', maxLength: 200 })
-      const amount = normalizeField(item?.amount, { label: 'Line item amount', maxLength: 20 })
-
-      parseLineItemAmount(amount)
-
-      return { description, amount }
-    })
+    .map((item) => ({
+      description: normalizeField(item?.description, { label: 'Line item description', maxLength: 200 }),
+      amount: normalizeField(item?.amount, { label: 'Line item amount', maxLength: 20 }),
+    }))
     .filter((item) => item.description || item.amount)
 
   if (normalized.length === 0) {
     throw new HttpError(400, 'At least one invoice line item is required.')
   }
+
+  normalized.forEach((item) => {
+    if (!item.amount) {
+      throw new HttpError(400, `"${item.description || 'This line item'}" needs an amount before the invoice can be saved.`)
+    }
+
+    parseLineItemAmount(item.amount)
+  })
 
   return normalized
 }
@@ -136,84 +139,32 @@ function normalizeMetricValue(value) {
   return Number.isFinite(number) ? number : 0
 }
 
-function normalizeOptionalMetricValue(value) {
-  const rawValue = String(value ?? '').trim()
-  if (!rawValue) {
-    return null
-  }
-
-  const cleanedValue = rawValue.replace(/,/g, '').replace(/[^0-9.-]/g, '')
-  if (!/[0-9]/.test(cleanedValue)) {
-    return null
-  }
-
-  const number = Number(cleanedValue)
-  return Number.isFinite(number) ? number : null
+function normalizeMarketingStat(value) {
+  return normalizeField(value || 'N/A', { label: 'Marketing statistic', maxLength: 40 }) || 'N/A'
 }
 
-function normalizeSocialStatEntry(entry = {}, { strict = true } = {}) {
-  if (!entry || typeof entry !== 'object') {
+function normalizeSocialMarketingReport(report = {}) {
+  if (!report || typeof report !== 'object') {
     return null
   }
 
-  const metricSource = entry.metrics && typeof entry.metrics === 'object' ? entry.metrics : entry
-  const metrics = SOCIAL_STAT_KEYS.reduce((normalized, key) => {
-    const value = normalizeOptionalMetricValue(metricSource[key])
-
-    if (value !== null) {
-      normalized[key] = value
-    }
-
-    return normalized
-  }, {})
-
-  if (Object.keys(metrics).length === 0) {
-    return null
-  }
-
-  let startDate = normalizeDateOnlyValue(entry.startDate ?? entry.dateRange?.startDate, {
-    label: 'Social stats start date',
-    strict,
-  })
-  let endDate = normalizeDateOnlyValue(entry.endDate ?? entry.dateRange?.endDate, {
-    label: 'Social stats end date',
-    strict,
-  })
-
-  if (Boolean(startDate) !== Boolean(endDate) || (startDate && startDate > endDate)) {
-    if (strict) {
-      throw new HttpError(
-        400,
-        Boolean(startDate) !== Boolean(endDate)
-          ? 'Social stats start and end dates must both be provided.'
-          : 'Social stats start date must be on or before the end date.',
-      )
-    }
-
-    // A previously-stored entry with a corrupt date range shouldn't block reading the rest
-    // of the invoice - drop the range and keep the metrics.
-    startDate = ''
-    endDate = ''
-  }
+  const dateLabel = normalizeField(report.dateLabel ?? report.marketingDates ?? 'Marketing Dates TBD', {
+    label: 'Marketing dates',
+    maxLength: 120,
+  }) || 'Marketing Dates TBD'
 
   return {
-    label:
-      normalizeField(entry.label ?? entry.platform ?? 'Social media marketing', {
-        label: 'Social stats label',
-        maxLength: 120,
-      }) || 'Social media marketing',
-    startDate,
-    endDate,
-    metrics,
+    dateLabel,
+    views: normalizeMarketingStat(report.views),
+    viewers: normalizeMarketingStat(report.viewers),
+    clicks: normalizeMarketingStat(report.clicks),
+    likes: normalizeMarketingStat(report.likes),
+    comments: normalizeMarketingStat(report.comments),
+    shares: normalizeMarketingStat(report.shares),
   }
 }
 
-function normalizeSocialStats(value, { strict = true } = {}) {
-  const entries = Array.isArray(value) ? value : value ? [value] : []
-  return entries.map((entry) => normalizeSocialStatEntry(entry, { strict })).filter(Boolean).slice(0, 10)
-}
-
-function normalizeAnalyticsSnapshot(snapshot = {}, { strict = true } = {}) {
+function normalizeAnalyticsSnapshot(snapshot = {}) {
   const propertySlug = String(snapshot?.propertySlug ?? '').trim()
 
   if (!propertySlug) {
@@ -250,16 +201,12 @@ function normalizeAnalyticsSnapshot(snapshot = {}, { strict = true } = {}) {
           sessions: normalizeMetricValue(row?.sessions),
         }))
       : [],
-    socialStats: normalizeSocialStats(
-      report?.socialStats ?? snapshot?.socialStats ?? report?.marketingStats ?? snapshot?.marketingStats,
-      { strict },
-    ),
   }
 }
 
-function normalizeAnalyticsSnapshots(value, { strict = true } = {}) {
+function normalizeAnalyticsSnapshots(value) {
   const snapshots = Array.isArray(value) ? value : value ? [value] : []
-  return snapshots.map((snapshot) => normalizeAnalyticsSnapshot(snapshot, { strict })).filter(Boolean).slice(0, 20)
+  return snapshots.map((snapshot) => normalizeAnalyticsSnapshot(snapshot)).filter(Boolean).slice(0, 20)
 }
 
 function normalizeEngagementSnapshot(snapshot = {}) {
@@ -299,6 +246,68 @@ function normalizeEngagementSnapshots(value) {
   return snapshots.map(normalizeEngagementSnapshot).filter(Boolean).slice(0, 20)
 }
 
+// Social posts an admin found (auto-matched or added by hand) for a property's billing
+// period. Unlike analytics/engagement snapshots, these are hand-editable before saving -
+// the admin may correct a wrong auto-match's numbers or delete/add an entry - so this
+// stores whatever the admin approved rather than re-deriving it from a live API call.
+function normalizeSocialPostEntry(entry = {}, fallbackPlatform = '') {
+  const externalId = String(entry?.externalId ?? '').trim()
+
+  if (!externalId) {
+    return null
+  }
+
+  const normalizedPlatform = String(entry?.platform ?? '').trim().toLowerCase()
+  const platform = ['facebook', 'instagram'].includes(normalizedPlatform)
+    ? normalizedPlatform
+    : fallbackPlatform || 'facebook'
+
+  return {
+    platform,
+    externalId,
+    message: normalizeField(entry.message, { label: 'Social post message', maxLength: 2200 }),
+    permalinkUrl: String(entry.permalinkUrl ?? '').trim(),
+    createdTime: String(entry.createdTime ?? '').trim(),
+    mediaType: String(entry.mediaType ?? '').trim(),
+    views: normalizeMetricValue(entry.views),
+    viewers: normalizeMetricValue(entry.viewers),
+    clicks: normalizeMetricValue(entry.clicks),
+    likes: normalizeMetricValue(entry.likes),
+    comments: normalizeMetricValue(entry.comments),
+    shares: normalizeMetricValue(entry.shares),
+  }
+}
+
+function normalizeSocialPostSnapshot(snapshot = {}, fallbackPlatform = '') {
+  const propertySlug = String(snapshot?.propertySlug ?? '').trim()
+
+  if (!propertySlug) {
+    return null
+  }
+
+  const posts = Array.isArray(snapshot?.posts) ? snapshot.posts : []
+
+  return {
+    propertySlug,
+    propertyName: String(snapshot?.propertyName ?? '').trim(),
+    posts: posts.map((post) => normalizeSocialPostEntry(post, fallbackPlatform)).filter(Boolean).slice(0, 25),
+  }
+}
+
+function normalizeFacebookPostSnapshot(snapshot = {}) {
+  return normalizeSocialPostSnapshot(snapshot, 'facebook')
+}
+
+function normalizeFacebookPostSnapshots(value) {
+  const snapshots = Array.isArray(value) ? value : value ? [value] : []
+  return snapshots.map(normalizeFacebookPostSnapshot).filter(Boolean).slice(0, 20)
+}
+
+function normalizeSocialPostSnapshots(value) {
+  const snapshots = Array.isArray(value) ? value : value ? [value] : []
+  return snapshots.map((snapshot) => normalizeSocialPostSnapshot(snapshot)).filter(Boolean).slice(0, 20)
+}
+
 function computeAmountTotal(lineItems) {
   const total = lineItems.reduce((sum, item) => sum + parseLineItemAmount(item.amount), 0)
   return total.toFixed(2)
@@ -323,7 +332,9 @@ function normalizeInvoiceDraft(payload) {
   const notes = normalizeField(payload?.notes, { label: 'Notes', maxLength: 2000 })
   const analyticsSnapshots = normalizeAnalyticsSnapshots(payload?.analyticsSnapshots)
   const engagementSnapshots = normalizeEngagementSnapshots(payload?.engagementSnapshots)
-  const socialStats = normalizeSocialStats(payload?.socialStats ?? payload?.marketingStats)
+  const facebookPostSnapshots = normalizeFacebookPostSnapshots(payload?.facebookPostSnapshots)
+  const socialPostSnapshots = normalizeSocialPostSnapshots(payload?.socialPostSnapshots)
+  const socialMarketingReport = normalizeSocialMarketingReport(payload?.socialMarketingReport)
 
   if (propertySlugs.length === 0) {
     throw new HttpError(400, 'Select at least one property for this invoice.')
@@ -362,7 +373,9 @@ function normalizeInvoiceDraft(payload) {
     analyticsEndDate,
     analyticsSnapshots,
     engagementSnapshots,
-    socialStats,
+    facebookPostSnapshots,
+    socialPostSnapshots: socialPostSnapshots.length > 0 ? socialPostSnapshots : facebookPostSnapshots,
+    socialMarketingReport,
     notes,
   }
 }
@@ -381,9 +394,13 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     dueDate: String(record.dueDate ?? '').trim(),
     analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
     analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
-    analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot, { strict: false }),
+    analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
     engagementSnapshots: normalizeEngagementSnapshots(record.engagementSnapshots ?? record.engagementSnapshot),
-    socialStats: normalizeSocialStats(record.socialStats ?? record.marketingStats, { strict: false }),
+    facebookPostSnapshots: normalizeFacebookPostSnapshots(record.facebookPostSnapshots),
+    socialPostSnapshots: normalizeSocialPostSnapshots(record.socialPostSnapshots).concat(
+      record.socialPostSnapshots ? [] : normalizeFacebookPostSnapshots(record.facebookPostSnapshots),
+    ),
+    socialMarketingReport: normalizeSocialMarketingReport(record.socialMarketingReport),
     status: INVOICE_STATUSES.has(record.status) ? record.status : 'draft',
     notes: String(record.notes ?? '').trim(),
     createdAt: normalizeTimestampValue(record.createdAt),
@@ -507,7 +524,9 @@ async function createInvoice(payload, adminUser) {
       analyticsEndDate: invoice.analyticsEndDate,
       analyticsSnapshots: invoice.analyticsSnapshots,
       engagementSnapshots: invoice.engagementSnapshots,
-      socialStats: invoice.socialStats,
+      facebookPostSnapshots: invoice.facebookPostSnapshots,
+      socialPostSnapshots: invoice.socialPostSnapshots,
+      socialMarketingReport: invoice.socialMarketingReport,
       status: 'draft',
       notes: invoice.notes,
       createdAt: getServerTimestamp(),
@@ -541,6 +560,34 @@ async function updateInvoiceStatus(id, status) {
   }
 
   await docRef.update({ status: normalizedStatus, updatedAt: getServerTimestamp() })
+
+  const savedSnapshot = await docRef.get()
+  return normalizeStoredInvoiceRecord(savedSnapshot.id, savedSnapshot.data())
+}
+
+async function updateInvoiceSocialMarketing(id, { socialMarketingReport, socialPostSnapshots } = {}) {
+  const normalizedId = String(id ?? '').trim()
+
+  if (!normalizedId) {
+    throw new HttpError(400, 'An invoice id is required.')
+  }
+
+  const docRef = getDb().collection(INVOICE_COLLECTION).doc(normalizedId)
+  const snapshot = await docRef.get()
+
+  if (!snapshot.exists) {
+    throw new HttpError(404, 'That invoice could not be found.')
+  }
+
+  if (snapshot.data()?.status !== 'draft') {
+    throw new HttpError(400, 'Only draft invoices can refresh social marketing stats.')
+  }
+
+  await docRef.update({
+    socialMarketingReport: normalizeSocialMarketingReport(socialMarketingReport),
+    socialPostSnapshots: normalizeSocialPostSnapshots(socialPostSnapshots),
+    updatedAt: getServerTimestamp(),
+  })
 
   const savedSnapshot = await docRef.get()
   return normalizeStoredInvoiceRecord(savedSnapshot.id, savedSnapshot.data())
@@ -581,6 +628,7 @@ exports.listInvoicesForClient = listInvoicesForClient
 exports.getInvoice = getInvoice
 exports.createInvoice = createInvoice
 exports.updateInvoiceStatus = updateInvoiceStatus
+exports.updateInvoiceSocialMarketing = updateInvoiceSocialMarketing
 exports.deleteInvoice = deleteInvoice
 exports.INVOICE_COLLECTION = INVOICE_COLLECTION
 exports._test = {

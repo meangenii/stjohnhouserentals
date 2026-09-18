@@ -38,6 +38,24 @@
         ]
       },
       {
+        "source": "/admin",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
+        "source": "/api/**",
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex, nofollow"
+          }
+        ]
+      },
+      {
         "source": "/social-preview.jpg",
         "headers": [
           {
@@ -67,6 +85,13 @@
         }
       },
       {
+        "source": "/llms.txt",
+        "function": {
+          "functionId": "siteSeo",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/rental-properties/**",
         "function": {
           "functionId": "siteSeo",
@@ -88,9 +113,27 @@
         }
       },
       {
+        "source": "/api/admin/social/**",
+        "function": {
+          "functionId": "siteApiSocial",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/**",
         "function": {
           "functionId": "siteApi",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/admin",
+        "destination": "/index.html"
+      },
+      {
+        "source": "!/@(assets|admin|api)/**",
+        "function": {
+          "functionId": "siteSeo",
           "region": "us-central1"
         }
       },

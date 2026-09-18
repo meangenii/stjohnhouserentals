@@ -33,7 +33,6 @@ import { listEditLockStatuses } from '../lib/editLockRepository'
 import { isFirebaseConfigured } from '../lib/firebase'
 import { useEditLock } from '../lib/useEditLock'
 import {
-  deleteAdminProperty,
   isFirebasePropertyData,
   isPropertyEditingEnabled,
   listAllProperties,
@@ -2567,48 +2566,6 @@ export function AdminPage() {
     }
   }
 
-  async function handleDeleteProperty() {
-    if (editorState.mode !== 'edit' || !formState.originalSlug) {
-      return
-    }
-
-    const propertyName = formState.name || formState.originalSlug
-    const confirmationMessage = `Delete ${propertyName} from the property catalog? This removes the saved draft and any published version.`
-
-    if (!window.confirm(confirmationMessage)) {
-      return
-    }
-
-    try {
-      setSaveStatus('saving')
-      const requestOptions = propertyUsesFirebase ? await getAdminRequestOptions() : {}
-      await deleteAdminProperty(formState.originalSlug, requestOptions)
-      const properties = await listAllProperties(requestOptions)
-
-      setWorkspaceState({ status: 'ready', properties })
-
-      if (properties.length > 0) {
-        const nextFormState = createFormState(properties[0])
-        setEditorState({ mode: 'edit', activeSlug: properties[0].slug })
-        setFormState(nextFormState)
-        setSavedFormState(nextFormState)
-        setPropertyPublication(properties[0].publication ?? null)
-      } else {
-        const nextFormState = createEmptyFormState()
-        setEditorState({ mode: 'create', activeSlug: '' })
-        setFormState(nextFormState)
-        setSavedFormState(nextFormState)
-        setPropertyPublication(null)
-      }
-
-      setFeedback(`Deleted ${propertyName}.`)
-      setSaveStatus('idle')
-    } catch (error) {
-      setSaveStatus('error')
-      setFeedback(error instanceof Error ? error.message : 'Unable to delete the property.')
-    }
-  }
-
   function handleDiscardPropertyChanges() {
     if (!propertyDirty) {
       return
@@ -3873,16 +3830,6 @@ export function AdminPage() {
                     >
                       View on site
                     </Link>
-                  ) : null}
-                  {editorState.mode === 'edit' && formState.originalSlug ? (
-                    <button
-                      className="button-link button-link--ghost admin-action"
-                      disabled={!propertySaveEnabled || propertyActionBusy}
-                      type="button"
-                      onClick={handleDeleteProperty}
-                    >
-                      Delete property
-                    </button>
                   ) : null}
                   <button
                     className="button-link button-link--ghost admin-action"

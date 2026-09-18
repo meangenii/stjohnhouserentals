@@ -1286,3 +1286,26 @@ exports.listAllStructuredPageContent = async function listAllStructuredPageConte
       .filter(Boolean),
   )
 }
+
+exports.listPublishedStructuredPageContent = async function listPublishedStructuredPageContent() {
+  const records = await listStructuredPageDocumentsFromFirestore()
+
+  return cloneData(
+    records
+      .map((record) => {
+        const page = getStructuredPageView(record.key, record.data, 'public')
+
+        if (!page) {
+          return null
+        }
+
+        return {
+          key: record.key,
+          title: resolveStructuredPageTitle(page),
+          path: String(page.path ?? '').trim(),
+          content: page,
+        }
+      })
+      .filter(Boolean),
+  )
+}

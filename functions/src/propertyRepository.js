@@ -1162,7 +1162,6 @@ function buildPropertyRecordFromAdminDraft(draft, originalSlug = '') {
 const seedProperties = Array.isArray(propertyCatalog.properties)
   ? propertyCatalog.properties.map((property) => normalizePropertyRecord(property)).filter(Boolean)
   : []
-const seedPropertyIds = new Set(seedProperties.map((property) => property.slug))
 
 function createFirestoreCatalogSetupError() {
   return new HttpError(
@@ -1346,6 +1345,22 @@ exports.getAdminPropertyBySlug = async function getAdminPropertyBySlug(slug) {
   }
 
   return cloneData(attachAdjacentProperties(property, catalog.properties))
+}
+
+// Resolves several slugs against one shared catalog fetch instead of one full
+// catalog read per slug - callers with a list of property slugs (e.g. a
+// multi-property invoice) should use this instead of mapping getAdminPropertyBySlug
+// over the list.
+exports.getAdminPropertiesBySlug = async function getAdminPropertiesBySlug(slugs) {
+  const catalog = await getCanonicalPropertyCatalogForMode('admin')
+
+  return (Array.isArray(slugs) ? slugs : []).map((slug) => {
+    const property = getRouteSlugVariants(slug)
+      .map((variant) => catalog.propertyIndex.get(variant))
+      .find(Boolean)
+
+    return property ? cloneData(attachAdjacentProperties(property, catalog.properties)) : null
+  })
 }
 
 exports.savePropertyRecord = async function savePropertyRecord(draft, originalSlug, adminUser, expectedUpdatedAt = null) {
@@ -1645,55 +1660,6 @@ exports.preparePropertyPaymentBillingPatch = async function preparePropertyPayme
 
   const patchedRecord = await readPropertyFieldPatchForTransaction(transaction, docRef, fieldPatch, adminUser)
   return { docRef, patchedRecord }
-}
-
-exports.deletePropertyRecord = async function deletePropertyRecord(originalSlug, adminUser) {
-  await syncSeedPropertiesToFirestore({ replace: false, actor: 'auto-seed' })
-
-  const documentId = String(originalSlug ?? '').trim()
-
-  if (!documentId) {
-    throw new HttpError(400, 'Property identifier is required to delete.')
-  }
-
-  const collectionRef = getDb().collection(PROPERTY_COLLECTION)
-  const snapshot = await collectionRef.doc(documentId).get()
-
-  if (!snapshot.exists) {
-    throw new HttpError(404, 'Property record not found.')
-  }
-
-  const currentEnvelope = normalizeStoredPropertyEnvelope(snapshot.data(), documentId)
-  const propertyName = currentEnvelope.draft?.name || currentEnvelope.published?.name || documentId
-  const deletedBy = adminUser.email || adminUser.uid || 'admin'
-
-  if (seedPropertyIds.has(documentId)) {
-    await collectionRef.doc(documentId).set({
-      deleted: true,
-      deletedAt: getServerTimestamp(),
-      deletedBy,
-      draft: null,
-      published: null,
-      publishedAt: null,
-      publishedBy: '',
-      updatedAt: getServerTimestamp(),
-      updatedBy: deletedBy,
-    })
-
-    return {
-      name: propertyName,
-      slug: documentId,
-      tombstoned: true,
-    }
-  }
-
-  await collectionRef.doc(documentId).delete()
-
-  return {
-    name: propertyName,
-    slug: documentId,
-    tombstoned: false,
-  }
 }
 
 exports.resetPropertyRecordsToSeed = async function resetPropertyRecordsToSeed() {

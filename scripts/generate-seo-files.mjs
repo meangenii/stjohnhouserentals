@@ -8,6 +8,7 @@ import {
   DEFAULT_SOCIAL_IMAGE_HEIGHT,
   DEFAULT_SOCIAL_IMAGE_TYPE,
   DEFAULT_SOCIAL_IMAGE_WIDTH,
+  SITE_ORIGIN,
   SITE_NAME,
   STATIC_SEO_ROUTES,
   buildCanonicalUrl,
@@ -90,6 +91,22 @@ async function removeGeneratedStaticSeoFiles() {
     rm(resolve(distDir, '1bedroom'), { force: true, recursive: true }),
     rm(resolve(distDir, 'charter-boat-rentals'), { force: true, recursive: true }),
   ])
+}
+
+function buildRobotsTxt() {
+  return [
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin',
+    'Disallow: /api/',
+    '',
+    `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
+    '',
+  ].join('\n')
+}
+
+async function writeRobotsTxt() {
+  await writeIfChanged(resolve(distDir, 'robots.txt'), buildRobotsTxt())
 }
 
 async function writeDynamicSeoShell() {
@@ -318,6 +335,7 @@ async function main() {
   const routes = Array.from(routeMap.values())
 
   await removeGeneratedStaticSeoFiles()
+  await writeRobotsTxt()
   await writeDynamicSeoShell()
   await generatePrerenderedHtml(routes)
 }

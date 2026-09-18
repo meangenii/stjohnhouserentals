@@ -76,6 +76,14 @@ export async function updateAdminClientInvoiceStatus(invoiceId, status, options 
   return payload?.invoice ?? null
 }
 
+export async function refreshAdminClientInvoiceSocialMarketing(invoiceId, draft, options = {}) {
+  const payload = await postJson(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}/social-marketing/refresh`, draft, options)
+  return {
+    invoice: payload?.invoice ?? null,
+    result: payload?.result ?? null,
+  }
+}
+
 export async function deleteAdminClientInvoice(invoiceId, options = {}) {
   return deleteJson(`/admin/clients/invoices/${encodeURIComponent(invoiceId)}`, options)
 }

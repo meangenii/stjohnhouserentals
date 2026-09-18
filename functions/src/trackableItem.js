@@ -1,7 +1,11 @@
 const { HttpError } = require('./firebaseAdmin')
 
 const ALLOWED_ITEM_TYPES = new Set(['property', 'charter'])
-const ITEM_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/
+// Trackable ids are public route slugs. Legacy imported slugs can contain
+// percent-encoded characters (for example Palladio%E2%80%99s View) or a curly
+// apostrophe after decoding, but they must remain a single path/document segment.
+const ITEM_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._~!$&'()*+,;=:@%\u2019-]{0,119}$/
+const MALFORMED_PERCENT_ENCODING_PATTERN = /%(?![0-9a-fA-F]{2})/
 
 function normalizeItemType(value, { message } = {}) {
   const normalized = String(value ?? '').trim().toLowerCase()
@@ -16,7 +20,7 @@ function normalizeItemType(value, { message } = {}) {
 function normalizeItemId(value, { message = 'A valid item id is required.' } = {}) {
   const normalized = String(value ?? '').trim()
 
-  if (!ITEM_ID_PATTERN.test(normalized)) {
+  if (!ITEM_ID_PATTERN.test(normalized) || MALFORMED_PERCENT_ENCODING_PATTERN.test(normalized)) {
     throw new HttpError(400, message)
   }
 

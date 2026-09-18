@@ -9,7 +9,7 @@ const {
   formatInvoiceDate,
   getInvoicePdfFilename,
 } = require('./invoicePdf')
-const { getAdminPropertyBySlug } = require('./propertyRepository')
+const { getAdminPropertiesBySlug } = require('./propertyRepository')
 const { getSiteShellContent } = require('./siteContentRepository')
 const { companyName: COMPANY_NAME, payeeName: PAYEE_NAME } = require('../shared/invoiceBranding.json')
 
@@ -19,7 +19,7 @@ async function getInvoiceDocumentContext(invoiceId) {
   const invoice = await getInvoice(invoiceId)
   const [client, properties] = await Promise.all([
     getClient(invoice.clientId),
-    Promise.all(invoice.propertySlugs.map((slug) => getAdminPropertyBySlug(slug))),
+    getAdminPropertiesBySlug(invoice.propertySlugs),
   ])
 
   return {

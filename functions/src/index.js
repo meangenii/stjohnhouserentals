@@ -14,7 +14,14 @@ const {
 const { archiveClient, getClient, importClientsFromProperties, listClients, saveClient } = require('./clientRepository')
 const { deletePayment, listPaymentsForClient, recordPayment } = require('./paymentRepository')
 const { createInvoicePdfDownload, emailInvoicePdf } = require('./invoiceDeliveryRepository')
-const { createInvoice, deleteInvoice, listInvoicesForClient, updateInvoiceStatus } = require('./invoiceRepository')
+const {
+  createInvoice,
+  deleteInvoice,
+  getInvoice,
+  listInvoicesForClient,
+  updateInvoiceSocialMarketing,
+  updateInvoiceStatus,
+} = require('./invoiceRepository')
 const {
   getPropertyAnalyticsReport,
   normalizeAnalyticsDateRange,
@@ -24,8 +31,11 @@ const { getLikeSummary, toggleLike } = require('./likeRepository')
 const { getPropertyEngagementSummary, recordEngagementEvent } = require('./engagementRepository')
 const {
   createSocialPost,
+  findFacebookPostsForProperty,
+  findSocialPostsForProperty,
   getPropertySocialSummary,
   getSocialConnectionStatus,
+  lookupFacebookPostByUrl,
   refreshSocialPostMetrics,
   SOCIAL_MEDIA_SECRETS,
 } = require('./socialPostRepository')
@@ -48,7 +58,7 @@ const {
   runWithRuntimeContext,
 } = require('./firebaseAdmin')
 const {
-  deletePropertyRecord,
+  getAdminPropertiesBySlug,
   getAdminPropertyBySlug,
   getPropertyBySlug,
   listAllProperties,
@@ -76,12 +86,16 @@ const {
 } = require('./mediaRepository')
 const { acquireLock, getLockStatus, heartbeatLock, listLockStatuses, releaseLock, takeOverLock } = require('./editLockRepository')
 const {
+  buildLlmsTxt,
   buildRobotsTxt,
   buildSitemap,
   createCharterRoute,
   createNotFoundRoute,
   createPropertyRoute,
   createSeoRoutes,
+  createStaticRoutes,
+  createStructuredPageRoutes,
+  getCanonicalPath,
   injectPrerenderHead,
   normalizePathname,
 } = require('./seoRenderer')
@@ -96,6 +110,7 @@ const {
   listDeletedStructuredPages,
   listStructuredPageRevisions,
   listPageInventory,
+  listPublishedStructuredPageContent,
   listStructuredPages,
   publishSiteShellContent,
   publishStructuredPageContent,
@@ -142,7 +157,11 @@ const publicSiteConfig = {
 }
 
 const PUBLIC_AVAILABILITY_CACHE_CONTROL = 'public, max-age=300, s-maxage=300, stale-while-revalidate=1800'
-const PUBLIC_SEO_CACHE_CONTROL = 'no-store'
+// Every ordinary page view (not just bots) goes through this Cloud Function once the catch-most
+// hosting rewrite is in place, so this must be edge-cacheable rather than no-store - a short
+// max-age keeps published content changes visible within minutes while letting Firebase Hosting's
+// CDN absorb repeat traffic instead of invoking the function on every page load.
+const PUBLIC_SEO_CACHE_CONTROL = 'public, max-age=60, s-maxage=600, stale-while-revalidate=86400'
 const DEFAULT_SITE_API_CORS_ORIGINS = [
   /^http:\/\/localhost(?::\d+)?$/i,
   /^http:\/\/127\.0\.0\.1(?::\d+)?$/i,
@@ -295,9 +314,24 @@ async function handleSiteSeoRequest(request, response, { serviceName, databaseId
     }
 
     if (pathname === '/sitemap.xml') {
-      const [properties, charters] = await Promise.all([listPropertySummaries(), listCharters()])
+      const [properties, charters, structuredPages] = await Promise.all([
+        listPropertySummaries(),
+        listCharters(),
+        listPublishedStructuredPageContent(),
+      ])
       response.type('application/xml')
-      response.send(buildSitemap(createSeoRoutes({ properties, charters })))
+      response.send(buildSitemap(createSeoRoutes({ properties, charters, structuredPages })))
+      return
+    }
+
+    if (pathname === '/llms.txt') {
+      const [properties, charters, structuredPages] = await Promise.all([
+        listPropertySummaries(),
+        listCharters(),
+        listPublishedStructuredPageContent(),
+      ])
+      response.type('text/plain')
+      response.send(buildLlmsTxt(createSeoRoutes({ properties, charters, structuredPages })))
       return
     }
 
@@ -329,6 +363,22 @@ async function handleSiteSeoRequest(request, response, { serviceName, databaseId
       return
     }
 
+    const staticRoute = createStaticRoutes().get(getCanonicalPath(pathname))
+
+    if (staticRoute) {
+      sendSeoHtml(response, staticRoute)
+      return
+    }
+
+    const structuredPages = await listPublishedStructuredPageContent()
+    const structuredRouteByPath = new Map(createStructuredPageRoutes(structuredPages).map((route) => [route.path, route]))
+    const structuredRoute = structuredRouteByPath.get(pathname)
+
+    if (structuredRoute) {
+      sendSeoHtml(response, structuredRoute)
+      return
+    }
+
     sendSeoHtml(response, createNotFoundRoute(pathname), 404)
   } catch (error) {
     sendError(response, error, request.path)
@@ -338,6 +388,7 @@ async function handleSiteSeoRequest(request, response, { serviceName, databaseId
 async function handleSiteApiRequest(request, response, { serviceName, databaseId, mode }) {
   const path = normalizeRequestPath(request.path)
   response.set('Cache-Control', 'no-store')
+  response.set('X-Robots-Tag', 'noindex, nofollow')
   response.set('X-Firestore-Database', databaseId)
   response.set('X-Site-Api-Variant', mode)
 
@@ -731,18 +782,6 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
-    if (request.method === 'DELETE' && path === 'admin/properties') {
-      const adminUser = await requireAdminUser(request)
-      const deletedProperty = await deletePropertyRecord(request.body?.originalSlug ?? '', adminUser)
-
-      response.json({
-        source: 'firestore',
-        checkedAt: new Date().toISOString(),
-        property: deletedProperty,
-      })
-      return
-    }
-
     if (request.method === 'GET' && path === 'admin/properties/catalog') {
       await requireAdminUser(request)
       response.json({
@@ -881,6 +920,67 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       return
     }
 
+    if (request.method === 'GET' && /^admin\/social\/properties\/[^/]+\/facebook-posts$/.test(path)) {
+      await requireAdminUser(request)
+      const slug = decodeURIComponent(path.replace(/^admin\/social\/properties\//, '').replace(/\/facebook-posts$/, ''))
+      const property = await getAdminPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in admin catalog',
+          slug,
+        })
+        return
+      }
+
+      response.json({
+        source: 'facebook-graph-api',
+        checkedAt: new Date().toISOString(),
+        result: await findFacebookPostsForProperty(property, {
+          startDate: request.query?.startDate,
+          endDate: request.query?.endDate,
+        }),
+      })
+      return
+    }
+
+    if (request.method === 'GET' && /^admin\/social\/properties\/[^/]+\/posts$/.test(path)) {
+      await requireAdminUser(request)
+      const slug = decodeURIComponent(path.replace(/^admin\/social\/properties\//, '').replace(/\/posts$/, ''))
+      const property = await getAdminPropertyBySlug(slug)
+
+      if (!property) {
+        response.status(404).json({
+          error: 'not-found',
+          message: 'Property not found in admin catalog',
+          slug,
+        })
+        return
+      }
+
+      response.json({
+        source: 'facebook-instagram-graph-api',
+        checkedAt: new Date().toISOString(),
+        result: await findSocialPostsForProperty(property, {
+          startDate: request.query?.startDate,
+          endDate: request.query?.endDate,
+        }),
+      })
+      return
+    }
+
+    if (request.method === 'POST' && path === 'admin/social/facebook-posts/lookup') {
+      await requireAdminUser(request)
+
+      response.json({
+        source: 'facebook-graph-api',
+        checkedAt: new Date().toISOString(),
+        post: await lookupFacebookPostByUrl(request.body?.url ?? ''),
+      })
+      return
+    }
+
     if (request.method === 'GET' && path === 'admin/clients') {
       await requireAdminUser(request)
       response.json({
@@ -991,7 +1091,7 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         throw new HttpError(400, 'Select at least one property for this invoice.')
       }
 
-      const properties = await Promise.all(propertySlugs.map((slug) => getAdminPropertyBySlug(slug)))
+      const properties = await getAdminPropertiesBySlug(propertySlugs)
 
       for (let index = 0; index < properties.length; index += 1) {
         const property = properties[index]
@@ -1081,6 +1181,47 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         source: 'firestore',
         checkedAt: new Date().toISOString(),
         delivery,
+      })
+      return
+    }
+
+    if (request.method === 'POST' && /^admin\/clients\/invoices\/[^/]+\/social-marketing\/refresh$/.test(path)) {
+      await requireAdminUser(request)
+      const invoiceId = decodeURIComponent(path.split('/')[3])
+      const invoice = await getInvoice(invoiceId)
+      const invoicePropertySlugs = new Set(
+        Array.isArray(invoice.propertySlugs)
+          ? invoice.propertySlugs.map((slug) => String(slug ?? '').trim()).filter(Boolean)
+          : [],
+      )
+      const socialPostSnapshots = Array.isArray(request.body?.socialPostSnapshots) ? request.body.socialPostSnapshots : []
+      const invalidSnapshot = socialPostSnapshots.find((snapshot) => !invoicePropertySlugs.has(String(snapshot?.propertySlug ?? '').trim()))
+
+      if (invoicePropertySlugs.size === 0) {
+        throw new HttpError(400, 'This invoice does not have a property to refresh.')
+      }
+
+      if (invalidSnapshot) {
+        throw new HttpError(400, 'Social marketing snapshots must belong to a property on this invoice.')
+      }
+
+      const refreshedInvoice = await updateInvoiceSocialMarketing(invoiceId, {
+        socialMarketingReport: request.body?.socialMarketingReport,
+        socialPostSnapshots,
+      })
+      const postCount = socialPostSnapshots.reduce(
+        (count, snapshot) => count + (Array.isArray(snapshot?.posts) ? snapshot.posts.length : 0),
+        0,
+      )
+
+      response.json({
+        source: 'firestore',
+        checkedAt: new Date().toISOString(),
+        invoice: refreshedInvoice,
+        result: {
+          status: 'ready',
+          postCount,
+        },
       })
       return
     }

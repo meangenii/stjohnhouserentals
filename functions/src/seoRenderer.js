@@ -8,6 +8,27 @@ const DEFAULT_SOCIAL_IMAGE_WIDTH = 1200
 const DEFAULT_SOCIAL_IMAGE_HEIGHT = 630
 const DEFAULT_SOCIAL_IMAGE_TYPE = 'image/jpeg'
 
+const GENERIC_PAGE_CONTENT_MODELS = new Set(['block-page', 'rich-content-page', 'legal-content-page'])
+const STRUCTURED_PAGE_DESCRIPTION_MAX_LENGTH = 160
+const BLOCK_TEXT_FIELDS = ['html', 'body', 'lead', 'title', 'heading', 'left', 'kicker']
+
+const AI_CRAWLER_USER_AGENTS = [
+  'GPTBot',
+  'OAI-SearchBot',
+  'ChatGPT-User',
+  'ClaudeBot',
+  'anthropic-ai',
+  'Claude-Web',
+  'PerplexityBot',
+  'Perplexity-User',
+  'Google-Extended',
+  'Applebot-Extended',
+  'CCBot',
+  'Bytespider',
+  'Meta-ExternalAgent',
+  'Amazonbot',
+]
+
 const CANONICAL_PATH_ALIASES = {
   '/car-rental-ferry-boat-info': '/car-barge-information',
   '/ferrys': '/passenger-ferry',
@@ -49,13 +70,6 @@ const STATIC_SEO_ROUTES = [
     title: 'Car Barge Information | St. John House Rentals',
     description: 'Get St. Thomas to St. John car barge information, schedules, rates, and travel tips for rental vehicles.',
     priority: '0.8',
-    changefreq: 'monthly',
-  },
-  {
-    path: '/cbtest',
-    title: 'Car Barge Information | St. John House Rentals',
-    description: 'Get St. Thomas to St. John car barge information, schedules, rates, and travel tips for rental vehicles.',
-    priority: '0.3',
     changefreq: 'monthly',
   },
   {
@@ -456,6 +470,193 @@ function buildCharterDescription(charter) {
   return `View ${charter.name}, a St. John charter boat listing, and contact the operator directly.`
 }
 
+function truncateAtWordBoundary(value, maxLength) {
+  const normalizedValue = String(value ?? '').trim()
+
+  if (normalizedValue.length <= maxLength) {
+    return normalizedValue
+  }
+
+  const truncated = normalizedValue.slice(0, maxLength)
+  const lastSpaceIndex = truncated.lastIndexOf(' ')
+
+  return `${(lastSpaceIndex > 0 ? truncated.slice(0, lastSpaceIndex) : truncated).trim()}…`
+}
+
+function getBlockOwnText(block) {
+  for (const field of BLOCK_TEXT_FIELDS) {
+    const value = block?.[field]
+
+    if (typeof value === 'string') {
+      const text = normalizeText(value)
+
+      if (text) {
+        return text
+      }
+    }
+  }
+
+  return ''
+}
+
+// Walks a block-page's blocks (including one level into Group items, Row columns, and Tabs items)
+// looking for the first usable text, mirroring the frontend's findPageShareImage traversal
+// (src/lib/blockPageMeta.js) so a page gets a sensible meta description without a dedicated field.
+function findBlockPageText(blocks) {
+  if (!Array.isArray(blocks)) {
+    return ''
+  }
+
+  for (const block of blocks) {
+    const text = getBlockOwnText(block)
+
+    if (text) {
+      return text
+    }
+  }
+
+  for (const block of blocks) {
+    if (block?.type === 'group' && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        const itemText = getBlockOwnText(item)
+
+        if (itemText) {
+          return itemText
+        }
+
+        const nestedText = findBlockPageText(item?.blocks)
+
+        if (nestedText) {
+          return nestedText
+        }
+      }
+    }
+
+    if (block?.type === 'row' && Array.isArray(block.columns)) {
+      for (const column of block.columns) {
+        const nestedText = findBlockPageText(column?.blocks)
+
+        if (nestedText) {
+          return nestedText
+        }
+      }
+    }
+
+    if (block?.type === 'tabs' && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        const nestedText = findBlockPageText(item?.blocks)
+
+        if (nestedText) {
+          return nestedText
+        }
+      }
+    }
+  }
+
+  return ''
+}
+
+function blockHasUsableImage(image) {
+  return Boolean(image?.url || image?.src)
+}
+
+function getBlockOwnImage(block) {
+  if (block?.type === 'hero' || block?.type === 'image' || block?.type === 'image-text-split') {
+    return blockHasUsableImage(block.image) ? block.image : null
+  }
+
+  if (block?.type === 'image-gallery' && Array.isArray(block.images)) {
+    return block.images.find(blockHasUsableImage) ?? null
+  }
+
+  return null
+}
+
+// Ported from src/lib/blockPageMeta.js's findPageShareImage. Duplicated rather than imported:
+// Cloud Functions only packages the functions/ directory on deploy, so code outside it (like the
+// frontend's src/lib) isn't available at runtime (see commit 0203fb0 for the packaging boundary
+// this avoids).
+function findBlockPageShareImage(blocks) {
+  if (!Array.isArray(blocks)) {
+    return null
+  }
+
+  for (const block of blocks) {
+    const image = getBlockOwnImage(block)
+
+    if (image) {
+      return image
+    }
+  }
+
+  for (const block of blocks) {
+    if (block?.type === 'group' && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        if (blockHasUsableImage(item?.image)) {
+          return item.image
+        }
+
+        const nestedImage = findBlockPageShareImage(item?.blocks)
+
+        if (nestedImage) {
+          return nestedImage
+        }
+      }
+    }
+
+    if (block?.type === 'row' && Array.isArray(block.columns)) {
+      for (const column of block.columns) {
+        const nestedImage = findBlockPageShareImage(column?.blocks)
+
+        if (nestedImage) {
+          return nestedImage
+        }
+      }
+    }
+
+    if (block?.type === 'tabs' && Array.isArray(block.items)) {
+      for (const item of block.items) {
+        const nestedImage = findBlockPageShareImage(item?.blocks)
+
+        if (nestedImage) {
+          return nestedImage
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+function buildStructuredPageDescription(pageContent = {}) {
+  const metaDescription = normalizeText(pageContent.metaDescription)
+
+  if (metaDescription) {
+    return metaDescription
+  }
+
+  const contentModel = String(pageContent.contentModel ?? '').trim()
+  const fallbackText =
+    contentModel === 'block-page' ? findBlockPageText(pageContent.blocks) : normalizeText(pageContent.bodyHtml)
+
+  if (fallbackText) {
+    return truncateAtWordBoundary(fallbackText, STRUCTURED_PAGE_DESCRIPTION_MAX_LENGTH)
+  }
+
+  return DEFAULT_SITE_DESCRIPTION
+}
+
+function findStructuredPageImage(pageContent = {}) {
+  const contentModel = String(pageContent.contentModel ?? '').trim()
+
+  if (contentModel === 'block-page') {
+    return findBlockPageShareImage(pageContent.blocks)
+  }
+
+  const imageGallery = Array.isArray(pageContent.imageGallery) ? pageContent.imageGallery : []
+  return imageGallery.find((image) => image?.url || image?.src) ?? null
+}
+
 function addRoute(routeMap, route) {
   const path = normalizePathname(route.path)
   const canonicalPath = route.canonicalPath ? normalizePathname(route.canonicalPath) : getCanonicalPath(path)
@@ -578,10 +779,73 @@ function createCharterRoutes(charters) {
     .map((charter) => createCharterRoute(charter))
 }
 
-function createSeoRoutes({ properties = [], charters = [] } = {}) {
+function createStructuredPageRoute(pageEntry) {
+  const content = pageEntry?.content || {}
+  const path = normalizePathname(content.path || pageEntry?.path)
+  const title = String(pageEntry?.title || content.navLabel || '').trim() || SITE_NAME
+  const image = findStructuredPageImage(content)
+
+  return {
+    path,
+    canonicalPath: path,
+    canonicalUrl: buildCanonicalUrl(path),
+    title,
+    description: buildStructuredPageDescription(content),
+    image: image || DEFAULT_SOCIAL_IMAGE,
+    imageAlt: getImageAlt(image, title),
+    priority: '0.5',
+    changefreq: 'monthly',
+    type: 'article',
+    structuredData: buildBreadcrumbJsonLd([
+      { name: 'Home', path: '/' },
+      { name: title, path },
+    ]),
+  }
+}
+
+function createStructuredPageRoutes(structuredPages) {
+  const routes = []
+
+  structuredPages
+    .filter((pageEntry) => GENERIC_PAGE_CONTENT_MODELS.has(String(pageEntry?.content?.contentModel ?? '').trim()))
+    .forEach((pageEntry) => {
+      const route = createStructuredPageRoute(pageEntry)
+
+      if (!route.path || route.path === '/') {
+        return
+      }
+
+      routes.push(route)
+
+      const routeAliases = Array.isArray(pageEntry.content?.routeAliases) ? pageEntry.content.routeAliases : []
+
+      routeAliases.forEach((alias) => {
+        const aliasPath = normalizePathname(alias)
+
+        if (!aliasPath || aliasPath === route.path) {
+          return
+        }
+
+        routes.push({
+          ...route,
+          path: aliasPath,
+          canonicalPath: route.path,
+          includeInSitemap: false,
+        })
+      })
+    })
+
+  return routes
+}
+
+function createSeoRoutes({ properties = [], charters = [], structuredPages = [] } = {}) {
   const routeMap = createStaticRoutes()
 
-  ;[...createPropertyRoutes(properties), ...createCharterRoutes(charters)].forEach((route) => addRoute(routeMap, route))
+  ;[
+    ...createPropertyRoutes(properties),
+    ...createCharterRoutes(charters),
+    ...createStructuredPageRoutes(structuredPages),
+  ].forEach((route) => addRoute(routeMap, route))
 
   return Array.from(routeMap.values())
 }
@@ -626,8 +890,13 @@ function buildSitemap(routes) {
   ].join('\n')
 }
 
+function buildAiCrawlerRobotsBlock(userAgent) {
+  return [`User-agent: ${userAgent}`, 'Allow: /', 'Disallow: /admin', 'Disallow: /api/', ''].join('\n')
+}
+
 function buildRobotsTxt() {
   return [
+    ...AI_CRAWLER_USER_AGENTS.map(buildAiCrawlerRobotsBlock),
     'User-agent: *',
     'Allow: /',
     'Disallow: /admin',
@@ -636,6 +905,58 @@ function buildRobotsTxt() {
     `Sitemap: ${SITE_ORIGIN}/sitemap.xml`,
     '',
   ].join('\n')
+}
+
+function partitionRoutesForLlms(routes) {
+  const pages = []
+  const properties = []
+  const charters = []
+
+  routes
+    .filter((route) => route.includeInSitemap !== false)
+    .forEach((route) => {
+      if (route.canonicalPath.startsWith('/rental-properties/')) {
+        properties.push(route)
+      } else if (route.canonicalPath.startsWith('/charter-boat-rentals/')) {
+        charters.push(route)
+      } else {
+        pages.push(route)
+      }
+    })
+
+  const byPath = (first, second) => first.path.localeCompare(second.path)
+
+  return {
+    charters: charters.sort(byPath),
+    pages: pages.sort(byPath),
+    properties: properties.sort(byPath),
+  }
+}
+
+function buildLlmsSection(heading, routes) {
+  if (routes.length === 0) {
+    return ''
+  }
+
+  const entries = routes.map((route) => `- [${route.title}](${route.canonicalUrl}): ${route.description}`).join('\n')
+
+  return `## ${heading}\n${entries}`
+}
+
+function buildLlmsTxt(routes) {
+  const { charters, pages, properties } = partitionRoutesForLlms(routes)
+
+  return (
+    [
+      `# ${SITE_NAME}`,
+      `> ${DEFAULT_SITE_DESCRIPTION}`,
+      buildLlmsSection('Pages', pages),
+      buildLlmsSection('Rental Properties', properties),
+      buildLlmsSection('Charter Boats', charters),
+    ]
+      .filter(Boolean)
+      .join('\n\n') + '\n'
+  )
 }
 
 function buildStructuredData(route) {
@@ -719,6 +1040,7 @@ function createNotFoundRoute(pathname = '/') {
 }
 
 module.exports = {
+  buildLlmsTxt,
   buildRobotsTxt,
   buildSitemap,
   createCharterRoute,
@@ -726,6 +1048,9 @@ module.exports = {
   createPropertyRoute,
   createSeoRoutes,
   createStaticRoutes,
+  createStructuredPageRoute,
+  createStructuredPageRoutes,
+  getCanonicalPath,
   injectPrerenderHead,
   normalizePathname,
 }
