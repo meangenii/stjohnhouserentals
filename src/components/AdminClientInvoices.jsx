@@ -317,15 +317,42 @@ function sumSocialPostMetric(posts, key) {
   return values.reduce((sum, value) => sum + value, 0)
 }
 
+function formatSocialMetric(value) {
+  return value === null || value === undefined ? 'N/A' : formatOptionalNumber(value)
+}
+
+function createPlatformSocialMarketingReport(posts, platform) {
+  const platformPosts = (Array.isArray(posts) ? posts : [])
+    .filter((post) => String(post?.platform ?? '').trim().toLowerCase() === platform)
+
+  return {
+    postCount: platformPosts.length,
+    views: formatSocialMetric(sumSocialPostMetric(platformPosts, 'views')),
+    viewers: formatSocialMetric(sumSocialPostMetric(platformPosts, 'viewers')),
+    clicks: formatSocialMetric(sumSocialPostMetric(platformPosts, 'clicks')),
+    likes: formatSocialMetric(sumSocialPostMetric(platformPosts, 'likes')),
+    comments: formatSocialMetric(sumSocialPostMetric(platformPosts, 'comments')),
+    shares: formatSocialMetric(sumSocialPostMetric(platformPosts, 'shares')),
+  }
+}
+
+function createSocialPlatformReports(posts) {
+  return {
+    facebook: createPlatformSocialMarketingReport(posts, 'facebook'),
+    instagram: createPlatformSocialMarketingReport(posts, 'instagram'),
+  }
+}
+
 function createSocialMarketingReportFromSocialPosts(posts, dateSource = {}) {
   return {
     dateLabel: getMarketingDateLabel(dateSource),
-    views: formatOptionalNumber(sumSocialPostMetric(posts, 'views')),
-    viewers: formatOptionalNumber(sumSocialPostMetric(posts, 'viewers')),
-    clicks: formatOptionalNumber(sumSocialPostMetric(posts, 'clicks')),
-    likes: formatOptionalNumber(sumSocialPostMetric(posts, 'likes')),
-    comments: formatOptionalNumber(sumSocialPostMetric(posts, 'comments')),
-    shares: formatOptionalNumber(sumSocialPostMetric(posts, 'shares')),
+    views: formatSocialMetric(sumSocialPostMetric(posts, 'views')),
+    viewers: formatSocialMetric(sumSocialPostMetric(posts, 'viewers')),
+    clicks: formatSocialMetric(sumSocialPostMetric(posts, 'clicks')),
+    likes: formatSocialMetric(sumSocialPostMetric(posts, 'likes')),
+    comments: formatSocialMetric(sumSocialPostMetric(posts, 'comments')),
+    shares: formatSocialMetric(sumSocialPostMetric(posts, 'shares')),
+    ...createSocialPlatformReports(posts),
   }
 }
 
@@ -349,6 +376,27 @@ function getSocialPlatformLabel(platform) {
   return platform === 'instagram' ? 'Instagram' : 'Facebook'
 }
 
+function getSocialMarketingPlatformRows(report, socialPostSnapshot) {
+  const posts = Array.isArray(socialPostSnapshot?.posts) ? socialPostSnapshot.posts : []
+
+  if (posts.length > 0) {
+    const platformReports = createSocialPlatformReports(posts)
+    return [
+      { platform: 'Facebook', ...platformReports.facebook },
+      { platform: 'Instagram', ...platformReports.instagram },
+    ]
+  }
+
+  if (report?.facebook || report?.instagram) {
+    return [
+      { platform: 'Facebook', ...(report.facebook || createSocialMarketingReport()) },
+      { platform: 'Instagram', ...(report.instagram || createSocialMarketingReport()) },
+    ]
+  }
+
+  return []
+}
+
 function formatPostDate(createdTime) {
   return formatDate(normalizeDateOnly(createdTime) || createdTime)
 }
@@ -369,18 +417,30 @@ function createInvoiceDraft(property) {
   }
 }
 
-function InvoiceSocialMarketingReport({ report }) {
+function InvoiceSocialMarketingReport({ report, socialPostSnapshot }) {
   if (!report) {
     return null
   }
 
+  const platformRows = getSocialMarketingPlatformRows(report, socialPostSnapshot)
+
   return (
     <div className="admin-client-invoice-marketing-report">
-      <strong>FB and Instagram marketing.</strong>
+      <strong>Facebook and Instagram marketing.</strong>
       <p>Statistics &quot;{report.dateLabel || 'Marketing Dates TBD'}&quot;:</p>
-      <p>Views: {report.views || 'N/A'} Viewers: {report.viewers || 'N/A'}</p>
-      <p>Clicks: {report.clicks || 'N/A'}</p>
-      <p>Likes: {report.likes || 'N/A'} Comments: {report.comments || 'N/A'} Shares: {report.shares || 'N/A'}</p>
+      {platformRows.length > 0 ? platformRows.map((row) => (
+        <p key={row.platform}>
+          <strong>{row.platform} stats:</strong>{' '}
+          Views: {row.views || 'N/A'} Viewers: {row.viewers || 'N/A'} Clicks: {row.clicks || 'N/A'} Likes:{' '}
+          {row.likes || 'N/A'} Comments: {row.comments || 'N/A'} Shares: {row.shares || 'N/A'}
+        </p>
+      )) : (
+        <>
+          <p>Combined Facebook and Instagram stats:</p>
+          <p>Views: {report.views || 'N/A'} Viewers: {report.viewers || 'N/A'} Clicks: {report.clicks || 'N/A'}</p>
+          <p>Likes: {report.likes || 'N/A'} Comments: {report.comments || 'N/A'} Shares: {report.shares || 'N/A'}</p>
+        </>
+      )}
     </div>
   )
 }
@@ -396,7 +456,7 @@ function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
 
   return (
     <div className="admin-client-invoice-marketing-report admin-client-invoice-website-report">
-      <strong>Website listing statistics.</strong>
+      <strong>Google Analytics website statistics.</strong>
       <p>
         Views: {hasAnalytics ? formatOptionalNumber(metrics.views) : 'N/A'} Visitors:{' '}
         {hasAnalytics ? formatOptionalNumber(metrics.activeUsers) : 'N/A'} Sessions:{' '}
@@ -579,6 +639,7 @@ function SavedInvoice({
                 const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
                 const rowAnalyticsSnapshot = getInvoiceSnapshotForProperty(invoice.analyticsSnapshots, rowPropertySlug)
                 const rowEngagementSnapshot = getInvoiceSnapshotForProperty(invoice.engagementSnapshots, rowPropertySlug)
+                const rowSocialPostSnapshot = getInvoiceSnapshotForProperty(invoice.socialPostSnapshots, rowPropertySlug)
                 const showPropertyDetails = Boolean(propertyName)
 
                 return (
@@ -591,7 +652,7 @@ function SavedInvoice({
                           <strong>{propertyName}</strong>
                           <a href={propertyUrl}>{propertyUrl}</a>
                           <InvoiceWebsiteStatsReport analyticsSnapshot={rowAnalyticsSnapshot} engagementSnapshot={rowEngagementSnapshot} />
-                          <InvoiceSocialMarketingReport report={socialMarketingReport} />
+                          <InvoiceSocialMarketingReport report={socialMarketingReport} socialPostSnapshot={rowSocialPostSnapshot} />
                         </>
                       ) : null}
                     </td>

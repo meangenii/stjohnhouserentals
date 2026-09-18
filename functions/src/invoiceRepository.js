@@ -143,6 +143,22 @@ function normalizeMarketingStat(value) {
   return normalizeField(value || 'N/A', { label: 'Marketing statistic', maxLength: 40 }) || 'N/A'
 }
 
+function normalizePlatformMarketingReport(report = {}) {
+  if (!report || typeof report !== 'object') {
+    return null
+  }
+
+  return {
+    postCount: normalizeMetricValue(report.postCount),
+    views: normalizeMarketingStat(report.views),
+    viewers: normalizeMarketingStat(report.viewers),
+    clicks: normalizeMarketingStat(report.clicks),
+    likes: normalizeMarketingStat(report.likes),
+    comments: normalizeMarketingStat(report.comments),
+    shares: normalizeMarketingStat(report.shares),
+  }
+}
+
 function normalizeSocialMarketingReport(report = {}) {
   if (!report || typeof report !== 'object') {
     return null
@@ -161,6 +177,8 @@ function normalizeSocialMarketingReport(report = {}) {
     likes: normalizeMarketingStat(report.likes),
     comments: normalizeMarketingStat(report.comments),
     shares: normalizeMarketingStat(report.shares),
+    facebook: normalizePlatformMarketingReport(report.facebook),
+    instagram: normalizePlatformMarketingReport(report.instagram),
   }
 }
 

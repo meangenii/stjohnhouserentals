@@ -49,6 +49,18 @@ const normalizedDraft = invoiceTest.normalizeInvoiceDraft({
     likes: '49',
     comments: '8',
     shares: '3',
+    facebook: {
+      views: '100',
+      clicks: '4',
+      likes: '42',
+      comments: '5',
+      shares: '3',
+    },
+    instagram: {
+      views: '25',
+      likes: '7',
+      comments: '3',
+    },
   },
   analyticsSnapshots: [
     {
@@ -135,6 +147,16 @@ assert.equal(normalizedDraft.socialMarketingReport.clicks, 'N/A')
 assert.equal(normalizedDraft.socialMarketingReport.likes, '49')
 assert.equal(normalizedDraft.socialMarketingReport.comments, '8')
 assert.equal(normalizedDraft.socialMarketingReport.shares, '3')
+assert.equal(normalizedDraft.socialMarketingReport.facebook.views, '100')
+assert.equal(normalizedDraft.socialMarketingReport.facebook.clicks, '4')
+assert.equal(normalizedDraft.socialMarketingReport.facebook.likes, '42')
+assert.equal(normalizedDraft.socialMarketingReport.facebook.comments, '5')
+assert.equal(normalizedDraft.socialMarketingReport.facebook.shares, '3')
+assert.equal(normalizedDraft.socialMarketingReport.instagram.views, '25')
+assert.equal(normalizedDraft.socialMarketingReport.instagram.clicks, 'N/A')
+assert.equal(normalizedDraft.socialMarketingReport.instagram.likes, '7')
+assert.equal(normalizedDraft.socialMarketingReport.instagram.comments, '3')
+assert.equal(normalizedDraft.socialMarketingReport.instagram.shares, 'N/A')
 
 assertHttpError(
   () => invoiceTest.normalizeInvoiceDraft({
@@ -271,6 +293,26 @@ assert.equal(
 )
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 276, 226), 292)
 assert.equal(invoicePdfTest.getInvoiceTableStartY(196, 220, 226), 262)
+const separatedPlatformRows = invoicePdfTest.getSocialMarketingPlatformRows(null, {
+  posts: [
+    { platform: 'facebook', views: 10, viewers: 8, clicks: 2, likes: 3, comments: 1, shares: 1 },
+    { platform: 'instagram', views: 25, likes: 7, comments: 4 },
+  ],
+})
+assert.deepEqual(separatedPlatformRows, [
+  { platform: 'Facebook', postCount: 1, views: '10', viewers: '8', clicks: '2', likes: '3', comments: '1', shares: '1' },
+  { platform: 'Instagram', postCount: 1, views: '25', viewers: 'N/A', clicks: 'N/A', likes: '7', comments: '4', shares: 'N/A' },
+])
+assert.deepEqual(
+  invoicePdfTest.getSocialMarketingPlatformRows(
+    { facebook: { views: '1' }, instagram: { views: '2' } },
+    null,
+  ),
+  [
+    { platform: 'Facebook', views: '1' },
+    { platform: 'Instagram', views: '2' },
+  ],
+)
 
 async function assertInvoicePdfGeneration() {
   const invoice = {

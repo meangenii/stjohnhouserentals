@@ -207,6 +207,67 @@ function drawRowBorders(doc, columns, y, height) {
   })
 }
 
+function sumSocialPostMetric(posts, key) {
+  const values = (Array.isArray(posts) ? posts : [])
+    .map((post) => post?.[key])
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value))
+
+  if (values.length === 0) {
+    return null
+  }
+
+  return values.reduce((sum, value) => sum + value, 0)
+}
+
+function formatSocialMetric(value) {
+  return value === null || value === undefined ? 'N/A' : formatOptionalNumber(value)
+}
+
+function createPlatformSocialMarketingReport(posts, platform) {
+  const platformPosts = (Array.isArray(posts) ? posts : [])
+    .filter((post) => String(post?.platform ?? '').trim().toLowerCase() === platform)
+
+  return {
+    postCount: platformPosts.length,
+    views: formatSocialMetric(sumSocialPostMetric(platformPosts, 'views')),
+    viewers: formatSocialMetric(sumSocialPostMetric(platformPosts, 'viewers')),
+    clicks: formatSocialMetric(sumSocialPostMetric(platformPosts, 'clicks')),
+    likes: formatSocialMetric(sumSocialPostMetric(platformPosts, 'likes')),
+    comments: formatSocialMetric(sumSocialPostMetric(platformPosts, 'comments')),
+    shares: formatSocialMetric(sumSocialPostMetric(platformPosts, 'shares')),
+  }
+}
+
+function createSocialPlatformReports(posts) {
+  return {
+    facebook: createPlatformSocialMarketingReport(posts, 'facebook'),
+    instagram: createPlatformSocialMarketingReport(posts, 'instagram'),
+  }
+}
+
+function getSocialMarketingPlatformRows(report, socialPostSnapshot) {
+  const posts = Array.isArray(socialPostSnapshot?.posts) ? socialPostSnapshot.posts : []
+
+  if (posts.length > 0) {
+    const platformReports = createSocialPlatformReports(posts)
+    return [
+      { platform: 'Facebook', ...platformReports.facebook },
+      { platform: 'Instagram', ...platformReports.instagram },
+    ]
+  }
+
+  if (report?.facebook || report?.instagram) {
+    return [
+      { platform: 'Facebook', ...(report.facebook || {}) },
+      { platform: 'Instagram', ...(report.instagram || {}) },
+    ]
+  }
+
+  return []
+}
+
 function getInvoiceTableStartY(partyY, clientY, invoiceDateY) {
   return Math.max(
     partyY + INVOICE_PARTY_ROW_MIN_HEIGHT,
@@ -215,15 +276,30 @@ function getInvoiceTableStartY(partyY, clientY, invoiceDateY) {
   )
 }
 
-function renderSocialMarketingReport(doc, report, x, y, width) {
+function renderSocialMarketingReport(doc, report, socialPostSnapshot, x, y, width) {
   if (!report) {
     return y
   }
 
-  let nextY = writeText(doc, 'FB and Instagram marketing.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
+  const platformRows = getSocialMarketingPlatformRows(report, socialPostSnapshot)
+  let nextY = writeText(doc, 'Facebook and Instagram marketing.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
   nextY = writeText(doc, `Statistics "${report.dateLabel || 'Marketing Dates TBD'}":`, x, nextY, { width, size: 9 }) + 2
-  nextY = writeText(doc, `Views: ${report.views || 'N/A'} Viewers: ${report.viewers || 'N/A'}`, x, nextY, { width, size: 9 }) + 2
-  nextY = writeText(doc, `Clicks: ${report.clicks || 'N/A'}`, x, nextY, { width, size: 9 }) + 4
+
+  if (platformRows.length > 0) {
+    platformRows.forEach((row) => {
+      nextY = writeText(
+        doc,
+        `${row.platform} stats: Views: ${row.views || 'N/A'} Viewers: ${row.viewers || 'N/A'} Clicks: ${row.clicks || 'N/A'} Likes: ${row.likes || 'N/A'} Comments: ${row.comments || 'N/A'} Shares: ${row.shares || 'N/A'}`,
+        x,
+        nextY,
+        { width, size: 9 },
+      ) + 3
+    })
+    return nextY + 1
+  }
+
+  nextY = writeText(doc, 'Combined Facebook and Instagram stats:', x, nextY, { width, size: 9 }) + 2
+  nextY = writeText(doc, `Views: ${report.views || 'N/A'} Viewers: ${report.viewers || 'N/A'} Clicks: ${report.clicks || 'N/A'}`, x, nextY, { width, size: 9 }) + 2
   nextY = writeText(doc, `Likes: ${report.likes || 'N/A'} Comments: ${report.comments || 'N/A'} Shares: ${report.shares || 'N/A'}`, x, nextY, { width, size: 9 }) + 4
 
   return nextY
@@ -237,7 +313,7 @@ function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x,
   const metrics = analyticsSnapshot?.metrics ?? {}
   const counts = engagementSnapshot?.counts ?? {}
   const hasAnalytics = analyticsSnapshot?.status === 'ready'
-  let nextY = writeText(doc, 'Website listing statistics.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
+  let nextY = writeText(doc, 'Google Analytics website statistics.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
 
   nextY = writeText(
     doc,
@@ -292,6 +368,7 @@ function renderInvoiceTable(doc, { invoice, properties }) {
     const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
     const analyticsSnapshot = getInvoiceSnapshotForProperty(invoice.analyticsSnapshots, rowPropertySlug)
     const engagementSnapshot = getInvoiceSnapshotForProperty(invoice.engagementSnapshots, rowPropertySlug)
+    const socialPostSnapshot = getInvoiceSnapshotForProperty(invoice.socialPostSnapshots, rowPropertySlug)
     const showPropertyDetails = Boolean(propertyName)
     const descriptionColumn = columns[1]
     const descX = descriptionColumn.x + 7
@@ -312,7 +389,7 @@ function renderInvoiceTable(doc, { invoice, properties }) {
       descY = renderCellText(doc, propertyName, descX, descY, descWidth, { font: 'Helvetica-Bold' })
       descY = renderCellText(doc, propertyUrl, descX, descY, descWidth, { color: '#0000ee' })
       descY = renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, descX, descY + 12, descWidth)
-      descY = renderSocialMarketingReport(doc, socialMarketingReport, descX, descY + 12, descWidth)
+      descY = renderSocialMarketingReport(doc, socialMarketingReport, socialPostSnapshot, descX, descY + 12, descWidth)
     }
 
     const amountY = renderCellText(doc, formatInvoiceCurrency(item.amount), columns[3].x + 5, rowY + 9, columns[3].width - 10)
@@ -447,6 +524,7 @@ exports.getInvoicePdfFilename = getInvoicePdfFilename
 exports._test = {
   getInvoiceSnapshotForProperty,
   getInvoiceTableStartY,
+  getSocialMarketingPlatformRows,
   getServicePeriod,
   hasMeaningfulWebsiteStats,
 }
