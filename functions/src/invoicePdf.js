@@ -76,6 +76,26 @@ function formatOptionalPercent(value) {
   return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
+function readMetricNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function hasMeaningfulWebsiteStats(analyticsSnapshot, engagementSnapshot) {
+  const metrics = analyticsSnapshot?.status === 'ready' ? analyticsSnapshot?.metrics ?? {} : {}
+  const counts = engagementSnapshot?.counts ?? {}
+
+  return [
+    metrics.views,
+    metrics.activeUsers,
+    metrics.sessions,
+    metrics.engagementRate,
+    engagementSnapshot?.totalEvents,
+    counts.siteLikes,
+    counts.facebookShareClicks,
+  ].some((value) => readMetricNumber(value) > 0)
+}
+
 function formatInvoiceCurrency(value) {
   const amount = readAmount(value)
 
@@ -200,7 +220,7 @@ function renderSocialMarketingReport(doc, report, x, y, width) {
 }
 
 function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x, y, width) {
-  if (!analyticsSnapshot && !engagementSnapshot) {
+  if (!hasMeaningfulWebsiteStats(analyticsSnapshot, engagementSnapshot)) {
     return y
   }
 
@@ -417,4 +437,5 @@ exports.getInvoicePdfFilename = getInvoicePdfFilename
 exports._test = {
   getInvoiceSnapshotForProperty,
   getServicePeriod,
+  hasMeaningfulWebsiteStats,
 }

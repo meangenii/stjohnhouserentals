@@ -255,6 +255,20 @@ assert.equal(
   ),
   '6-2026\nthrough\n5-2027',
 )
+assert.equal(
+  invoicePdfTest.hasMeaningfulWebsiteStats(
+    { status: 'ready', metrics: { views: 0, activeUsers: 0, sessions: 0, engagementRate: 0 } },
+    { totalEvents: 0, counts: { siteLikes: 0, facebookShareClicks: 0 } },
+  ),
+  false,
+)
+assert.equal(
+  invoicePdfTest.hasMeaningfulWebsiteStats(
+    { status: 'ready', metrics: { views: 1, activeUsers: 0, sessions: 0, engagementRate: 0 } },
+    { totalEvents: 0, counts: { siteLikes: 0, facebookShareClicks: 0 } },
+  ),
+  true,
+)
 
 async function assertInvoicePdfGeneration() {
   const invoice = {
