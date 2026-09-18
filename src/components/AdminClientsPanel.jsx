@@ -999,6 +999,7 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
               <AdminClientInvoices
                 authUser={authUser}
                 client={selectedClient}
+                selectedPropertyAnalyticsReport={propertyAnalyticsState.state === 'ready' ? propertyAnalyticsState.report : null}
                 properties={linkedProperties}
                 selectedPropertySlug={selectedPropertySlug}
               />

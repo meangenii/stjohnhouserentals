@@ -1096,9 +1096,20 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
       const invoicePropertySlugs = new Set(propertySlugs)
       const invalidSocialSnapshot = [...socialPostSnapshots, ...facebookPostSnapshots]
         .find((snapshot) => !invoicePropertySlugs.has(String(snapshot?.propertySlug ?? '').trim()))
+      const providedAnalyticsSnapshots = Array.isArray(request.body?.analyticsSnapshots)
+        ? request.body.analyticsSnapshots
+        : request.body?.analyticsSnapshots
+          ? [request.body.analyticsSnapshots]
+          : []
+      const invalidAnalyticsSnapshot = providedAnalyticsSnapshots
+        .find((snapshot) => !invoicePropertySlugs.has(String(snapshot?.propertySlug ?? '').trim()))
 
       if (invalidSocialSnapshot) {
         throw new HttpError(400, 'Social marketing snapshots must belong to a property on this invoice.')
+      }
+
+      if (invalidAnalyticsSnapshot) {
+        throw new HttpError(400, 'Google Analytics snapshots must belong to a property on this invoice.')
       }
 
       const properties = await getAdminPropertiesBySlug(propertySlugs)
@@ -1120,15 +1131,26 @@ async function handleSiteApiRequest(request, response, { serviceName, databaseId
         endDate: request.body?.analyticsEndDate,
       })
       const capturedAt = new Date().toISOString()
-      const analyticsReports = await Promise.all(
-        properties.map((property) => getPropertyAnalyticsReport(property, analyticsDateRange)),
+      const providedAnalyticsBySlug = new Map(
+        providedAnalyticsSnapshots
+          .map((snapshot) => [String(snapshot?.propertySlug ?? '').trim(), snapshot])
+          .filter(([slug]) => slug),
       )
-      const analyticsSnapshots = properties.map((property, index) => ({
-        propertySlug: property.slug,
-        propertyName: property.name,
-        capturedAt,
-        report: analyticsReports[index],
-      }))
+      const fetchedAnalyticsReports = await Promise.all(
+        properties.map((property) =>
+          providedAnalyticsBySlug.has(property.slug)
+            ? null
+            : getPropertyAnalyticsReport(property, analyticsDateRange),
+        ),
+      )
+      const analyticsSnapshots = properties.map((property, index) => (
+        providedAnalyticsBySlug.get(property.slug) || {
+          propertySlug: property.slug,
+          propertyName: property.name,
+          capturedAt,
+          report: fetchedAnalyticsReports[index],
+        }
+      ))
       const engagementDateRange = resolveAnalyticsDateRangeToIsoDates(analyticsDateRange)
       const engagementReports = await Promise.all(
         properties.map((property) =>

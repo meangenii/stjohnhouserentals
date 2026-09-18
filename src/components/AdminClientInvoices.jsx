@@ -162,6 +162,11 @@ function formatInvoiceStatNumber(value) {
   return Number.isFinite(number) && number > 0 ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
 }
 
+function hasPositiveInvoiceStatNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0
+}
+
 function formatInvoiceStatPercent(value) {
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
@@ -373,6 +378,21 @@ function createSocialPostSnapshot(property, posts) {
   ]
 }
 
+function createAnalyticsSnapshot(property, report) {
+  if (!property?.slug || report?.status !== 'ready') {
+    return []
+  }
+
+  return [
+    {
+      propertySlug: property.slug,
+      propertyName: property.name || property.slug,
+      capturedAt: new Date().toISOString(),
+      report,
+    },
+  ]
+}
+
 function getSocialPlatformLabel(platform) {
   return platform === 'instagram' ? 'Instagram' : 'Facebook'
 }
@@ -457,6 +477,11 @@ function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
   const metrics = analyticsSnapshot?.metrics ?? {}
   const counts = engagementSnapshot?.counts ?? {}
   const hasAnalytics = analyticsSnapshot?.status === 'ready'
+  const hasEngagementActivity = [
+    engagementSnapshot?.totalEvents,
+    counts.siteLikes,
+    counts.facebookShareClicks,
+  ].some(hasPositiveInvoiceStatNumber)
 
   return (
     <div className="admin-client-invoice-marketing-report admin-client-invoice-website-report">
@@ -467,7 +492,7 @@ function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
         {hasAnalytics ? formatInvoiceStatNumber(metrics.sessions) : 'N/A'}
       </p>
       <p>Engagement rate: {hasAnalytics ? formatInvoiceStatPercent(metrics.engagementRate) : 'N/A'}</p>
-      {engagementSnapshot ? (
+      {hasEngagementActivity ? (
         <p>
           On-site activity: {formatInvoiceStatNumber(engagementSnapshot.totalEvents)} total /{' '}
           {formatInvoiceStatNumber(counts.siteLikes)} likes / {formatInvoiceStatNumber(counts.facebookShareClicks)} Facebook shares
@@ -704,7 +729,7 @@ function SavedInvoice({
   )
 }
 
-export function AdminClientInvoices({ authUser, client, properties, selectedPropertySlug }) {
+export function AdminClientInvoices({ authUser, client, selectedPropertyAnalyticsReport, properties, selectedPropertySlug }) {
   const siteShell = useSiteShellContent()
   const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim() || siteLogoFallback
   const selectedProperty = properties.find((property) => property.slug === selectedPropertySlug) ?? properties[0] ?? null
@@ -1002,6 +1027,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           analyticsStartDate: subscriptionDates.analyticsStartDate,
           analyticsEndDate: subscriptionDates.analyticsEndDate,
           lineItems: [lineItem],
+          analyticsSnapshots: createAnalyticsSnapshot(invoiceProperty, selectedPropertyAnalyticsReport),
           socialMarketingReport: syncSocialMarketingReportDateLabel(draft.socialMarketingReport, subscriptionDates),
           socialPostSnapshots: createSocialPostSnapshot(invoiceProperty, socialMarketingState.posts),
         },

@@ -89,6 +89,11 @@ function formatInvoiceStatNumber(value) {
   return Number.isFinite(number) && number > 0 ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
 }
 
+function hasPositiveInvoiceStatNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0
+}
+
 function formatInvoiceStatPercent(value) {
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
@@ -317,6 +322,11 @@ function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x,
   const metrics = analyticsSnapshot?.metrics ?? {}
   const counts = engagementSnapshot?.counts ?? {}
   const hasAnalytics = analyticsSnapshot?.status === 'ready'
+  const hasEngagementActivity = [
+    engagementSnapshot?.totalEvents,
+    counts.siteLikes,
+    counts.facebookShareClicks,
+  ].some(hasPositiveInvoiceStatNumber)
   let nextY = writeText(doc, 'Google Analytics website statistics.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
 
   nextY = writeText(
@@ -328,7 +338,7 @@ function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x,
   ) + 2
   nextY = writeText(doc, `Engagement rate: ${hasAnalytics ? formatInvoiceStatPercent(metrics.engagementRate) : 'N/A'}`, x, nextY, { width, size: 9 }) + 2
 
-  if (engagementSnapshot) {
+  if (hasEngagementActivity) {
     nextY = writeText(
       doc,
       `On-site activity: ${formatInvoiceStatNumber(engagementSnapshot.totalEvents)} total / ${formatInvoiceStatNumber(counts.siteLikes)} likes / ${formatInvoiceStatNumber(counts.facebookShareClicks)} Facebook shares`,
@@ -530,6 +540,7 @@ exports._test = {
   getInvoiceTableStartY,
   getSocialMarketingPlatformRows,
   getServicePeriod,
+  hasPositiveInvoiceStatNumber,
   formatInvoiceStatNumber,
   formatInvoiceStatPercent,
   formatInvoiceStatValue,
