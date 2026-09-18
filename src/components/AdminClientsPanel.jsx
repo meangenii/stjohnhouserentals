@@ -121,6 +121,17 @@ function getAnnualServiceEndDate(startDate) {
   return startDate ? addDays(addMonths(startDate, 12), -1) : ''
 }
 
+function getBillableServicePeriod(property, draft = {}) {
+  const renewalStartDate = normalizeDateOnlyValue(property?.renewalDueAt)
+  const subscriptionStartDate = normalizeDateOnlyValue(draft?.subscriptionStartAt) || normalizeDateOnlyValue(property?.subscriptionStartAt)
+  const serviceStartDate = renewalStartDate || subscriptionStartDate
+
+  return {
+    startDate: serviceStartDate,
+    endDate: getAnnualServiceEndDate(serviceStartDate),
+  }
+}
+
 function formatDate(dateOnly) {
   const normalized = normalizeDateOnlyValue(dateOnly)
 
@@ -304,8 +315,7 @@ function PropertyBillingPanel({ disabled, draft, hasChanges, property, status, o
     return null
   }
 
-  const subscriptionStartDate = normalizeDateOnlyValue(draft.subscriptionStartAt)
-  const serviceEndDate = getAnnualServiceEndDate(subscriptionStartDate)
+  const servicePeriod = getBillableServicePeriod(property, draft)
 
   return (
     <form className="admin-client-property-billing" aria-label={`${property.name || property.slug} billing`} onSubmit={onSave}>
@@ -338,8 +348,12 @@ function PropertyBillingPanel({ disabled, draft, hasChanges, property, status, o
           />
         </label>
         <div className="admin-client-billing-derived">
+          <span>Annual service starts</span>
+          <strong>{servicePeriod.startDate ? formatDate(servicePeriod.startDate) : 'Set subscription start'}</strong>
+        </div>
+        <div className="admin-client-billing-derived">
           <span>Annual service through</span>
-          <strong>{serviceEndDate ? formatDate(serviceEndDate) : 'Set subscription start'}</strong>
+          <strong>{servicePeriod.endDate ? formatDate(servicePeriod.endDate) : 'Set subscription start'}</strong>
         </div>
       </div>
 
@@ -423,7 +437,7 @@ function UnassignedPropertiesPanel({ properties, clients, assignStatus, onAssign
   )
 }
 
-export function AdminClientsPanel({ authUser, initialClientId = '', initialPropertySlug = '' }) {
+export function AdminClientsPanel({ authUser, initialClientId = '', initialPropertySlug = '', onSelectionChange }) {
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', clients: [], message: '' })
   const [properties, setProperties] = useState([])
   const [selectedClientId, setSelectedClientId] = useState(initialClientId)
@@ -564,9 +578,16 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
   }, [selectedClientId])
 
   useEffect(() => {
+    onSelectionChange?.({
+      clientId: selectedClientId,
+      clientPropertySlug: selectedPropertySlug,
+    })
+  }, [onSelectionChange, selectedClientId, selectedPropertySlug])
+
+  useEffect(() => {
     setPropertyBillingDraft(createPropertyBillingDraft(selectedProperty))
     setPropertyBillingStatus({ state: 'idle', message: '' })
-  }, [selectedProperty?.listingFeeAmount, selectedProperty?.slug, selectedProperty?.subscriptionStartAt, selectedProperty])
+  }, [selectedProperty?.listingFeeAmount, selectedProperty?.renewalDueAt, selectedProperty?.slug, selectedProperty?.subscriptionStartAt, selectedProperty])
 
   useEffect(() => {
     if (!authUser?.uid || !selectedProperty?.slug) {

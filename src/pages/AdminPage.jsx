@@ -1350,6 +1350,10 @@ export function AdminPage() {
   const preferredClientId = initialAdminEditorLocation.clientId
   const preferredClientPropertySlug = initialAdminEditorLocation.clientPropertySlug
   const [activeTab, setActiveTab] = useState(initialAdminEditorLocation.tab)
+  const [clientEditorLocation, setClientEditorLocation] = useState(() => ({
+    clientId: preferredClientId,
+    clientPropertySlug: preferredClientPropertySlug,
+  }))
   const [workspaceState, setWorkspaceState] = useState({ status: 'loading', properties: [] })
   const [formState, setFormState] = useState(initialPropertyFormState)
   const [savedFormState, setSavedFormState] = useState(initialPropertyFormState)
@@ -1563,11 +1567,15 @@ export function AdminPage() {
       propertySlug: editorState.mode === 'edit' ? editorState.activeSlug : '',
       charterMode: charterEditorState.mode,
       charterSlug: charterEditorState.mode === 'edit' ? charterEditorState.activeSlug : '',
+      clientId: clientEditorLocation.clientId,
+      clientPropertySlug: clientEditorLocation.clientPropertySlug,
     })
   }, [
     activeTab,
     charterEditorState.activeSlug,
     charterEditorState.mode,
+    clientEditorLocation.clientId,
+    clientEditorLocation.clientPropertySlug,
     editorState.activeSlug,
     editorState.mode,
     pageEditorState.activeKey,
@@ -4488,6 +4496,7 @@ export function AdminPage() {
               authUser={authState.user}
               initialClientId={preferredClientId}
               initialPropertySlug={preferredClientPropertySlug}
+              onSelectionChange={setClientEditorLocation}
             />
           ) : null}
           {activeTab === 'social' ? <AdminSocialMediaPanel authUser={authState.user} /> : null}

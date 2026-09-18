@@ -121,10 +121,14 @@ function getPropertyUrl(property, fallbackSlug = '') {
 }
 
 function getServicePeriod(invoice, property) {
-  const startDate = normalizeDateOnly(invoice?.analyticsStartDate)
+  const startDate = normalizeDateOnly(invoice?.serviceStartDate)
+    || normalizeDateOnly(invoice?.analyticsStartDate)
+    || normalizeDateOnly(property?.renewalDueAt)
     || normalizeDateOnly(property?.subscriptionStartAt)
     || normalizeDateOnly(invoice?.issueDate)
-  const endDate = normalizeDateOnly(invoice?.analyticsEndDate) || getAnnualServiceEndDate(startDate)
+  const endDate = normalizeDateOnly(invoice?.serviceEndDate)
+    || normalizeDateOnly(invoice?.analyticsEndDate)
+    || getAnnualServiceEndDate(startDate)
   const startLabel = formatMonthYear(startDate)
   const endLabel = formatMonthYear(endDate)
 
@@ -412,4 +416,5 @@ exports.formatInvoiceDate = formatInvoiceDate
 exports.getInvoicePdfFilename = getInvoicePdfFilename
 exports._test = {
   getInvoiceSnapshotForProperty,
+  getServicePeriod,
 }

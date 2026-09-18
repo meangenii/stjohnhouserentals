@@ -57,36 +57,47 @@ function getAnnualInvoiceAmount(property) {
   return amount || DEFAULT_ANNUAL_INVOICE_AMOUNT
 }
 
-// The billing period for a renewal invoice picks up the day after the prior
-// invoice's period ended, so it advances year over year instead of every
-// invoice re-reporting the property's original first-year window.
-function getMostRecentInvoiceForProperty(invoices, propertySlug) {
-  if (!propertySlug) {
-    return null
+function getBillableServicePeriod(property) {
+  const renewalStartDate = normalizeDateOnly(property?.renewalDueAt)
+  const subscriptionStartDate = normalizeDateOnly(property?.subscriptionStartAt)
+  const serviceStartDate = renewalStartDate || subscriptionStartDate
+
+  return {
+    startDate: serviceStartDate,
+    endDate: getAnnualServiceEndDate(serviceStartDate),
   }
-
-  return invoices.reduce((latest, invoice) => {
-    if (!Array.isArray(invoice?.propertySlugs) || !invoice.propertySlugs.includes(propertySlug)) {
-      return latest
-    }
-
-    const candidateEnd = normalizeDateOnly(invoice.analyticsEndDate) || normalizeDateOnly(invoice.issueDate)
-    const latestEnd = latest ? normalizeDateOnly(latest.analyticsEndDate) || normalizeDateOnly(latest.issueDate) : ''
-
-    return candidateEnd > latestEnd ? invoice : latest
-  }, null)
 }
 
-function getDerivedInvoiceDates(property, priorInvoice) {
+function getMarketingStatsPeriod(property) {
+  const renewalStartDate = normalizeDateOnly(property?.renewalDueAt)
   const subscriptionStartDate = normalizeDateOnly(property?.subscriptionStartAt)
-  const priorPeriodEndDate = normalizeDateOnly(priorInvoice?.analyticsEndDate)
-  const periodStartDate = priorPeriodEndDate ? addDays(priorPeriodEndDate, 1) : subscriptionStartDate
+
+  if (renewalStartDate) {
+    const marketingStartDate = addMonths(renewalStartDate, -ANNUAL_INVOICE_MONTH_COUNT)
+
+    return {
+      startDate: marketingStartDate,
+      endDate: addDays(renewalStartDate, -1),
+    }
+  }
+
+  return {
+    startDate: subscriptionStartDate,
+    endDate: getAnnualServiceEndDate(subscriptionStartDate),
+  }
+}
+
+function getDerivedInvoiceDates(property) {
+  const servicePeriod = getBillableServicePeriod(property)
+  const marketingStatsPeriod = getMarketingStatsPeriod(property)
   const issueDate = getLocalDateOnly()
 
   return {
     issueDate,
-    analyticsStartDate: periodStartDate,
-    analyticsEndDate: getAnnualServiceEndDate(periodStartDate),
+    serviceStartDate: servicePeriod.startDate,
+    serviceEndDate: servicePeriod.endDate,
+    analyticsStartDate: marketingStatsPeriod.startDate,
+    analyticsEndDate: marketingStatsPeriod.endDate,
   }
 }
 
@@ -192,10 +203,14 @@ function getPropertyLineDescription(property) {
 }
 
 function getServicePeriod(invoice, property) {
-  const startDate = normalizeDateOnly(invoice?.analyticsStartDate)
+  const startDate = normalizeDateOnly(invoice?.serviceStartDate)
+    || normalizeDateOnly(invoice?.analyticsStartDate)
+    || normalizeDateOnly(property?.renewalDueAt)
     || normalizeDateOnly(property?.subscriptionStartAt)
     || normalizeDateOnly(invoice?.issueDate)
-  const endDate = normalizeDateOnly(invoice?.analyticsEndDate) || getAnnualServiceEndDate(startDate)
+  const endDate = normalizeDateOnly(invoice?.serviceEndDate)
+    || normalizeDateOnly(invoice?.analyticsEndDate)
+    || getAnnualServiceEndDate(startDate)
   const startLabel = formatMonthYear(startDate)
   const endLabel = formatMonthYear(endDate)
 
@@ -318,8 +333,8 @@ function formatPostDate(createdTime) {
   return formatDate(normalizeDateOnly(createdTime) || createdTime)
 }
 
-function createInvoiceDraft(property, priorInvoice) {
-  const derivedDates = getDerivedInvoiceDates(property, priorInvoice)
+function createInvoiceDraft(property) {
+  const derivedDates = getDerivedInvoiceDates(property)
 
   return {
     propertySlug: property?.slug ?? '',
@@ -449,7 +464,7 @@ function SavedInvoice({
             title={
               canRefreshSocialMarketing
                 ? 'Refresh Facebook and Instagram stats for this draft invoice.'
-                : 'Only draft invoices with a billing period can refresh social stats.'
+                : 'Only draft invoices with a marketing stats period can refresh social stats.'
             }
             type="button"
             onClick={() => onRefreshSocialMarketing(invoice)}
@@ -608,7 +623,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const siteShell = useSiteShellContent()
   const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim() || siteLogoFallback
   const selectedProperty = properties.find((property) => property.slug === selectedPropertySlug) ?? properties[0] ?? null
-  const [draft, setDraft] = useState(() => createInvoiceDraft(selectedProperty, null))
+  const [draft, setDraft] = useState(() => createInvoiceDraft(selectedProperty))
   const [invoiceState, setInvoiceState] = useState({ state: 'idle', invoices: [], message: '' })
   const [createStatus, setCreateStatus] = useState({ state: 'idle', message: '' })
   const [socialMarketingState, setSocialMarketingState] = useState({ state: 'idle', posts: [], message: '' })
@@ -620,27 +635,34 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const socialMarketingRequestIdRef = useRef(0)
   const propertyKey = properties.map((property) => property.slug).join('|')
   const draftProperty = properties.find((property) => property.slug === draft.propertySlug) ?? null
-  const subscriptionStartDate = normalizeDateOnly(draftProperty?.subscriptionStartAt)
+  const billableServicePeriod = getBillableServicePeriod(draftProperty)
+  const billableServiceStartDate = billableServicePeriod.startDate
   const amountTotal = useMemo(() => draft.lineItems.reduce((sum, item) => sum + readAmount(item.amount), 0), [draft.lineItems])
-  const invoiceServiceStartDate = normalizeDateOnly(draft.analyticsStartDate)
-  const invoiceServiceEndDate = normalizeDateOnly(draft.analyticsEndDate)
-  const datesAreQueryable =
+  const invoiceServiceStartDate = normalizeDateOnly(draft.serviceStartDate)
+  const invoiceServiceEndDate = normalizeDateOnly(draft.serviceEndDate)
+  const marketingStatsStartDate = normalizeDateOnly(draft.analyticsStartDate)
+  const marketingStatsEndDate = normalizeDateOnly(draft.analyticsEndDate)
+  const serviceDatesAreValid =
     DATE_ONLY_PATTERN.test(invoiceServiceStartDate) &&
     DATE_ONLY_PATTERN.test(invoiceServiceEndDate) &&
     invoiceServiceStartDate <= invoiceServiceEndDate
-  const canGenerateInvoice = Boolean(draft.propertySlug && subscriptionStartDate && datesAreQueryable)
+  const datesAreQueryable =
+    DATE_ONLY_PATTERN.test(marketingStatsStartDate) &&
+    DATE_ONLY_PATTERN.test(marketingStatsEndDate) &&
+    marketingStatsStartDate <= marketingStatsEndDate
+  const canGenerateInvoice = Boolean(draft.propertySlug && billableServiceStartDate && serviceDatesAreValid && datesAreQueryable)
 
   useEffect(() => {
-    const nextDraft = createInvoiceDraft(selectedProperty, getMostRecentInvoiceForProperty(invoiceState.invoices, selectedProperty?.slug))
+    const nextDraft = createInvoiceDraft(selectedProperty)
 
     setDraft(nextDraft)
     setCreateStatus({ state: 'idle', message: '' })
     setSocialMarketingState({ state: 'idle', posts: [], message: '' })
   }, [
     propertyKey,
-    invoiceState.invoices,
     selectedProperty?.listingFeeAmount,
     selectedProperty?.path,
+    selectedProperty?.renewalDueAt,
     selectedProperty?.slug,
     selectedProperty?.subscriptionStartAt,
     selectedProperty,
@@ -727,7 +749,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     socialMarketingRequestIdRef.current += 1
     autoSocialLookupKeyRef.current = ''
     const property = properties.find((candidate) => candidate.slug === slug)
-    const derivedDates = getDerivedInvoiceDates(property, getMostRecentInvoiceForProperty(invoiceState.invoices, slug))
+    const derivedDates = getDerivedInvoiceDates(property)
     const nextDraft = {
       propertySlug: slug,
       ...derivedDates,
@@ -758,7 +780,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
       socialMarketingRequestIdRef.current += 1
 
       if (showValidationError) {
-        setSocialMarketingState({ state: 'error', posts: [], message: 'Set a property and billing period first.' })
+        setSocialMarketingState({ state: 'error', posts: [], message: 'Set a property and marketing stats period first.' })
       }
 
       return null
@@ -857,15 +879,16 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     event.preventDefault()
 
     const invoiceProperty = properties.find((property) => property.slug === draft.propertySlug) ?? draftProperty
+    const subscriptionDates = getDerivedInvoiceDates(invoiceProperty)
     const lineItem = {
       description: getPropertyLineDescription(invoiceProperty),
       amount: getAnnualInvoiceAmount(invoiceProperty),
     }
 
-    if (!normalizeDateOnly(invoiceProperty?.subscriptionStartAt)) {
+    if (!getBillableServicePeriod(invoiceProperty).startDate) {
       setCreateStatus({
         state: 'error',
-        message: 'Set and save this property\'s subscription start date before generating the annual invoice.',
+        message: 'Set and save this property\'s subscription or renewal date before generating the annual invoice.',
       })
       return
     }
@@ -889,10 +912,12 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         {
           propertySlugs: [draft.propertySlug],
           issueDate: draft.issueDate,
-          analyticsStartDate: draft.analyticsStartDate,
-          analyticsEndDate: draft.analyticsEndDate,
+          serviceStartDate: subscriptionDates.serviceStartDate,
+          serviceEndDate: subscriptionDates.serviceEndDate,
+          analyticsStartDate: subscriptionDates.analyticsStartDate,
+          analyticsEndDate: subscriptionDates.analyticsEndDate,
           lineItems: [lineItem],
-          socialMarketingReport: syncSocialMarketingReportDateLabel(draft.socialMarketingReport, draft),
+          socialMarketingReport: syncSocialMarketingReportDateLabel(draft.socialMarketingReport, subscriptionDates),
           socialPostSnapshots: createSocialPostSnapshot(invoiceProperty, socialMarketingState.posts),
         },
         { authToken },
@@ -1287,9 +1312,9 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           ) : null}
         </div>
 
-        {!subscriptionStartDate ? (
+        {!billableServiceStartDate ? (
           <p className="admin-note">
-            Set and save the selected property&apos;s subscription start date to calculate the annual invoice and analytics range.
+            Set and save the selected property&apos;s subscription or renewal date to calculate the annual invoice and marketing range.
           </p>
         ) : null}
 

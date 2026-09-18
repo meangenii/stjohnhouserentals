@@ -327,6 +327,8 @@ function normalizeInvoiceDraft(payload) {
   const lineItems = normalizeLineItems(payload?.lineItems)
   const issueDate = normalizeDateOnlyValue(payload?.issueDate, { label: 'Issue date', required: true })
   const dueDate = normalizeDateOnlyValue(payload?.dueDate, { label: 'Due date' })
+  const serviceStartDate = normalizeDateOnlyValue(payload?.serviceStartDate, { label: 'Service start date' })
+  const serviceEndDate = normalizeDateOnlyValue(payload?.serviceEndDate, { label: 'Service end date' })
   const analyticsStartDate = normalizeDateOnlyValue(payload?.analyticsStartDate, { label: 'Analytics start date' })
   const analyticsEndDate = normalizeDateOnlyValue(payload?.analyticsEndDate, { label: 'Analytics end date' })
   const notes = normalizeField(payload?.notes, { label: 'Notes', maxLength: 2000 })
@@ -355,6 +357,14 @@ function normalizeInvoiceDraft(payload) {
     throw new HttpError(400, 'Analytics start and end dates must both be provided.')
   }
 
+  if (Boolean(serviceStartDate) !== Boolean(serviceEndDate)) {
+    throw new HttpError(400, 'Service start and end dates must both be provided.')
+  }
+
+  if (serviceStartDate && serviceStartDate > serviceEndDate) {
+    throw new HttpError(400, 'Service start date must be on or before the end date.')
+  }
+
   if (analyticsStartDate && analyticsStartDate > analyticsEndDate) {
     throw new HttpError(400, 'Analytics start date must be on or before the end date.')
   }
@@ -369,6 +379,8 @@ function normalizeInvoiceDraft(payload) {
     lineItems,
     issueDate,
     dueDate,
+    serviceStartDate,
+    serviceEndDate,
     analyticsStartDate,
     analyticsEndDate,
     analyticsSnapshots,
@@ -392,6 +404,8 @@ function normalizeStoredInvoiceRecord(id, record = {}) {
     amountTotal: String(record.amountTotal ?? '').trim(),
     issueDate: String(record.issueDate ?? '').trim(),
     dueDate: String(record.dueDate ?? '').trim(),
+    serviceStartDate: String(record.serviceStartDate ?? '').trim(),
+    serviceEndDate: String(record.serviceEndDate ?? '').trim(),
     analyticsStartDate: String(record.analyticsStartDate ?? '').trim(),
     analyticsEndDate: String(record.analyticsEndDate ?? '').trim(),
     analyticsSnapshots: normalizeAnalyticsSnapshots(record.analyticsSnapshots ?? record.analyticsSnapshot),
@@ -520,6 +534,8 @@ async function createInvoice(payload, adminUser) {
       amountTotal,
       issueDate: invoice.issueDate,
       dueDate: invoice.dueDate,
+      serviceStartDate: invoice.serviceStartDate,
+      serviceEndDate: invoice.serviceEndDate,
       analyticsStartDate: invoice.analyticsStartDate,
       analyticsEndDate: invoice.analyticsEndDate,
       analyticsSnapshots: invoice.analyticsSnapshots,

@@ -35,6 +35,8 @@ const normalizedDraft = invoiceTest.normalizeInvoiceDraft({
   propertySlugs: ['villa-one', 'villa-one'],
   issueDate: '2026-08-31',
   dueDate: '2026-09-30',
+  serviceStartDate: '2026-09-01',
+  serviceEndDate: '2027-08-31',
   analyticsStartDate: '2026-08-01',
   analyticsEndDate: '2026-08-31',
   lineItems: [{ description: 'Annual listing', amount: '$500.00' }],
@@ -111,6 +113,10 @@ const normalizedDraft = invoiceTest.normalizeInvoiceDraft({
 })
 
 assert.deepEqual(normalizedDraft.propertySlugs, ['villa-one'])
+assert.equal(normalizedDraft.serviceStartDate, '2026-09-01')
+assert.equal(normalizedDraft.serviceEndDate, '2027-08-31')
+assert.equal(normalizedDraft.analyticsStartDate, '2026-08-01')
+assert.equal(normalizedDraft.analyticsEndDate, '2026-08-31')
 assert.equal(normalizedDraft.analyticsSnapshots[0].metrics.views, 125)
 assert.equal(normalizedDraft.analyticsSnapshots[0].sources[0].sessions, 50)
 assert.equal(normalizedDraft.analyticsSnapshots[0].status, 'ready')
@@ -228,6 +234,26 @@ assert.equal(
 assert.equal(
   invoicePdfTest.getInvoiceSnapshotForProperty([{ propertySlug: 'legacy-single', metrics: { views: 7 } }], 'missing-villa').metrics.views,
   7,
+)
+assert.equal(
+  invoicePdfTest.getServicePeriod({}, { subscriptionStartAt: '2025-06-01', renewalDueAt: '2026-06-01' }),
+  '6-2026\nthrough\n5-2027',
+)
+assert.equal(
+  invoicePdfTest.getServicePeriod({ analyticsStartDate: '2027-06-01', analyticsEndDate: '2028-05-31' }, { renewalDueAt: '2026-06-01' }),
+  '6-2027\nthrough\n5-2028',
+)
+assert.equal(
+  invoicePdfTest.getServicePeriod(
+    {
+      serviceStartDate: '2026-06-01',
+      serviceEndDate: '2027-05-31',
+      analyticsStartDate: '2025-06-01',
+      analyticsEndDate: '2026-05-31',
+    },
+    { renewalDueAt: '2026-06-01' },
+  ),
+  '6-2026\nthrough\n5-2027',
 )
 
 async function assertInvoicePdfGeneration() {
