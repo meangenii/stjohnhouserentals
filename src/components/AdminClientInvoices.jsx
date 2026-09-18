@@ -741,6 +741,7 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
   const [invoiceActionState, setInvoiceActionState] = useState({ invoiceId: '', action: '', state: 'idle', message: '' })
   const [expandedInvoiceId, setExpandedInvoiceId] = useState('')
   const [printInvoiceId, setPrintInvoiceId] = useState('')
+  const createInvoiceRequestIdRef = useRef(0)
   const autoSocialLookupKeyRef = useRef('')
   const socialMarketingRequestIdRef = useRef(0)
   const propertyKey = properties.map((property) => property.slug).join('|')
@@ -856,6 +857,7 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
   }
 
   function handlePropertyChange(slug) {
+    createInvoiceRequestIdRef.current += 1
     socialMarketingRequestIdRef.current += 1
     autoSocialLookupKeyRef.current = ''
     const property = properties.find((candidate) => candidate.slug === slug)
@@ -988,6 +990,12 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
   async function handleCreateInvoice(event) {
     event.preventDefault()
 
+    if (createStatus.state === 'saving') {
+      return
+    }
+
+    const requestId = createInvoiceRequestIdRef.current + 1
+    createInvoiceRequestIdRef.current = requestId
     const invoiceProperty = properties.find((property) => property.slug === draft.propertySlug) ?? draftProperty
     const subscriptionDates = getDerivedInvoiceDates(invoiceProperty)
     const lineItem = {
@@ -1034,10 +1042,22 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
         { authToken },
       )
 
+      if (requestId !== createInvoiceRequestIdRef.current) {
+        return
+      }
+
+      if (!invoice?.id) {
+        throw new Error('The invoice was generated, but the saved invoice record was not returned. Refresh invoices before generating another.')
+      }
+
       setInvoiceState((current) => ({ state: 'ready', invoices: [invoice, ...current.invoices.filter((item) => item.id !== invoice.id)], message: '' }))
       setExpandedInvoiceId(invoice.id)
-      setCreateStatus({ state: 'success', message: `${invoice.invoiceNumber} generated.` })
+      setCreateStatus({ state: 'idle', message: `${invoice.invoiceNumber} generated. Ready to generate another invoice.` })
     } catch (error) {
+      if (requestId !== createInvoiceRequestIdRef.current) {
+        return
+      }
+
       setCreateStatus({ state: 'error', message: error instanceof Error ? error.message : 'Unable to generate this invoice.' })
     }
   }
