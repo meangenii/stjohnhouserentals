@@ -3,9 +3,13 @@ const { HttpError, getDb, getServerTimestamp, isFirestoreUnavailableError } = re
 const { getPropertyEngagementSummary } = require('./engagementRepository')
 
 const SOCIAL_POST_COLLECTION = 'cmsSocialPosts'
-const DEFAULT_GRAPH_API_VERSION = 'v21.0'
+const DEFAULT_GRAPH_API_VERSION = 'v26.0'
 const GRAPH_API_ROOT = 'https://graph.facebook.com'
 const ALLOWED_PLATFORMS = new Set(['facebook', 'instagram'])
+const FACEBOOK_POST_INSIGHT_METRIC_SETS = [
+  ['post_media_view', 'post_total_media_view_unique', 'post_clicks'],
+  ['post_impressions', 'post_impressions_unique', 'post_clicks'],
+]
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const DEFAULT_SUMMARY_WINDOW_DAYS = 90
 const FACEBOOK_PAGE_ACCESS_TOKEN_SECRET = defineSecret('FACEBOOK_PAGE_ACCESS_TOKEN')
@@ -108,18 +112,19 @@ function getSocialConnectionStatus() {
 async function callGraphApi(pathSegment, { method = 'GET', params = {}, accessToken }) {
   const version = getGraphApiVersion()
   const url = new URL(`${GRAPH_API_ROOT}/${version}/${pathSegment}`)
-  const searchParams = new URLSearchParams({ ...params, access_token: accessToken })
+  const searchParams = new URLSearchParams(params)
+  const authHeaders = accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
 
   let response
 
   try {
     if (method === 'GET') {
       url.search = searchParams.toString()
-      response = await fetch(url, { method: 'GET' })
+      response = await fetch(url, { method: 'GET', headers: authHeaders })
     } else {
       response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...authHeaders },
         body: searchParams.toString(),
       })
     }
@@ -141,6 +146,31 @@ async function callGraphApi(pathSegment, { method = 'GET', params = {}, accessTo
   }
 
   return payload ?? {}
+}
+
+async function resolveFacebookPageAccessToken({ pageId, accessToken }) {
+  if (!pageId || !accessToken) {
+    return accessToken
+  }
+
+  try {
+    const result = await callGraphApi('me/accounts', {
+      accessToken,
+      params: {
+        fields: 'id,name,access_token',
+        limit: '100',
+      },
+    })
+    const pages = Array.isArray(result?.data) ? result.data : []
+    const page = pages.find((candidate) => String(candidate?.id ?? '').trim() === pageId)
+
+    return String(page?.access_token ?? '').trim() || accessToken
+  } catch {
+    // The configured secret may already be a Page token, in which case /me/accounts
+    // is not guaranteed to be available. Fall back and let the Page call report any
+    // remaining permission problem.
+    return accessToken
+  }
 }
 
 async function publishFacebookPost({ pageId, accessToken, message, imageUrl }) {
@@ -194,12 +224,134 @@ async function getFacebookPostMetrics({ postId, accessToken }) {
     accessToken,
     params: { fields: 'likes.summary(true),comments.summary(true),shares' },
   })
+  const insights = await getFacebookPostInsights({ postId, accessToken }).catch(() => ({
+    views: null,
+    viewers: null,
+    clicks: null,
+  }))
 
   return {
     likes: Number(result?.likes?.summary?.total_count) || 0,
     comments: Number(result?.comments?.summary?.total_count) || 0,
     shares: Number(result?.shares?.count) || 0,
+    ...insights,
   }
+}
+
+function sumInsightValue(value) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0
+  }
+
+  if (typeof value === 'string') {
+    const number = Number(value)
+    return Number.isFinite(number) ? number : 0
+  }
+
+  if (Array.isArray(value)) {
+    return value.reduce((sum, entry) => sum + sumInsightValue(entry), 0)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.values(value).reduce((sum, entry) => sum + sumInsightValue(entry), 0)
+  }
+
+  return 0
+}
+
+function getInsightMetricValue(insights, metricNames) {
+  const metricNameSet = new Set(metricNames)
+  const entry = insights.find((candidate) => metricNameSet.has(candidate?.name))
+  const values = Array.isArray(entry?.values) ? entry.values : []
+  const value = values.length > 0 ? values[values.length - 1]?.value : null
+
+  return value === null || value === undefined ? null : sumInsightValue(value)
+}
+
+async function getFacebookPostInsights({ postId, accessToken }) {
+  let lastError = null
+
+  for (const metricSet of FACEBOOK_POST_INSIGHT_METRIC_SETS) {
+    try {
+      const result = await callGraphApi(`${postId}/insights`, {
+        accessToken,
+        params: {
+          metric: metricSet.join(','),
+          period: 'lifetime',
+        },
+      })
+      const insights = Array.isArray(result?.data) ? result.data : []
+
+      return {
+        views: getInsightMetricValue(insights, ['post_media_view', 'post_impressions']),
+        viewers: getInsightMetricValue(insights, ['post_total_media_view_unique', 'post_impressions_unique']),
+        clicks: getInsightMetricValue(insights, ['post_clicks']),
+      }
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError || new HttpError(502, 'Facebook Graph API did not return post insights.')
+}
+
+// Paginates through the Page's own post history via the `after` cursor, rather than
+// re-parsing the full `paging.next` URL Facebook returns - simpler, and callGraphApi
+// already owns building the request URL (including re-adding the access token).
+async function listFacebookPagePosts({ pageId, accessToken, sinceDate, untilDate, maxPages = 10 }) {
+  const posts = []
+  let after = null
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const result = await callGraphApi(`${pageId}/posts`, {
+      accessToken,
+      params: {
+        fields: 'id,message,created_time,permalink_url',
+        since: sinceDate,
+        until: untilDate,
+        limit: '100',
+        ...(after ? { after } : {}),
+      },
+    })
+
+    const data = Array.isArray(result?.data) ? result.data : []
+    posts.push(...data)
+
+    after = result?.paging?.cursors?.after || null
+
+    if (!after || data.length === 0) {
+      break
+    }
+  }
+
+  return posts
+}
+
+async function listInstagramMedia({ igUserId, accessToken, maxPages = 10 }) {
+  const media = []
+  let after = null
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const result = await callGraphApi(`${igUserId}/media`, {
+      accessToken,
+      params: {
+        fields: 'id,caption,timestamp,permalink,media_type,like_count,comments_count',
+        limit: '100',
+        ...(after ? { after } : {}),
+      },
+    })
+
+    const data = Array.isArray(result?.data) ? result.data : []
+    media.push(...data)
+
+    after = result?.paging?.cursors?.after || null
+
+    if (!after || data.length === 0) {
+      break
+    }
+  }
+
+  return media
 }
 
 async function getInstagramMediaMetrics({ mediaId, accessToken }) {
@@ -497,16 +649,417 @@ async function getPropertySocialSummary({ propertySlug, startDate, endDate }) {
   return { propertySlug: normalizedSlug, dateRange, visitorEngagement, posts }
 }
 
+// --- Finding existing Facebook posts made outside this app ------------------
+//
+// createSocialPost/refreshSocialPostMetrics only know about posts published through
+// this app's own composer. An admin posting directly on Facebook has no such record,
+// so the only way to surface those posts for an invoice is to search the Page's own
+// post history and match by whether the property is mentioned - Facebook has no
+// "this post is about this listing" tag to query by instead.
+
+function normalizeSearchText(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function normalizeCompactSearchText(value) {
+  return normalizeSearchText(value).replace(/[^a-z0-9]+/g, '')
+}
+
+// Matches on whole phrases (full property name, full slug/URL) rather than individual
+// words, so a short/common word in a property name ("The Nest") can't match unrelated
+// posts on its own.
+function getPropertyMatchTerms(property) {
+  const propertyPath = property?.path || (property?.slug ? `/rental-properties/${property.slug}` : '')
+  const terms = [property?.name, property?.slug, property?.adminOriginalSlug, propertyPath]
+    .map((term) => normalizeSearchText(term))
+    .filter((term) => term.length > 2)
+
+  const compactTerms = terms
+    .map((term) => normalizeCompactSearchText(term))
+    .filter((term) => term.length > 2)
+
+  return Array.from(new Set([...terms, ...compactTerms]))
+}
+
+function postMentionsProperty(post, matchTerms) {
+  const haystack = normalizeSearchText(`${post?.message ?? ''} ${post?.caption ?? ''} ${post?.permalink_url ?? ''} ${post?.permalink ?? ''}`)
+  const compactHaystack = normalizeCompactSearchText(haystack)
+
+  return matchTerms.some((term) => {
+    const normalizedTerm = normalizeSearchText(term)
+    const compactTerm = normalizeCompactSearchText(term)
+
+    return haystack.includes(normalizedTerm) || (compactTerm.length > 2 && compactHaystack.includes(compactTerm))
+  })
+}
+
+function normalizeFoundFacebookPost(post, metrics) {
+  return {
+    platform: 'facebook',
+    externalId: String(post?.id ?? '').trim(),
+    message: String(post?.message ?? '').trim(),
+    permalinkUrl: String(post?.permalink_url ?? '').trim(),
+    createdTime: normalizeTimestampValue(post?.created_time) || String(post?.created_time ?? '').trim(),
+    ...metrics,
+  }
+}
+
+function normalizeFoundInstagramPost(media) {
+  return {
+    platform: 'instagram',
+    externalId: String(media?.id ?? '').trim(),
+    message: String(media?.caption ?? '').trim(),
+    permalinkUrl: String(media?.permalink ?? '').trim(),
+    createdTime: normalizeTimestampValue(media?.timestamp) || String(media?.timestamp ?? '').trim(),
+    mediaType: String(media?.media_type ?? '').trim(),
+    likes: Number(media?.like_count) || 0,
+    comments: Number(media?.comments_count) || 0,
+  }
+}
+
+function normalizeStoredSocialPostResult(post, result, metrics = {}) {
+  const platform = String(result?.platform ?? '').trim().toLowerCase()
+  const externalId = String(result?.externalId ?? '').trim()
+
+  if (!ALLOWED_PLATFORMS.has(platform) || !externalId) {
+    return null
+  }
+
+  return {
+    platform,
+    externalId,
+    message: post.message,
+    permalinkUrl: String(metrics?.permalinkUrl ?? '').trim(),
+    createdTime: metrics.createdTime || post.createdAt || post.updatedAt,
+    imageUrl: post.imageUrl,
+    mediaType: String(metrics?.mediaType ?? '').trim(),
+    views: metrics.views ?? result.metrics?.views ?? null,
+    viewers: metrics.viewers ?? result.metrics?.viewers ?? null,
+    clicks: metrics.clicks ?? result.metrics?.clicks ?? null,
+    likes: metrics.likes ?? result.metrics?.likes ?? null,
+    comments: metrics.comments ?? result.metrics?.comments ?? null,
+    shares: metrics.shares ?? result.metrics?.shares ?? null,
+  }
+}
+
+function postDateOnly(post) {
+  const timestamp =
+    normalizeTimestampValue(post?.created_time ?? post?.timestamp ?? post?.createdAt ?? post?.updatedAt)
+    || String(post?.created_time ?? post?.timestamp ?? post?.createdAt ?? post?.updatedAt ?? '').trim()
+  return timestamp.slice(0, 10)
+}
+
+function postIsWithinDateRange(post, dateRange) {
+  const dateOnly = postDateOnly(post)
+
+  if (!DATE_ONLY_PATTERN.test(dateOnly)) {
+    return true
+  }
+
+  return dateOnly >= dateRange.startDate && dateOnly <= dateRange.endDate
+}
+
+async function findFacebookPostsForProperty(property, { startDate, endDate } = {}) {
+  const dateRange = normalizeSummaryDateRange({ startDate, endDate })
+  const connection = getSocialConnectionStatus()
+
+  if (!connection.facebookConfigured) {
+    return { status: 'not_connected', message: 'Facebook is not connected yet.', dateRange, posts: [] }
+  }
+
+  const matchTerms = getPropertyMatchTerms(property)
+
+  if (matchTerms.length === 0) {
+    return { status: 'ready', dateRange, posts: [] }
+  }
+
+  const config = getSocialMediaConfig()
+  let candidatePosts
+
+  try {
+    const pageAccessToken = await resolveFacebookPageAccessToken({
+      pageId: config.pageId,
+      accessToken: config.pageAccessToken,
+    })
+
+    candidatePosts = await listFacebookPagePosts({
+      pageId: config.pageId,
+      accessToken: pageAccessToken,
+      sinceDate: dateRange.startDate,
+      // `until` is treated as an exclusive upper bound by the Graph API, so pad by a
+      // day to include the invoice period's own end date.
+      untilDate: addDays(dateRange.endDate, 1),
+    })
+
+    config.pageAccessToken = pageAccessToken
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      message: error instanceof Error ? error.message : 'Unable to search Facebook posts.',
+      dateRange,
+      posts: [],
+    }
+  }
+
+  const matchedPosts = candidatePosts.filter((post) => postMentionsProperty(post, matchTerms))
+
+  const posts = await Promise.all(
+    matchedPosts.map(async (post) => {
+      try {
+        const metrics = await getFacebookPostMetrics({ postId: post.id, accessToken: config.pageAccessToken })
+        return normalizeFoundFacebookPost(post, metrics)
+      } catch {
+        // Skip a post whose metrics can't be read rather than failing the whole search.
+        return null
+      }
+    }),
+  )
+
+  return { status: 'ready', dateRange, posts: posts.filter(Boolean) }
+}
+
+async function findInstagramPostsForProperty(property, { startDate, endDate } = {}) {
+  const dateRange = normalizeSummaryDateRange({ startDate, endDate })
+  const connection = getSocialConnectionStatus()
+
+  if (!connection.instagramConfigured) {
+    return { status: 'not_connected', message: 'Instagram is not connected yet.', dateRange, posts: [] }
+  }
+
+  const matchTerms = getPropertyMatchTerms(property)
+
+  if (matchTerms.length === 0) {
+    return { status: 'ready', dateRange, posts: [] }
+  }
+
+  const config = getSocialMediaConfig()
+  let candidateMedia
+
+  try {
+    const pageAccessToken = await resolveFacebookPageAccessToken({
+      pageId: config.pageId,
+      accessToken: config.pageAccessToken,
+    })
+
+    candidateMedia = await listInstagramMedia({
+      igUserId: config.instagramBusinessAccountId,
+      accessToken: pageAccessToken,
+    })
+  } catch (error) {
+    return {
+      status: 'unavailable',
+      message: error instanceof Error ? error.message : 'Unable to search Instagram posts.',
+      dateRange,
+      posts: [],
+    }
+  }
+
+  const posts = candidateMedia
+    .filter((media) => postIsWithinDateRange(media, dateRange))
+    .filter((media) => postMentionsProperty(media, matchTerms))
+    .map(normalizeFoundInstagramPost)
+    .filter((post) => post.externalId)
+
+  return { status: 'ready', dateRange, posts }
+}
+
+async function getStoredFacebookPostSnapshot({ post, result, accessToken }) {
+  try {
+    const [details, metrics] = await Promise.all([
+      callGraphApi(result.externalId, { accessToken, params: { fields: 'id,message,created_time,permalink_url' } }),
+      getFacebookPostMetrics({ postId: result.externalId, accessToken }),
+    ])
+
+    return normalizeStoredSocialPostResult(post, result, {
+      ...metrics,
+      createdTime: normalizeTimestampValue(details?.created_time) || String(details?.created_time ?? '').trim(),
+      permalinkUrl: details?.permalink_url,
+    })
+  } catch {
+    return normalizeStoredSocialPostResult(post, result)
+  }
+}
+
+async function getStoredInstagramPostSnapshot({ post, result, accessToken }) {
+  try {
+    const details = await callGraphApi(result.externalId, {
+      accessToken,
+      params: { fields: 'id,caption,timestamp,permalink,media_type,like_count,comments_count' },
+    })
+
+    return normalizeStoredSocialPostResult(post, result, {
+      createdTime: normalizeTimestampValue(details?.timestamp) || String(details?.timestamp ?? '').trim(),
+      permalinkUrl: details?.permalink,
+      mediaType: details?.media_type,
+      likes: Number(details?.like_count) || 0,
+      comments: Number(details?.comments_count) || 0,
+    })
+  } catch {
+    return normalizeStoredSocialPostResult(post, result)
+  }
+}
+
+async function findStoredSocialPostsForProperty(property, { startDate, endDate } = {}) {
+  const dateRange = normalizeSummaryDateRange({ startDate, endDate })
+  const storedPosts = await listSocialPostsForProperty(property.slug)
+  const periodPosts = storedPosts.filter((post) => postIsWithinDateRange(post, dateRange))
+  const config = getSocialMediaConfig()
+  const connection = getSocialConnectionStatus()
+  let pageAccessToken = config.pageAccessToken
+
+  if ((connection.facebookConfigured || connection.instagramConfigured) && config.pageId && config.pageAccessToken) {
+    try {
+      pageAccessToken = await resolveFacebookPageAccessToken({
+        pageId: config.pageId,
+        accessToken: config.pageAccessToken,
+      })
+    } catch {
+      pageAccessToken = config.pageAccessToken
+    }
+  }
+
+  const snapshots = await Promise.all(
+    periodPosts.flatMap((post) =>
+      post.platformResults
+        .filter((result) => result.status === 'published' && result.externalId)
+        .map((result) => {
+          if (result.platform === 'facebook' && pageAccessToken) {
+            return getStoredFacebookPostSnapshot({ post, result, accessToken: pageAccessToken })
+          }
+
+          if (result.platform === 'instagram' && pageAccessToken) {
+            return getStoredInstagramPostSnapshot({ post, result, accessToken: pageAccessToken })
+          }
+
+          return Promise.resolve(normalizeStoredSocialPostResult(post, result))
+        }),
+    ),
+  )
+
+  return snapshots.filter(Boolean)
+}
+
+async function findSocialPostsForProperty(property, { startDate, endDate } = {}) {
+  const dateRange = normalizeSummaryDateRange({ startDate, endDate })
+  const [facebook, instagram, storedPosts] = await Promise.all([
+    findFacebookPostsForProperty(property, dateRange),
+    findInstagramPostsForProperty(property, dateRange),
+    findStoredSocialPostsForProperty(property, dateRange).catch(() => []),
+  ])
+  const platformResults = { facebook, instagram }
+  const successfulResults = [facebook, instagram].filter((result) => result.status === 'ready')
+  const postsByKey = new Map()
+
+  ;[...successfulResults.flatMap((result) => (Array.isArray(result.posts) ? result.posts : [])), ...storedPosts].forEach((post) => {
+    const key = `${post.platform}:${post.externalId}`
+
+    if (post.externalId && !postsByKey.has(key)) {
+      postsByKey.set(key, post)
+    }
+  })
+
+  const posts = Array.from(postsByKey.values())
+    .sort((a, b) => (a.createdTime < b.createdTime ? 1 : a.createdTime > b.createdTime ? -1 : 0))
+
+  if (successfulResults.length > 0 || posts.length > 0) {
+    return { status: 'ready', dateRange, posts, platformResults }
+  }
+
+  if ([facebook, instagram].every((result) => result.status === 'not_connected')) {
+    return {
+      status: 'not_connected',
+      message: 'Facebook and Instagram are not connected yet.',
+      dateRange,
+      posts: [],
+      platformResults,
+    }
+  }
+
+  return {
+    status: 'unavailable',
+    message: [facebook.message, instagram.message].filter(Boolean).join(' ') || 'Unable to load social post stats.',
+    dateRange,
+    posts: [],
+    platformResults,
+  }
+}
+
+// Recognizes the post-id shapes that appear in the Facebook URLs an admin is likely to
+// paste (a permalink, a photo/video permalink, or the old permalink.php?story_fbid=&id=
+// form), plus a bare id typed in directly. Anything else is rejected with a message
+// telling the admin what to paste instead, rather than guessing.
+const FACEBOOK_POST_URL_ID_PATTERNS = [/\/posts\/(\d+)/, /\/videos\/(\d+)/, /\/photos\/[^/]+\/(\d+)/]
+
+function extractFacebookPostReference(url) {
+  const trimmed = String(url ?? '').trim()
+
+  if (!trimmed) {
+    throw new HttpError(400, 'A Facebook post URL is required.')
+  }
+
+  if (/^\d+(_\d+)?$/.test(trimmed)) {
+    return trimmed
+  }
+
+  for (const pattern of FACEBOOK_POST_URL_ID_PATTERNS) {
+    const match = trimmed.match(pattern)
+
+    if (match) {
+      return match[1]
+    }
+  }
+
+  const storyIdMatch = trimmed.match(/story_fbid=(\d+)/)
+  const pageIdMatch = trimmed.match(/[?&]id=(\d+)/)
+
+  if (storyIdMatch && pageIdMatch) {
+    return `${pageIdMatch[1]}_${storyIdMatch[1]}`
+  }
+
+  throw new HttpError(
+    400,
+    "Couldn't find a post id in that link. Paste the post's Facebook permalink, or its numeric post id directly.",
+  )
+}
+
+async function lookupFacebookPostByUrl(url) {
+  const connection = getSocialConnectionStatus()
+
+  if (!connection.facebookConfigured) {
+    throw new HttpError(400, 'Facebook is not connected yet.')
+  }
+
+  const config = getSocialMediaConfig()
+  const reference = extractFacebookPostReference(url)
+  const postId = reference.includes('_') ? reference : `${config.pageId}_${reference}`
+
+  const [details, metrics] = await Promise.all([
+    callGraphApi(postId, { accessToken: config.pageAccessToken, params: { fields: 'id,message,created_time,permalink_url' } }),
+    getFacebookPostMetrics({ postId, accessToken: config.pageAccessToken }),
+  ])
+
+  return normalizeFoundFacebookPost({ ...details, permalink_url: details.permalink_url || String(url ?? '').trim() }, metrics)
+}
+
 exports.createSocialPost = createSocialPost
+exports.findFacebookPostsForProperty = findFacebookPostsForProperty
+exports.findInstagramPostsForProperty = findInstagramPostsForProperty
+exports.findSocialPostsForProperty = findSocialPostsForProperty
 exports.getPropertySocialSummary = getPropertySocialSummary
 exports.getSocialConnectionStatus = getSocialConnectionStatus
 exports.listSocialPostsForProperty = listSocialPostsForProperty
+exports.lookupFacebookPostByUrl = lookupFacebookPostByUrl
 exports.refreshSocialPostMetrics = refreshSocialPostMetrics
 exports.SOCIAL_MEDIA_SECRETS = SOCIAL_MEDIA_SECRETS
 exports._test = {
   computePostStatus,
+  extractFacebookPostReference,
+  getPropertyMatchTerms,
   normalizePlatforms,
   normalizePublishedProperty,
   normalizeSocialPostRecord,
   normalizeSummaryDateRange,
+  postMentionsProperty,
+  postIsWithinDateRange,
+  sumInsightValue,
 }

@@ -29,6 +29,53 @@ async function main() {
     socialTest.normalizeSummaryDateRange({ startDate: '2026-01-01', endDate: '2026-03-31' }),
     { startDate: '2026-01-01', endDate: '2026-03-31' },
   )
+  assert.equal(
+    socialTest.postMentionsProperty(
+      { caption: 'A fresh look at Villa One on St. John.', permalink: 'https://www.instagram.com/p/example/' },
+      ['villa one'],
+    ),
+    true,
+  )
+  const solLaVieTerms = socialTest.getPropertyMatchTerms({ name: 'Sol La Vie', slug: 'sol-la-vie', path: '/rental-properties/sol-la-vie' })
+  assert.equal(solLaVieTerms.includes('sol la vie'), true)
+  assert.equal(solLaVieTerms.includes('sol-la-vie'), true)
+  assert.equal(solLaVieTerms.includes('sollavie'), true)
+  assert.equal(solLaVieTerms.includes('rentalpropertiessollavie'), true)
+  assert.equal(
+    socialTest.postMentionsProperty(
+      { caption: 'Sunset season at #SolLaVie in Coral Bay.' },
+      socialTest.getPropertyMatchTerms({ name: 'Sol La Vie', slug: 'sol-la-vie' }),
+    ),
+    true,
+  )
+  assert.equal(
+    socialTest.postMentionsProperty(
+      { message: 'See the listing: https://www.stjohnhouserentals.com/rental-properties/sol-la-vie' },
+      socialTest.getPropertyMatchTerms({ name: 'Sol La Vie', slug: 'sol-la-vie' }),
+    ),
+    true,
+  )
+  assert.equal(
+    socialTest.postIsWithinDateRange(
+      { timestamp: '2026-08-31T23:59:59+0000' },
+      { startDate: '2026-08-01', endDate: '2026-08-31' },
+    ),
+    true,
+  )
+  assert.equal(
+    socialTest.postIsWithinDateRange(
+      { timestamp: '2026-09-01T00:00:00+0000' },
+      { startDate: '2026-08-01', endDate: '2026-08-31' },
+    ),
+    false,
+  )
+  assert.equal(
+    socialTest.postIsWithinDateRange(
+      { createdAt: '2026-08-15T12:00:00.000Z' },
+      { startDate: '2026-08-01', endDate: '2026-08-31' },
+    ),
+    true,
+  )
 
   // An unconfigured platform is a setup issue, not a publish failure - it must not
   // be reported the same way as an actual Graph API failure.

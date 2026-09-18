@@ -9,24 +9,6 @@ const {
 } = require('../shared/invoiceBranding.json')
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const SOCIAL_STAT_LABELS = [
-  ['views', 'Views'],
-  ['viewers', 'Viewers'],
-  ['clicks', 'Clicks'],
-  ['impressions', 'Impressions'],
-  ['reach', 'Reach'],
-  ['engagements', 'Engagements'],
-]
-const ENGAGEMENT_METRIC_LABELS = [
-  ['siteLikes', 'Site Likes'],
-  ['facebookLikes', 'FB Likes'],
-  ['facebookShareClicks', 'FB Shares'],
-  ['pinterestShareClicks', 'Pinterest'],
-  ['twitterShareClicks', 'X Shares'],
-  ['whatsappShareClicks', 'WhatsApp'],
-  ['emailShareClicks', 'Email'],
-  ['nativeShareClicks', 'Other Shares'],
-]
 const ANNUAL_INVOICE_MONTH_COUNT = 12
 
 function normalizeDateOnly(dateOnly) {
@@ -57,14 +39,6 @@ function getAnnualServiceEndDate(startDate) {
   return startDate ? addDays(addMonths(startDate, ANNUAL_INVOICE_MONTH_COUNT), -1) : ''
 }
 
-function formatDate(dateOnly) {
-  if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
-    return String(dateOnly ?? '')
-  }
-
-  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(`${dateOnly}T00:00:00Z`))
-}
-
 function formatInvoiceDate(dateOnly) {
   if (!DATE_ONLY_PATTERN.test(String(dateOnly ?? ''))) {
     return String(dateOnly ?? '')
@@ -83,23 +57,6 @@ function formatMonthYear(dateOnly) {
   return `${Number(month)}-${year}`
 }
 
-function formatNumber(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : '0'
-}
-
-function formatPercent(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? `${Math.round(number * 100)}%` : '0%'
-}
-
-function formatDuration(value) {
-  const seconds = Math.max(0, Math.round(Number(value) || 0))
-  const minutes = Math.floor(seconds / 60)
-  const remainder = seconds % 60
-  return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`
-}
-
 function readAmount(value) {
   const amount = Number(String(value ?? '').replace(/[^0-9.-]/g, ''))
   return Number.isFinite(amount) ? amount : 0
@@ -107,6 +64,16 @@ function readAmount(value) {
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(readAmount(value))
+}
+
+function formatOptionalNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
+}
+
+function formatOptionalPercent(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
 function formatInvoiceCurrency(value) {
@@ -168,96 +135,16 @@ function getServicePeriod(invoice, property) {
   return startLabel || ''
 }
 
-function getSnapshotForProperty(snapshots, property, propertySlug) {
-  return snapshots.find((snapshot) => snapshot.propertySlug === property?.slug)
-    || snapshots.find((snapshot) => snapshot.propertySlug === propertySlug)
-    || snapshots[0]
-    || null
-}
+function getInvoiceSnapshotForProperty(snapshots, propertySlug) {
+  const normalizedSlug = String(propertySlug ?? '').trim()
+  const normalizedSnapshots = Array.isArray(snapshots) ? snapshots : []
+  const exactSnapshot = normalizedSnapshots.find((snapshot) => String(snapshot?.propertySlug ?? '').trim() === normalizedSlug)
 
-function getEngagementRangeLabel(invoice, snapshot) {
-  const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice?.analyticsStartDate)
-  const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice?.analyticsEndDate)
-  const rangeLabel = startDate && endDate ? `${formatDate(startDate)} - ${formatDate(endDate)}` : 'TBD'
-
-  if (snapshot?.clamped && normalizeDateOnly(snapshot?.trackingStartDate)) {
-    return `${rangeLabel} (tracking began ${formatDate(snapshot.trackingStartDate)})`
+  if (exactSnapshot) {
+    return exactSnapshot
   }
 
-  return rangeLabel
-}
-
-function getAnalyticsRangeLabel(invoice, snapshot) {
-  const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice?.analyticsStartDate)
-  const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice?.analyticsEndDate)
-
-  if (startDate && endDate) {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`
-  }
-
-  return 'TBD'
-}
-
-function getAnalyticsMetricLabel(snapshot, metricName) {
-  if (snapshot?.status !== 'ready') {
-    return 'N/A'
-  }
-
-  return formatNumber(snapshot?.metrics?.[metricName])
-}
-
-function getSocialStatsRangeLabel(stats) {
-  const startDate = normalizeDateOnly(stats?.startDate || stats?.dateRange?.startDate)
-  const endDate = normalizeDateOnly(stats?.endDate || stats?.dateRange?.endDate)
-
-  if (startDate && endDate) {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`
-  }
-
-  return String(stats?.rangeLabel || stats?.range || '').trim()
-}
-
-function normalizeSocialStatEntry(stats) {
-  if (!stats || typeof stats !== 'object') {
-    return null
-  }
-
-  const metricSource = stats.metrics && typeof stats.metrics === 'object' ? stats.metrics : stats
-  const metrics = SOCIAL_STAT_LABELS
-    .map(([key, label]) => {
-      const value = Number(metricSource[key])
-      return Number.isFinite(value) ? { key, label, value } : null
-    })
-    .filter(Boolean)
-
-  if (!metrics.length) {
-    return null
-  }
-
-  return {
-    label: String(stats.label || stats.platform || 'Social media marketing').trim(),
-    rangeLabel: getSocialStatsRangeLabel(stats),
-    metrics,
-  }
-}
-
-function getInvoiceSocialStats(invoice, snapshot) {
-  const sources = [
-    ...(Array.isArray(invoice?.socialStats) ? invoice.socialStats : invoice?.socialStats ? [invoice.socialStats] : []),
-    ...(Array.isArray(snapshot?.socialStats) ? snapshot.socialStats : snapshot?.socialStats ? [snapshot.socialStats] : []),
-    ...(Array.isArray(invoice?.marketingStats)
-      ? invoice.marketingStats
-      : invoice?.marketingStats
-        ? [invoice.marketingStats]
-        : []),
-    ...(Array.isArray(snapshot?.marketingStats)
-      ? snapshot.marketingStats
-      : snapshot?.marketingStats
-        ? [snapshot.marketingStats]
-        : []),
-  ]
-
-  return sources.map(normalizeSocialStatEntry).filter(Boolean)
+  return normalizedSnapshots.length === 1 ? normalizedSnapshots[0] : null
 }
 
 function writeText(doc, text, x, y, options = {}) {
@@ -272,111 +159,6 @@ function writeText(doc, text, x, y, options = {}) {
 
   doc.font(font).fontSize(size).fillColor(color).text(String(text ?? ''), x, y, { width, lineGap, align })
   return doc.y
-}
-
-function renderMetricGrid(doc, metrics, x, y, width, { columns = 3 } = {}) {
-  const gap = 4
-  const cellHeight = 32
-  const cellWidth = (width - gap * (columns - 1)) / columns
-
-  metrics.forEach((metric, index) => {
-    const column = index % columns
-    const row = Math.floor(index / columns)
-    const cellX = x + column * (cellWidth + gap)
-    const cellY = y + row * (cellHeight + gap)
-
-    doc.rect(cellX, cellY, cellWidth, cellHeight).fillAndStroke('#f8fafc', '#d7d7d7')
-    writeText(doc, metric.label, cellX + 5, cellY + 5, { width: cellWidth - 10, size: 6.8, color: '#4b5563' })
-    writeText(doc, metric.value, cellX + 5, cellY + 17, { width: cellWidth - 10, size: 8.5 })
-  })
-
-  return y + Math.ceil(metrics.length / columns) * (cellHeight + gap) - gap
-}
-
-function renderAnalyticsReport(doc, invoice, snapshot, x, y, width) {
-  writeText(doc, 'Google Analytics', x, y, { width: width * 0.45, font: 'Helvetica-Bold', size: 9.5 })
-  writeText(doc, getAnalyticsRangeLabel(invoice, snapshot), x + width * 0.45, y + 1, {
-    width: width * 0.55,
-    size: 7,
-    color: '#4b5563',
-    align: 'right',
-  })
-  let nextY = y + 15
-
-  if (snapshot?.status !== 'ready') {
-    return writeText(
-      doc,
-      snapshot?.message || 'Google Analytics was unavailable when this invoice was generated.',
-      x,
-      nextY,
-      { width, size: 8, color: '#4b5563' },
-    ) + 3
-  }
-
-  nextY = renderMetricGrid(
-    doc,
-    [
-      { label: 'Views', value: getAnalyticsMetricLabel(snapshot, 'views') },
-      { label: 'Unique visitors', value: getAnalyticsMetricLabel(snapshot, 'activeUsers') },
-      { label: 'Sessions', value: getAnalyticsMetricLabel(snapshot, 'sessions') },
-      { label: 'Engagement', value: formatPercent(snapshot.metrics?.engagementRate) },
-      { label: 'Avg. session', value: formatDuration(snapshot.metrics?.averageSessionDuration) },
-    ],
-    x,
-    nextY,
-    width,
-  )
-
-  return nextY + 4
-}
-
-function renderEngagementReport(doc, invoice, snapshot, x, y, width) {
-  const counts = snapshot?.counts ?? {}
-  const metrics = ENGAGEMENT_METRIC_LABELS
-    .map(([key, label]) => ({ label, value: formatNumber(counts[key]), raw: Number(counts[key]) || 0 }))
-    .filter((metric) => metric.raw > 0)
-
-  if (!metrics.length) {
-    return y
-  }
-
-  writeText(doc, 'Site Engagement', x, y, { width: width * 0.45, font: 'Helvetica-Bold', size: 9.5 })
-  writeText(doc, getEngagementRangeLabel(invoice, snapshot), x + width * 0.45, y + 1, {
-    width: width * 0.55,
-    size: 7,
-    color: '#4b5563',
-    align: 'right',
-  })
-
-  return renderMetricGrid(doc, metrics, x, y + 15, width, { columns: 4 }) + 4
-}
-
-function renderSocialStats(doc, stats, x, y, width) {
-  if (!stats.length) {
-    return y
-  }
-
-  let nextY = y + 4
-
-  stats.forEach((entry) => {
-    writeText(doc, entry.label, x, nextY, { width: width * 0.45, font: 'Helvetica-Bold', size: 9 })
-
-    if (entry.rangeLabel) {
-      writeText(doc, entry.rangeLabel, x + width * 0.45, nextY + 1, {
-        width: width * 0.55,
-        size: 7,
-        color: '#4b5563',
-        align: 'right',
-      })
-    }
-
-    nextY = renderMetricGrid(doc, entry.metrics.map((metric) => ({
-      label: metric.label,
-      value: formatNumber(metric.value),
-    })), x, nextY + 15, width, { columns: 3 }) + 7
-  })
-
-  return nextY
 }
 
 function getServiceDescriptionLabel(description) {
@@ -399,9 +181,54 @@ function drawRowBorders(doc, columns, y, height) {
   })
 }
 
+function renderSocialMarketingReport(doc, report, x, y, width) {
+  if (!report) {
+    return y
+  }
+
+  let nextY = writeText(doc, 'FB and Instagram marketing.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
+  nextY = writeText(doc, `Statistics "${report.dateLabel || 'Marketing Dates TBD'}":`, x, nextY, { width, size: 9 }) + 2
+  nextY = writeText(doc, `Views: ${report.views || 'N/A'} Viewers: ${report.viewers || 'N/A'}`, x, nextY, { width, size: 9 }) + 2
+  nextY = writeText(doc, `Clicks: ${report.clicks || 'N/A'}`, x, nextY, { width, size: 9 }) + 4
+  nextY = writeText(doc, `Likes: ${report.likes || 'N/A'} Comments: ${report.comments || 'N/A'} Shares: ${report.shares || 'N/A'}`, x, nextY, { width, size: 9 }) + 4
+
+  return nextY
+}
+
+function renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, x, y, width) {
+  if (!analyticsSnapshot && !engagementSnapshot) {
+    return y
+  }
+
+  const metrics = analyticsSnapshot?.metrics ?? {}
+  const counts = engagementSnapshot?.counts ?? {}
+  const hasAnalytics = analyticsSnapshot?.status === 'ready'
+  let nextY = writeText(doc, 'Website listing statistics.', x, y, { width, font: 'Helvetica-Bold', size: 9.5 }) + 2
+
+  nextY = writeText(
+    doc,
+    `Views: ${hasAnalytics ? formatOptionalNumber(metrics.views) : 'N/A'} Visitors: ${hasAnalytics ? formatOptionalNumber(metrics.activeUsers) : 'N/A'} Sessions: ${hasAnalytics ? formatOptionalNumber(metrics.sessions) : 'N/A'}`,
+    x,
+    nextY,
+    { width, size: 9 },
+  ) + 2
+  nextY = writeText(doc, `Engagement rate: ${hasAnalytics ? formatOptionalPercent(metrics.engagementRate) : 'N/A'}`, x, nextY, { width, size: 9 }) + 2
+
+  if (engagementSnapshot) {
+    nextY = writeText(
+      doc,
+      `On-site activity: ${formatOptionalNumber(engagementSnapshot.totalEvents)} total / ${formatOptionalNumber(counts.siteLikes)} likes / ${formatOptionalNumber(counts.facebookShareClicks)} Facebook shares`,
+      x,
+      nextY,
+      { width, size: 9 },
+    ) + 4
+  }
+
+  return nextY
+}
+
 function renderInvoiceTable(doc, { invoice, properties }) {
-  const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
-  const engagementSnapshots = Array.isArray(invoice.engagementSnapshots) ? invoice.engagementSnapshots : []
+  const socialMarketingReport = invoice.socialMarketingReport ?? null
   const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property?.slug === slug)?.name || slug)
   const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
   const primaryProperty = properties.find((property) => property?.slug === primaryPropertySlug) ?? null
@@ -427,12 +254,11 @@ function renderInvoiceTable(doc, { invoice, properties }) {
   invoice.lineItems.forEach((item, index) => {
     const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
     const rowProperty = properties.find((property) => property?.slug === rowPropertySlug) ?? primaryProperty
-    const rowSnapshot = getSnapshotForProperty(snapshots, rowProperty, rowPropertySlug)
-    const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
-    const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
+    const propertyName = rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
     const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
+    const analyticsSnapshot = getInvoiceSnapshotForProperty(invoice.analyticsSnapshots, rowPropertySlug)
+    const engagementSnapshot = getInvoiceSnapshotForProperty(invoice.engagementSnapshots, rowPropertySlug)
     const showPropertyDetails = Boolean(propertyName)
-    const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
     const descriptionColumn = columns[1]
     const descX = descriptionColumn.x + 7
     const descWidth = descriptionColumn.width - 14
@@ -451,9 +277,8 @@ function renderInvoiceTable(doc, { invoice, properties }) {
       descY += 22
       descY = renderCellText(doc, propertyName, descX, descY, descWidth, { font: 'Helvetica-Bold' })
       descY = renderCellText(doc, propertyUrl, descX, descY, descWidth, { color: '#0000ee' })
-      descY = renderAnalyticsReport(doc, invoice, rowSnapshot, descX, descY + 5, descWidth)
-      descY = renderEngagementReport(doc, invoice, rowEngagementSnapshot, descX, descY + 4, descWidth)
-      descY = renderSocialStats(doc, socialStats, descX, descY, descWidth)
+      descY = renderWebsiteStatsReport(doc, analyticsSnapshot, engagementSnapshot, descX, descY + 12, descWidth)
+      descY = renderSocialMarketingReport(doc, socialMarketingReport, descX, descY + 12, descWidth)
     }
 
     const amountY = renderCellText(doc, formatInvoiceCurrency(item.amount), columns[3].x + 5, rowY + 9, columns[3].width - 10)
@@ -479,8 +304,6 @@ function renderInvoiceHeader(doc, invoice, client, logoImage) {
   const brandWidth = 130
   const brandX = right - brandWidth
   let brandTextY = top + 20
-
-  writeText(doc, `Invoice - ${invoice.invoiceNumber}.`, left, top, { width: 220, size: 13 })
 
   if (logoImage) {
     const logoWidth = 90
@@ -587,3 +410,6 @@ exports.createInvoicePdfBuffer = createInvoicePdfBuffer
 exports.formatInvoiceCurrency = formatInvoiceCurrency
 exports.formatInvoiceDate = formatInvoiceDate
 exports.getInvoicePdfFilename = getInvoicePdfFilename
+exports._test = {
+  getInvoiceSnapshotForProperty,
+}

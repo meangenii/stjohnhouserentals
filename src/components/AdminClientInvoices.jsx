@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getAdminIdToken } from '../lib/adminAuth'
 import {
   createAdminClientInvoice,
   deleteAdminClientInvoice,
   downloadAdminClientInvoicePdf,
   emailAdminClientInvoicePdf,
-  getAdminPropertyAnalytics,
   listAdminClientInvoices,
+  refreshAdminClientInvoiceSocialMarketing,
   updateAdminClientInvoiceStatus,
 } from '../lib/adminClientApi'
+import { findAdminSocialPostsForProperty } from '../lib/adminSocialApi'
 import { useSiteShellContent } from '../lib/useSiteContent'
 import siteLogoFallback from '../content/site_logo.png'
 import {
@@ -22,27 +23,8 @@ import {
 
 const INVOICE_STATUSES = ['draft', 'sent', 'paid', 'overdue', 'void']
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const SOCIAL_STAT_LABELS = {
-  views: 'Views',
-  viewers: 'Viewers',
-  clicks: 'Clicks',
-  impressions: 'Impressions',
-  reach: 'Reach',
-  engagements: 'Engagements',
-}
-const ENGAGEMENT_METRIC_LABELS = [
-  ['siteLikes', 'Site Likes'],
-  ['facebookLikes', 'Facebook Likes'],
-  ['facebookShareClicks', 'Facebook Shares'],
-  ['pinterestShareClicks', 'Pinterest Shares'],
-  ['twitterShareClicks', 'X (Twitter) Shares'],
-  ['whatsappShareClicks', 'WhatsApp Shares'],
-  ['emailShareClicks', 'Email Shares'],
-  ['nativeShareClicks', 'Other Shares'],
-]
 const DEFAULT_ANNUAL_INVOICE_AMOUNT = '300'
 const ANNUAL_INVOICE_MONTH_COUNT = 12
-const INVOICE_DUE_DAY_COUNT = 30
 
 function getLocalDateOnly(date = new Date()) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
@@ -75,16 +57,36 @@ function getAnnualInvoiceAmount(property) {
   return amount || DEFAULT_ANNUAL_INVOICE_AMOUNT
 }
 
-function getDerivedInvoiceDates(property) {
+// The billing period for a renewal invoice picks up the day after the prior
+// invoice's period ended, so it advances year over year instead of every
+// invoice re-reporting the property's original first-year window.
+function getMostRecentInvoiceForProperty(invoices, propertySlug) {
+  if (!propertySlug) {
+    return null
+  }
+
+  return invoices.reduce((latest, invoice) => {
+    if (!Array.isArray(invoice?.propertySlugs) || !invoice.propertySlugs.includes(propertySlug)) {
+      return latest
+    }
+
+    const candidateEnd = normalizeDateOnly(invoice.analyticsEndDate) || normalizeDateOnly(invoice.issueDate)
+    const latestEnd = latest ? normalizeDateOnly(latest.analyticsEndDate) || normalizeDateOnly(latest.issueDate) : ''
+
+    return candidateEnd > latestEnd ? invoice : latest
+  }, null)
+}
+
+function getDerivedInvoiceDates(property, priorInvoice) {
   const subscriptionStartDate = normalizeDateOnly(property?.subscriptionStartAt)
-  const today = getLocalDateOnly()
-  const issueDate = subscriptionStartDate || today
+  const priorPeriodEndDate = normalizeDateOnly(priorInvoice?.analyticsEndDate)
+  const periodStartDate = priorPeriodEndDate ? addDays(priorPeriodEndDate, 1) : subscriptionStartDate
+  const issueDate = getLocalDateOnly()
 
   return {
     issueDate,
-    dueDate: addDays(issueDate, INVOICE_DUE_DAY_COUNT),
-    analyticsStartDate: subscriptionStartDate,
-    analyticsEndDate: getAnnualServiceEndDate(subscriptionStartDate),
+    analyticsStartDate: periodStartDate,
+    analyticsEndDate: getAnnualServiceEndDate(periodStartDate),
   }
 }
 
@@ -114,23 +116,6 @@ function formatMonthYear(dateOnly) {
   return `${Number(month)}-${year}`
 }
 
-function formatNumber(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : '0'
-}
-
-function formatPercent(value) {
-  const number = Number(value)
-  return Number.isFinite(number) ? `${Math.round(number * 100)}%` : '0%'
-}
-
-function formatDuration(value) {
-  const seconds = Math.max(0, Math.round(Number(value) || 0))
-  const minutes = Math.floor(seconds / 60)
-  const remainder = seconds % 60
-  return minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`
-}
-
 function readAmount(value) {
   const amount = Number(String(value ?? '').replace(/[^0-9.-]/g, ''))
   return Number.isFinite(amount) ? amount : 0
@@ -138,6 +123,16 @@ function readAmount(value) {
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(readAmount(value))
+}
+
+function formatOptionalNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(number) : 'N/A'
+}
+
+function formatOptionalPercent(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number * 100)}%` : 'N/A'
 }
 
 function formatInvoiceCurrency(value) {
@@ -221,101 +216,6 @@ function getClientInvoiceLines(client) {
   return Array.from(new Set([businessName, contactName, phone, address, email].filter(Boolean)))
 }
 
-function getSnapshotForProperty(snapshots, property, propertySlug) {
-  return snapshots.find((snapshot) => snapshot.propertySlug === property?.slug)
-    || snapshots.find((snapshot) => snapshot.propertySlug === propertySlug)
-    || snapshots[0]
-    || null
-}
-
-function getAnalyticsRangeLabel(invoice, snapshot) {
-  const startDate = normalizeDateOnly(snapshot?.dateRange?.startDate) || normalizeDateOnly(invoice.analyticsStartDate)
-  const endDate = normalizeDateOnly(snapshot?.dateRange?.endDate) || normalizeDateOnly(invoice.analyticsEndDate)
-
-  if (startDate && endDate) {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`
-  }
-
-  return 'TBD'
-}
-
-function getAnalyticsMetricLabel(snapshot, metricName) {
-  if (snapshot?.status !== 'ready') {
-    return 'N/A'
-  }
-
-  return formatNumber(snapshot?.metrics?.[metricName])
-}
-
-function readSocialMetric(value) {
-  const rawValue = String(value ?? '').trim()
-  if (!rawValue) {
-    return null
-  }
-
-  const cleanedValue = rawValue.replace(/,/g, '').replace(/[^0-9.-]/g, '')
-  if (!/[0-9]/.test(cleanedValue)) {
-    return null
-  }
-
-  const metric = Number(cleanedValue)
-  return Number.isFinite(metric) ? metric : null
-}
-
-function getSocialStatsRangeLabel(stats) {
-  const startDate = normalizeDateOnly(stats?.startDate || stats?.dateRange?.startDate)
-  const endDate = normalizeDateOnly(stats?.endDate || stats?.dateRange?.endDate)
-
-  if (startDate && endDate) {
-    return `${formatDate(startDate)} - ${formatDate(endDate)}`
-  }
-
-  return String(stats?.rangeLabel || stats?.range || '').trim()
-}
-
-function normalizeSocialStatEntry(stats) {
-  if (!stats || typeof stats !== 'object') {
-    return null
-  }
-
-  const metricSource = stats.metrics && typeof stats.metrics === 'object' ? stats.metrics : stats
-  const metrics = Object.entries(SOCIAL_STAT_LABELS)
-    .map(([key, label]) => {
-      const value = readSocialMetric(metricSource[key])
-      return value === null ? null : { key, label, value }
-    })
-    .filter(Boolean)
-
-  if (!metrics.length) {
-    return null
-  }
-
-  return {
-    label: String(stats.label || stats.platform || 'Social media marketing').trim(),
-    rangeLabel: getSocialStatsRangeLabel(stats),
-    metrics,
-  }
-}
-
-function getInvoiceSocialStats(invoice, snapshot) {
-  const sources = [
-    ...(Array.isArray(invoice?.socialStats) ? invoice.socialStats : invoice?.socialStats ? [invoice.socialStats] : []),
-    ...(Array.isArray(snapshot?.socialStats) ? snapshot.socialStats : snapshot?.socialStats ? [snapshot.socialStats] : []),
-    ...(Array.isArray(invoice?.marketingStats)
-      ? invoice.marketingStats
-      : invoice?.marketingStats
-        ? [invoice.marketingStats]
-        : []),
-    ...(Array.isArray(snapshot?.marketingStats)
-      ? snapshot.marketingStats
-      : snapshot?.marketingStats
-        ? [snapshot.marketingStats]
-        : []),
-  ]
-
-  return sources.map(normalizeSocialStatEntry).filter(Boolean)
-}
-
 function getServiceDescriptionLabel(description) {
   const normalized = String(description ?? '').trim().replace(/[\u2013\u2014]/g, '-')
 
@@ -326,37 +226,93 @@ function getServiceDescriptionLabel(description) {
   return normalized
 }
 
-function createEmptySocialStatsDraft() {
-  return Object.keys(SOCIAL_STAT_LABELS).reduce((draft, key) => ({ ...draft, [key]: '' }), { label: '' })
+function getMarketingDateLabel(dateSource = {}) {
+  const startDate = normalizeDateOnly(dateSource.analyticsStartDate)
+  const endDate = normalizeDateOnly(dateSource.analyticsEndDate)
+
+  if (startDate && endDate) {
+    return `${formatDate(startDate)} - ${formatDate(endDate)}`
+  }
+
+  return 'Marketing Dates TBD'
 }
 
-function buildSocialStatsPayload(socialStats, dateRange) {
-  const metrics = Object.keys(SOCIAL_STAT_LABELS).reduce((normalized, key) => {
-    const raw = String(socialStats?.[key] ?? '').trim()
+function createSocialMarketingReport(dateSource = {}) {
+  return {
+    dateLabel: getMarketingDateLabel(dateSource),
+    views: 'N/A',
+    viewers: 'N/A',
+    clicks: 'N/A',
+    likes: 'N/A',
+    comments: 'N/A',
+    shares: 'N/A',
+  }
+}
 
-    if (raw) {
-      normalized[key] = raw
-    }
+function getInvoiceSnapshotForProperty(snapshots, propertySlug) {
+  const normalizedSlug = String(propertySlug ?? '').trim()
+  const normalizedSnapshots = Array.isArray(snapshots) ? snapshots : []
+  const exactSnapshot = normalizedSnapshots.find((snapshot) => String(snapshot?.propertySlug ?? '').trim() === normalizedSlug)
 
-    return normalized
-  }, {})
+  if (exactSnapshot) {
+    return exactSnapshot
+  }
 
-  if (Object.keys(metrics).length === 0) {
+  return normalizedSnapshots.length === 1 ? normalizedSnapshots[0] : null
+}
+
+function sumSocialPostMetric(posts, key) {
+  const values = posts
+    .map((post) => post?.[key])
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value))
+
+  if (values.length === 0) {
+    return null
+  }
+
+  return values.reduce((sum, value) => sum + value, 0)
+}
+
+function createSocialMarketingReportFromSocialPosts(posts, dateSource = {}) {
+  return {
+    dateLabel: getMarketingDateLabel(dateSource),
+    views: formatOptionalNumber(sumSocialPostMetric(posts, 'views')),
+    viewers: formatOptionalNumber(sumSocialPostMetric(posts, 'viewers')),
+    clicks: formatOptionalNumber(sumSocialPostMetric(posts, 'clicks')),
+    likes: formatOptionalNumber(sumSocialPostMetric(posts, 'likes')),
+    comments: formatOptionalNumber(sumSocialPostMetric(posts, 'comments')),
+    shares: formatOptionalNumber(sumSocialPostMetric(posts, 'shares')),
+  }
+}
+
+function createSocialPostSnapshot(property, posts) {
+  const normalizedPosts = Array.isArray(posts) ? posts : []
+
+  if (!property?.slug || normalizedPosts.length === 0) {
     return []
   }
 
   return [
     {
-      label: String(socialStats?.label ?? '').trim() || 'Social media marketing',
-      startDate: dateRange?.startDate ?? '',
-      endDate: dateRange?.endDate ?? '',
-      ...metrics,
+      propertySlug: property.slug,
+      propertyName: property.name || property.slug,
+      posts: normalizedPosts,
     },
   ]
 }
 
-function createInvoiceDraft(property) {
-  const derivedDates = getDerivedInvoiceDates(property)
+function getSocialPlatformLabel(platform) {
+  return platform === 'instagram' ? 'Instagram' : 'Facebook'
+}
+
+function formatPostDate(createdTime) {
+  return formatDate(normalizeDateOnly(createdTime) || createdTime)
+}
+
+function createInvoiceDraft(property, priorInvoice) {
+  const derivedDates = getDerivedInvoiceDates(property, priorInvoice)
 
   return {
     propertySlug: property?.slug ?? '',
@@ -367,132 +323,51 @@ function createInvoiceDraft(property) {
         amount: getAnnualInvoiceAmount(property),
       },
     ],
-    socialStats: createEmptySocialStatsDraft(),
-    notes: '',
+    socialMarketingReport: createSocialMarketingReport(derivedDates),
   }
 }
 
-function AnalyticsMetrics({ report }) {
-  const metrics = report?.metrics ?? {}
+function InvoiceSocialMarketingReport({ report }) {
+  if (!report) {
+    return null
+  }
 
   return (
-    <div className="admin-client-invoice-metrics">
-      <span><strong>{formatNumber(metrics.views)}</strong> views</span>
-      <span><strong>{formatNumber(metrics.activeUsers)}</strong> unique visitors</span>
-      <span><strong>{formatNumber(metrics.sessions)}</strong> sessions</span>
-      <span><strong>{formatPercent(metrics.engagementRate)}</strong> engagement</span>
-      <span><strong>{formatDuration(metrics.averageSessionDuration)}</strong> avg. session</span>
+    <div className="admin-client-invoice-marketing-report">
+      <strong>FB and Instagram marketing.</strong>
+      <p>Statistics &quot;{report.dateLabel || 'Marketing Dates TBD'}&quot;:</p>
+      <p>Views: {report.views || 'N/A'} Viewers: {report.viewers || 'N/A'}</p>
+      <p>Clicks: {report.clicks || 'N/A'}</p>
+      <p>Likes: {report.likes || 'N/A'} Comments: {report.comments || 'N/A'} Shares: {report.shares || 'N/A'}</p>
     </div>
   )
 }
 
-function InvoiceAnalyticsReport({ invoice, snapshot }) {
-  const rangeLabel = getAnalyticsRangeLabel(invoice, snapshot)
+function InvoiceWebsiteStatsReport({ analyticsSnapshot, engagementSnapshot }) {
+  if (!analyticsSnapshot && !engagementSnapshot) {
+    return null
+  }
+
+  const metrics = analyticsSnapshot?.metrics ?? {}
+  const counts = engagementSnapshot?.counts ?? {}
+  const hasAnalytics = analyticsSnapshot?.status === 'ready'
 
   return (
-    <section className="admin-client-invoice-ga-report" aria-label="Google Analytics report">
-      <div className="admin-client-invoice-ga-header">
-        <strong>Google Analytics</strong>
-        <span>{rangeLabel}</span>
-      </div>
-      {snapshot?.status === 'ready' ? (
-        <dl className="admin-client-invoice-ga-metrics">
-          <div>
-            <dt>Views</dt>
-            <dd>{getAnalyticsMetricLabel(snapshot, 'views')}</dd>
-          </div>
-          <div>
-            <dt>Unique visitors</dt>
-            <dd>{getAnalyticsMetricLabel(snapshot, 'activeUsers')}</dd>
-          </div>
-          <div>
-            <dt>Sessions</dt>
-            <dd>{getAnalyticsMetricLabel(snapshot, 'sessions')}</dd>
-          </div>
-          <div>
-            <dt>Engagement</dt>
-            <dd>{formatPercent(snapshot.metrics?.engagementRate)}</dd>
-          </div>
-          <div>
-            <dt>Avg. session</dt>
-            <dd>{formatDuration(snapshot.metrics?.averageSessionDuration)}</dd>
-          </div>
-        </dl>
-      ) : (
-        <p className="admin-client-invoice-muted">
-          {snapshot?.message || 'Google Analytics was unavailable when this invoice was generated.'}
+    <div className="admin-client-invoice-marketing-report admin-client-invoice-website-report">
+      <strong>Website listing statistics.</strong>
+      <p>
+        Views: {hasAnalytics ? formatOptionalNumber(metrics.views) : 'N/A'} Visitors:{' '}
+        {hasAnalytics ? formatOptionalNumber(metrics.activeUsers) : 'N/A'} Sessions:{' '}
+        {hasAnalytics ? formatOptionalNumber(metrics.sessions) : 'N/A'}
+      </p>
+      <p>Engagement rate: {hasAnalytics ? formatOptionalPercent(metrics.engagementRate) : 'N/A'}</p>
+      {engagementSnapshot ? (
+        <p>
+          On-site activity: {formatOptionalNumber(engagementSnapshot.totalEvents)} total /{' '}
+          {formatOptionalNumber(counts.siteLikes)} likes / {formatOptionalNumber(counts.facebookShareClicks)} Facebook shares
         </p>
-      )}
-    </section>
-  )
-}
-
-function getEngagementRangeLabel(invoice, snapshot) {
-  const rangeLabel = getAnalyticsRangeLabel(invoice, snapshot)
-
-  if (snapshot?.clamped && normalizeDateOnly(snapshot?.trackingStartDate)) {
-    return `${rangeLabel} (tracking began ${formatDate(snapshot.trackingStartDate)})`
-  }
-
-  return rangeLabel
-}
-
-function InvoiceEngagementReport({ invoice, snapshot }) {
-  const counts = snapshot?.counts ?? {}
-  const metrics = ENGAGEMENT_METRIC_LABELS.map(([key, label]) => ({ key, label, value: Number(counts[key]) || 0 })).filter(
-    (metric) => metric.value > 0,
-  )
-
-  if (!metrics.length) {
-    return null
-  }
-
-  const rangeLabel = getEngagementRangeLabel(invoice, snapshot)
-
-  return (
-    <section className="admin-client-invoice-social-report" aria-label="Site engagement">
-      <div className="admin-client-invoice-social-group">
-        <div className="admin-client-invoice-social-header">
-          <strong>Site Engagement</strong>
-          <span>{rangeLabel}</span>
-        </div>
-        <dl className="admin-client-invoice-social-metrics">
-          {metrics.map((metric) => (
-            <div key={metric.key}>
-              <dt>{metric.label}</dt>
-              <dd>{formatNumber(metric.value)}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
-    </section>
-  )
-}
-
-function InvoiceSocialStats({ stats }) {
-  if (!stats?.length) {
-    return null
-  }
-
-  return (
-    <section className="admin-client-invoice-social-report" aria-label="Social marketing statistics">
-      {stats.map((entry, index) => (
-        <div className="admin-client-invoice-social-group" key={`${entry.label}-${entry.rangeLabel}-${index}`}>
-          <div className="admin-client-invoice-social-header">
-            <strong>{entry.label}</strong>
-            {entry.rangeLabel ? <span>{entry.rangeLabel}</span> : null}
-          </div>
-          <dl className="admin-client-invoice-social-metrics">
-            {entry.metrics.map((metric) => (
-              <div key={metric.key}>
-                <dt>{metric.label}</dt>
-                <dd>{formatNumber(metric.value)}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
-    </section>
+      ) : null}
+    </div>
   )
 }
 
@@ -500,6 +375,7 @@ function SavedInvoice({
   actionState,
   client,
   invoice,
+  expanded,
   logoUrl,
   properties,
   printTarget,
@@ -507,12 +383,13 @@ function SavedInvoice({
   onDeleteInvoice,
   onEmailPdf,
   onPrint,
+  onRefreshSocialMarketing,
   onSavePdf,
   onStatusChange,
+  onToggle,
 }) {
   const propertyNames = invoice.propertySlugs.map((slug) => properties.find((property) => property.slug === slug)?.name || slug)
-  const snapshots = Array.isArray(invoice.analyticsSnapshots) ? invoice.analyticsSnapshots : []
-  const engagementSnapshots = Array.isArray(invoice.engagementSnapshots) ? invoice.engagementSnapshots : []
+  const socialMarketingReport = invoice.socialMarketingReport ?? null
   const primaryPropertySlug = invoice.propertySlugs[0] ?? ''
   const primaryProperty = properties.find((property) => property.slug === primaryPropertySlug) ?? null
   const servicePeriod = getServicePeriod(invoice, primaryProperty)
@@ -522,13 +399,26 @@ function SavedInvoice({
   const isPdfBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'save-pdf'
   const isEmailBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'email-pdf'
   const isDeleteBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'delete'
-  const isActionBusy = isPdfBusy || isEmailBusy || isDeleteBusy
+  const isSocialRefreshBusy = invoiceAction?.state === 'working' && invoiceAction.action === 'refresh-social'
+  const isActionBusy = isPdfBusy || isEmailBusy || isDeleteBusy || isSocialRefreshBusy
   const isDeletable = invoice.status === 'draft' || invoice.status === 'void'
+  const canRefreshSocialMarketing = invoice.status === 'draft' && normalizeDateOnly(invoice.analyticsStartDate) && normalizeDateOnly(invoice.analyticsEndDate)
+  const isExpanded = expanded || printTarget
+  const documentId = `admin-client-invoice-document-${invoice.id}`
 
   return (
     <article className={`admin-client-saved-invoice ${printTarget ? 'admin-client-invoice-print-target' : ''}`.trim()}>
       <div className="admin-client-saved-invoice-toolbar admin-client-invoice-no-print">
-        <strong>{invoice.invoiceNumber}</strong>
+        <button
+          aria-controls={documentId}
+          aria-expanded={isExpanded}
+          className="admin-client-saved-invoice-toggle"
+          type="button"
+          onClick={() => onToggle(invoice.id)}
+        >
+          <span className="admin-client-saved-invoice-toggle-icon" aria-hidden="true">{isExpanded ? 'v' : '>'}</span>
+          <strong>{invoice.invoiceNumber}</strong>
+        </button>
         <div className="admin-inline-actions">
           <label className="admin-client-invoice-status-field">
             <span className="visually-hidden">Invoice status</span>
@@ -545,6 +435,19 @@ function SavedInvoice({
           </label>
           <button className="button-link button-link--ghost admin-action" type="button" onClick={() => onPrint(invoice.id)}>
             Print
+          </button>
+          <button
+            className="button-link button-link--ghost admin-action"
+            disabled={isActionBusy || !canRefreshSocialMarketing}
+            title={
+              canRefreshSocialMarketing
+                ? 'Refresh Facebook and Instagram stats for this draft invoice.'
+                : 'Only draft invoices with a billing period can refresh social stats.'
+            }
+            type="button"
+            onClick={() => onRefreshSocialMarketing(invoice)}
+          >
+            {isSocialRefreshBusy ? 'Refreshing...' : 'Refresh stats'}
           </button>
           <button
             className="button-link button-link--ghost admin-action"
@@ -584,104 +487,112 @@ function SavedInvoice({
         </p>
       ) : null}
 
-      <div className="admin-client-invoice-document">
-        <header className="admin-client-invoice-document-header">
-          <h4>Invoice - {invoice.invoiceNumber}.</h4>
-          <div className="admin-client-invoice-brand">
-            <span className="admin-client-invoice-logo-mark" aria-hidden="true"><img alt="" src={logoUrl} /></span>
-            <strong aria-label={COMPANY_NAME}>
-              <span>St. John House</span>
-              <span>Rentals</span>
-            </strong>
+      {!isExpanded ? (
+        <p className="admin-client-saved-invoice-summary admin-client-invoice-no-print">
+          <span>{getClientName(client)}</span>
+          <span>{propertyNames.join(', ') || primaryPropertySlug}</span>
+          <span>{formatDate(invoice.issueDate)}</span>
+          <span>{formatCurrency(invoice.amountTotal)}</span>
+        </p>
+      ) : null}
+
+      {isExpanded ? (
+        <div className="admin-client-invoice-document" id={documentId}>
+          <header className="admin-client-invoice-document-header">
+            <div className="admin-client-invoice-brand">
+              <span className="admin-client-invoice-logo-mark" aria-hidden="true"><img alt="" src={logoUrl} /></span>
+              <strong aria-label={COMPANY_NAME}>
+                <span>St. John House</span>
+                <span>Rentals</span>
+              </strong>
+            </div>
+          </header>
+
+          <div className="admin-client-invoice-party-row">
+            <section className="admin-client-invoice-client">
+              <strong>Client:</strong>
+              {clientLines.length > 0 ? clientLines.map((line) => <span key={line}>{line}</span>) : <span>{getClientName(client)}</span>}
+            </section>
+
+            <section className="admin-client-invoice-date-block">
+              <strong>Invoice Date:</strong>
+              <span>{formatInvoiceDate(invoice.issueDate)}</span>
+            </section>
           </div>
-        </header>
 
-        <div className="admin-client-invoice-party-row">
-          <section className="admin-client-invoice-client">
-            <strong>Client:</strong>
-            {clientLines.length > 0 ? clientLines.map((line) => <span key={line}>{line}</span>) : <span>{getClientName(client)}</span>}
+          <table className="admin-client-invoice-line-table">
+            <thead>
+              <tr>
+                <th>Date of Service</th>
+                <th>Service Description</th>
+                <th>Amount</th>
+                <th>Amount Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.lineItems.map((item, index) => {
+                const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
+                const rowProperty = properties.find((property) => property.slug === rowPropertySlug) ?? primaryProperty
+                const propertyName = rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
+                const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
+                const rowAnalyticsSnapshot = getInvoiceSnapshotForProperty(invoice.analyticsSnapshots, rowPropertySlug)
+                const rowEngagementSnapshot = getInvoiceSnapshotForProperty(invoice.engagementSnapshots, rowPropertySlug)
+                const showPropertyDetails = Boolean(propertyName)
+
+                return (
+                  <tr key={`${item.description}-${index}`}>
+                    <td className="admin-client-invoice-service-period">{index === 0 ? servicePeriod : ''}</td>
+                    <td className="admin-client-invoice-service-description">
+                      <p>{getServiceDescriptionLabel(item.description)}</p>
+                      {showPropertyDetails ? (
+                        <>
+                          <strong>{propertyName}</strong>
+                          <a href={propertyUrl}>{propertyUrl}</a>
+                          <InvoiceWebsiteStatsReport analyticsSnapshot={rowAnalyticsSnapshot} engagementSnapshot={rowEngagementSnapshot} />
+                          <InvoiceSocialMarketingReport report={socialMarketingReport} />
+                        </>
+                      ) : null}
+                    </td>
+                    <td />
+                    <td>{formatInvoiceCurrency(item.amount)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} />
+                <th>Total Due:</th>
+                <th>{formatInvoiceCurrency(invoice.amountTotal)}</th>
+              </tr>
+            </tfoot>
+          </table>
+
+          {invoice.notes ? <section className="admin-client-invoice-notes"><p>{invoice.notes}</p></section> : null}
+
+          <section className="admin-client-invoice-payment-copy">
+            <p>
+              Please contact me with any listing changes, seasonal including rates and dates. Payment is due upon receipt.{' '}
+              <strong>Please make checks payable to {PAYEE_NAME}.</strong> Payments can be sent to:
+            </p>
+            <address>
+              <span>{PAYEE_NAME}</span>
+              {COMPANY_ADDRESS_LINES.map((line) => <span key={line}>{line}</span>)}
+            </address>
           </section>
 
-          <section className="admin-client-invoice-date-block">
-            <strong>Invoice Date:</strong>
-            <span>{formatInvoiceDate(invoice.issueDate)}</span>
-          </section>
+          <footer className="admin-client-invoice-footer">
+            <div>
+              <strong>{DBA_NAME}</strong>
+              <a href={SITE_ORIGIN}>{SITE_ORIGIN.replace(/^https?:\/\//, '')}</a>
+            </div>
+            <address>
+              {COMPANY_ADDRESS_LINES.map((line) => <span key={line}>{line}</span>)}
+              <a href={`mailto:${COMPANY_EMAIL}`}>{COMPANY_EMAIL}</a>
+            </address>
+          </footer>
         </div>
-
-        <table className="admin-client-invoice-line-table">
-          <thead>
-            <tr>
-              <th>Date of Service</th>
-              <th>Service Description</th>
-              <th>Amount</th>
-              <th>Amount Due</th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.lineItems.map((item, index) => {
-              const rowPropertySlug = invoice.propertySlugs[index] ?? primaryPropertySlug
-              const rowProperty = properties.find((property) => property.slug === rowPropertySlug) ?? primaryProperty
-              const rowSnapshot = getSnapshotForProperty(snapshots, rowProperty, rowPropertySlug)
-              const rowEngagementSnapshot = getSnapshotForProperty(engagementSnapshots, rowProperty, rowPropertySlug)
-              const propertyName = rowSnapshot?.propertyName || rowProperty?.name || propertyNames[index] || propertyNames[0] || rowPropertySlug
-              const propertyUrl = getPropertyUrl(rowProperty, rowPropertySlug)
-              const showPropertyDetails = Boolean(propertyName)
-              const socialStats = getInvoiceSocialStats(invoice, rowSnapshot)
-
-              return (
-                <tr key={`${item.description}-${index}`}>
-                  <td className="admin-client-invoice-service-period">{index === 0 ? servicePeriod : ''}</td>
-                  <td className="admin-client-invoice-service-description">
-                    <p>{getServiceDescriptionLabel(item.description)}</p>
-                    {showPropertyDetails ? (
-                      <>
-                        <strong>{propertyName}</strong>
-                        <a href={propertyUrl}>{propertyUrl}</a>
-                        <InvoiceAnalyticsReport invoice={invoice} snapshot={rowSnapshot} />
-                        <InvoiceEngagementReport invoice={invoice} snapshot={rowEngagementSnapshot} />
-                        <InvoiceSocialStats stats={socialStats} />
-                      </>
-                    ) : null}
-                  </td>
-                  <td />
-                  <td>{formatInvoiceCurrency(item.amount)}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-          <tfoot>
-            <tr>
-              <td colSpan={2} />
-              <th>Total Due:</th>
-              <th>{formatInvoiceCurrency(invoice.amountTotal)}</th>
-            </tr>
-          </tfoot>
-        </table>
-
-        {invoice.notes ? <section className="admin-client-invoice-notes"><p>{invoice.notes}</p></section> : null}
-
-        <section className="admin-client-invoice-payment-copy">
-          <p>
-            Please contact me with any listing changes, seasonal including rates and dates. Payment is due upon receipt.{' '}
-            <strong>Please make checks payable to {PAYEE_NAME}.</strong> Payments can be sent to:
-          </p>
-          <address>
-            <span>{PAYEE_NAME}</span>
-            {COMPANY_ADDRESS_LINES.map((line) => <span key={line}>{line}</span>)}
-          </address>
-        </section>
-
-        <footer className="admin-client-invoice-footer">
-          <div>
-            <strong>{DBA_NAME}</strong>
-            <a href={SITE_ORIGIN}>{SITE_ORIGIN.replace(/^https?:\/\//, '')}</a>
-          </div>
-          <address>
-            {COMPANY_ADDRESS_LINES.map((line) => <span key={line}>{line}</span>)}
-            <a href={`mailto:${COMPANY_EMAIL}`}>{COMPANY_EMAIL}</a>
-          </address>
-        </footer>
-      </div>
+      ) : null}
     </article>
   )
 }
@@ -690,17 +601,19 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const siteShell = useSiteShellContent()
   const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim() || siteLogoFallback
   const selectedProperty = properties.find((property) => property.slug === selectedPropertySlug) ?? properties[0] ?? null
-  const [draft, setDraft] = useState(() => createInvoiceDraft(selectedProperty))
-  const [analyticsState, setAnalyticsState] = useState({ state: 'idle', report: null, message: '' })
+  const [draft, setDraft] = useState(() => createInvoiceDraft(selectedProperty, null))
   const [invoiceState, setInvoiceState] = useState({ state: 'idle', invoices: [], message: '' })
   const [createStatus, setCreateStatus] = useState({ state: 'idle', message: '' })
+  const [socialMarketingState, setSocialMarketingState] = useState({ state: 'idle', posts: [], message: '' })
   const [statusBusyId, setStatusBusyId] = useState('')
   const [invoiceActionState, setInvoiceActionState] = useState({ invoiceId: '', action: '', state: 'idle', message: '' })
+  const [expandedInvoiceId, setExpandedInvoiceId] = useState('')
   const [printInvoiceId, setPrintInvoiceId] = useState('')
+  const autoSocialLookupKeyRef = useRef('')
+  const socialMarketingRequestIdRef = useRef(0)
   const propertyKey = properties.map((property) => property.slug).join('|')
   const draftProperty = properties.find((property) => property.slug === draft.propertySlug) ?? null
   const subscriptionStartDate = normalizeDateOnly(draftProperty?.subscriptionStartAt)
-  const annualServiceEndDate = getAnnualServiceEndDate(subscriptionStartDate)
   const amountTotal = useMemo(() => draft.lineItems.reduce((sum, item) => sum + readAmount(item.amount), 0), [draft.lineItems])
   const datesAreQueryable =
     DATE_ONLY_PATTERN.test(draft.analyticsStartDate) &&
@@ -709,10 +622,14 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   const canGenerateInvoice = Boolean(draft.propertySlug && subscriptionStartDate && datesAreQueryable)
 
   useEffect(() => {
-    setDraft(createInvoiceDraft(selectedProperty))
+    const nextDraft = createInvoiceDraft(selectedProperty, getMostRecentInvoiceForProperty(invoiceState.invoices, selectedProperty?.slug))
+
+    setDraft(nextDraft)
     setCreateStatus({ state: 'idle', message: '' })
+    setSocialMarketingState({ state: 'idle', posts: [], message: '' })
   }, [
     propertyKey,
+    invoiceState.invoices,
     selectedProperty?.listingFeeAmount,
     selectedProperty?.path,
     selectedProperty?.slug,
@@ -724,6 +641,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   useEffect(() => {
     if (!authUser?.uid || !client?.id) {
       setInvoiceState({ state: 'idle', invoices: [], message: '' })
+      setExpandedInvoiceId('')
       return undefined
     }
 
@@ -731,6 +649,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
 
     async function loadInvoices() {
       setInvoiceState({ state: 'loading', invoices: [], message: '' })
+      setExpandedInvoiceId('')
 
       try {
         const authToken = await getAdminIdToken()
@@ -760,46 +679,10 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   }, [authUser?.uid, client?.id])
 
   useEffect(() => {
-    if (!authUser?.uid || !draft.propertySlug || !datesAreQueryable) {
-      setAnalyticsState({ state: 'idle', report: null, message: '' })
-      return undefined
+    if (expandedInvoiceId && !invoiceState.invoices.some((invoice) => invoice.id === expandedInvoiceId)) {
+      setExpandedInvoiceId('')
     }
-
-    let cancelled = false
-
-    async function loadAnalyticsPreview() {
-      setAnalyticsState({ state: 'loading', report: null, message: '' })
-
-      try {
-        const authToken = await getAdminIdToken()
-
-        if (!authToken) {
-          throw new Error('Sign in to preview invoice analytics.')
-        }
-
-        const report = await getAdminPropertyAnalytics(draft.propertySlug, {
-          authToken,
-          startDate: draft.analyticsStartDate,
-          endDate: draft.analyticsEndDate,
-        })
-
-        if (!cancelled) {
-          setAnalyticsState({ state: 'ready', report, message: '' })
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setAnalyticsState({
-            state: 'error',
-            report: null,
-            message: error instanceof Error ? error.message : 'Unable to load invoice analytics.',
-          })
-        }
-      }
-    }
-
-    loadAnalyticsPreview()
-    return () => { cancelled = true }
-  }, [authUser?.uid, datesAreQueryable, draft.analyticsEndDate, draft.analyticsStartDate, draft.propertySlug])
+  }, [expandedInvoiceId, invoiceState.invoices])
 
   useEffect(() => {
     function finishPrinting() {
@@ -814,34 +697,156 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
     }
   }, [])
 
-  function setDraftField(field, value) {
-    setDraft((current) => ({ ...current, [field]: value }))
+  function handleIssueDateChange(value) {
+    setDraft((current) => ({ ...current, issueDate: value }))
     setCreateStatus({ state: 'idle', message: '' })
   }
 
-  function setSocialStatField(field, value) {
-    setDraft((current) => ({ ...current, socialStats: { ...current.socialStats, [field]: value } }))
+  function handleSocialMarketingReportFieldChange(field, value) {
+    setDraft((current) => ({
+      ...current,
+      socialMarketingReport: {
+        ...(current.socialMarketingReport || createSocialMarketingReport(current)),
+        [field]: value,
+      },
+    }))
     setCreateStatus({ state: 'idle', message: '' })
   }
 
   function handlePropertyChange(slug) {
+    socialMarketingRequestIdRef.current += 1
+    autoSocialLookupKeyRef.current = ''
     const property = properties.find((candidate) => candidate.slug === slug)
-    const derivedDates = getDerivedInvoiceDates(property)
-
-    setDraft((current) => ({
-      ...current,
+    const derivedDates = getDerivedInvoiceDates(property, getMostRecentInvoiceForProperty(invoiceState.invoices, slug))
+    const nextDraft = {
       propertySlug: slug,
       ...derivedDates,
       lineItems: [{ description: getPropertyLineDescription(property), amount: getAnnualInvoiceAmount(property) }],
+      socialMarketingReport: createSocialMarketingReport(derivedDates),
+    }
+
+    setDraft((current) => ({
+      ...current,
+      ...nextDraft,
     }))
     setCreateStatus({ state: 'idle', message: '' })
+    setSocialMarketingState({ state: 'idle', posts: [], message: '' })
   }
+
+  const loadSocialMarketingReportForDraft = useCallback(async ({
+    propertySlug = draft.propertySlug,
+    analyticsStartDate = draft.analyticsStartDate,
+    analyticsEndDate = draft.analyticsEndDate,
+    showValidationError = true,
+  } = {}) => {
+    const queryable =
+      DATE_ONLY_PATTERN.test(analyticsStartDate) &&
+      DATE_ONLY_PATTERN.test(analyticsEndDate) &&
+      analyticsStartDate <= analyticsEndDate
+
+    if (!propertySlug || !queryable) {
+      socialMarketingRequestIdRef.current += 1
+
+      if (showValidationError) {
+        setSocialMarketingState({ state: 'error', posts: [], message: 'Set a property and billing period first.' })
+      }
+
+      return null
+    }
+
+    const requestId = socialMarketingRequestIdRef.current + 1
+    socialMarketingRequestIdRef.current = requestId
+    setSocialMarketingState({ state: 'loading', posts: [], message: '' })
+    setCreateStatus({ state: 'idle', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to load social marketing stats.')
+      }
+
+      const result = await findAdminSocialPostsForProperty(propertySlug, {
+        authToken,
+        startDate: analyticsStartDate,
+        endDate: analyticsEndDate,
+      })
+
+      if (requestId !== socialMarketingRequestIdRef.current) {
+        return null
+      }
+
+      if (result?.status !== 'ready') {
+        throw new Error(result?.message || 'Unable to load social marketing stats.')
+      }
+
+      const posts = Array.isArray(result.posts) ? result.posts : []
+      const dateSource = {
+        analyticsStartDate: result.dateRange?.startDate || analyticsStartDate,
+        analyticsEndDate: result.dateRange?.endDate || analyticsEndDate,
+      }
+
+      setDraft((current) => ({
+        ...current,
+        socialMarketingReport:
+          current.propertySlug === propertySlug &&
+          current.analyticsStartDate === analyticsStartDate &&
+          current.analyticsEndDate === analyticsEndDate
+            ? createSocialMarketingReportFromSocialPosts(posts, dateSource)
+            : current.socialMarketingReport,
+      }))
+      setSocialMarketingState({
+        state: 'ready',
+        posts,
+        message: posts.length > 0 ? `${posts.length} social post${posts.length === 1 ? '' : 's'} loaded.` : 'No matching Facebook or Instagram posts found.',
+      })
+
+      return { posts, result }
+    } catch (error) {
+      if (requestId !== socialMarketingRequestIdRef.current) {
+        return null
+      }
+
+      setSocialMarketingState({
+        state: 'error',
+        posts: [],
+        message: error instanceof Error ? error.message : 'Unable to load social marketing stats.',
+      })
+
+      return null
+    }
+  }, [draft.analyticsEndDate, draft.analyticsStartDate, draft.propertySlug])
+
+  async function handleLoadSocialMarketingReport() {
+    await loadSocialMarketingReportForDraft()
+  }
+
+  useEffect(() => {
+    const lookupKey = `${authUser?.uid || ''}|${draft.propertySlug}|${draft.analyticsStartDate}|${draft.analyticsEndDate}`
+
+    if (!authUser?.uid || !draft.propertySlug || !datesAreQueryable) {
+      autoSocialLookupKeyRef.current = ''
+      socialMarketingRequestIdRef.current += 1
+      return
+    }
+
+    if (autoSocialLookupKeyRef.current === lookupKey) {
+      return
+    }
+
+    autoSocialLookupKeyRef.current = lookupKey
+    loadSocialMarketingReportForDraft({
+      propertySlug: draft.propertySlug,
+      analyticsStartDate: draft.analyticsStartDate,
+      analyticsEndDate: draft.analyticsEndDate,
+      showValidationError: false,
+    })
+  }, [authUser?.uid, datesAreQueryable, draft.analyticsEndDate, draft.analyticsStartDate, draft.propertySlug, loadSocialMarketingReportForDraft])
 
   async function handleCreateInvoice(event) {
     event.preventDefault()
 
     const invoiceProperty = properties.find((property) => property.slug === draft.propertySlug) ?? draftProperty
-    const derivedDates = getDerivedInvoiceDates(invoiceProperty)
     const lineItem = {
       description: getPropertyLineDescription(invoiceProperty),
       amount: getAnnualInvoiceAmount(invoiceProperty),
@@ -855,11 +860,9 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
       return
     }
 
-    if (analyticsState.report?.status !== 'ready') {
-      const proceed = window.confirm('Google Analytics is not currently available for this property and period. Save the invoice with the availability message instead?')
-      if (!proceed) {
-        return
-      }
+    if (!DATE_ONLY_PATTERN.test(draft.issueDate)) {
+      setCreateStatus({ state: 'error', message: 'Set a valid invoice date before generating this invoice.' })
+      return
     }
 
     setCreateStatus({ state: 'saving', message: '' })
@@ -875,22 +878,19 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         client.id,
         {
           propertySlugs: [draft.propertySlug],
-          issueDate: derivedDates.issueDate,
-          dueDate: derivedDates.dueDate,
-          analyticsStartDate: derivedDates.analyticsStartDate,
-          analyticsEndDate: derivedDates.analyticsEndDate,
+          issueDate: draft.issueDate,
+          analyticsStartDate: draft.analyticsStartDate,
+          analyticsEndDate: draft.analyticsEndDate,
           lineItems: [lineItem],
-          socialStats: buildSocialStatsPayload(draft.socialStats, {
-            startDate: derivedDates.analyticsStartDate,
-            endDate: derivedDates.analyticsEndDate,
-          }),
-          notes: draft.notes,
+          socialMarketingReport: draft.socialMarketingReport,
+          socialPostSnapshots: createSocialPostSnapshot(invoiceProperty, socialMarketingState.posts),
         },
         { authToken },
       )
 
       setInvoiceState((current) => ({ state: 'ready', invoices: [invoice, ...current.invoices.filter((item) => item.id !== invoice.id)], message: '' }))
-      setCreateStatus({ state: 'success', message: `${invoice.invoiceNumber} generated with a server-verified analytics snapshot.` })
+      setExpandedInvoiceId(invoice.id)
+      setCreateStatus({ state: 'success', message: `${invoice.invoiceNumber} generated.` })
     } catch (error) {
       setCreateStatus({ state: 'error', message: error instanceof Error ? error.message : 'Unable to generate this invoice.' })
     }
@@ -923,9 +923,94 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
   }
 
   function handlePrint(invoiceId) {
+    setExpandedInvoiceId(invoiceId)
     setPrintInvoiceId(invoiceId)
     document.body.classList.add('admin-invoice-printing')
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.print()))
+  }
+
+  function handleToggleInvoice(invoiceId) {
+    setExpandedInvoiceId((current) => (current === invoiceId ? '' : invoiceId))
+  }
+
+  async function handleRefreshInvoiceSocialMarketing(invoice) {
+    setInvoiceActionState({ invoiceId: invoice.id, action: 'refresh-social', state: 'working', message: '' })
+
+    try {
+      const authToken = await getAdminIdToken()
+
+      if (!authToken) {
+        throw new Error('Sign in to refresh social marketing stats.')
+      }
+
+      const invoiceProperties = (Array.isArray(invoice.propertySlugs) ? invoice.propertySlugs : [])
+        .map((slug) => properties.find((property) => property.slug === slug))
+        .filter(Boolean)
+
+      if (invoiceProperties.length === 0) {
+        throw new Error('This invoice does not have a matching property to refresh.')
+      }
+
+      const results = await Promise.all(
+        invoiceProperties.map((property) =>
+          findAdminSocialPostsForProperty(property.slug, {
+            authToken,
+            startDate: invoice.analyticsStartDate,
+            endDate: invoice.analyticsEndDate,
+          }),
+        ),
+      )
+      const unavailableMessages = results
+        .filter((result) => result?.status && result.status !== 'ready')
+        .map((result) => result.message)
+        .filter(Boolean)
+
+      if (unavailableMessages.length > 0 && results.every((result) => result?.status !== 'ready')) {
+        throw new Error(unavailableMessages.join(' '))
+      }
+
+      const posts = results.flatMap((result) => (Array.isArray(result?.posts) ? result.posts : []))
+      const dateRange = results.find((result) => result?.dateRange)?.dateRange ?? {}
+      const dateSource = {
+        analyticsStartDate: dateRange.startDate || invoice.analyticsStartDate,
+        analyticsEndDate: dateRange.endDate || invoice.analyticsEndDate,
+      }
+      const socialMarketingReport = createSocialMarketingReportFromSocialPosts(posts, dateSource)
+      const socialPostSnapshots = invoiceProperties.flatMap((property, index) =>
+        createSocialPostSnapshot(property, Array.isArray(results[index]?.posts) ? results[index].posts : []),
+      )
+      const { invoice: refreshedInvoice, result } = await refreshAdminClientInvoiceSocialMarketing(
+        invoice.id,
+        { socialMarketingReport, socialPostSnapshots },
+        { authToken },
+      )
+
+      if (!refreshedInvoice) {
+        throw new Error('Unable to refresh social marketing stats.')
+      }
+
+      setInvoiceState((current) => ({
+        ...current,
+        invoices: current.invoices.map((existing) => existing.id === refreshedInvoice.id ? refreshedInvoice : existing),
+        message: '',
+      }))
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'refresh-social',
+        state: 'success',
+        message:
+          Number(result?.postCount) > 0
+            ? `${result.postCount} social post${result.postCount === 1 ? '' : 's'} loaded.`
+            : 'No matching Facebook or Instagram posts found.',
+      })
+    } catch (error) {
+      setInvoiceActionState({
+        invoiceId: invoice.id,
+        action: 'refresh-social',
+        state: 'error',
+        message: error instanceof Error ? error.message : 'Unable to refresh social marketing stats.',
+      })
+    }
   }
 
   async function handleSavePdf(invoice) {
@@ -1024,6 +1109,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
         ...current,
         invoices: current.invoices.filter((existing) => existing.id !== invoice.id),
       }))
+      setExpandedInvoiceId((current) => (current === invoice.id ? '' : current))
       setInvoiceActionState({ invoiceId: '', action: '', state: 'idle', message: '' })
     } catch (error) {
       setInvoiceActionState({
@@ -1043,8 +1129,6 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
       </section>
     )
   }
-
-  const analyticsMessage = analyticsState.message || analyticsState.report?.message || ''
 
   return (
     <section className="admin-client-invoices" aria-label="Invoices">
@@ -1068,15 +1152,11 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
             </div>
             <div>
               <span>Annual service through</span>
-              <strong>{annualServiceEndDate ? formatDate(annualServiceEndDate) : 'Calculated from subscription start'}</strong>
+              <strong>{draft.analyticsEndDate ? formatDate(draft.analyticsEndDate) : 'Calculated from subscription start'}</strong>
             </div>
             <div>
               <span>Invoice date</span>
-              <strong>{formatDate(draft.issueDate)}</strong>
-            </div>
-            <div>
-              <span>Due date</span>
-              <strong>{formatDate(draft.dueDate)}</strong>
+              <input required type="date" value={draft.issueDate} onChange={(event) => handleIssueDateChange(event.target.value)} />
             </div>
           </div>
         </div>
@@ -1094,33 +1174,107 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           </div>
         </div>
 
-        <label className="admin-field"><span>Notes</span><textarea rows={3} value={draft.notes} onChange={(event) => setDraftField('notes', event.target.value)} /></label>
+        <div className="admin-field admin-field--full-width admin-client-invoice-marketing-editor">
+          <div className="admin-client-invoice-marketing-header">
+            <span>FB and Instagram marketing</span>
+            <button
+              className="button-link button-link--ghost admin-action"
+              disabled={!datesAreQueryable || socialMarketingState.state === 'loading'}
+              type="button"
+              onClick={handleLoadSocialMarketingReport}
+            >
+              {socialMarketingState.state === 'loading' ? 'Loading...' : 'Load stats'}
+            </button>
+          </div>
 
-        <div className="admin-field admin-field--full-width">
-          <span>Social &amp; marketing stats (optional)</span>
-          <p className="admin-note">Paste totals from an external report (Facebook Ads, Meta/Google insights, etc.) to include a marketing stats section on this invoice. Leave blank to skip it.</p>
-        </div>
-        <label className="admin-field admin-field--full-width">
-          <span>Stats label</span>
-          <input
-            placeholder="Social media marketing"
-            type="text"
-            value={draft.socialStats.label}
-            onChange={(event) => setSocialStatField('label', event.target.value)}
-          />
-        </label>
-        <div className="admin-client-invoice-fields">
-          {Object.entries(SOCIAL_STAT_LABELS).map(([key, label]) => (
-            <label className="admin-field" key={key}>
-              <span>{label}</span>
+          <div className="admin-client-invoice-marketing-fields">
+            <label className="admin-field">
+              <span>Marketing dates</span>
               <input
-                inputMode="numeric"
+                placeholder="Marketing Dates TBD"
                 type="text"
-                value={draft.socialStats[key]}
-                onChange={(event) => setSocialStatField(key, event.target.value)}
+                value={draft.socialMarketingReport?.dateLabel ?? 'Marketing Dates TBD'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('dateLabel', event.target.value)}
               />
             </label>
-          ))}
+            <label className="admin-field">
+              <span>Views</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.views ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('views', event.target.value)}
+              />
+            </label>
+            <label className="admin-field">
+              <span>Viewers</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.viewers ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('viewers', event.target.value)}
+              />
+            </label>
+            <label className="admin-field">
+              <span>Clicks</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.clicks ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('clicks', event.target.value)}
+              />
+            </label>
+            <label className="admin-field">
+              <span>Likes</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.likes ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('likes', event.target.value)}
+              />
+            </label>
+            <label className="admin-field">
+              <span>Comments</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.comments ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('comments', event.target.value)}
+              />
+            </label>
+            <label className="admin-field">
+              <span>Shares</span>
+              <input
+                placeholder="N/A"
+                type="text"
+                value={draft.socialMarketingReport?.shares ?? 'N/A'}
+                onChange={(event) => handleSocialMarketingReportFieldChange('shares', event.target.value)}
+              />
+            </label>
+          </div>
+
+          {socialMarketingState.message ? (
+            <p className={`admin-feedback admin-feedback--${socialMarketingState.state === 'error' ? 'error' : 'idle'}`}>
+              {socialMarketingState.message}
+            </p>
+          ) : null}
+
+          {socialMarketingState.posts.length > 0 ? (
+            <ul className="admin-client-invoice-social-posts">
+              {socialMarketingState.posts.map((post) => (
+                <li key={post.externalId}>
+                  <a href={post.permalinkUrl || undefined} rel="noreferrer" target="_blank">
+                    {formatPostDate(post.createdTime)} {getSocialPlatformLabel(post.platform)} post
+                  </a>
+                  <span>
+                    {formatOptionalNumber(post.views)} views / {formatOptionalNumber(post.viewers)} viewers /{' '}
+                    {formatOptionalNumber(post.clicks)} clicks / {formatOptionalNumber(post.likes)} likes /{' '}
+                    {formatOptionalNumber(post.comments)} comments
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
 
         {!subscriptionStartDate ? (
@@ -1129,26 +1283,12 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           </p>
         ) : null}
 
-        <div className="admin-client-invoice-analytics-preview" aria-live="polite">
-          <div className="admin-client-invoice-report-heading">
-            <div><span className="eyebrow">Analytics preview</span><strong>{draftProperty?.name || draft.propertySlug}</strong></div>
-            <span>
-              {datesAreQueryable
-                ? `${formatDate(draft.analyticsStartDate)} - ${formatDate(draft.analyticsEndDate)}`
-                : 'Set subscription start'}
-            </span>
-          </div>
-          {analyticsState.state === 'loading' ? <p>Loading Google Analytics...</p> : null}
-          {analyticsState.state === 'ready' && analyticsState.report?.status === 'ready' ? <AnalyticsMetrics report={analyticsState.report} /> : null}
-          {analyticsMessage && analyticsState.state !== 'loading' ? <p>{analyticsMessage}</p> : null}
-        </div>
-
         {createStatus.message ? <p className={`admin-feedback admin-feedback--${createStatus.state === 'success' ? 'idle' : createStatus.state}`}>{createStatus.message}</p> : null}
 
         <div className="admin-inline-actions admin-client-invoice-submit-row">
           <button
             className="button-link button-link--primary admin-action"
-            disabled={createStatus.state === 'saving' || analyticsState.state === 'loading' || !canGenerateInvoice}
+            disabled={createStatus.state === 'saving' || !canGenerateInvoice}
             type="submit"
           >
             {createStatus.state === 'saving' ? 'Generating...' : 'Generate invoice'}
@@ -1165,6 +1305,7 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
           <SavedInvoice
             actionState={invoiceActionState}
             client={client}
+            expanded={expandedInvoiceId === invoice.id}
             invoice={invoice}
             key={invoice.id}
             logoUrl={logoUrl}
@@ -1174,8 +1315,10 @@ export function AdminClientInvoices({ authUser, client, properties, selectedProp
             onDeleteInvoice={handleDeleteInvoice}
             onEmailPdf={handleEmailPdf}
             onPrint={handlePrint}
+            onRefreshSocialMarketing={handleRefreshInvoiceSocialMarketing}
             onSavePdf={handleSavePdf}
             onStatusChange={handleStatusChange}
+            onToggle={handleToggleInvoice}
           />
         ))}
       </div>

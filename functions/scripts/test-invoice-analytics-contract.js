@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict')
 const { normalizeAnalyticsDateRange, resolveAnalyticsDateRangeToIsoDates } = require('../src/analyticsRepository')
 const { _test: invoiceTest } = require('../src/invoiceRepository')
-const { createInvoicePdfBuffer, getInvoicePdfFilename } = require('../src/invoicePdf')
+const { createInvoicePdfBuffer, getInvoicePdfFilename, _test: invoicePdfTest } = require('../src/invoicePdf')
+const { normalizeItemId: normalizeTrackableItemId } = require('../src/trackableItem')
 
 function assertHttpError(callback, expectedMessage) {
   assert.throws(callback, (error) => error?.status === 400 && error.message === expectedMessage)
@@ -38,31 +39,20 @@ const normalizedDraft = invoiceTest.normalizeInvoiceDraft({
   analyticsEndDate: '2026-08-31',
   lineItems: [{ description: 'Annual listing', amount: '$500.00' }],
   notes: 'Thank you.',
-  socialStats: [
-    {
-      platform: 'Facebook and Instagram',
-      startDate: '2026-08-01',
-      endDate: '2026-08-31',
-      metrics: {
-        views: '1,250',
-        viewers: '890',
-        clicks: '42',
-      },
-    },
-    {
-      platform: 'Empty social source',
-    },
-  ],
+  socialMarketingReport: {
+    dateLabel: 'Marketing Dates TBD',
+    views: 'N/A',
+    viewers: 'N/A',
+    clicks: 'N/A',
+    likes: '49',
+    comments: '8',
+    shares: '3',
+  },
   analyticsSnapshots: [
     {
       propertySlug: 'villa-one',
       propertyName: 'Villa One',
       capturedAt: '2026-08-31T12:00:00.000Z',
-      socialStats: {
-        platform: 'Instagram',
-        dateRange: { startDate: '2026-08-01', endDate: '2026-08-31' },
-        metrics: { reach: '640' },
-      },
       report: {
         status: 'ready',
         dateRange: { startDate: '2026-08-01', endDate: '2026-08-31' },
@@ -78,19 +68,67 @@ const normalizedDraft = invoiceTest.normalizeInvoiceDraft({
       },
     },
   ],
+  facebookPostSnapshots: [
+    {
+      propertySlug: 'villa-one',
+      propertyName: 'Villa One',
+      posts: [
+        {
+          externalId: '155976689882_1234567890123456',
+          message: 'Check out Villa One, freshly renovated for the season!',
+          permalinkUrl: 'https://www.facebook.com/155976689882/posts/1234567890123456',
+          createdTime: '2026-08-15T14:32:10+0000',
+          likes: '42',
+          comments: '5',
+          shares: '3',
+        },
+        {
+          // A post with no externalId isn't a real match/lookup result - drop it
+          // rather than store a post nobody can trace back to Facebook.
+          message: 'Missing an external id',
+        },
+      ],
+    },
+  ],
+  socialPostSnapshots: [
+    {
+      propertySlug: 'villa-one',
+      propertyName: 'Villa One',
+      posts: [
+        {
+          platform: 'instagram',
+          externalId: '17895695668004550',
+          message: 'Villa One from the pool deck.',
+          permalinkUrl: 'https://www.instagram.com/p/example/',
+          createdTime: '2026-08-16T14:32:10+0000',
+          mediaType: 'IMAGE',
+          likes: '7',
+          comments: '3',
+        },
+      ],
+    },
+  ],
 })
 
 assert.deepEqual(normalizedDraft.propertySlugs, ['villa-one'])
 assert.equal(normalizedDraft.analyticsSnapshots[0].metrics.views, 125)
 assert.equal(normalizedDraft.analyticsSnapshots[0].sources[0].sessions, 50)
 assert.equal(normalizedDraft.analyticsSnapshots[0].status, 'ready')
-assert.equal(normalizedDraft.analyticsSnapshots[0].socialStats[0].label, 'Instagram')
-assert.equal(normalizedDraft.analyticsSnapshots[0].socialStats[0].metrics.reach, 640)
-assert.equal(normalizedDraft.socialStats.length, 1)
-assert.equal(normalizedDraft.socialStats[0].label, 'Facebook and Instagram')
-assert.equal(normalizedDraft.socialStats[0].startDate, '2026-08-01')
-assert.equal(normalizedDraft.socialStats[0].metrics.views, 1250)
-assert.equal(normalizedDraft.socialStats[0].metrics.clicks, 42)
+assert.equal(normalizedDraft.facebookPostSnapshots.length, 1)
+assert.equal(normalizedDraft.facebookPostSnapshots[0].posts.length, 1)
+assert.equal(normalizedDraft.facebookPostSnapshots[0].posts[0].likes, 42)
+assert.equal(normalizedDraft.facebookPostSnapshots[0].posts[0].comments, 5)
+assert.equal(normalizedDraft.facebookPostSnapshots[0].posts[0].shares, 3)
+assert.equal(normalizedDraft.socialPostSnapshots.length, 1)
+assert.equal(normalizedDraft.socialPostSnapshots[0].posts[0].platform, 'instagram')
+assert.equal(normalizedDraft.socialPostSnapshots[0].posts[0].likes, 7)
+assert.equal(normalizedDraft.socialMarketingReport.dateLabel, 'Marketing Dates TBD')
+assert.equal(normalizedDraft.socialMarketingReport.views, 'N/A')
+assert.equal(normalizedDraft.socialMarketingReport.viewers, 'N/A')
+assert.equal(normalizedDraft.socialMarketingReport.clicks, 'N/A')
+assert.equal(normalizedDraft.socialMarketingReport.likes, '49')
+assert.equal(normalizedDraft.socialMarketingReport.comments, '8')
+assert.equal(normalizedDraft.socialMarketingReport.shares, '3')
 
 assertHttpError(
   () => invoiceTest.normalizeInvoiceDraft({
@@ -122,7 +160,6 @@ assertHttpError(
   }),
   'Line item amount must be a valid number.',
 )
-
 // The default GA-relative date range ('30daysAgo'/'today') must resolve to real
 // calendar dates for non-GA consumers (e.g. the engagement summary), not pass through.
 const resolvedDefaultRange = resolveAnalyticsDateRangeToIsoDates(normalizeAnalyticsDateRange())
@@ -132,29 +169,66 @@ assert.deepEqual(
   resolveAnalyticsDateRangeToIsoDates({ startDate: '2026-08-01', endDate: '2026-08-31' }),
   { startDate: '2026-08-01', endDate: '2026-08-31' },
 )
+assert.equal(normalizeTrackableItemId('palladio%E2%80%99s-view'), 'palladio%E2%80%99s-view')
+assert.equal(normalizeTrackableItemId('palladio\u2019s-view'), 'palladio\u2019s-view')
+assertHttpError(
+  () => normalizeTrackableItemId('rental-properties/palladio%E2%80%99s-view'),
+  'A valid item id is required.',
+)
+assertHttpError(
+  () => normalizeTrackableItemId('palladio%ZZs-view'),
+  'A valid item id is required.',
+)
 
-// Reading back a previously-stored invoice must never throw, even if it has a
-// corrupt socialStats date range (e.g. from a manual edit or a future integration) -
-// the metrics should survive with the bad date range dropped.
 const rehydratedInvoice = invoiceTest.normalizeStoredInvoiceRecord('invoice-1', {
   invoiceNumber: 'STJHR-2026-002',
   clientId: 'client-1',
   propertySlugs: ['villa-one'],
   lineItems: [{ description: 'Listing', amount: '500' }],
   issueDate: '2026-08-31',
-  socialStats: [
+  socialMarketingReport: {
+    dateLabel: '',
+    views: '100',
+    viewers: '',
+    clicks: null,
+    likes: '12',
+    comments: '',
+    shares: null,
+  },
+  facebookPostSnapshots: [
     {
-      label: 'Corrupt entry',
-      startDate: 'not-a-date',
-      endDate: '2026-08-31',
-      metrics: { views: '100' },
+      propertySlug: 'villa-one',
+      propertyName: 'Villa One',
+      posts: [{ externalId: '155976689882_1234567890123456', likes: 1 }],
     },
   ],
 })
-assert.equal(rehydratedInvoice.socialStats.length, 1)
-assert.equal(rehydratedInvoice.socialStats[0].startDate, '')
-assert.equal(rehydratedInvoice.socialStats[0].endDate, '')
-assert.equal(rehydratedInvoice.socialStats[0].metrics.views, 100)
+assert.equal(rehydratedInvoice.socialMarketingReport.dateLabel, 'Marketing Dates TBD')
+assert.equal(rehydratedInvoice.socialMarketingReport.views, '100')
+assert.equal(rehydratedInvoice.socialMarketingReport.viewers, 'N/A')
+assert.equal(rehydratedInvoice.socialMarketingReport.clicks, 'N/A')
+assert.equal(rehydratedInvoice.socialMarketingReport.likes, '12')
+assert.equal(rehydratedInvoice.socialMarketingReport.comments, 'N/A')
+assert.equal(rehydratedInvoice.socialMarketingReport.shares, 'N/A')
+assert.equal(rehydratedInvoice.socialPostSnapshots[0].posts[0].platform, 'facebook')
+assert.equal(
+  invoicePdfTest.getInvoiceSnapshotForProperty([
+    { propertySlug: 'villa-one', metrics: { views: 10 } },
+    { propertySlug: 'villa-two', metrics: { views: 20 } },
+  ], 'villa-two').metrics.views,
+  20,
+)
+assert.equal(
+  invoicePdfTest.getInvoiceSnapshotForProperty([
+    { propertySlug: 'villa-one', metrics: { views: 10 } },
+    { propertySlug: 'villa-two', metrics: { views: 20 } },
+  ], 'missing-villa'),
+  null,
+)
+assert.equal(
+  invoicePdfTest.getInvoiceSnapshotForProperty([{ propertySlug: 'legacy-single', metrics: { views: 7 } }], 'missing-villa').metrics.views,
+  7,
+)
 
 async function assertInvoicePdfGeneration() {
   const invoice = {
