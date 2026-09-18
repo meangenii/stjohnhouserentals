@@ -1000,8 +1000,10 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
                 authUser={authUser}
                 client={selectedClient}
                 selectedPropertyAnalyticsReport={propertyAnalyticsState.state === 'ready' ? propertyAnalyticsState.report : null}
+                selectedPropertyAnalyticsSlug={propertyAnalyticsState.state === 'ready' ? selectedProperty?.slug : ''}
                 properties={linkedProperties}
                 selectedPropertySlug={selectedPropertySlug}
+                onSelectedPropertySlugChange={setSelectedPropertySlug}
               />
             </>
           ) : null}

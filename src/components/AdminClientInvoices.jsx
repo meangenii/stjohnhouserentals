@@ -378,8 +378,12 @@ function createSocialPostSnapshot(property, posts) {
   ]
 }
 
-function createAnalyticsSnapshot(property, report) {
+function createAnalyticsSnapshot(property, report, reportPropertySlug = '') {
   if (!property?.slug || report?.status !== 'ready') {
+    return []
+  }
+
+  if (reportPropertySlug && reportPropertySlug !== property.slug) {
     return []
   }
 
@@ -729,7 +733,15 @@ function SavedInvoice({
   )
 }
 
-export function AdminClientInvoices({ authUser, client, selectedPropertyAnalyticsReport, properties, selectedPropertySlug }) {
+export function AdminClientInvoices({
+  authUser,
+  client,
+  selectedPropertyAnalyticsReport,
+  selectedPropertyAnalyticsSlug = '',
+  properties,
+  selectedPropertySlug,
+  onSelectedPropertySlugChange,
+}) {
   const siteShell = useSiteShellContent()
   const logoUrl = String(siteShell?.header?.logo?.url ?? '').trim() || siteLogoFallback
   const selectedProperty = properties.find((property) => property.slug === selectedPropertySlug) ?? properties[0] ?? null
@@ -745,6 +757,30 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
   const autoSocialLookupKeyRef = useRef('')
   const socialMarketingRequestIdRef = useRef(0)
   const propertyKey = properties.map((property) => property.slug).join('|')
+  const selectedPropertyListingFeeAmount = selectedProperty?.listingFeeAmount
+  const selectedPropertyPath = selectedProperty?.path
+  const selectedPropertyRenewalDueAt = selectedProperty?.renewalDueAt
+  const selectedPropertySlugValue = selectedProperty?.slug
+  const selectedPropertySubscriptionStartAt = selectedProperty?.subscriptionStartAt
+  const selectedPropertyDraftSource = useMemo(
+    () =>
+      selectedPropertySlugValue
+        ? {
+            listingFeeAmount: selectedPropertyListingFeeAmount,
+            path: selectedPropertyPath,
+            renewalDueAt: selectedPropertyRenewalDueAt,
+            slug: selectedPropertySlugValue,
+            subscriptionStartAt: selectedPropertySubscriptionStartAt,
+          }
+        : null,
+    [
+      selectedPropertyListingFeeAmount,
+      selectedPropertyPath,
+      selectedPropertyRenewalDueAt,
+      selectedPropertySlugValue,
+      selectedPropertySubscriptionStartAt,
+    ],
+  )
   const draftProperty = properties.find((property) => property.slug === draft.propertySlug) ?? null
   const billableServicePeriod = getBillableServicePeriod(draftProperty)
   const billableServiceStartDate = billableServicePeriod.startDate
@@ -764,19 +800,14 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
   const canGenerateInvoice = Boolean(draft.propertySlug && billableServiceStartDate && serviceDatesAreValid && datesAreQueryable)
 
   useEffect(() => {
-    const nextDraft = createInvoiceDraft(selectedProperty)
+    const nextDraft = createInvoiceDraft(selectedPropertyDraftSource)
 
     setDraft(nextDraft)
     setCreateStatus({ state: 'idle', message: '' })
     setSocialMarketingState({ state: 'idle', posts: [], message: '' })
   }, [
     propertyKey,
-    selectedProperty?.listingFeeAmount,
-    selectedProperty?.path,
-    selectedProperty?.renewalDueAt,
-    selectedProperty?.slug,
-    selectedProperty?.subscriptionStartAt,
-    selectedProperty,
+    selectedPropertyDraftSource,
     selectedPropertySlug,
   ])
 
@@ -873,6 +904,7 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
       ...current,
       ...nextDraft,
     }))
+    onSelectedPropertySlugChange?.(property?.slug || slug)
     setCreateStatus({ state: 'idle', message: '' })
     setSocialMarketingState({ state: 'idle', posts: [], message: '' })
   }
@@ -1035,7 +1067,7 @@ export function AdminClientInvoices({ authUser, client, selectedPropertyAnalytic
           analyticsStartDate: subscriptionDates.analyticsStartDate,
           analyticsEndDate: subscriptionDates.analyticsEndDate,
           lineItems: [lineItem],
-          analyticsSnapshots: createAnalyticsSnapshot(invoiceProperty, selectedPropertyAnalyticsReport),
+          analyticsSnapshots: createAnalyticsSnapshot(invoiceProperty, selectedPropertyAnalyticsReport, selectedPropertyAnalyticsSlug),
           socialMarketingReport: syncSocialMarketingReportDateLabel(draft.socialMarketingReport, subscriptionDates),
           socialPostSnapshots: createSocialPostSnapshot(invoiceProperty, socialMarketingState.posts),
         },
