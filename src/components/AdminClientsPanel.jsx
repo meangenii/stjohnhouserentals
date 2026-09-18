@@ -41,11 +41,41 @@ function draftFromClient(client) {
   }
 }
 
+function comparableClientDraft(value) {
+  const draft = draftFromClient(value)
+
+  return {
+    ...draft,
+    businessName: draft.businessName.trim(),
+    contactName: draft.contactName.trim(),
+    email: draft.email.trim().toLowerCase(),
+    phone: draft.phone.trim(),
+    subscriptionStartAt: draft.subscriptionStartAt.trim(),
+    subscriptionEndAt: draft.subscriptionEndAt.trim(),
+    address: draft.address.trim(),
+    notes: draft.notes.trim(),
+  }
+}
+
 function isClientDraftChanged(draft, client) {
-  const currentDraft = draftFromClient(draft)
-  const savedDraft = client ? draftFromClient(client) : BLANK_DRAFT
+  const currentDraft = comparableClientDraft(draft)
+  const savedDraft = client ? comparableClientDraft(client) : BLANK_DRAFT
 
   return Object.keys(BLANK_DRAFT).some((field) => String(currentDraft[field] ?? '') !== String(savedDraft[field] ?? ''))
+}
+
+function compareClientNames(left, right) {
+  return getClientDisplayName(left).localeCompare(getClientDisplayName(right), undefined, { sensitivity: 'base' })
+}
+
+function upsertClient(clients, savedClient) {
+  if (!savedClient?.id) {
+    return clients
+  }
+
+  const nextClients = clients.filter((client) => client.id !== savedClient.id)
+  nextClients.push(savedClient)
+  return nextClients.sort(compareClientNames)
 }
 
 function comparePropertyNames(left, right) {
@@ -708,8 +738,20 @@ export function AdminClientsPanel({ authUser, initialClientId = '', initialPrope
         expectedUpdatedAt: selectedClient?.updatedAt ?? null,
       })
 
+      if (!savedClient?.id) {
+        throw new Error('The client was saved, but the server did not return the updated client record.')
+      }
+
+      setWorkspaceState((current) => ({
+        ...current,
+        status: 'ready',
+        clients: upsertClient(current.clients, savedClient),
+        message: '',
+      }))
+      setSelectedClientId(savedClient.id)
+      setDraft(draftFromClient(savedClient))
       setFormStatus({ state: 'success', message: 'Client saved.' })
-      await loadClients({ selectId: savedClient?.id ?? '' })
+      await loadProperties(authToken)
     } catch (error) {
       setFormStatus({
         state: 'error',
